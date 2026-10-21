@@ -15,22 +15,15 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 
-// Session Setup
-app.use(session({
-  secret: 'luxmind-secret-key',
-  resave: false,
-  saveUninitialized: false
-}));
+app.use(session({ secret: 'luxmind-secret', resave: false, saveUninitialized: false }));
 app.use(flash());
 
-// Pass user and flash messages to all templates
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.flash = { success: req.flash('success'), error: req.flash('error') };
   next();
 });
 
-// Helper for dynamic greeting
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -38,7 +31,7 @@ function getGreeting() {
   return 'Good evening';
 }
 
-// --- AUTHENTICATION ROUTES ---
+// --- AUTHENTICATION ---
 app.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/sis/my');
   res.render('login', { error: req.flash('error') });
@@ -65,55 +58,55 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// Middleware to protect routes
 const requireLogin = (req, res, next) => {
   if (!req.session.user) return res.redirect('/login');
   next();
 };
 
-// --- STUDENT ROUTES ---
+// --- STUDENT DASHBOARD ---
 app.get('/', (req, res) => res.redirect('/login'));
 
 app.get('/sis/my', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   
   try {
+    // 1. Get real student profile
     const profileRes = await pool.query(`SELECT * FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
-    const profile = profileRes.rows[0] || { current_semester: 1 };
+    const profile = profileRes.rows[0] || { current_semester: 1, class_level: 'Computer Engineering' };
     
-    const stats = { gpa: '3.85', credits: 45, balance: 1250, semester: profile.current_semester };
+    // 2. Get real total credits from enrollments
+    const creditsRes = await pool.query(`
+      SELECT COALESCE(SUM(c.credits), 0) as total_credits 
+      FROM enrollments e 
+      JOIN courses c ON c.id = e.course_id 
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+    const credits = creditsRes.rows[0].total_credits;
+
+    // 3. Get real balance (Mocked for now until we build fees)
+    const stats = { 
+      gpa: '3.85', // Will be calculated from grades
+      credits: credits, 
+      balance: 1250, 
+      semester: profile.current_semester 
+    };
     
-    res.render('dashboard', { user: req.session.user, stats: stats, greeting: getGreeting() });
+    res.render('dashboard', { user: req.session.user, profile: profile, stats: stats, greeting: getGreeting() });
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).send("Dashboard Error: " + err.message);
   }
 });
 
-app.get('/sis/my/registration', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
-  
-  try {
-    const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
-    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
-    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
-
-    res.render('registration', { user: req.session.user, courses: coursesRes.rows, cart: cartRes.rows, pending: pendingRes.rows, currentSem: 1 });
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-// --- ADVISOR ROUTES ---
-app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'advisor') return res.redirect('/login');
-  
-  try {
-    const studentsRes = await pool.query(`SELECT u.id, u.full_name, u.username, COUNT(cr.id) as total_courses FROM course_registrations cr JOIN users u ON u.id = cr.student_id WHERE cr.status = 'pending_advisor' GROUP BY u.id, u.full_name, u.username`);
-    const coursesRes = await pool.query(`SELECT cr.student_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.status = 'pending_advisor'`);
-    res.render('advisor', { user: req.session.user, pendingStudents: studentsRes.rows, pendingCourses: coursesRes.rows });
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
+// --- PLACEHOLDER FOR SIDEBAR LINKS ---
+// This catches any sidebar link we haven't built yet and shows a nice page instead of crashing
+app.get('/sis/my/:page', requireLogin, (req, res) => {
+  res.send(`
+    <div style="font-family: sans-serif; padding: 3rem; text-align: center;">
+      <h1>Page Under Construction</h1>
+      <p>The <strong>${req.params.page}</strong> page is currently being built.</p>
+      <a href="/sis/my" style="display:inline-block; margin-top:1rem; padding: 10px 20px; background: #0a1e32; color: white; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+    </div>
+  `);
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running at http://localhost:3000/login'));

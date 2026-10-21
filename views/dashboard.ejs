@@ -239,9 +239,14 @@
         <h1>Good night, <%= user.full_name.split(' ')[0] %> 👋</h1>
         <p>Here is what is happening with your academics today.</p>
       </div>
-      <div class="user-pill">
-        <i class="fas fa-user-circle"></i>
-        <%= user.admission_number %>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="user-pill">
+          <i class="fas fa-user-circle"></i>
+          <%= user.admission_number || user.username %>
+        </div>
+        <a href="/logout" style="background: #b33e2e; color: white; padding: 0.5rem 1rem; border-radius: 100px; text-decoration: none; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-soft);">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
       </div>
     </div>
 

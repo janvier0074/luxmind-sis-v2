@@ -99,14 +99,16 @@ app.get('/sis/my', requireLogin, async (req, res) => {
 
 // --- STUDENT TIMETABLE ---
 // MUST BE ABOVE THE PLACEHOLDER ROUTE
+// --- STUDENT TIMETABLE ---
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
+    // This query pulls the course, the group, the REAL teacher's name, and the links
     const scheduleRes = await pool.query(`
       SELECT 
-        c.code, c.title, 
-        s.day_of_week, s.start_time, s.end_time, s.room, s.group_name,
+        c.code, c.title, c.syllabus_url, c.moodle_url,
+        s.id AS section_id, s.group_name,
         u.full_name AS teacher_name
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
@@ -115,23 +117,10 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
-    const classes = scheduleRes.rows;
-
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
-
-    classes.forEach(cls => {
-      if (schedule[cls.day_of_week]) {
-        cls.start_time = cls.start_time.slice(0, 5);
-        cls.end_time = cls.end_time.slice(0, 5);
-        schedule[cls.day_of_week].push(cls);
-      }
-    });
-
+    // Send the real database rows to the frontend
     res.render('timetable', { 
       user: req.session.user, 
-      schedule: schedule,
-      days: days
+      courses: scheduleRes.rows
     });
   } catch (err) {
     res.status(500).send("Timetable Error: " + err.message);

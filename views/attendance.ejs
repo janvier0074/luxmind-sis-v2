@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Attendance Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
+    .submenu.open { display: block; }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
+    .user-pill i { color: var(--amber); }
+
+    /* Attendance Cards */
+    .attendance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+    
+    .att-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); padding: 1.5rem; position: relative; overflow: hidden; }
+    .att-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .att-code { font-size: 0.8rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px; }
+    .att-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-top: 0.2rem; }
+    
+    .att-percentage { font-size: 1.8rem; font-weight: 800; }
+    .att-percentage.safe { color: var(--success); }
+    .att-percentage.warning { color: var(--danger); }
+
+    /* Progress Bar */
+    .progress-bg { background: var(--mist); height: 10px; border-radius: 100px; overflow: hidden; margin: 1rem 0; }
+    .progress-fill { height: 100%; border-radius: 100px; transition: width 0.5s ease; }
+    .fill-safe { background: var(--success); }
+    .fill-warning { background: var(--danger); }
+
+    .att-stats { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #64748b; }
+    
+    /* Exam Block Banner */
+    .block-banner { background: #fbe9e7; color: var(--danger); padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #e0b4ab; }
+    .safe-banner { background: #dcfce7; color: var(--success); padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #bbf7d0; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item open">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu open">
+              <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
+              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="/sis/my/attendance" class="menu-link active"><i class="fas fa-check-circle main-icon"></i> Attendance Detail</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <div class="top-bar">
+      <div class="greeting">
+        <h1>Attendance Detail</h1>
+        <p>Track your attendance per course. You need 70% to sit for the final exam.</p>
+      </div>
+      <div class="user-pill">
+        <i class="fas fa-user-circle"></i>
+        <%= user.admission_number || user.username %>
+      </div>
+    </div>
+
+    <div class="attendance-grid">
+      <% if (attendanceData.length === 0) { %>
+        <div style="background:#fff; padding: 2rem; border-radius: 1.25rem; text-align: center; color: #64748b; grid-column: 1 / -1;">
+          <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--frost); margin-bottom: 1rem;"></i>
+          <h3>No attendance recorded yet.</h3>
+        </div>
+      <% } else { %>
+        <% attendanceData.forEach(att => { %>
+          <div class="att-card">
+            <div class="att-header">
+              <div>
+                <div class="att-code"><%= att.code %></div>
+                <div class="att-title"><%= att.title %></div>
+              </div>
+              <div class="att-percentage <%= att.isBlocked ? 'warning' : 'safe' %>">
+                <%= att.percentage %>%
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bg">
+              <div class="progress-fill <%= att.isBlocked ? 'fill-warning' : 'fill-safe' %>" style="width: <%= att.percentage %>%;"></div>
+            </div>
+
+            <div class="att-stats">
+              <span>Attended: <%= att.attended_classes %> classes</span>
+              <span>Total: <%= att.total_classes %> classes</span>
+            </div>
+
+            <% if (att.isBlocked) { %>
+              <div class="block-banner">
+                <i class="fas fa-exclamation-triangle"></i> Warning: Below 70%. Final Exam is blocked.
+              </div>
+            <% } else { %>
+              <div class="safe-banner">
+                <i class="fas fa-check-circle"></i> Good standing. Eligible for final exam.
+              </div>
+            <% } %>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

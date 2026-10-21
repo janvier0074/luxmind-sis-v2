@@ -69,4 +69,21 @@ app.post('/sis/advisor/approvals/reject', async (req, res) => {
   res.redirect('/sis/advisor/approvals');
 });
 
+
+// --- STUDENT DASHBOARD ---
+app.get('/sis/my', (req, res) => {
+  // In the future, we will fetch these stats from the database
+  const mockStats = {
+    gpa: '3.85',
+    credits: 45,
+    balance: 1250,
+    semester: 1
+  };
+  
+  res.render('dashboard', { 
+    user: mockUser,
+    stats: mockStats
+  });
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

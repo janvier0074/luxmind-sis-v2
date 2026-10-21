@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - My Timetable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
+
+    /* --- SIDEBAR (Same as Dashboard) --- */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
+    .submenu.open { display: block; }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
+    .user-pill i { color: var(--amber); }
+
+    /* --- TIMETABLE GRID --- */
+    .timetable-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    .timetable-header { background: var(--navy); color: #fff; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--amber); }
+    .timetable-header h2 { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 0.8rem; }
+    .timetable-header h2 i { color: var(--gold); }
+    
+    .grid-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .grid-table th { background: var(--mist); padding: 1rem; text-align: left; font-size: 0.85rem; font-weight: 800; color: var(--navy); border-bottom: 2px solid var(--frost); border-right: 1px solid var(--frost); }
+    .grid-table td { padding: 1rem; vertical-align: top; border-bottom: 1px solid var(--frost); border-right: 1px solid var(--frost); height: 120px; }
+    
+    .time-col { width: 100px; background: #f8fafc; font-weight: 700; color: #64748b; font-size: 0.8rem; text-align: center; }
+    
+    /* Course Card inside the grid */
+    .course-card { background: linear-gradient(135deg, var(--navy), var(--blue)); color: #fff; padding: 0.8rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(10,30,50,0.2); height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+    .course-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--amber); }
+    .course-code { font-size: 0.75rem; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+    .course-title { font-size: 0.85rem; font-weight: 700; margin-top: 0.2rem; line-height: 1.2; }
+    .course-meta { font-size: 0.7rem; color: #cbd5e1; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .course-meta i { width: 12px; margin-right: 4px; color: var(--amber); }
+
+    .empty-slot { display: flex; align-items: center; justify-content: center; height: 100%; color: #cbd5e1; font-size: 0.8rem; font-weight: 600; border: 2px dashed #e2e8f0; border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-wallet main-icon"></i> Accounting</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calculator main-icon"></i> CGPA Calculator</a></li>
+          <li class="menu-item open">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu open">
+              <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
+              <!-- Active Link for Timetable -->
+              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link active"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Attendance Detail</a></li>
+            </ul>
+          </li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-signature main-icon"></i> Exam</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <div class="top-bar">
+      <div class="greeting">
+        <h1>My Timetable</h1>
+        <p>Your weekly academic schedule.</p>
+      </div>
+      <div class="user-pill">
+        <i class="fas fa-user-circle"></i>
+        <%= user.admission_number || user.username %>
+      </div>
+    </div>
+
+    <div class="timetable-container">
+      <div class="timetable-header">
+        <h2><i class="fas fa-calendar-week"></i> Weekly Schedule</h2>
+        <span style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 700;">Fall Semester 2026</span>
+      </div>
+
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th class="time-col">Time</th>
+            <% days.forEach(day => { %>
+              <th><%= day %></th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- We simulate a grid from 08:00 to 16:00 -->
+          <% 
+            const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00']; 
+            hours.forEach(hour => { 
+          %>
+            <tr>
+              <td class="time-col"><%= hour %></td>
+              
+              <% days.forEach(day => { 
+                 // Find if the student has a class on this day starting at this hour
+                 const classItem = schedule[day].find(c => c.start_time.startsWith(hour.split(':')[0]));
+              %>
+                <td>
+                  <% if (classItem) { %>
+                    <div class="course-card">
+                      <div>
+                        <div class="course-code"><%= classItem.code %></div>
+                        <div class="course-title"><%= classItem.title %></div>
+                      </div>
+                      <div class="course-meta">
+                        <span><i class="fas fa-clock"></i> <%= classItem.start_time %> - <%= classItem.end_time %></span>
+                        <span><i class="fas fa-door-open"></i> <%= classItem.room || 'TBA' %></span>
+                        <span><i class="fas fa-chalkboard-teacher"></i> <%= classItem.teacher_name || 'Staff' %></span>
+                      </div>
+                    </div>
+                  <% } else { %>
+                    <div class="empty-slot">-</div>
+                  <% } %>
+                </td>
+              <% }) %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

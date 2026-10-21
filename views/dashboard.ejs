@@ -20,7 +20,7 @@
 
     /* --- SIDEBAR --- */
     .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
-    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar { width: 6px; }
     .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
     
     .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
@@ -30,18 +30,23 @@
     
     .sidebar-menu { list-style: none; padding: 1rem 0; }
     .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link { display: flex; align-items: center; padding: 0.8rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
     .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
     .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
     .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
     .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
     
     /* Nested Menus */
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
-    .submenu.open { display: block; }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    
+    /* Level 2 */
     .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    /* Level 3 */
     .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    /* Level 4 */
     .submenu .submenu .submenu .menu-link { padding-left: 5.5rem; font-size: 0.75rem; }
+    
     .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
 
     /* --- MAIN CONTENT --- */
@@ -106,6 +111,7 @@
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-pdf main-icon"></i> Transcript Request</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-id-card main-icon"></i> Student ID Request</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-certificate main-icon"></i> Enrollment Certificate</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-envelope-open-text main-icon"></i> Recommendation Letter</a></li>
         </ul>
       </li>
 
@@ -120,6 +126,7 @@
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-check main-icon"></i> Book Appointment</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-history main-icon"></i> My Appointments</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-hand-holding-heart main-icon"></i> Guidance Requests</a></li>
         </ul>
       </li>
 
@@ -132,6 +139,7 @@
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-pen main-icon"></i> Additional Course</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Withdrawal</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-signature main-icon"></i> Make-up Exam</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-exclamation-triangle main-icon"></i> Objection</a></li>
         </ul>
       </li>
 
@@ -150,6 +158,7 @@
             <ul class="submenu">
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-invoice main-icon"></i> My Fees</a></li>
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-credit-card main-icon"></i> Make a Payment</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-balance-scale main-icon"></i> Financial Status</a></li>
             </ul>
           </li>
 
@@ -167,6 +176,8 @@
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-check-square main-icon"></i> Attendance Detail</a></li>
               <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-poll main-icon"></i> Course Evaluation</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-folder-open main-icon"></i> Course Materials</a></li>
             </ul>
           </li>
 
@@ -174,7 +185,7 @@
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
           
-          <!-- EXAM (NOW COLLAPSIBLE) -->
+          <!-- EXAM (EXPANDED AS REQUESTED) -->
           <li class="menu-item">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
               <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
@@ -182,6 +193,8 @@
             <ul class="submenu">
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-poll main-icon"></i> Exam Result</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objection</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exam Application</a></li>
             </ul>
           </li>
 
@@ -200,6 +213,7 @@
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Events Calendar</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-camera main-icon"></i> Photo Gallery</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-clipboard-list main-icon"></i> Surveys</a></li>
         </ul>
       </li>
 
@@ -210,6 +224,7 @@
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-cog main-icon"></i> Account Settings</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-key main-icon"></i> Change Password</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
         </ul>
       </li>
@@ -301,7 +316,9 @@
       const parent = element.parentElement;
       parent.classList.toggle('open');
       const submenu = parent.querySelector('.submenu');
-      if (submenu) submenu.classList.toggle('open');
+      if (submenu) {
+        submenu.classList.toggle('open');
+      }
     }
   </script>
 </body>

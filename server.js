@@ -97,20 +97,8 @@ app.get('/sis/my', requireLogin, async (req, res) => {
   }
 });
 
-// --- PLACEHOLDER FOR SIDEBAR LINKS ---
-// This catches any sidebar link we haven't built yet and shows a nice page instead of crashing
-app.get('/sis/my/:page', requireLogin, (req, res) => {
-  res.send(`
-    <div style="font-family: sans-serif; padding: 3rem; text-align: center;">
-      <h1>Page Under Construction</h1>
-      <p>The <strong>${req.params.page}</strong> page is currently being built.</p>
-      <a href="/sis/my" style="display:inline-block; margin-top:1rem; padding: 10px 20px; background: #0a1e32; color: white; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
-    </div>
-  `);
-});
-
-
 // --- STUDENT TIMETABLE ---
+// MUST BE ABOVE THE PLACEHOLDER ROUTE
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -129,13 +117,11 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
 
     const classes = scheduleRes.rows;
 
-    // Group classes by Day for easy frontend rendering
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
     classes.forEach(cls => {
       if (schedule[cls.day_of_week]) {
-        // Format times to look nice (e.g., '09:00')
         cls.start_time = cls.start_time.slice(0, 5);
         cls.end_time = cls.end_time.slice(0, 5);
         schedule[cls.day_of_week].push(cls);
@@ -152,5 +138,16 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   }
 });
 
+// --- PLACEHOLDER FOR SIDEBAR LINKS ---
+// MUST BE AT THE VERY BOTTOM
+app.get('/sis/my/:page', requireLogin, (req, res) => {
+  res.send(`
+    <div style="font-family: sans-serif; padding: 3rem; text-align: center;">
+      <h1>Page Under Construction</h1>
+      <p>The <strong>${req.params.page}</strong> page is currently being built.</p>
+      <a href="/sis/my" style="display:inline-block; margin-top:1rem; padding: 10px 20px; background: #0a1e32; color: white; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+    </div>
+  `);
+});
 
-app.listen(process.env.PORT || 3000, () => console.log('Server running at http://localhost:3000/login'));
+app.listen(process.env.PORT || 3000, () => console.log('Server running'));

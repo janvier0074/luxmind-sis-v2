@@ -70,11 +70,9 @@ app.get('/sis/my', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   
   try {
-    // 1. Get real student profile
     const profileRes = await pool.query(`SELECT * FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
     const profile = profileRes.rows[0] || { current_semester: 1, class_level: 'Computer Engineering' };
     
-    // 2. Get real total credits from enrollments
     const creditsRes = await pool.query(`
       SELECT COALESCE(SUM(c.credits), 0) as total_credits 
       FROM enrollments e 
@@ -83,9 +81,8 @@ app.get('/sis/my', requireLogin, async (req, res) => {
     `, [req.session.user.id]);
     const credits = creditsRes.rows[0].total_credits;
 
-    // 3. Get real balance (Mocked for now until we build fees)
     const stats = { 
-      gpa: '3.85', // Will be calculated from grades
+      gpa: '3.85', 
       credits: credits, 
       balance: 1250, 
       semester: profile.current_semester 
@@ -97,8 +94,6 @@ app.get('/sis/my', requireLogin, async (req, res) => {
   }
 });
 
-// --- STUDENT TIMETABLE ---
-// MUST BE ABOVE THE PLACEHOLDER ROUTE
 // --- STUDENT TIMETABLE ---
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
@@ -118,7 +113,6 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
 
     const classes = scheduleRes.rows;
 
-    // Group by day for the visual grid
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
@@ -141,8 +135,47 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   }
 });
 
+// --- STUDENT ATTENDANCE DETAIL ---
+app.get('/sis/my/attendance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const attendanceRes = await pool.query(`
+      SELECT 
+        c.code, c.title,
+        COUNT(a.id) as total_classes,
+        COUNT(CASE WHEN a.status = 'Present' THEN 1 END) as attended_classes
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN course_sections s ON s.id = e.section_id
+      LEFT JOIN attendance a ON a.section_id = s.id AND a.student_id = e.user_id
+      WHERE e.user_id = $1
+      GROUP BY c.id, c.code, c.title
+    `, [req.session.user.id]);
+
+    const attendanceData = attendanceRes.rows.map(row => {
+      const total = Number(row.total_classes);
+      const attended = Number(row.attended_classes);
+      const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
+      
+      return {
+        ...row,
+        percentage,
+        isBlocked: percentage < 70 && total > 0
+      };
+    });
+
+    res.render('attendance', { 
+      user: req.session.user, 
+      attendanceData: attendanceData
+    });
+  } catch (err) {
+    res.status(500).send("Attendance Error: " + err.message);
+  }
+});
+
 // --- PLACEHOLDER FOR SIDEBAR LINKS ---
-// MUST BE AT THE VERY BOTTOM
+// MUST BE AT THE VERY BOTTOM BEFORE APP.LISTEN
 app.get('/sis/my/:page', requireLogin, (req, res) => {
   res.send(`
     <div style="font-family: sans-serif; padding: 3rem; text-align: center;">

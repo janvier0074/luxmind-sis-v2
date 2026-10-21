@@ -1,0 +1,27 @@
+{
+  "name": "luxmind_v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janvier0074/luxmind-sis-v2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/janvier0074/luxmind-sis-v2/issues"
+  },
+  "homepage": "https://github.com/janvier0074/luxmind-sis-v2#readme",
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  }
+}

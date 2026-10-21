@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advisor Approvals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-card: 0 30px 60px -20px rgba(10, 30, 50, 0.4);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: radial-gradient(circle at 20% 20%, #e5eef9, #cedbe9); min-height: 100vh; padding: 3rem 1.5rem; color: var(--navy); }
+    
+    .advisor-card { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 2rem; box-shadow: var(--shadow-card); overflow: hidden; }
+    
+    .advisor-header { background: linear-gradient(105deg, var(--navy) 0%, var(--deep) 55%, var(--blue) 100%); padding: 2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; color: #fff; position: relative; }
+    .advisor-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--amber), var(--gold), var(--amber)); }
+    .advisor-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 1rem; }
+    .advisor-header h1 i { color: var(--gold); }
+    
+    .advisor-body { padding: 2.5rem; background: var(--ice); }
+    
+    .student-block { background: #fff; border-radius: 1.25rem; border: 1px solid var(--frost); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 20px -6px rgba(10, 30, 50, 0.05); }
+    
+    .student-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--mist); padding-bottom: 1rem; margin-bottom: 1rem; }
+    .student-name { font-size: 1.25rem; font-weight: 800; color: var(--navy); }
+    .student-meta { font-size: 0.85rem; font-weight: 600; color: var(--blue); margin-top: 0.2rem; }
+    
+    .btn-approve { background: var(--success); color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-approve:hover { background: #166a48; transform: translateY(-2px); }
+    .btn-reject { background: var(--danger); color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-right: 0.5rem; }
+    .btn-reject:hover { background: #922e20; transform: translateY(-2px); }
+    
+    .course-list-advisor { background: var(--ice); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--frost); }
+    .course-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px dashed var(--frost); }
+    .course-row:last-child { border-bottom: none; }
+    .course-code { font-size: 0.8rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.05em; }
+    .course-title { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+    .course-credits { background: #fff; border: 1px solid var(--frost); padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: #64748b; }
+    .empty-state i { font-size: 4rem; color: var(--frost); margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="advisor-card">
+    <header class="advisor-header">
+      <h1><i class="fas fa-clipboard-check"></i> Pending Approvals</h1>
+      <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1.5rem; border-radius: 100px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2);">
+        Advisor Portal
+      </div>
+    </header>
+
+    <main class="advisor-body">
+      <% if (typeof pendingStudents === 'undefined' || pendingStudents.length === 0) { %>
+        <div class="empty-state">
+          <i class="fas fa-check-circle"></i>
+          <h2>All caught up!</h2>
+          <p>There are no pending student registrations to review.</p>
+        </div>
+      <% } else { %>
+        <% pendingStudents.forEach(student => { %>
+          <div class="student-block">
+            <div class="student-top">
+              <div>
+                <div class="student-name"><%= student.full_name || student.username %></div>
+                <div class="student-meta"><i class="fas fa-book"></i> <%= student.total_courses %> courses requested</div>
+              </div>
+              <div>
+                <form method="POST" action="/sis/advisor/approvals/reject" style="display:inline;">
+                  <input type="hidden" name="student_id" value="<%= student.id %>">
+                  <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Reject</button>
+                </form>
+                <form method="POST" action="/sis/advisor/approvals/approve" style="display:inline;">
+                  <input type="hidden" name="student_id" value="<%= student.id %>">
+                  <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="course-list-advisor">
+              <% pendingCourses.filter(c => c.student_id === student.id).forEach(course => { %>
+                <div class="course-row">
+                  <div>
+                    <span class="course-code"><%= course.code %></span>
+                    <div class="course-title"><%= course.title %></div>
+                  </div>
+                  <span class="course-credits"><%= course.credits %> CR</span>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </main>
+  </div>
+</body>
+</html>

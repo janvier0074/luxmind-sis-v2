@@ -52,8 +52,8 @@
     .warning-banner { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 1rem 1.5rem; border-radius: 1rem; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; display: flex; gap: 0.8rem; align-items: flex-start; }
     .warning-banner i { font-size: 1.2rem; margin-top: 2px; }
 
-    /* Table Design */
-    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    /* Table Design (Top Section) */
+    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; margin-bottom: 2.5rem; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
     .data-table th { background: var(--navy); color: #fff; padding: 1.2rem 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
     .data-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; vertical-align: middle; }
@@ -69,9 +69,24 @@
     .action-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); transform: translateY(-2px); }
     .action-btn.moodle { color: var(--amber); }
     .action-btn.moodle:hover { background: var(--amber); color: var(--navy); border-color: var(--amber); }
+
+    /* --- VISUAL TIMETABLE GRID (Bottom Section) --- */
+    .section-title { font-size: 1.2rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+    .section-title i { color: var(--amber); }
+
+    .grid-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow-x: auto; }
+    .grid-table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px; }
+    .grid-table th { background: var(--mist); padding: 0.8rem; text-align: center; font-size: 0.8rem; font-weight: 800; color: var(--navy); border-bottom: 2px solid var(--frost); border-right: 1px solid var(--frost); }
+    .grid-table td { padding: 0.5rem; vertical-align: top; border-bottom: 1px solid var(--frost); border-right: 1px solid var(--frost); height: 80px; }
     
-    .empty-state { text-align: center; padding: 4rem 2rem; color: #64748b; }
-    .empty-state i { font-size: 3rem; color: var(--frost); margin-bottom: 1rem; }
+    .time-col { width: 80px; background: #f8fafc; font-weight: 700; color: #64748b; font-size: 0.75rem; text-align: center; vertical-align: middle !important; }
+    
+    /* Compact Course Card */
+    .course-card { background: linear-gradient(135deg, var(--navy), var(--blue)); color: #fff; padding: 0.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(10,30,50,0.2); height: 100%; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; font-size: 0.7rem; }
+    .course-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--amber); }
+    .course-card .code { font-weight: 800; color: var(--gold); margin-bottom: 2px; }
+    .course-card .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .course-card .meta { font-size: 0.6rem; color: #cbd5e1; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -119,7 +134,7 @@
       </div>
     </div>
 
-    <!-- CIU Warning Banner -->
+    <!-- WARNING BANNER -->
     <div class="warning-banner">
       <i class="fas fa-exclamation-triangle"></i>
       <div>
@@ -127,7 +142,7 @@
       </div>
     </div>
 
-    <!-- Table -->
+    <!-- 1. DETAILED COURSE TABLE -->
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -144,13 +159,7 @@
         <tbody>
           <% if (courses.length === 0) { %>
             <tr>
-              <td colspan="7">
-                <div class="empty-state">
-                  <i class="fas fa-book-open"></i>
-                  <h3>No courses found</h3>
-                  <p>You are not currently enrolled in any courses.</p>
-                </div>
-              </td>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">No courses enrolled.</td>
             </tr>
           <% } else { %>
             <% courses.forEach(course => { %>
@@ -160,12 +169,10 @@
                 <td><span class="instructor-name"><%= course.teacher_name || 'TBA' %></span></td>
                 <td><span class="group-badge"><%= course.group_name || 'N/A' %></span></td>
                 
-                <!-- Action Buttons using the REAL database links we just created -->
                 <td style="text-align: center;">
                   <a href="<%= course.syllabus_url || '#' %>" target="_blank" class="action-btn" title="Download Syllabus"><i class="fas fa-file-pdf"></i></a>
                 </td>
                 <td style="text-align: center;">
-                  <!-- This will link to the attendance page later -->
                   <a href="#" class="action-btn" title="View Attendance"><i class="fas fa-user-check"></i></a>
                 </td>
                 <td style="text-align: center;">
@@ -174,6 +181,47 @@
               </tr>
             <% }) %>
           <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2. COMPACT VISUAL WEEKLY GRID -->
+    <div class="section-title"><i class="fas fa-calendar-week"></i> Weekly Schedule</div>
+    <div class="grid-container">
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th class="time-col">Time</th>
+            <% days.forEach(day => { %>
+              <th><%= day %></th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% 
+            const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00']; 
+            hours.forEach(hour => { 
+          %>
+            <tr>
+              <td class="time-col"><%= hour %></td>
+              
+              <% days.forEach(day => { 
+                 const classItem = schedule[day].find(c => c.start_time.startsWith(hour.split(':')[0]));
+              %>
+                <td>
+                  <% if (classItem) { %>
+                    <div class="course-card">
+                      <div class="code"><%= classItem.code %></div>
+                      <div class="title"><%= classItem.title %></div>
+                      <div class="meta"><i class="fas fa-door-open"></i> <%= classItem.room || 'TBA' %></div>
+                    </div>
+                  <% } else { %>
+                    <div style="height: 100%; border: 1px dashed #e2e8f0; border-radius: 8px;"></div>
+                  <% } %>
+                </td>
+              <% }) %>
+            </tr>
+          <% }) %>
         </tbody>
       </table>
     </div>

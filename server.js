@@ -104,11 +104,10 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-    // This query pulls the course, the group, the REAL teacher's name, and the links
     const scheduleRes = await pool.query(`
       SELECT 
         c.code, c.title, c.syllabus_url, c.moodle_url,
-        s.id AS section_id, s.group_name,
+        s.id AS section_id, s.group_name, s.day_of_week, s.start_time, s.end_time, s.room,
         u.full_name AS teacher_name
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
@@ -117,10 +116,25 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
-    // Send the real database rows to the frontend
+    const classes = scheduleRes.rows;
+
+    // Group by day for the visual grid
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
+
+    classes.forEach(cls => {
+      if (schedule[cls.day_of_week]) {
+        cls.start_time = cls.start_time.slice(0, 5);
+        cls.end_time = cls.end_time.slice(0, 5);
+        schedule[cls.day_of_week].push(cls);
+      }
+    });
+
     res.render('timetable', { 
       user: req.session.user, 
-      courses: scheduleRes.rows
+      courses: classes,
+      schedule: schedule,
+      days: days
     });
   } catch (err) {
     res.status(500).send("Timetable Error: " + err.message);

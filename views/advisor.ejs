@@ -3,103 +3,262 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advisor Approvals</title>
+  <title>LuxMind SIS - Advisor Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
       --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
       --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-card: 0 30px 60px -20px rgba(10, 30, 50, 0.4);
+      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
     }
-    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: radial-gradient(circle at 20% 20%, #e5eef9, #cedbe9); min-height: 100vh; padding: 3rem 1.5rem; color: var(--navy); }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
     
-    .advisor-card { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 2rem; box-shadow: var(--shadow-card); overflow: hidden; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
     
-    .advisor-header { background: linear-gradient(105deg, var(--navy) 0%, var(--deep) 55%, var(--blue) 100%); padding: 2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; color: #fff; position: relative; }
-    .advisor-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--amber), var(--gold), var(--amber)); }
-    .advisor-header h1 { font-size: 1.8rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 1rem; }
-    .advisor-header h1 i { color: var(--gold); }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
     
-    .advisor-body { padding: 2.5rem; background: var(--ice); }
+    /* Nested Menus */
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
+    .submenu.open { display: block; }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
     
-    .student-block { background: #fff; border-radius: 1.25rem; border: 1px solid var(--frost); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 20px -6px rgba(10, 30, 50, 0.05); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
+    .user-pill i { color: var(--amber); }
+
+    /* Approval Cards */
+    .approval-grid { display: flex; flex-direction: column; gap: 1.5rem; }
     
-    .student-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--mist); padding-bottom: 1rem; margin-bottom: 1rem; }
-    .student-name { font-size: 1.25rem; font-weight: 800; color: var(--navy); }
-    .student-meta { font-size: 0.85rem; font-weight: 600; color: var(--blue); margin-top: 0.2rem; }
+    .approval-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    .card-header { background: var(--mist); padding: 1.2rem 1.5rem; border-bottom: 2px solid var(--frost); display: flex; justify-content: space-between; align-items: center; }
+    .student-info h3 { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
+    .student-info p { font-size: 0.8rem; font-weight: 600; color: var(--blue); }
     
-    .btn-approve { background: var(--success); color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-    .btn-approve:hover { background: #166a48; transform: translateY(-2px); }
-    .btn-reject { background: var(--danger); color: #fff; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-right: 0.5rem; }
-    .btn-reject:hover { background: #922e20; transform: translateY(-2px); }
-    
-    .course-list-advisor { background: var(--ice); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--frost); }
+    .card-body { padding: 1.5rem; }
     .course-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px dashed var(--frost); }
     .course-row:last-child { border-bottom: none; }
-    .course-code { font-size: 0.8rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.05em; }
-    .course-title { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
-    .course-credits { background: #fff; border: 1px solid var(--frost); padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+    .course-code { font-size: 0.8rem; font-weight: 800; color: var(--blue); text-transform: uppercase; width: 100px; }
+    .course-title { font-weight: 700; color: var(--navy); flex: 1; }
+    .course-credits { font-size: 0.75rem; font-weight: 800; background: var(--mist); padding: 0.2rem 0.6rem; border-radius: 100px; border: 1px solid var(--frost); margin-left: 1rem; }
 
-    .empty-state { text-align: center; padding: 4rem 2rem; color: #64748b; }
+    .card-footer { padding: 1.2rem 1.5rem; background: var(--ice); border-top: 1px solid var(--frost); display: flex; justify-content: flex-end; gap: 1rem; }
+    
+    .btn { padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-approve { background: var(--success); color: #fff; }
+    .btn-approve:hover { background: #166a48; transform: translateY(-2px); }
+    .btn-reject { background: var(--danger); color: #fff; }
+    .btn-reject:hover { background: #922e20; transform: translateY(-2px); }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); }
     .empty-state i { font-size: 4rem; color: var(--frost); margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.5rem; color: var(--navy); margin-bottom: 0.5rem; }
+    .empty-state p { color: #64748b; font-weight: 500; }
   </style>
 </head>
 <body>
-  <div class="advisor-card">
-    <header class="advisor-header">
-      <h1><i class="fas fa-clipboard-check"></i> Pending Approvals</h1>
-      <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1.5rem; border-radius: 100px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2);">
-        Advisor Portal
-      </div>
-    </header>
 
-    <main class="advisor-body">
+  <!-- SIDEBAR (DEEPLY NESTED ADVISOR MENU) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Advisor Portal</span></div>
+    </div>
+
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      
+      <!-- ADVISING -->
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-users main-icon"></i> Advising <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link active"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-graduate main-icon"></i> My Advisees</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-clipboard-list main-icon"></i> Advising Notes</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-check main-icon"></i> Appointment Requests</a></li>
+        </ul>
+      </li>
+
+      <!-- COURSE MANAGEMENT -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> Course Management <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-chalkboard-teacher main-icon"></i> My Courses</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-alt main-icon"></i> Course Syllabus</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-check main-icon"></i> Attendance Management</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-pen main-icon"></i> Grade Entry</a></li>
+        </ul>
+      </li>
+
+      <!-- EXAM MANAGEMENT -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-file-signature main-icon"></i> Exam Management <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-poll main-icon"></i> Exam Results</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objections</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exam Requests</a></li>
+        </ul>
+      </li>
+
+      <!-- STUDENT RECORDS -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-folder-open main-icon"></i> Student Records <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-list-ol main-icon"></i> Transcript Review</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-graduation-cap main-icon"></i> Graduation Check</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum Map</a></li>
+        </ul>
+      </li>
+
+      <!-- DOCUMENT REQUESTS -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-file-download main-icon"></i> Document Requests <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-clock main-icon"></i> Pending Requests</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-check-double main-icon"></i> Processed Requests</a></li>
+        </ul>
+      </li>
+
+      <!-- COMMUNICATION -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-comments main-icon"></i> Communication <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-hands-helping main-icon"></i> PCGC Guidance</a></li>
+        </ul>
+      </li>
+
+      <!-- SYSTEM -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-cog main-icon"></i> System <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-cog main-icon"></i> My Profile</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-key main-icon"></i> Change Password</a></li>
+          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <div class="top-bar">
+      <div class="greeting">
+        <h1>Pending Approvals</h1>
+        <p>Review and approve student course registrations.</p>
+      </div>
+      <div class="user-pill">
+        <i class="fas fa-user-tie"></i>
+        <%= user.full_name || user.username %>
+      </div>
+    </div>
+
+    <div class="approval-grid">
       <% if (typeof pendingStudents === 'undefined' || pendingStudents.length === 0) { %>
+        
         <div class="empty-state">
           <i class="fas fa-check-circle"></i>
-          <h2>All caught up!</h2>
-          <p>There are no pending student registrations to review.</p>
+          <h3>All caught up!</h3>
+          <p>There are no pending student registrations to review right now.</p>
         </div>
+
       <% } else { %>
+        
         <% pendingStudents.forEach(student => { %>
-          <div class="student-block">
-            <div class="student-top">
-              <div>
-                <div class="student-name"><%= student.full_name || student.username %></div>
-                <div class="student-meta"><i class="fas fa-book"></i> <%= student.total_courses %> courses requested</div>
+          <div class="approval-card">
+            <div class="card-header">
+              <div class="student-info">
+                <h3><i class="fas fa-user-graduate" style="color: var(--amber); margin-right: 0.5rem;"></i><%= student.full_name || student.username %></h3>
+                <p>Requested <%= student.total_courses %> courses</p>
               </div>
-              <div>
-                <form method="POST" action="/sis/advisor/approvals/reject" style="display:inline;">
-                  <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Reject</button>
-                </form>
-                <form method="POST" action="/sis/advisor/approvals/approve" style="display:inline;">
-                  <input type="hidden" name="student_id" value="<%= student.id %>">
-                  <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve</button>
-                </form>
+              <div style="font-size: 0.75rem; font-weight: 800; background: #fff; padding: 0.4rem 0.8rem; border-radius: 100px; border: 1px solid var(--frost); color: var(--blue);">
+                ID: <%= student.username %>
               </div>
             </div>
 
-            <div class="course-list-advisor">
+            <div class="card-body">
               <% pendingCourses.filter(c => c.student_id === student.id).forEach(course => { %>
                 <div class="course-row">
-                  <div>
-                    <span class="course-code"><%= course.code %></span>
-                    <div class="course-title"><%= course.title %></div>
-                  </div>
-                  <span class="course-credits"><%= course.credits %> CR</span>
+                  <div class="course-code"><%= course.code %></div>
+                  <div class="course-title"><%= course.title %></div>
+                  <div class="course-credits"><%= course.credits %> CR</div>
                 </div>
               <% }) %>
             </div>
+
+            <div class="card-footer">
+              <form method="POST" action="/sis/advisor/approvals/reject" style="margin: 0;">
+                <input type="hidden" name="student_id" value="<%= student.id %>">
+                <button type="submit" class="btn btn-reject" onclick="return confirm('Are you sure you want to reject this registration?');">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+              </form>
+              <form method="POST" action="/sis/advisor/approvals/approve" style="margin: 0;">
+                <input type="hidden" name="student_id" value="<%= student.id %>">
+                <button type="submit" class="btn btn-approve">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+              </form>
+            </div>
           </div>
         <% }) %>
+
       <% } %>
-    </main>
-  </div>
+    </div>
+
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
 </body>
 </html>

@@ -300,6 +300,101 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 });
 
 // ============================================
+// --- FACULTY: ATTENDANCE MANAGEMENT ---
+// ============================================
+
+// 1. Show list of classes
+app.get('/sis/faculty/attendance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
+  
+  try {
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
+    
+    res.render('faculty-attendance', { 
+      user: req.session.user, 
+      courses: coursesRes.rows, 
+      section: null, 
+      students: [] 
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show roster for a specific class
+app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
+  
+  try {
+    // Get the courses for the sidebar list
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
+
+    // Get the specific class details
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name 
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/attendance');
+
+    // Get students enrolled in this section, plus their attendance status for TODAY (if it exists)
+    const studentsRes = await pool.query(`
+      SELECT u.id as user_id, u.full_name, u.username, a.status as current_status
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      LEFT JOIN attendance a ON a.student_id = u.id AND a.section_id = $1 AND a.date = CURRENT_DATE
+      WHERE e.section_id = $1
+    `, [req.params.section_id]);
+
+    res.render('faculty-attendance', { 
+      user: req.session.user, 
+      courses: coursesRes.rows, 
+      section: sectionRes.rows[0], 
+      students: studentsRes.rows 
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 3. Save the attendance
+app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
+  
+  const sectionId = req.params.section_id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    for (const key in req.body) {
+      if (key.startsWith('status_')) {
+        const studentId = key.split('_')[1];
+        const status = req.body[key];
+
+        // Delete existing attendance for today to avoid duplicates
+        await pool.query(`DELETE FROM attendance WHERE student_id = $1 AND section_id = $2 AND date = $3`, [studentId, sectionId, today]);
+        
+        // Insert the new attendance record
+        await pool.query(`INSERT INTO attendance (student_id, section_id, date, status) VALUES ($1, $2, $3, $4)`, [studentId, sectionId, today, status]);
+      }
+    }
+    res.redirect('/sis/faculty/attendance/' + sectionId);
+  } catch (err) {
+    res.status(500).send("Error saving attendance: " + err.message);
+  }
+});
+// ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================
 app.get('/sis/my/:page', requireLogin, (req, res) => {

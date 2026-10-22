@@ -31,7 +31,9 @@ function getGreeting() {
   return 'Good evening';
 }
 
+// ============================================
 // --- AUTHENTICATION ---
+// ============================================
 app.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/sis/my');
   res.render('login', { error: req.flash('error') });
@@ -49,7 +51,7 @@ app.post('/login', async (req, res) => {
     req.flash('error', 'Invalid credentials');
     res.redirect('/login');
   } catch (err) {
-    res.status(500).send("Login error");
+    res.status(500).send("Login error: " + err.message);
   }
 });
 
@@ -63,9 +65,11 @@ const requireLogin = (req, res, next) => {
   next();
 };
 
-// --- STUDENT DASHBOARD ---
 app.get('/', (req, res) => res.redirect('/login'));
 
+// ============================================
+// --- STUDENT DASHBOARD ---
+// ============================================
 app.get('/sis/my', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   
@@ -81,12 +85,7 @@ app.get('/sis/my', requireLogin, async (req, res) => {
     `, [req.session.user.id]);
     const credits = creditsRes.rows[0].total_credits;
 
-    const stats = { 
-      gpa: '3.85', 
-      credits: credits, 
-      balance: 1250, 
-      semester: profile.current_semester 
-    };
+    const stats = { gpa: '3.85', credits: credits, balance: 1250, semester: profile.current_semester };
     
     res.render('dashboard', { user: req.session.user, profile: profile, stats: stats, greeting: getGreeting() });
   } catch (err) {
@@ -94,7 +93,9 @@ app.get('/sis/my', requireLogin, async (req, res) => {
   }
 });
 
+// ============================================
 // --- STUDENT TIMETABLE ---
+// ============================================
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -112,7 +113,6 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
     `, [req.session.user.id]);
 
     const classes = scheduleRes.rows;
-
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
@@ -124,46 +124,15 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
       }
     });
 
-    res.render('timetable', { 
-      user: req.session.user, 
-      courses: classes,
-      schedule: schedule,
-      days: days
-    });
+    res.render('timetable', { user: req.session.user, courses: classes, schedule: schedule, days: days });
   } catch (err) {
     res.status(500).send("Timetable Error: " + err.message);
   }
 });
 
-// --- STUDENT COURSE REGISTRATION VIEW ---
-// --- STUDENT COURSE REGISTRATION VIEW ---
-app.get('/sis/my/registration', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
-
-  try {
-    const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
-    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
-    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
-
-    res.render('registration', {
-      user: req.session.user,
-      courses: coursesRes.rows,
-      cart: cartRes.rows,
-      pending: pendingRes.rows
-    }, (err, html) => {
-      if (err) {
-        console.error("EJS ERROR:", err);
-        return res.status(500).send(`<pre>EJS Error: ${err.message}\n${err.stack}</pre>`);
-      }
-      res.send(html);
-    });
-  } catch (err) {
-    console.error("DB ERROR:", err);
-    res.status(500).send(`<pre>DB Error: ${err.message}</pre>`);
-  }
-});
-
-// --- STUDENT ATTENDANCE DETAIL ---
+// ============================================
+// --- STUDENT ATTENDANCE ---
+// ============================================
 app.get('/sis/my/attendance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -185,25 +154,139 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
       const total = Number(row.total_classes);
       const attended = Number(row.attended_classes);
       const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
-      
-      return {
-        ...row,
-        percentage,
-        isBlocked: percentage < 70 && total > 0
-      };
+      return { ...row, percentage, isBlocked: percentage < 70 && total > 0 };
     });
 
-    res.render('attendance', { 
-      user: req.session.user, 
-      attendanceData: attendanceData
-    });
+    res.render('attendance', { user: req.session.user, attendanceData: attendanceData });
   } catch (err) {
     res.status(500).send("Attendance Error: " + err.message);
   }
 });
 
-// --- PLACEHOLDER FOR SIDEBAR LINKS ---
-// MUST BE AT THE VERY BOTTOM BEFORE APP.LISTEN
+// ============================================
+// --- COURSE REGISTRATION ---
+// ============================================
+
+// 1. View Registration Page
+app.get('/sis/my/registration', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
+    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
+    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
+
+    res.render('registration', {
+      user: req.session.user,
+      courses: coursesRes.rows,
+      cart: cartRes.rows,
+      pending: pendingRes.rows
+    });
+  } catch (err) {
+    res.status(500).send("Registration Error: " + err.message);
+  }
+});
+
+// 2. Add to Cart
+app.post('/sis/my/registration/add', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const courseId = Number(req.body.course_id);
+
+  try {
+    const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
+    if (existing.rows.length === 0) {
+      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
+    }
+    res.redirect('/sis/my/registration');
+  } catch (err) {
+    res.status(500).send("Error adding: " + err.message);
+  }
+});
+
+// 3. Remove from Cart
+app.post('/sis/my/registration/remove', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const cartId = Number(req.body.cart_id);
+
+  try {
+    await pool.query(`DELETE FROM course_registrations WHERE id = $1 AND student_id = $2 AND status = 'draft'`, [cartId, req.session.user.id]);
+    res.redirect('/sis/my/registration');
+  } catch (err) {
+    res.status(500).send("Error removing: " + err.message);
+  }
+});
+
+// 4. Submit to Advisor
+app.post('/sis/my/registration/submit', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    await pool.query(`UPDATE course_registrations SET status = 'pending_advisor' WHERE student_id = $1 AND status = 'draft'`, [req.session.user.id]);
+    res.redirect('/sis/my/registration');
+  } catch (err) {
+    res.status(500).send("Error submitting: " + err.message);
+  }
+});
+
+// ============================================
+// --- ADVISOR APPROVALS ---
+// ============================================
+
+app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor') return res.redirect('/login');
+
+  try {
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, COUNT(cr.id) as total_courses 
+      FROM course_registrations cr 
+      JOIN users u ON u.id = cr.student_id 
+      WHERE cr.status = 'pending_advisor' 
+      GROUP BY u.id, u.full_name, u.username
+    `);
+    const coursesRes = await pool.query(`
+      SELECT cr.student_id, c.title, c.code, c.credits 
+      FROM course_registrations cr 
+      JOIN courses c ON c.id = cr.course_id 
+      WHERE cr.status = 'pending_advisor'
+    `);
+
+    res.render('advisor', { user: req.session.user, pendingStudents: studentsRes.rows, pendingCourses: coursesRes.rows });
+  } catch (err) {
+    res.status(500).send("Advisor Error: " + err.message);
+  }
+});
+
+app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor') return res.redirect('/login');
+  const studentId = Number(req.body.student_id);
+
+  try {
+    const courses = await pool.query(`SELECT course_id, section_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    for (const c of courses.rows) {
+      await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, c.section_id]);
+    }
+    await pool.query(`UPDATE course_registrations SET status = 'approved' WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    res.redirect('/sis/advisor/approvals');
+  } catch (err) {
+    res.status(500).send("Error approving: " + err.message);
+  }
+});
+
+app.post('/sis/advisor/approvals/reject', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor') return res.redirect('/login');
+  const studentId = Number(req.body.student_id);
+
+  try {
+    await pool.query(`DELETE FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    res.redirect('/sis/advisor/approvals');
+  } catch (err) {
+    res.status(500).send("Error rejecting: " + err.message);
+  }
+});
+
+// ============================================
+// --- PLACEHOLDER (MUST BE LAST) ---
+// ============================================
 app.get('/sis/my/:page', requireLogin, (req, res) => {
   res.send(`
     <div style="font-family: sans-serif; padding: 3rem; text-align: center;">
@@ -213,55 +296,8 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
     </div>
   `);
 });
-// --- TEMPORARY DIAGNOSTIC ENDPOINT ---
-app.get('/diag', async (req, res) => {
-  try {
-    const coursesCols = await pool.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name = 'courses'
-    `);
-    const regCols = await pool.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name = 'course_registrations'
-    `);
-    const enrollCols = await pool.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name = 'enrollments'
-    `);
-    
-    res.json({
-      courses: coursesCols.rows.map(r => r.column_name),
-      course_registrations: regCols.rows.map(r => r.column_name),
-      enrollments: enrollCols.rows.map(r => r.column_name)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message, code: err.code });
-  }
-});
 
-// --- TEMPORARY DEBUG ROUTE ---
-app.get('/debug-reg', requireLogin, async (req, res) => {
-  const out = { user_id: req.session.user.id, role: req.session.user.role };
-  
-  try {
-    const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
-    out.courses_count = coursesRes.rows.length;
-    out.courses_ok = true;
-  } catch (e) { out.courses_error = e.message; }
-
-  try {
-    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
-    out.cart_count = cartRes.rows.length;
-    out.cart_ok = true;
-  } catch (e) { out.cart_error = e.message; }
-
-  try {
-    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
-    out.pending_count = pendingRes.rows.length;
-    out.pending_ok = true;
-  } catch (e) { out.pending_error = e.message; }
-
-  res.json(out);
-});
-
+// ============================================
+// --- START SERVER ---
+// ============================================
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

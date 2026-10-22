@@ -488,7 +488,92 @@ app.post('/sis/admin/teachers/new', requireLogin, async (req, res) => {
   }
 });
 
+// ============================================
+// --- ADMIN: SECTIONS & GROUPS ---
+// ============================================
 
+// 1. Show all courses and their sections
+app.get('/sis/admin/sections', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    // Get all courses
+    const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC, code ASC`);
+    
+    // Get all sections with teacher names
+    const sectionsRes = await pool.query(`
+      SELECT s.*, u.full_name as teacher_name
+      FROM course_sections s
+      LEFT JOIN users u ON u.id = s.teacher_id
+    `);
+
+    // Group sections by course_id for easy rendering
+    const sectionsByCourse = {};
+    sectionsRes.rows.forEach(sec => {
+      if (!sectionsByCourse[sec.course_id]) sectionsByCourse[sec.course_id] = [];
+      sectionsByCourse[sec.course_id].push(sec);
+    });
+
+    res.render('admin-sections', { 
+      user: req.session.user, 
+      courses: coursesRes.rows, 
+      sectionsByCourse: sectionsByCourse 
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show form to create a new section for a course
+app.get('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const courseRes = await pool.query(`SELECT * FROM courses WHERE id = $1`, [req.params.course_id]);
+    if (courseRes.rows.length === 0) return res.redirect('/sis/admin/sections');
+
+    const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'teacher' ORDER BY full_name`);
+
+    res.render('admin-section-new', { 
+      user: req.session.user, 
+      course: courseRes.rows[0], 
+      teachers: teachersRes.rows 
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 3. Save the new section to the database
+app.post('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  const courseId = Number(req.params.course_id);
+  const { group_name, teacher_id, day_of_week, start_time, end_time, room, quota } = req.body;
+
+  try {
+    await pool.query(`
+      INSERT INTO course_sections 
+      (course_id, group_name, teacher_id, day_of_week, start_time, end_time, room, max_capacity) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      courseId, 
+      group_name, 
+      teacher_id ? Number(teacher_id) : null, 
+      day_of_week, 
+      start_time, 
+      end_time, 
+      room, 
+      quota ? Number(quota) : 40
+    ]);
+
+    req.flash('success', 'New group created successfully.');
+    res.redirect('/sis/admin/sections');
+  } catch (err) {
+    req.flash('error', 'Error creating group: ' + err.message);
+    res.redirect('/sis/admin/sections/' + courseId + '/new');
+  }
+});
 
 // ============================================
 // --- ADMIN DASHBOARD ---

@@ -245,4 +245,29 @@ app.get('/diag', async (req, res) => {
   }
 });
 
+// --- TEMPORARY DEBUG ROUTE ---
+app.get('/debug-reg', requireLogin, async (req, res) => {
+  const out = { user_id: req.session.user.id, role: req.session.user.role };
+  
+  try {
+    const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
+    out.courses_count = coursesRes.rows.length;
+    out.courses_ok = true;
+  } catch (e) { out.courses_error = e.message; }
+
+  try {
+    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
+    out.cart_count = cartRes.rows.length;
+    out.cart_ok = true;
+  } catch (e) { out.cart_error = e.message; }
+
+  try {
+    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
+    out.pending_count = pendingRes.rows.length;
+    out.pending_ok = true;
+  } catch (e) { out.pending_error = e.message; }
+
+  res.json(out);
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

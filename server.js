@@ -784,6 +784,51 @@ app.get('/sis/admin', requireLogin, async (req, res) => {
   }
 });
 
+
+// ============================================
+// --- STUDENT TRANSCRIPT ---
+// ============================================
+app.get('/sis/my/transcript', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const gradesRes = await pool.query(`
+      SELECT c.code, c.title, c.credits, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+      ORDER BY c.semester_number ASC
+    `, [req.session.user.id]);
+
+    const courses = gradesRes.rows;
+
+    // Calculate CGPA
+    let totalCredits = 0;
+    let totalPoints = 0;
+
+    courses.forEach(c => {
+      totalCredits += Number(c.credits);
+      totalPoints += (Number(c.gpa_points) * Number(c.credits));
+    });
+
+    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+
+    res.render('transcript', { 
+      user: req.session.user, 
+      courses: courses, 
+      totalCredits: totalCredits, 
+      cgpa: cgpa 
+    });
+  } catch (err) {
+    res.status(500).send("Transcript Error: " + err.message);
+  }
+});
+
+
+
+
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Official Transcript</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
+    .submenu.open { display: block; }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    
+    .btn-print { background: var(--navy); color: #fff; padding: 0.8rem 1.5rem; border-radius: 100px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
+    .btn-print:hover { background: var(--deep); transform: translateY(-2px); }
+
+    /* Transcript Card */
+    .transcript-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); padding: 3rem; max-width: 900px; margin: 0 auto; }
+    
+    .transcript-header { text-align: center; border-bottom: 3px solid var(--navy); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .transcript-header h2 { font-size: 2rem; font-weight: 800; color: var(--navy); text-transform: uppercase; letter-spacing: 2px; }
+    .transcript-header p { color: var(--blue); font-weight: 700; margin-top: 0.5rem; }
+
+    .student-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; background: var(--ice); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--frost); }
+    .info-item { font-size: 0.95rem; font-weight: 600; color: var(--navy); }
+    .info-item span { color: #64748b; font-weight: 500; margin-right: 0.5rem; }
+
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 2rem; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; }
+    .data-table tr:hover { background: var(--ice); }
+    
+    .grade-badge { font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.9rem; }
+    .grade-a { background: #dcfce7; color: #16a34a; }
+    .grade-b { background: #e0f2fe; color: #0284c7; }
+    .grade-c { background: #fef3c7; color: #d97706; }
+    .grade-d { background: #ffedd5; color: #ea580c; }
+    .grade-f { background: #fee2e2; color: #dc2626; }
+
+    .summary-box { background: var(--navy); color: #fff; padding: 1.5rem 2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .summary-box h3 { font-size: 1.2rem; font-weight: 700; }
+    .summary-box .cgpa { font-size: 2rem; font-weight: 800; color: var(--gold); }
+    
+    .empty-state { text-align: center; padding: 4rem 2rem; color: #64748b; }
+    .empty-state i { font-size: 4rem; color: var(--frost); margin-bottom: 1rem; }
+    
+    @media print {
+      .sidebar, .top-bar, .btn-print { display: none !important; }
+      .main-content { margin-left: 0; padding: 0; width: 100%; }
+      .transcript-card { box-shadow: none; border: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Academic Records <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link active"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div class="greeting">
+        <h1>Academic Transcript</h1>
+        <p>Official record of completed coursework.</p>
+      </div>
+      <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print Transcript</button>
+    </div>
+
+    <div class="transcript-card">
+      
+      <div class="transcript-header">
+        <h2>LuxMind University</h2>
+        <p>Official Academic Transcript</p>
+      </div>
+
+      <div class="student-info-grid">
+        <div class="info-item"><span>Student Name:</span> <%= user.full_name %></div>
+        <div class="info-item"><span>Student ID:</span> <%= user.username %></div>
+        <div class="info-item"><span>Program:</span> Computer Engineering</div>
+        <div class="info-item"><span>Date Issued:</span> <%= new Date().toLocaleDateString() %></div>
+      </div>
+
+      <% if (courses.length === 0) { %>
+        <div class="empty-state">
+          <i class="fas fa-file-alt"></i>
+          <h3>No grades recorded yet</h3>
+          <p>Grades will appear here once your teachers submit them.</p>
+        </div>
+      <% } else { %>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Course Code</th>
+              <th>Course Title</th>
+              <th>Credits</th>
+              <th>Midterm</th>
+              <th>Final</th>
+              <th>Letter Grade</th>
+              <th>Grade Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% courses.forEach(c => { %>
+              <tr>
+                <td><%= c.code %></td>
+                <td><%= c.title %></td>
+                <td><%= c.credits %></td>
+                <td><%= c.midterm_grade || '-' %></td>
+                <td><%= c.final_grade || '-' %></td>
+                <td><span class="grade-badge grade-<%= c.letter_grade ? c.letter_grade.toLowerCase() : 'f' %>"><%= c.letter_grade || 'N/A' %></span></td>
+                <td><strong><%= c.gpa_points || '0.0' %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+        <div class="summary-box">
+          <div>
+            <h3>Total Credits Earned</h3>
+            <p style="font-size: 1.5rem; font-weight: 800;"><%= totalCredits %></p>
+          </div>
+          <div style="text-align: right;">
+            <h3>Cumulative GPA (CGPA)</h3>
+            <div class="cgpa"><%= cgpa %></div>
+          </div>
+        </div>
+      <% } %>
+
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

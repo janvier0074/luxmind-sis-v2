@@ -71,17 +71,16 @@
 
     .tile-selected { background: #d4f0e3; border-color: var(--success); cursor: default; }
     .tile-available { background: #fff; border: 1.5px dashed var(--blue); }
-    .tile-locked { background: #f3f4f6; border: 1px solid #cbd5e1; opacity: 0.75; cursor: not-allowed; }
-
-    .tile-credit-front { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); padding: 0.35rem; border-radius: 8px; background: var(--navy); color: var(--gold); font-size: 0.7rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; }
-    .tile-credit-front small { font-size: 0.55rem; color: #cfd9e6; margin-top: 2px; }
+    
+    /* New Credit & Quota Badge */
+    .tile-credit-front { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); padding: 0.35rem 0.3rem; border-radius: 8px; background: var(--navy); color: var(--gold); font-size: 0.7rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+    .tile-credit-front small { font-size: 0.55rem; color: #cbd5e1; margin-top: 3px; display: block; border-top: 1px solid #334155; padding-top: 3px; }
 
     .tile-code { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue); }
     .tile-title { font-size: 0.82rem; font-weight: 700; color: var(--navy); line-height: 1.3; }
     .tile-meta { display: flex; justify-content: space-between; margin-top: 0.2rem; font-size: 0.68rem; font-weight: 600; color: #4a6785; }
 
     .tile-selected::after { content: '✓'; position: absolute; top: 8px; right: 10px; font-size: 0.8rem; font-weight: 800; color: var(--success); }
-    .tile-locked::after { content: '🔒'; position: absolute; top: 8px; right: 10px; font-size: 0.75rem; }
 
     .summary-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: #fff; border-radius: 100px; padding: 1.1rem 2rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); }
     .selected-stats { display: flex; align-items: center; gap: 1rem; font-weight: 500; color: var(--deep); }
@@ -134,8 +133,8 @@
                 const cartItem = cart.find(c => c.course_id === course.id);
                 const pendingItem = pending.find(p => p.course_id === course.id);
                 
-                // LOCK LOGIC: If the semester is greater than currentSem + 1, it is locked.
-                const isLocked = semNum > (currentSem + 1);
+                // The rule: You can only click if semNum <= currentSem + 1
+                const isAllowed = semNum <= (currentSem + 1);
 
                 let tileClass = 'tile-available';
                 let statusLabel = 'Available';
@@ -143,25 +142,35 @@
 
                 if (pendingItem) { tileClass = 'tile-selected'; statusLabel = 'Pending'; clickable = false; }
                 else if (cartItem) { tileClass = 'tile-selected'; statusLabel = 'Selected'; clickable = false; }
-                else if (isLocked) { tileClass = 'tile-locked'; statusLabel = 'Locked'; clickable = false; }
               %>
-                <% if (clickable && pending.length === 0) { %>
-                  <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
-                    <input type="hidden" name="course_id" value="<%= course.id %>">
-                    <button type="submit" class="course-tile <%= tileClass %>">
-                      <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small></div>
-                      <div class="tile-code"><%= course.code || 'N/A' %></div>
-                      <div class="tile-title"><%= course.title %></div>
-                      <div class="tile-meta"><span>Add to Cart</span></div>
-                    </button>
-                  </form>
-                <% } else { %>
+                
+                <% if (!clickable) { %>
+                  <!-- Already Selected / Pending -->
                   <div class="course-tile <%= tileClass %>">
-                    <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small></div>
+                    <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small><small>Q:<%= course.quota || 40 %></small></div>
                     <div class="tile-code"><%= course.code || 'N/A' %></div>
                     <div class="tile-title"><%= course.title %></div>
                     <div class="tile-meta"><span><%= statusLabel %></span></div>
                   </div>
+                <% } else if (isAllowed && pending.length === 0) { %>
+                  <!-- Allowed to Add to Cart -->
+                  <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                    <input type="hidden" name="course_id" value="<%= course.id %>">
+                    <button type="submit" class="course-tile tile-available">
+                      <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small><small>Q:<%= course.quota || 40 %></small></div>
+                      <div class="tile-code"><%= course.code || 'N/A' %></div>
+                      <div class="tile-title"><%= course.title %></div>
+                      <div class="tile-meta"><span>+ Add to Cart</span></div>
+                    </button>
+                  </form>
+                <% } else { %>
+                  <!-- Future Semester - Show Popup on Click -->
+                  <button type="button" class="course-tile tile-available" style="opacity: 0.8;" onclick="showSemesterWarning(<%= semNum %>, <%= currentSem %>)">
+                    <div class="tile-credit-front" style="background: #64748b; color: #fff;"><%= course.credits || 3 %><small style="color: #e2e8f0;">CR</small><small style="color: #e2e8f0;">Q:<%= course.quota || 40 %></small></div>
+                    <div class="tile-code"><%= course.code || 'N/A' %></div>
+                    <div class="tile-title"><%= course.title %></div>
+                    <div class="tile-meta"><span style="color: var(--amber); font-weight: 800;">🔒 Not Allowed Yet</span></div>
+                  </button>
                 <% } %>
               <% }) %>
             </div>
@@ -187,5 +196,12 @@
       </div>
     </main>
   </div>
+
+  <!-- Javascript for the Pop-up Message -->
+  <script>
+    function showSemesterWarning(targetSem, currentSem) {
+      alert("⚠️ Registration Restriction\n\nYou are currently in Semester " + currentSem + ".\nYou are only allowed to register for courses in Semester " + currentSem + " or " + (currentSem + 1) + ".\n\nYou cannot register for Semester " + targetSem + " yet.");
+    }
+  </script>
 </body>
 </html>

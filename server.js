@@ -96,6 +96,7 @@ app.get('/sis/my', requireLogin, async (req, res) => {
 // ============================================
 // --- STUDENT TIMETABLE ---
 // ============================================
+// --- STUDENT TIMETABLE ---
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -107,7 +108,7 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
         u.full_name AS teacher_name
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
-      JOIN course_sections s ON s.id = e.section_id
+      LEFT JOIN course_sections s ON s.id = e.section_id
       LEFT JOIN users u ON u.id = s.teacher_id
       WHERE e.user_id = $1
     `, [req.session.user.id]);
@@ -117,7 +118,7 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
     classes.forEach(cls => {
-      if (schedule[cls.day_of_week]) {
+      if (schedule[cls.day_of_week] && cls.start_time) {
         cls.start_time = cls.start_time.slice(0, 5);
         cls.end_time = cls.end_time.slice(0, 5);
         schedule[cls.day_of_week].push(cls);
@@ -168,22 +169,21 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
 // ============================================
 
 // 1. View Registration Page
+// --- STUDENT COURSE REGISTRATION VIEW ---
 app.get('/sis/my/registration', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-     // Fetch courses AND calculate how many students are already enrolled
-    const coursesRes = await pool.query(`
-      SELECT c.*, 
-             COALESCE(c.quota, 40) as quota,
-             (
-               (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) +
-               (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')
-             ) as enrolled_count
-      FROM courses c 
-      ORDER BY c.semester_number ASC
-    `);
+    // 1. Check if the student is ALREADY ENROLLED in anything
+    const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
+    const hasRegistered = enrollCheck.rows.length > 0;
 
+    // 2. Fetch the rest of the data (only if not registered)
+    const coursesRes = await pool.query(`
+      SELECT c.*, COALESCE(c.quota, 40) as quota,
+             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count
+      FROM courses c ORDER BY c.semester_number ASC
+    `);
     const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
     const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
 
@@ -191,7 +191,8 @@ app.get('/sis/my/registration', requireLogin, async (req, res) => {
       user: req.session.user,
       courses: coursesRes.rows,
       cart: cartRes.rows,
-      pending: pendingRes.rows
+      pending: pendingRes.rows,
+      hasRegistered: hasRegistered // Pass this to the frontend
     });
   } catch (err) {
     res.status(500).send("Registration Error: " + err.message);
@@ -272,26 +273,20 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
   const studentId = Number(req.body.student_id);
 
   try {
-    const courses = await pool.query(`SELECT course_id, section_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    const courses = await pool.query(`SELECT course_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    
     for (const c of courses.rows) {
-      await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, c.section_id]);
+      // Auto-assign the first available section for this course
+      const sec = await pool.query(`SELECT id FROM course_sections WHERE course_id = $1 LIMIT 1`, [c.course_id]);
+      const sectionId = sec.rows.length > 0 ? sec.rows[0].id : null;
+
+      await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, sectionId]);
     }
+    
     await pool.query(`UPDATE course_registrations SET status = 'approved' WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
     res.redirect('/sis/advisor/approvals');
   } catch (err) {
     res.status(500).send("Error approving: " + err.message);
-  }
-});
-
-app.post('/sis/advisor/approvals/reject', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'advisor') return res.redirect('/login');
-  const studentId = Number(req.body.student_id);
-
-  try {
-    await pool.query(`DELETE FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
-    res.redirect('/sis/advisor/approvals');
-  } catch (err) {
-    res.status(500).send("Error rejecting: " + err.message);
   }
 });
 

@@ -3,6 +3,9 @@
   if (typeof cart === 'undefined') cart = [];
   if (typeof pending === 'undefined') pending = [];
   const currentSem = 1; // Student is in Semester 1
+  if (typeof hasRegistered !== 'undefined' && hasRegistered) {
+    // If registered, we don't need the rest of the data
+  }
 
   const bySem = {};
   for (let i = 1; i <= 8; i++) bySem[i] = [];
@@ -111,6 +114,19 @@
 
     <main class="endeavor-body">
       
+      <% if (typeof hasRegistered !== 'undefined' && hasRegistered) { %>
+        
+        <!-- ALREADY REGISTERED MESSAGE -->
+        <div style="background: #fff; border-radius: 1.5rem; padding: 4rem 2rem; text-align: center; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); max-width: 600px; margin: 0 auto;">
+          <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success); margin-bottom: 1.5rem;"></i>
+          <h2 style="color: var(--navy); font-size: 1.8rem; margin-bottom: 1rem;">You are already registered!</h2>
+          <p style="color: #64748b; font-size: 1rem; margin-bottom: 2rem;">Your courses have been approved by your advisor. You can view your schedule on the Timetable page.</p>
+          <a href="/sis/my/timetable" style="background: var(--navy); color: #fff; padding: 0.9rem 2rem; border-radius: 100px; text-decoration: none; font-weight: 700;">Go to My Timetable</a>
+        </div>
+
+      <% } else { %>
+
+
       <% if (pending.length > 0) { %>
         <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; font-weight: 800; border: 1px solid #fcd34d;">
           <i class="fas fa-clock"></i> Your registration is pending Advisor approval.
@@ -271,6 +287,8 @@
           <% } %>
         </div>
       </div>
+      <% } %> <!-- END ELSE -->
+    </main>
     </main>
   </div>
 

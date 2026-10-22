@@ -601,28 +601,43 @@ app.get('/sis/admin/registrations', requireLogin, async (req, res) => {
 });
 
 // 2. Finance Dashboard
+// 2. Finance Dashboard
 app.get('/sis/admin/finance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
 
   try {
-    // Get Fee Structures
     const feesRes = await pool.query(`SELECT * FROM fee_structure ORDER BY program, semester`);
 
-    // Get Student Balances (Total Fee for their program - Total Payments)
-    const balancesRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester,
-            COALESCE((SELECT SUM(amount) FROM fee_structure fs WHERE LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester), 0) as total_fee,
-             COALESCE((SELECT SUM(amount) FROM payments p WHERE p.student_id = u.id), 0) as total_paid
+    // Get ALL students
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester
       FROM users u
       JOIN student_profiles sp ON sp.user_id = u.id
       WHERE u.role = 'student'
     `);
 
-    // Calculate remaining balance
-    const balances = balancesRes.rows.map(b => ({
-      ...b,
-      balance: Number(b.total_fee) - Number(b.total_paid)
-    }));
+    // Calculate balances in JavaScript (safer than complex SQL joins)
+    const balances = [];
+    for (const student of studentsRes.rows) {
+      // Find the matching fee in the fee array
+      const matchingFee = feesRes.rows.find(f => 
+        f.program.toLowerCase().trim() === student.class_level.toLowerCase().trim() && 
+        Number(f.semester) === Number(student.current_semester)
+      );
+
+      const totalFee = matchingFee ? Number(matchingFee.amount) : 0;
+
+      // Get total paid
+      const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [student.id]);
+      const totalPaid = Number(paidRes.rows[0].total);
+
+      balances.push({
+        ...student,
+        total_fee: totalFee,
+        total_paid: totalPaid,
+        balance: totalFee - totalPaid
+      });
+    }
 
     res.render('admin-finance', { user: req.session.user, fees: feesRes.rows, balances });
   } catch (err) {

@@ -1,9 +1,23 @@
+<%
+  // Safety checks so it never crashes
+  if (typeof courses === 'undefined') courses = [];
+  if (typeof cart === 'undefined') cart = [];
+  if (typeof pending === 'undefined') pending = [];
+
+  const bySem = { 1: [], 2: [] };
+  courses.forEach(c => { 
+    if (c.semester_number && bySem[c.semester_number]) {
+      bySem[c.semester_number].push(c); 
+    }
+  });
+%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LuxMind Course Registration</title>
+  <title>LuxMind SIS - Course Registration</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,163 +28,227 @@
       --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
       --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
       --success: #1f8a5f; --danger: #b33e2e;
-      --radius-card: 2rem; --radius-inner: 1.25rem;
-      --shadow-card: 0 30px 60px -20px rgba(10, 30, 50, 0.4), 0 8px 24px -6px rgba(0, 0, 0, 0.08);
       --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
     }
-    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: radial-gradient(circle at 20% 20%, #e5eef9, #cedbe9); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; color: var(--navy); line-height: 1.5; }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
 
-    .endeavor-card { max-width: 1500px; width: 100%; background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; animation: cardFloat 0.6s ease-out; }
-    @keyframes cardFloat { from { opacity: 0; transform: translateY(20px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    /* --- SIDEBAR --- */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
+    .submenu.open { display: block; }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
 
-    .endeavor-header { background: linear-gradient(105deg, var(--navy) 0%, var(--deep) 55%, var(--blue) 100%); padding: 1.8rem 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem; position: relative; }
-    .endeavor-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--amber), var(--gold), var(--amber)); }
-    .brand-block { display: flex; align-items: center; gap: 1.2rem; }
-    .brand-mark { width: 58px; height: 58px; background: var(--amber); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: var(--navy); box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3); }
-    .brand-text h1 { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1.2; }
-    .brand-text span { display: block; font-size: 0.8rem; font-weight: 600; color: var(--gold); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 0.15rem; }
-    .user-pill { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); padding: 0.6rem 1.6rem; border-radius: 100px; display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; font-weight: 600; color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
-    .user-pill i { color: var(--gold); font-size: 1.2rem; }
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
 
-    .endeavor-body { padding: 2.2rem 2.5rem 2rem; background: var(--ice); }
-
-    .semester-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-    @media (max-width: 1200px) { .semester-grid { grid-template-columns: repeat(2, 1fr); } }
+    /* Registration UI */
+    .status-banner { padding: 1rem 1.5rem; border-radius: 1rem; font-weight: 700; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
+    .status-pending { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
     
-    .semester-panel { background: #fff; border-radius: var(--radius-inner); border: 1px solid var(--frost); overflow: hidden; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
-    .semester-header { background: var(--mist); padding: 0.9rem 1.2rem; border-bottom: 2px solid var(--frost); display: flex; align-items: center; justify-content: space-between; }
-    .semester-header h3 { font-size: 1rem; font-weight: 800; color: var(--navy); }
-    .year-badge { background: var(--blue); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.7rem; border-radius: 100px; }
-    .course-list { padding: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+    .semester-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 6rem; }
+    @media (max-width: 900px) { .semester-grid { grid-template-columns: 1fr; } }
 
-    .course-tile { padding: 0.75rem 1rem 0.75rem 2.4rem; border-radius: 12px; border: 1.5px solid transparent; transition: all 0.15s ease; cursor: pointer; position: relative; display: flex; flex-direction: column; gap: 0.2rem; text-align: left; width: 100%; background: #fff; }
+    .semester-panel { background: #fff; border-radius: 1.25rem; border: 1px solid var(--frost); box-shadow: var(--shadow-soft); overflow: hidden; }
+    .semester-header { background: var(--mist); padding: 1rem 1.5rem; border-bottom: 2px solid var(--frost); font-weight: 800; color: var(--navy); display: flex; justify-content: space-between; align-items: center; }
+    .course-list { padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .course-tile { padding: 1rem 1rem 1rem 3rem; border-radius: 12px; border: 1.5px solid transparent; text-align: left; position: relative; display: flex; flex-direction: column; gap: 0.2rem; width: 100%; background: #fff; cursor: pointer; transition: 0.2s; }
     .course-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 14px -6px rgba(10, 30, 50, 0.2); }
-
+    .tile-available { border: 1.5px dashed var(--blue); }
     .tile-selected { background: #d4f0e3; border-color: var(--success); cursor: default; }
-    .tile-available { background: #fff; border: 1.5px dashed var(--blue); }
-    .tile-locked { background: #f3f4f6; border: 1px solid #cbd5e1; opacity: 0.75; cursor: not-allowed; }
+    .tile-credit { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: var(--navy); color: var(--gold); padding: 0.4rem 0.3rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .tile-credit small { font-size: 0.55rem; color: #cbd5e1; margin-top: 2px; }
+    .tile-code { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--blue); }
+    .tile-title { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
 
-    .tile-credit-front { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); padding: 0.35rem; border-radius: 8px; background: var(--navy); color: var(--gold); font-size: 0.7rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; }
-    .tile-credit-front small { font-size: 0.55rem; color: #cfd9e6; margin-top: 2px; }
-
-    .tile-code { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue); }
-    .tile-title { font-size: 0.82rem; font-weight: 700; color: var(--navy); line-height: 1.3; }
-    .tile-meta { display: flex; justify-content: space-between; margin-top: 0.2rem; font-size: 0.68rem; font-weight: 600; color: #4a6785; }
-
-    .tile-selected::after { content: '✓'; position: absolute; top: 8px; right: 10px; font-size: 0.8rem; font-weight: 800; color: var(--success); }
-    .tile-locked::after { content: '🔒'; position: absolute; top: 8px; right: 10px; font-size: 0.75rem; }
-
-    .summary-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: #fff; border-radius: 100px; padding: 1.1rem 2rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); }
-    .selected-stats { display: flex; align-items: center; gap: 1rem; font-weight: 500; color: var(--deep); }
-    .selected-stats i { color: var(--amber); font-size: 1.5rem; }
-    .selected-stats strong { font-weight: 800; color: var(--navy); font-size: 1.1rem; margin: 0 0.15rem; }
-    
-    .submit-action { background: var(--navy); border: none; padding: 0.9rem 2.4rem; border-radius: 100px; font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 12px 24px -10px var(--navy); }
-    .submit-action:hover { background: var(--deep); transform: translateY(-2px); }
-    .submit-action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .submit-action i { color: var(--gold); }
+    /* Sticky Cart Footer */
+    .summary-footer { position: fixed; bottom: 0; left: 280px; right: 0; background: #fff; padding: 1.2rem 2.5rem; border-top: 1px solid var(--frost); box-shadow: 0 -10px 30px rgba(10,30,50,0.05); display: flex; justify-content: space-between; align-items: center; z-index: 50; }
+    .summary-text { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    .btn-submit { background: var(--navy); color: #fff; padding: 1rem 2.5rem; border-radius: 100px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+    .btn-submit:hover { background: var(--deep); transform: scale(1.02); }
+    .btn-submit:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
   </style>
 </head>
 <body>
-  <div class="endeavor-card">
-    <header class="endeavor-header">
-      <div class="brand-block">
-        <div class="brand-mark">L</div>
-        <div class="brand-text">
-          <h1>LuxMind Endeavor</h1>
-          <span>4-Year Curriculum · 8 Semesters</span>
-        </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item open">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu open">
+              <li class="menu-item"><a href="/sis/my/registration" class="menu-link active"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
+              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="/sis/my/attendance" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Attendance Detail</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div class="greeting">
+        <h1>Course Registration</h1>
+        <p>Select your courses for the upcoming semester.</p>
       </div>
       <div class="user-pill">
-        <i class="fas fa-user-graduate"></i>
-        <span><%= user.full_name %> · ID <%= user.admission_number || 'N/A' %></span>
+        <i class="fas fa-user-circle"></i>
+        <%= user.admission_number || user.username %>
       </div>
-    </header>
+    </div>
 
-    <main class="endeavor-body">
-      
-      <% if (pending.length > 0) { %>
-        <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; font-weight: 800; border: 1px solid #fcd34d;">
-          <i class="fas fa-clock"></i> Your registration is pending Advisor approval.
-        </div>
-      <% } %>
-
-      <div class="semester-grid">
-        <% 
-          const bySem = {};
-          for (let i = 1; i <= 8; i++) bySem[i] = [];
-          courses.forEach(c => { 
-            const sem = c.semester_number || c.semester || 1;
-            if (bySem[sem]) bySem[sem].push(c); 
-          });
-          const labels = {1:'Year 1 · Fall',2:'Year 1 · Spring',3:'Year 2 · Fall',4:'Year 2 · Spring',5:'Year 3 · Fall',6:'Year 3 · Spring',7:'Year 4 · Fall',8:'Year 4 · Spring'};
-          
-          for (let semNum = 1; semNum <= 8; semNum++) {
-        %>
-          <div class="semester-panel">
-            <div class="semester-header">
-              <h3><%= labels[semNum] %></h3>
-              <span class="year-badge">Sem <%= semNum %></span>
-            </div>
-            <div class="course-list">
-              <% if (bySem[semNum].length === 0) { %>
-                <div style="padding: 1rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">No courses</div>
-              <% } %>
-
-              <% bySem[semNum].forEach(course => {
-                const cartItem = cart.find(c => c.course_id === course.id);
-                const pendingItem = pending.find(p => p.course_id === course.id);
-                const isLocked = semNum > (currentSem + 1);
-
-                let tileClass = 'tile-available';
-                let statusLabel = 'Available';
-                let clickable = true;
-
-                if (pendingItem) { tileClass = 'tile-selected'; statusLabel = 'Pending'; clickable = false; }
-                else if (cartItem) { tileClass = 'tile-selected'; statusLabel = 'Selected'; clickable = false; }
-                else if (isLocked) { tileClass = 'tile-locked'; statusLabel = 'Locked'; clickable = false; }
-              %>
-                <% if (clickable && pending.length === 0) { %>
-                  <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
-                    <input type="hidden" name="course_id" value="<%= course.id %>">
-                    <button type="submit" class="course-tile <%= tileClass %>">
-                      <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small></div>
-                      <div class="tile-code"><%= course.code || 'N/A' %></div>
-                      <div class="tile-title"><%= course.title %></div>
-                      <div class="tile-meta"><span>Add to Cart</span></div>
-                    </button>
-                  </form>
-                <% } else { %>
-                  <div class="course-tile <%= tileClass %>">
-                    <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small></div>
-                    <div class="tile-code"><%= course.code || 'N/A' %></div>
-                    <div class="tile-title"><%= course.title %></div>
-                    <div class="tile-meta"><span><%= statusLabel %></span></div>
-                  </div>
-                <% } %>
-              <% }) %>
-            </div>
-          </div>
-        <% } %>
+    <% if (pending.length > 0) { %>
+      <div class="status-banner status-pending">
+        <i class="fas fa-clock"></i> Your registration has been submitted and is pending Advisor approval. You cannot edit it right now.
       </div>
+    <% } %>
 
-      <div class="summary-footer">
-        <div class="selected-stats">
-          <i class="fas fa-check-double"></i>
-          <span>Selected: <strong><%= cart.length %></strong> courses</span>
+    <div class="semester-grid">
+      <!-- Current Semester -->
+      <div class="semester-panel">
+        <div class="semester-header">
+          <span>Current Semester (Sem 1)</span>
+          <span style="background: var(--blue); color: white; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem;">Available</span>
         </div>
-        
-        <div style="display: flex; gap: 1rem;">
-          <% if (cart.length > 0 && pending.length === 0) { %>
-            <form method="POST" action="/sis/my/registration/submit" style="margin: 0;">
-              <button type="submit" class="submit-action"><i class="fas fa-rocket"></i> Submit to Advisor</button>
-            </form>
-          <% } else if (pending.length > 0) { %>
-            <button class="submit-action" disabled style="background: #64748b;"><i class="fas fa-clock"></i> Awaiting Advisor</button>
+        <div class="course-list">
+          <% if (bySem[1].length === 0) { %>
+             <div style="text-align: center; color: #94a3b8; padding: 1rem;">No courses available.</div>
           <% } %>
+          <% bySem[1].forEach(course => { 
+            const inCart = cart.find(c => c.course_id === course.id);
+            const isPending = pending.find(p => p.course_id === course.id);
+          %>
+            <% if (isPending) { %>
+              <div class="course-tile tile-selected">
+                <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                <div class="tile-code"><%= course.code %></div>
+                <div class="tile-title"><%= course.title %></div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--success); margin-top: 5px;">✓ Pending Approval</div>
+              </div>
+            <% } else if (inCart) { %>
+              <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                <input type="hidden" name="cart_id" value="<%= inCart.cart_id %>">
+                <button type="submit" class="course-tile tile-selected">
+                  <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                  <div class="tile-code"><%= course.code %></div>
+                  <div class="tile-title"><%= course.title %></div>
+                  <div style="font-size: 0.7rem; font-weight: 800; color: var(--success); margin-top: 5px;">✓ In Cart (Click to remove)</div>
+                </button>
+              </form>
+            <% } else { %>
+              <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                <input type="hidden" name="course_id" value="<%= course.id %>">
+                <button type="submit" class="course-tile tile-available" <%= pending.length > 0 ? 'disabled' : '' %>>
+                  <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                  <div class="tile-code"><%= course.code %></div>
+                  <div class="tile-title"><%= course.title %></div>
+                  <div style="font-size: 0.7rem; font-weight: 800; color: var(--blue); margin-top: 5px;">+ Add to Cart</div>
+                </button>
+              </form>
+            <% } %>
+          <% }) %>
         </div>
       </div>
-    </main>
-  </div>
+
+      <!-- Next Semester -->
+      <div class="semester-panel">
+        <div class="semester-header">
+          <span>Next Semester (Sem 2)</span>
+          <span style="background: var(--amber); color: var(--navy); padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem;">Allowed</span>
+        </div>
+        <div class="course-list">
+          <% if (bySem[2].length === 0) { %>
+             <div style="text-align: center; color: #94a3b8; padding: 1rem;">No courses available.</div>
+          <% } %>
+          <% bySem[2].forEach(course => { 
+            const inCart = cart.find(c => c.course_id === course.id);
+            const isPending = pending.find(p => p.course_id === course.id);
+          %>
+            <% if (isPending) { %>
+              <div class="course-tile tile-selected">
+                <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                <div class="tile-code"><%= course.code %></div>
+                <div class="tile-title"><%= course.title %></div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--success); margin-top: 5px;">✓ Pending Approval</div>
+              </div>
+            <% } else if (inCart) { %>
+              <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                <input type="hidden" name="cart_id" value="<%= inCart.cart_id %>">
+                <button type="submit" class="course-tile tile-selected">
+                  <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                  <div class="tile-code"><%= course.code %></div>
+                  <div class="tile-title"><%= course.title %></div>
+                  <div style="font-size: 0.7rem; font-weight: 800; color: var(--success); margin-top: 5px;">✓ In Cart (Click to remove)</div>
+                </button>
+              </form>
+            <% } else { %>
+              <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                <input type="hidden" name="course_id" value="<%= course.id %>">
+                <button type="submit" class="course-tile tile-available" <%= pending.length > 0 ? 'disabled' : '' %>>
+                  <div class="tile-credit"><%= course.credits %><small>CR</small></div>
+                  <div class="tile-code"><%= course.code %></div>
+                  <div class="tile-title"><%= course.title %></div>
+                  <div style="font-size: 0.7rem; font-weight: 800; color: var(--blue); margin-top: 5px;">+ Add to Cart</div>
+                </button>
+              </form>
+            <% } %>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-footer">
+      <div class="summary-text">Selected: <%= cart.length %> courses</div>
+      <% if (pending.length > 0) { %>
+        <button class="btn-submit" disabled><i class="fas fa-clock"></i> Awaiting Advisor</button>
+      <% } else { %>
+        <form method="POST" action="/sis/my/registration/submit" style="margin: 0;">
+          <button type="submit" class="btn-submit" <%= cart.length === 0 ? 'disabled' : '' %>>
+            Submit to Advisor <i class="fas fa-rocket"></i>
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
 </body>
 </html>

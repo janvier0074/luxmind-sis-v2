@@ -136,39 +136,33 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
 });
 
 // --- STUDENT COURSE REGISTRATION VIEW ---
+// --- STUDENT COURSE REGISTRATION VIEW ---
 app.get('/sis/my/registration', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-    // 1. Get available courses (Semesters 1 and 2)
     const coursesRes = await pool.query(`SELECT * FROM courses WHERE semester_number <= 2 ORDER BY semester_number ASC`);
-    
-    // 2. Get the student's cart (draft)
-    const cartRes = await pool.query(`
-      SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits 
-      FROM course_registrations cr 
-      JOIN courses c ON c.id = cr.course_id 
-      WHERE cr.student_id = $1 AND cr.status = 'draft'
-    `, [req.session.user.id]);
-    
-    // 3. Get the student's pending items
-    const pendingRes = await pool.query(`
-      SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits 
-      FROM course_registrations cr 
-      JOIN courses c ON c.id = cr.course_id 
-      WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'
-    `, [req.session.user.id]);
+    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
+    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
 
     res.render('registration', {
       user: req.session.user,
       courses: coursesRes.rows,
       cart: cartRes.rows,
       pending: pendingRes.rows
+    }, (err, html) => {
+      if (err) {
+        console.error("EJS ERROR:", err);
+        return res.status(500).send(`<pre>EJS Error: ${err.message}\n${err.stack}</pre>`);
+      }
+      res.send(html);
     });
   } catch (err) {
-    res.status(500).send("Registration Error: " + err.message);
+    console.error("DB ERROR:", err);
+    res.status(500).send(`<pre>DB Error: ${err.message}</pre>`);
   }
 });
+
 // --- STUDENT ATTENDANCE DETAIL ---
 app.get('/sis/my/attendance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');

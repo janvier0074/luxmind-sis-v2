@@ -611,7 +611,7 @@ app.get('/sis/admin/finance', requireLogin, async (req, res) => {
     // Get Student Balances (Total Fee for their program - Total Payments)
     const balancesRes = await pool.query(`
       SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester,
-             COALESCE((SELECT SUM(amount) FROM fee_structure fs WHERE fs.program = sp.class_level AND fs.semester = sp.current_semester), 0) as total_fee,
+            COALESCE((SELECT SUM(amount) FROM fee_structure fs WHERE LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester), 0) as total_fee,
              COALESCE((SELECT SUM(amount) FROM payments p WHERE p.student_id = u.id), 0) as total_paid
       FROM users u
       JOIN student_profiles sp ON sp.user_id = u.id

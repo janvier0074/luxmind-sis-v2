@@ -440,6 +440,57 @@ app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
 });
 
 // ============================================
+// --- ADMIN: TEACHER REGISTRY ---
+// ============================================
+
+// 1. List all teachers
+app.get('/sis/admin/teachers', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const teachersRes = await pool.query(`
+      SELECT id, full_name, username, email, created_at
+      FROM users
+      WHERE role = 'teacher'
+      ORDER BY created_at DESC
+    `);
+
+    res.render('admin-teachers', { user: req.session.user, teachers: teachersRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show Teacher Registration Form
+app.get('/sis/admin/teachers/new', requireLogin, (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  res.render('admin-teacher-new', { user: req.session.user });
+});
+
+// 3. Save New Teacher
+app.post('/sis/admin/teachers/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  const { full_name, username, email } = req.body;
+  const defaultPassword = 'Teacher2026!';
+
+  try {
+    await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'teacher')`,
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
+    );
+
+    req.flash('success', `Teacher ${full_name} created! Password: ${defaultPassword}`);
+    res.redirect('/sis/admin/teachers');
+  } catch (err) {
+    req.flash('error', 'Error creating teacher: ' + err.message);
+    res.redirect('/sis/admin/teachers/new');
+  }
+});
+
+
+
+// ============================================
 // --- ADMIN DASHBOARD ---
 // ============================================
 app.get('/sis/admin', requireLogin, async (req, res) => {

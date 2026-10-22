@@ -327,9 +327,7 @@ app.get('/sis/faculty/attendance', requireLogin, async (req, res) => {
 });
 
 // 2. Show roster for a specific class
-// 2. Show roster for a specific class
 app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
-  // Allow both teacher and advisor roles (since they can be the same person)
   if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
   
   try {
@@ -357,15 +355,16 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
       WHERE e.section_id = $1
     `, [req.params.section_id]);
 
-    // Get today's date for the UI and QR code
     const today = new Date().toISOString().slice(0, 10);
+    const hours = [1, 2, 3, 4]; // QR codes for 4 hours
 
     res.render('faculty-attendance', { 
       user: req.session.user, 
       courses: coursesRes.rows, 
       section: sectionRes.rows[0], 
       students: studentsRes.rows,
-      today: today
+      today: today,
+      hours: hours
     });
   } catch (err) {
     res.status(500).send("Error: " + err.message);

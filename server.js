@@ -44,9 +44,13 @@ app.post('/login', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM users WHERE username = $1 AND password = $2`, [username, password]);
     if (result.rows.length > 0) {
-      req.session.user = result.rows[0];
+           req.session.user = result.rows[0];
+      
+      // Route based on exact role
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor/approvals');
-      return res.redirect('/sis/my');
+      if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
+      
+      return res.redirect('/sis/my'); // Student
     }
     req.flash('error', 'Invalid credentials');
     res.redirect('/login');
@@ -304,22 +308,23 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 // ============================================
 
 // 1. Show list of classes
-app.get('/sis/faculty/attendance', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
-  
+// --- TEACHER DASHBOARD ---
+app.get('/sis/faculty', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+
   try {
+    // Get courses taught by this teacher
     const coursesRes = await pool.query(`
-      SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time
+      SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count
       FROM course_sections s
       JOIN courses c ON c.id = s.course_id
       WHERE s.teacher_id = $1
     `, [req.session.user.id]);
-    
-    res.render('faculty-attendance', { 
+
+    res.render('faculty-dashboard', { 
       user: req.session.user, 
-      courses: coursesRes.rows, 
-      section: null, 
-      students: [] 
+      courses: coursesRes.rows 
     });
   } catch (err) {
     res.status(500).send("Error: " + err.message);

@@ -372,6 +372,73 @@ app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =
   }
 });
 
+
+// ============================================
+// --- ADMIN: STUDENT REGISTRY ---
+// ============================================
+
+// 1. List all students
+app.get('/sis/admin/students', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, adv.full_name as advisor_name
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN users adv ON adv.id = sp.advisor_id
+      WHERE u.role = 'student'
+      ORDER BY u.created_at DESC
+    `);
+
+    res.render('admin-students', { user: req.session.user, students: studentsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show Registration Form
+app.get('/sis/admin/students/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor'`);
+    res.render('admin-student-new', { user: req.session.user, advisors: advisorsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 3. Save New Student
+app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  const { full_name, username, email, class_level, advisor_id, admission_number } = req.body;
+  const defaultPassword = 'Student2026!';
+  const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
+
+  try {
+    // Insert into users
+    const userRes = await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id`,
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
+    );
+    const userId = userRes.rows[0].id;
+
+    // Insert into student_profiles
+    await pool.query(
+      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id) VALUES ($1, $2, $3, $4, $5)`,
+      [userId, generatedId, class_level || 'Computer Engineering', 1, advisor_id ? Number(advisor_id) : null]
+    );
+
+    req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
+    res.redirect('/sis/admin/students');
+  } catch (err) {
+    req.flash('error', 'Error creating student: ' + err.message);
+    res.redirect('/sis/admin/students/new');
+  }
+});
+
 // ============================================
 // --- ADMIN DASHBOARD ---
 // ============================================

@@ -219,5 +219,30 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
     </div>
   `);
 });
+// --- TEMPORARY DIAGNOSTIC ENDPOINT ---
+app.get('/diag', async (req, res) => {
+  try {
+    const coursesCols = await pool.query(`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'courses'
+    `);
+    const regCols = await pool.query(`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'course_registrations'
+    `);
+    const enrollCols = await pool.query(`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'enrollments'
+    `);
+    
+    res.json({
+      courses: coursesCols.rows.map(r => r.column_name),
+      course_registrations: regCols.rows.map(r => r.column_name),
+      enrollments: enrollCols.rows.map(r => r.column_name)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: err.code });
+  }
+});
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

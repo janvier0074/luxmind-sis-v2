@@ -53,27 +53,36 @@
     .course-code { font-size: 0.8rem; font-weight: 800; color: var(--blue); text-transform: uppercase; margin-bottom: 0.5rem; }
     .course-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; }
     .course-meta { font-size: 0.85rem; color: #64748b; font-weight: 600; display: flex; flex-direction: column; gap: 0.5rem; }
-    .course-meta i { color: var(--amber); width: 20px; }
 
-    /* Attendance Roster */
+    /* Attendance Roster Layout */
+    .attendance-layout { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: flex-start; }
+    
+    /* QR Code Card */
+    .qr-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); padding: 2rem; text-align: center; }
+    .qr-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--navy); }
+    .qr-card p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; font-weight: 500; }
+    .qr-card img { border-radius: 1rem; border: 4px solid var(--mist); }
+    
+    /* Manual Form Card */
     .roster-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
-    .roster-header { background: var(--mist); padding: 1.5rem; border-bottom: 2px solid var(--frost); display: flex; justify-content: space-between; align-items: center; }
+    .roster-header { background: var(--mist); padding: 1.5rem; border-bottom: 2px solid var(--frost); }
     .roster-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--navy); }
     
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
     .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; vertical-align: middle; }
     
-    /* Radio Buttons */
-    .attendance-options { display: flex; gap: 1rem; }
+    /* Radio Buttons & Info */
+    .attendance-options { display: flex; gap: 1.5rem; margin-bottom: 0.4rem; }
     .attendance-options label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-weight: 700; font-size: 0.85rem; }
     .attendance-options input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--blue); }
+    
+    .student-info { font-size: 0.75rem; color: #64748b; font-weight: 600; }
 
     .btn-save { background: var(--navy); color: #fff; padding: 1rem 2.5rem; border-radius: 100px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
     .btn-save:hover { background: var(--deep); transform: translateY(-2px); }
     
     .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
-    .back-btn:hover { color: var(--navy); }
   </style>
 </head>
 <body>
@@ -92,8 +101,6 @@
           <i class="fas fa-book-open main-icon"></i> Course Management <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu open">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-chalkboard-teacher main-icon"></i> My Courses</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-alt main-icon"></i> Course Syllabus</a></li>
           <li class="menu-item"><a href="/sis/faculty/attendance" class="menu-link active"><i class="fas fa-user-check main-icon"></i> Attendance Management</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-pen main-icon"></i> Grade Entry</a></li>
         </ul>
@@ -107,7 +114,7 @@
     <div class="top-bar">
       <div class="greeting">
         <h1>Attendance Management</h1>
-        <p>Mark attendance for your classes.</p>
+        <p>Mark attendance via QR code or manually.</p>
       </div>
       <div class="user-pill">
         <i class="fas fa-chalkboard-teacher"></i>
@@ -127,8 +134,8 @@
             <div class="course-code"><%= course.code %> · <%= course.group_name %></div>
             <div class="course-title"><%= course.title %></div>
             <div class="course-meta">
-              <span><i class="fas fa-calendar-alt"></i> <%= course.day_of_week || 'TBA' %></span>
-              <span><i class="fas fa-clock"></i> <%= course.start_time || 'TBA' %></span>
+              <span><i class="fas fa-calendar-alt" style="color: var(--amber); width: 20px;"></i> <%= course.day_of_week || 'TBA' %></span>
+              <span><i class="fas fa-clock" style="color: var(--amber); width: 20px;"></i> <%= course.start_time || 'TBA' %></span>
             </div>
           </a>
         <% }) %>
@@ -137,49 +144,68 @@
       <!-- SHOW ROSTER FOR SPECIFIC CLASS -->
       <a href="/sis/faculty/attendance" class="back-btn"><i class="fas fa-arrow-left"></i> Back to My Classes</a>
       
-      <div class="roster-container">
-        <div class="roster-header">
-          <h2><%= section.code %> - <%= section.title %> (<%= section.group_name %>)</h2>
-          <span style="background: var(--blue); color: #fff; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800;">Today's Date</span>
+      <div class="attendance-layout">
+        
+        <!-- METHOD 1: QR CODE -->
+        <div class="qr-card">
+          <h3>Method 1: Scan to Attend</h3>
+          <p>Display this QR code for students to scan.</p>
+          <!-- We use a public API to generate the QR code image -->
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://luxmind-sis-v2.onrender.com/sis/my/attendance/scan?section_id=<%= section.id %>&date=<%= today %>" alt="Attendance QR Code">
+          <p style="margin-top: 1rem; font-size: 0.75rem; color: #94a3b8;">Date: <%= today %></p>
         </div>
 
-        <form method="POST" action="/sis/faculty/attendance/<%= section.id %>">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student Name</th>
-                <th>Student ID</th>
-                <th>Attendance Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if (students.length === 0) { %>
-                <tr><td colspan="3" style="text-align: center; padding: 2rem;">No students enrolled in this class yet.</td></tr>
-              <% } %>
-              
-              <% students.forEach(student => { %>
-                <tr>
-                  <td><%= student.full_name %></td>
-                  <td><%= student.username %></td>
-                  <td>
-                    <div class="attendance-options">
-                      <label style="color: var(--success);">
-                        <input type="radio" name="status_<%= student.user_id %>" value="Present" <%= student.current_status === 'Present' ? 'checked' : '' %>> Present
-                      </label>
-                      <label style="color: var(--danger);">
-                        <input type="radio" name="status_<%= student.user_id %>" value="Absent" <%= student.current_status === 'Absent' ? 'checked' : '' %>> Absent
-                      </label>
-                    </div>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-          
-          <div style="padding: 0 1.5rem 1.5rem;">
-            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Attendance</button>
+        <!-- METHOD 2: MANUAL VALIDATION -->
+        <div class="roster-container">
+          <div class="roster-header">
+            <h2><%= section.code %> - <%= section.title %> (<%= section.group_name %>)</h2>
+            <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">Manual Validation</p>
           </div>
-        </form>
+
+          <form method="POST" action="/sis/faculty/attendance/<%= section.id %>">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Attendance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (students.length === 0) { %>
+                  <tr><td colspan="2" style="text-align: center; padding: 2rem;">No students enrolled in this class yet.</td></tr>
+                <% } %>
+                
+                <% students.forEach(student => { %>
+                  <tr>
+                    <td>
+                      <div style="font-weight: 800; font-size: 0.95rem;"><%= student.full_name %></div>
+                      <div style="font-size: 0.75rem; color: var(--blue); font-weight: 600;">ID: <%= student.username %></div>
+                    </td>
+                    <td>
+                      <div class="attendance-options">
+                        <label style="color: var(--success);">
+                          <input type="radio" name="status_<%= student.user_id %>" value="Present" <%= student.current_status === 'Present' ? 'checked' : '' %>> Present
+                        </label>
+                        <label style="color: var(--danger);">
+                          <input type="radio" name="status_<%= student.user_id %>" value="Absent" <%= student.current_status === 'Absent' ? 'checked' : '' %>> Absent
+                        </label>
+                      </div>
+                      <!-- Requested Info below Radio Buttons -->
+                      <div class="student-info">
+                        Date: <%= today %> · Student No: <%= student.username %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+            
+            <div style="padding: 0 1.5rem 1.5rem;">
+              <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Manual Attendance</button>
+            </div>
+          </form>
+        </div>
+
       </div>
     <% } %>
 

@@ -327,11 +327,12 @@ app.get('/sis/faculty/attendance', requireLogin, async (req, res) => {
 });
 
 // 2. Show roster for a specific class
+// 2. Show roster for a specific class
 app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
+  // Allow both teacher and advisor roles (since they can be the same person)
   if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
   
   try {
-    // Get the courses for the sidebar list
     const coursesRes = await pool.query(`
       SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time
       FROM course_sections s
@@ -339,7 +340,6 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
       WHERE s.teacher_id = $1
     `, [req.session.user.id]);
 
-    // Get the specific class details
     const sectionRes = await pool.query(`
       SELECT s.id, c.code, c.title, s.group_name 
       FROM course_sections s
@@ -349,7 +349,6 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
 
     if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/attendance');
 
-    // Get students enrolled in this section, plus their attendance status for TODAY (if it exists)
     const studentsRes = await pool.query(`
       SELECT u.id as user_id, u.full_name, u.username, a.status as current_status
       FROM enrollments e
@@ -358,11 +357,15 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
       WHERE e.section_id = $1
     `, [req.params.section_id]);
 
+    // Get today's date for the UI and QR code
+    const today = new Date().toISOString().slice(0, 10);
+
     res.render('faculty-attendance', { 
       user: req.session.user, 
       courses: coursesRes.rows, 
       section: sectionRes.rows[0], 
-      students: studentsRes.rows 
+      students: studentsRes.rows,
+      today: today
     });
   } catch (err) {
     res.status(500).send("Error: " + err.message);

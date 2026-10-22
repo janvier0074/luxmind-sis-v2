@@ -104,7 +104,7 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
     const scheduleRes = await pool.query(`
       SELECT 
         c.code, c.title, c.syllabus_url, c.moodle_url,
-        s.id AS section_id, s.group_name, s.day_of_week, s.start_time, s.end_time, s.room,
+        s.group_name, s.day_of_week, s.start_time, s.end_time, s.room,
         u.full_name AS teacher_name
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
@@ -114,13 +114,22 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
     `, [req.session.user.id]);
 
     const classes = scheduleRes.rows;
+    
+    // Sort classes by start time
+    classes.sort((a, b) => (a.start_time || '00:00').localeCompare(b.start_time || '00:00'));
+
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
-    classes.forEach(cls => {
-      if (schedule[cls.day_of_week] && cls.start_time) {
-        cls.start_time = cls.start_time.slice(0, 5);
-        cls.end_time = cls.end_time.slice(0, 5);
+    classes.forEach((cls, index) => {
+      // Format time to HH:MM
+      if (cls.start_time) cls.start_time = cls.start_time.slice(0, 5);
+      if (cls.end_time) cls.end_time = cls.end_time.slice(0, 5);
+      
+      // Assign a color index (0-4) for the frontend gradients
+      cls.colorIndex = index % 5;
+
+      if (cls.day_of_week && schedule[cls.day_of_week]) {
         schedule[cls.day_of_week].push(cls);
       }
     });

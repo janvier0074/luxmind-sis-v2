@@ -1,5 +1,4 @@
 <%
-  // Safety checks
   if (typeof courses === 'undefined') courses = [];
   if (typeof cart === 'undefined') cart = [];
   if (typeof pending === 'undefined') pending = [];
@@ -12,12 +11,7 @@
     if (bySem[sem]) bySem[sem].push(c); 
   });
   
-  const labels = {
-    1:'Year 1 · Fall', 2:'Year 1 · Spring',
-    3:'Year 2 · Fall', 4:'Year 2 · Spring',
-    5:'Year 3 · Fall', 6:'Year 3 · Spring',
-    7:'Year 4 · Fall', 8:'Year 4 · Spring'
-  };
+  const labels = {1:'Fall', 2:'Spring', 3:'Fall', 4:'Spring', 5:'Fall', 6:'Spring', 7:'Fall', 8:'Spring'};
 %>
 
 <!DOCTYPE html>
@@ -37,60 +31,66 @@
       --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
       --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
       --success: #1f8a5f; --danger: #b33e2e;
-      --radius-card: 2rem; --radius-inner: 1.25rem;
+      --radius-card: 2rem; --radius-inner: 1rem;
       --shadow-card: 0 30px 60px -20px rgba(10, 30, 50, 0.4), 0 8px 24px -6px rgba(0, 0, 0, 0.08);
       --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
     }
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: radial-gradient(circle at 20% 20%, #e5eef9, #cedbe9); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; color: var(--navy); line-height: 1.5; }
 
-    .endeavor-card { max-width: 1500px; width: 100%; background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; animation: cardFloat 0.6s ease-out; }
-    @keyframes cardFloat { from { opacity: 0; transform: translateY(20px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-    .endeavor-header { background: linear-gradient(105deg, var(--navy) 0%, var(--deep) 55%, var(--blue) 100%); padding: 1.8rem 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem; position: relative; }
+    .endeavor-card { max-width: 1400px; width: 100%; background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
+    
+    .endeavor-header { background: linear-gradient(105deg, var(--navy) 0%, var(--deep) 55%, var(--blue) 100%); padding: 1.8rem 2.5rem; display: flex; align-items: center; justify-content: space-between; position: relative; }
     .endeavor-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--amber), var(--gold), var(--amber)); }
     .brand-block { display: flex; align-items: center; gap: 1.2rem; }
-    .brand-mark { width: 58px; height: 58px; background: var(--amber); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: var(--navy); box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3); }
+    .brand-mark { width: 58px; height: 58px; background: var(--amber); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: var(--navy); }
     .brand-text h1 { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1.2; }
     .brand-text span { display: block; font-size: 0.8rem; font-weight: 600; color: var(--gold); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 0.15rem; }
     .user-pill { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); padding: 0.6rem 1.6rem; border-radius: 100px; display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; font-weight: 600; color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
     .user-pill i { color: var(--gold); font-size: 1.2rem; }
 
-    .endeavor-body { padding: 2.2rem 2.5rem 2rem; background: var(--ice); }
+    .endeavor-body { padding: 2rem 2.5rem; background: var(--ice); }
 
-    .semester-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-    @media (max-width: 1200px) { .semester-grid { grid-template-columns: repeat(2, 1fr); } }
+    /* --- NEW YEAR BOX LAYOUT --- */
+    .year-box { background: #fff; border-radius: 1.25rem; border: 1px solid var(--frost); box-shadow: var(--shadow-soft); margin-bottom: 2rem; overflow: hidden; }
+    .year-header { background: var(--navy); color: #fff; padding: 1rem 1.5rem; font-size: 1.2rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--amber); }
     
-    .semester-panel { background: #fff; border-radius: var(--radius-inner); border: 1px solid var(--frost); overflow: hidden; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
-    .semester-header { background: var(--mist); padding: 0.9rem 1.2rem; border-bottom: 2px solid var(--frost); display: flex; align-items: center; justify-content: space-between; }
-    .semester-header h3 { font-size: 1rem; font-weight: 800; color: var(--navy); margin: 0; }
-    .year-badge { background: var(--blue); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.7rem; border-radius: 100px; }
-    .course-list { padding: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+    .semesters-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--frost); }
+    .semester-column { background: #fff; padding: 1.5rem; }
+    
+    .semester-title { font-size: 0.9rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--mist); padding-bottom: 0.5rem; }
+    
+    .course-list { display: flex; flex-direction: column; gap: 0.8rem; }
 
-    .course-tile { padding: 0.75rem 1rem 0.75rem 2.4rem; border-radius: 12px; border: 1.5px solid transparent; transition: all 0.15s ease; cursor: pointer; position: relative; display: flex; flex-direction: column; gap: 0.2rem; text-align: left; width: 100%; background: #fff; }
-    .course-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 14px -6px rgba(10, 30, 50, 0.2); }
-
+    /* --- COURSE TILES --- */
+    .course-tile { padding: 0.8rem 1rem; border-radius: 10px; border: 1.5px solid transparent; transition: all 0.15s ease; cursor: pointer; text-align: left; width: 100%; background: #fff; }
+    .course-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(10, 30, 50, 0.1); }
+    
     .tile-selected { background: #d4f0e3; border-color: var(--success); cursor: default; }
-    .tile-available { background: #fff; border: 1.5px dashed var(--blue); }
+    .tile-available { background: #f8fafc; border: 1.5px dashed var(--frost); }
     
-    /* New Credit & Quota Badge */
-    .tile-credit-front { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); padding: 0.35rem 0.3rem; border-radius: 8px; background: var(--navy); color: var(--gold); font-size: 0.7rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
-    .tile-credit-front small { font-size: 0.55rem; color: #cbd5e1; margin-top: 3px; display: block; border-top: 1px solid #334155; padding-top: 3px; }
+    .tile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.3rem; }
+    .tile-code { font-size: 0.75rem; font-weight: 800; color: var(--blue); text-transform: uppercase; }
+    .tile-title { font-size: 0.9rem; font-weight: 700; color: var(--navy); line-height: 1.3; margin-bottom: 0.5rem; }
+    
+    /* NEW INLINE BADGES */
+    .badge-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .badge-credit { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .badge-quota { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+    .badge-quota.full { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-    .tile-code { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue); }
-    .tile-title { font-size: 0.82rem; font-weight: 700; color: var(--navy); line-height: 1.3; }
-    .tile-meta { display: flex; justify-content: space-between; margin-top: 0.2rem; font-size: 0.68rem; font-weight: 600; color: #4a6785; }
+    .status-text { font-size: 0.75rem; font-weight: 800; margin-top: 0.5rem; }
+    .status-available { color: var(--blue); }
+    .status-selected { color: var(--success); }
+    .status-restricted { color: var(--danger); }
 
-    .tile-selected::after { content: '✓'; position: absolute; top: 8px; right: 10px; font-size: 0.8rem; font-weight: 800; color: var(--success); }
-
-    .summary-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: #fff; border-radius: 100px; padding: 1.1rem 2rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); }
+    .summary-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: #fff; border-radius: 100px; padding: 1rem 2rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); position: sticky; bottom: 1.5rem; z-index: 10; }
     .selected-stats { display: flex; align-items: center; gap: 1rem; font-weight: 500; color: var(--deep); }
-    .selected-stats i { color: var(--amber); font-size: 1.5rem; }
-    .selected-stats strong { font-weight: 800; color: var(--navy); font-size: 1.1rem; margin: 0 0.15rem; }
+    .selected-stats strong { font-weight: 800; color: var(--navy); font-size: 1.1rem; }
     
-    .submit-action { background: var(--navy); border: none; padding: 0.9rem 2.4rem; border-radius: 100px; font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 12px 24px -10px var(--navy); }
+    .submit-action { background: var(--navy); border: none; padding: 0.8rem 2.4rem; border-radius: 100px; font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; transition: all 0.15s ease; }
     .submit-action:hover { background: var(--deep); transform: translateY(-2px); }
     .submit-action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .submit-action i { color: var(--gold); }
   </style>
 </head>
 <body>
@@ -100,7 +100,7 @@
         <div class="brand-mark">L</div>
         <div class="brand-text">
           <h1>LuxMind Endeavor</h1>
-          <span>4-Year Curriculum · 8 Semesters</span>
+          <span>Course Registration</span>
         </div>
       </div>
       <div class="user-pill">
@@ -117,74 +117,151 @@
         </div>
       <% } %>
 
-      <div class="semester-grid">
-        <% for (let semNum = 1; semNum <= 8; semNum++) { %>
-          <div class="semester-panel">
-            <div class="semester-header">
-              <h3><%= labels[semNum] %></h3>
-              <span class="year-badge">Sem <%= semNum %></span>
-            </div>
-            <div class="course-list">
-              <% if (bySem[semNum].length === 0) { %>
-                <div style="padding: 1rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">No courses</div>
-              <% } %>
+      <!-- YEAR BOXES -->
+      <% for (let year = 1; year <= 4; year++) { 
+           const sem1 = (year * 2) - 1;
+           const sem2 = year * 2;
+      %>
+        <div class="year-box">
+          <div class="year-header">
+            <span>Year <%= year %></span>
+            <span style="font-size: 0.9rem; font-weight: 600; color: #94a3b8;"><%= year === 1 ? 'Freshman' : year === 2 ? 'Sophomore' : year === 3 ? 'Junior' : 'Senior' %></span>
+          </div>
+          
+          <div class="semesters-container">
+            <!-- Semester 1 (Odd) -->
+            <div class="semester-column">
+              <div class="semester-title">Fall (Semester <%= sem1 %>)</div>
+              <div class="course-list">
+                <% if (bySem[sem1].length === 0) { %><div style="color: #94a3b8; font-size: 0.8rem;">No courses</div><% } %>
+                <% bySem[sem1].forEach(course => { 
+                  const cartItem = cart.find(c => c.course_id === course.id);
+                  const pendingItem = pending.find(p => p.course_id === course.id);
+                  const isSemAllowed = sem1 <= (currentSem + 1);
+                  const isQuotaFull = course.enrolled_count >= course.quota;
 
-              <% bySem[semNum].forEach(course => {
-                const cartItem = cart.find(c => c.course_id === course.id);
-                const pendingItem = pending.find(p => p.course_id === course.id);
-                
-                // The rule: You can only click if semNum <= currentSem + 1
-                const isAllowed = semNum <= (currentSem + 1);
+                  let tileClass = 'tile-available';
+                  let statusText = '+ Add to Cart';
+                  let statusClass = 'status-available';
+                  let clickable = true;
 
-                let tileClass = 'tile-available';
-                let statusLabel = 'Available';
-                let clickable = true;
+                  if (pendingItem) { tileClass = 'tile-selected'; statusText = '✓ Pending Approval'; statusClass = 'status-selected'; clickable = false; }
+                  else if (cartItem) { tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; }
+                  else if (isQuotaFull) { statusText = 'Quota Full'; statusClass = 'status-restricted'; }
+                  else if (!isSemAllowed) { statusText = '🔒 Registration Restricted'; statusClass = 'status-restricted'; }
+                %>
+                  
+                  <% if (cartItem && !pendingItem) { %>
+                    <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                      <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
+                      <button type="submit" class="course-tile <%= tileClass %>">
+                  <% } else if (clickable) { %>
+                    <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                      <input type="hidden" name="course_id" value="<%= course.id %>">
+                      <button type="submit" class="course-tile <%= tileClass %>" 
+                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); showSemesterWarning(<%= sem1 %>, <%= currentSem %>);"
+                        <% } else if (isQuotaFull) { %> onclick="event.preventDefault(); showQuotaWarning('<%= course.title %>');"
+                        <% } %>>
+                  <% } else { %>
+                    <div class="course-tile <%= tileClass %>">
+                  <% } %>
 
-                if (pendingItem) { tileClass = 'tile-selected'; statusLabel = 'Pending'; clickable = false; }
-                else if (cartItem) { tileClass = 'tile-selected'; statusLabel = 'Selected'; clickable = false; }
-              %>
-                
-                <% if (!clickable) { %>
-                  <!-- Already Selected / Pending -->
-                  <div class="course-tile <%= tileClass %>">
-                    <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small><small>Q:<%= course.quota || 40 %></small></div>
-                    <div class="tile-code"><%= course.code || 'N/A' %></div>
-                    <div class="tile-title"><%= course.title %></div>
-                    <div class="tile-meta"><span><%= statusLabel %></span></div>
-                  </div>
-                <% } else if (isAllowed && pending.length === 0) { %>
-                  <!-- Allowed to Add to Cart -->
-                  <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
-                    <input type="hidden" name="course_id" value="<%= course.id %>">
-                    <button type="submit" class="course-tile tile-available">
-                      <div class="tile-credit-front"><%= course.credits || 3 %><small>CR</small><small>Q:<%= course.quota || 40 %></small></div>
-                      <div class="tile-code"><%= course.code || 'N/A' %></div>
+                      <div class="tile-header">
+                        <span class="tile-code"><%= course.code %></span>
+                      </div>
                       <div class="tile-title"><%= course.title %></div>
-                      <div class="tile-meta"><span>+ Add to Cart</span></div>
-                    </button>
-                  </form>
-                <% } else { %>
-                  <!-- Future Semester - Show Popup on Click -->
-                  <button type="button" class="course-tile tile-available" style="opacity: 0.8;" onclick="showSemesterWarning(<%= semNum %>, <%= currentSem %>)">
-                    <div class="tile-credit-front" style="background: #64748b; color: #fff;"><%= course.credits || 3 %><small style="color: #e2e8f0;">CR</small><small style="color: #e2e8f0;">Q:<%= course.quota || 40 %></small></div>
-                    <div class="tile-code"><%= course.code || 'N/A' %></div>
-                    <div class="tile-title"><%= course.title %></div>
-                    <div class="tile-meta"><span style="color: var(--amber); font-weight: 800;">🔒 Not Allowed Yet</span></div>
-                  </button>
-                <% } %>
-              <% }) %>
+                      
+                      <!-- INLINE BADGES (CREDIT & QUOTA) -->
+                      <div class="badge-row">
+                        <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
+                        <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
+                      </div>
+
+                      <div class="status-text <%= statusClass %>"><%= statusText %></div>
+
+                  <% if (clickable || cartItem) { %>
+                      </button>
+                    </form>
+                  <% } else { %>
+                    </div>
+                  <% } %>
+
+                <% }) %>
+              </div>
+            </div>
+
+            <!-- Semester 2 (Even) -->
+            <div class="semester-column" style="background: var(--ice);">
+              <div class="semester-title" style="color: var(--amber);">Spring (Semester <%= sem2 %>)</div>
+              <div class="course-list">
+                <% if (bySem[sem2].length === 0) { %><div style="color: #94a3b8; font-size: 0.8rem;">No courses</div><% } %>
+                <% bySem[sem2].forEach(course => { 
+                  const cartItem = cart.find(c => c.course_id === course.id);
+                  const pendingItem = pending.find(p => p.course_id === course.id);
+                  const isSemAllowed = sem2 <= (currentSem + 1);
+                  const isQuotaFull = course.enrolled_count >= course.quota;
+
+                  let tileClass = 'tile-available';
+                  let statusText = '+ Add to Cart';
+                  let statusClass = 'status-available';
+                  let clickable = true;
+
+                  if (pendingItem) { tileClass = 'tile-selected'; statusText = '✓ Pending Approval'; statusClass = 'status-selected'; clickable = false; }
+                  else if (cartItem) { tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; }
+                  else if (isQuotaFull) { statusText = 'Quota Full'; statusClass = 'status-restricted'; }
+                  else if (!isSemAllowed) { statusText = '🔒 Registration Restricted'; statusClass = 'status-restricted'; }
+                %>
+                  
+                  <% if (cartItem && !pendingItem) { %>
+                    <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                      <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
+                      <button type="submit" class="course-tile <%= tileClass %>">
+                  <% } else if (clickable) { %>
+                    <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                      <input type="hidden" name="course_id" value="<%= course.id %>">
+                      <button type="submit" class="course-tile <%= tileClass %>" 
+                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); showSemesterWarning(<%= sem2 %>, <%= currentSem %>);"
+                        <% } else if (isQuotaFull) { %> onclick="event.preventDefault(); showQuotaWarning('<%= course.title %>');"
+                        <% } %>>
+                  <% } else { %>
+                    <div class="course-tile <%= tileClass %>">
+                  <% } %>
+
+                      <div class="tile-header">
+                        <span class="tile-code"><%= course.code %></span>
+                      </div>
+                      <div class="tile-title"><%= course.title %></div>
+                      
+                      <!-- INLINE BADGES -->
+                      <div class="badge-row">
+                        <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
+                        <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
+                      </div>
+
+                      <div class="status-text <%= statusClass %>"><%= statusText %></div>
+
+                  <% if (clickable || cartItem) { %>
+                      </button>
+                    </form>
+                  <% } else { %>
+                    </div>
+                  <% } %>
+
+                <% }) %>
+              </div>
             </div>
           </div>
-        <% } %>
-      </div>
+        </div>
+      <% } %>
 
+      <!-- STICKY SUMMARY FOOTER -->
       <div class="summary-footer">
         <div class="selected-stats">
-          <i class="fas fa-check-double"></i>
+          <i class="fas fa-check-double" style="color: var(--amber); font-size: 1.5rem;"></i>
           <span>Selected: <strong><%= cart.length %></strong> courses</span>
         </div>
         
-        <div style="display: flex; gap: 1rem;">
+        <div>
           <% if (cart.length > 0 && pending.length === 0) { %>
             <form method="POST" action="/sis/my/registration/submit" style="margin: 0;">
               <button type="submit" class="submit-action"><i class="fas fa-rocket"></i> Submit to Advisor</button>
@@ -197,10 +274,14 @@
     </main>
   </div>
 
-  <!-- Javascript for the Pop-up Message -->
+  <!-- POP-UP LOGIC -->
   <script>
     function showSemesterWarning(targetSem, currentSem) {
-      alert("⚠️ Registration Restriction\n\nYou are currently in Semester " + currentSem + ".\nYou are only allowed to register for courses in Semester " + currentSem + " or " + (currentSem + 1) + ".\n\nYou cannot register for Semester " + targetSem + " yet.");
+      alert("⚠️ Registration Restriction\n\nYou are currently in Semester " + currentSem + ".\nYou are only allowed to register for Semester " + currentSem + " or " + (currentSem + 1) + ".\n\nYou cannot register for Semester " + targetSem + " yet.");
+    }
+
+    function showQuotaWarning(courseName) {
+      alert("⚠️ Quota Full\n\nThe course '" + courseName + "' has reached its maximum capacity.\n\nPlease wait until a new group is created or the quota is increased by your Advisor.");
     }
   </script>
 </body>

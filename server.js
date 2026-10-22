@@ -172,7 +172,17 @@ app.get('/sis/my/registration', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
- const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC`);
+     // Fetch courses AND calculate how many students are already enrolled
+    const coursesRes = await pool.query(`
+      SELECT c.*, 
+             COALESCE(c.quota, 40) as quota,
+             (
+               (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) +
+               (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')
+             ) as enrolled_count
+      FROM courses c 
+      ORDER BY c.semester_number ASC
+    `);
 
     const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
     const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);

@@ -311,7 +311,36 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
     </div>
   `);
 });
+// --- TEMPORARY DATABASE FIX ---
+app.get('/fix-db', async (req, res) => {
+  try {
+    // 1. Fix the column length
+    await pool.query(`ALTER TABLE course_sections ALTER COLUMN day_of_week TYPE VARCHAR(20);`);
+    
+    // 2. Distribute the schedule
+    await pool.query(`
+      UPDATE course_sections 
+      SET day_of_week = CASE (id % 5)
+          WHEN 0 THEN 'Monday'
+          WHEN 1 THEN 'Tuesday'
+          WHEN 2 THEN 'Wednesday'
+          WHEN 3 THEN 'Thursday'
+          ELSE 'Friday'
+        END,
+        start_time = CASE (id % 4)
+          WHEN 0 THEN '08:30'::time
+          WHEN 1 THEN '10:30'::time
+          WHEN 2 THEN '13:30'::time
+          ELSE '15:30'::time
+        END,
+        room = 'Room ' || (100 + (id % 20));
+    `);
 
+    res.send('<h1>✅ SUCCESS!</h1><p>Database unlocked and schedule distributed. You can now check your Timetable.</p>');
+  } catch (err) {
+    res.status(500).send('<h1>❌ Error</h1><pre>' + err.message + '</pre>');
+  }
+});
 // ============================================
 // --- START SERVER ---
 // ============================================

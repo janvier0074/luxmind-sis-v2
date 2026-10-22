@@ -44,9 +44,10 @@ app.post('/login', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM users WHERE username = $1 AND password = $2`, [username, password]);
     if (result.rows.length > 0) {
-           req.session.user = result.rows[0];
+      req.session.user = result.rows[0];
       
       // Route based on exact role
+      if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor/approvals');
       if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
       
@@ -100,7 +101,6 @@ app.get('/sis/my', requireLogin, async (req, res) => {
 // ============================================
 // --- STUDENT TIMETABLE ---
 // ============================================
-// --- STUDENT TIMETABLE ---
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -118,19 +118,14 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
     `, [req.session.user.id]);
 
     const classes = scheduleRes.rows;
-    
-    // Sort classes by start time
     classes.sort((a, b) => (a.start_time || '00:00').localeCompare(b.start_time || '00:00'));
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const schedule = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
 
     classes.forEach((cls, index) => {
-      // Format time to HH:MM
       if (cls.start_time) cls.start_time = cls.start_time.slice(0, 5);
       if (cls.end_time) cls.end_time = cls.end_time.slice(0, 5);
-      
-      // Assign a color index (0-4) for the frontend gradients
       cls.colorIndex = index % 5;
 
       if (cls.day_of_week && schedule[cls.day_of_week]) {
@@ -180,18 +175,13 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
 // ============================================
 // --- COURSE REGISTRATION ---
 // ============================================
-
-// 1. View Registration Page
-// --- STUDENT COURSE REGISTRATION VIEW ---
 app.get('/sis/my/registration', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-    // 1. Check if the student is ALREADY ENROLLED in anything
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
-    // 2. Fetch the rest of the data (only if not registered)
     const coursesRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota,
              ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count
@@ -205,14 +195,13 @@ app.get('/sis/my/registration', requireLogin, async (req, res) => {
       courses: coursesRes.rows,
       cart: cartRes.rows,
       pending: pendingRes.rows,
-      hasRegistered: hasRegistered // Pass this to the frontend
+      hasRegistered: hasRegistered
     });
   } catch (err) {
     res.status(500).send("Registration Error: " + err.message);
   }
 });
 
-// 2. Add to Cart
 app.post('/sis/my/registration/add', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   const courseId = Number(req.body.course_id);
@@ -228,7 +217,6 @@ app.post('/sis/my/registration/add', requireLogin, async (req, res) => {
   }
 });
 
-// 3. Remove from Cart
 app.post('/sis/my/registration/remove', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   const cartId = Number(req.body.cart_id);
@@ -241,7 +229,6 @@ app.post('/sis/my/registration/remove', requireLogin, async (req, res) => {
   }
 });
 
-// 4. Submit to Advisor
 app.post('/sis/my/registration/submit', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -256,7 +243,6 @@ app.post('/sis/my/registration/submit', requireLogin, async (req, res) => {
 // ============================================
 // --- ADVISOR APPROVALS ---
 // ============================================
-
 app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor') return res.redirect('/login');
 
@@ -289,10 +275,8 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
     const courses = await pool.query(`SELECT course_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
     
     for (const c of courses.rows) {
-      // Auto-assign the first available section for this course
       const sec = await pool.query(`SELECT id FROM course_sections WHERE course_id = $1 LIMIT 1`, [c.course_id]);
       const sectionId = sec.rows.length > 0 ? sec.rows[0].id : null;
-
       await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, sectionId]);
     }
     
@@ -306,14 +290,10 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 // ============================================
 // --- FACULTY: ATTENDANCE MANAGEMENT ---
 // ============================================
-
-// 1. Show list of classes
-// --- TEACHER DASHBOARD ---
 app.get('/sis/faculty', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
 
   try {
-    // Get courses taught by this teacher
     const coursesRes = await pool.query(`
       SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time,
              (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count
@@ -322,16 +302,12 @@ app.get('/sis/faculty', requireLogin, async (req, res) => {
       WHERE s.teacher_id = $1
     `, [req.session.user.id]);
 
-    res.render('faculty-dashboard', { 
-      user: req.session.user, 
-      courses: coursesRes.rows 
-    });
+    res.render('faculty-dashboard', { user: req.session.user, courses: coursesRes.rows });
   } catch (err) {
     res.status(500).send("Error: " + err.message);
   }
 });
 
-// 2. Show roster for a specific class
 app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
   
@@ -361,7 +337,7 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
     `, [req.params.section_id]);
 
     const today = new Date().toISOString().slice(0, 10);
-    const hours = [1, 2, 3, 4]; // QR codes for 4 hours
+    const hours = [1, 2, 3, 4];
 
     res.render('faculty-attendance', { 
       user: req.session.user, 
@@ -376,10 +352,8 @@ app.get('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =>
   }
 });
 
-// 3. Save the attendance
 app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor' && req.session.user.role !== 'teacher') return res.redirect('/login');
-  
   const sectionId = req.params.section_id;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -388,11 +362,7 @@ app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =
       if (key.startsWith('status_')) {
         const studentId = key.split('_')[1];
         const status = req.body[key];
-
-        // Delete existing attendance for today to avoid duplicates
         await pool.query(`DELETE FROM attendance WHERE student_id = $1 AND section_id = $2 AND date = $3`, [studentId, sectionId, today]);
-        
-        // Insert the new attendance record
         await pool.query(`INSERT INTO attendance (student_id, section_id, date, status) VALUES ($1, $2, $3, $4)`, [studentId, sectionId, today, status]);
       }
     }
@@ -401,6 +371,33 @@ app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =
     res.status(500).send("Error saving attendance: " + err.message);
   }
 });
+
+// ============================================
+// --- ADMIN DASHBOARD ---
+// ============================================
+app.get('/sis/admin', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);
+    const teachersCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'teacher'`);
+    const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
+    const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
+
+    res.render('admin-dashboard', { 
+      user: req.session.user,
+      stats: {
+        students: studentsCount.rows[0].count,
+        teachers: teachersCount.rows[0].count,
+        courses: coursesCount.rows[0].count,
+        pending: pendingRegs.rows[0].count
+      }
+    });
+  } catch (err) {
+    res.status(500).send("Admin Error: " + err.message);
+  }
+});
+
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================
@@ -413,36 +410,7 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
     </div>
   `);
 });
-// --- TEMPORARY DATABASE FIX ---
-app.get('/fix-db', async (req, res) => {
-  try {
-    // 1. Fix the column length
-    await pool.query(`ALTER TABLE course_sections ALTER COLUMN day_of_week TYPE VARCHAR(20);`);
-    
-    // 2. Distribute the schedule
-    await pool.query(`
-      UPDATE course_sections 
-      SET day_of_week = CASE (id % 5)
-          WHEN 0 THEN 'Monday'
-          WHEN 1 THEN 'Tuesday'
-          WHEN 2 THEN 'Wednesday'
-          WHEN 3 THEN 'Thursday'
-          ELSE 'Friday'
-        END,
-        start_time = CASE (id % 4)
-          WHEN 0 THEN '08:30'::time
-          WHEN 1 THEN '10:30'::time
-          WHEN 2 THEN '13:30'::time
-          ELSE '15:30'::time
-        END,
-        room = 'Room ' || (100 + (id % 20));
-    `);
 
-    res.send('<h1>✅ SUCCESS!</h1><p>Database unlocked and schedule distributed. You can now check your Timetable.</p>');
-  } catch (err) {
-    res.status(500).send('<h1>❌ Error</h1><pre>' + err.message + '</pre>');
-  }
-});
 // ============================================
 // --- START SERVER ---
 // ============================================

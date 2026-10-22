@@ -576,6 +576,80 @@ app.post('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) =>
 });
 
 // ============================================
+// --- ADMIN: FINANCE & REGISTRATIONS ---
+// ============================================
+
+// 1. Master Registration List
+app.get('/sis/admin/registrations', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const registrationsRes = await pool.query(`
+      SELECT cr.id, cr.status, cr.requested_at, 
+             u.full_name as student_name, u.username,
+             c.code as course_code, c.title as course_title
+      FROM course_registrations cr
+      JOIN users u ON u.id = cr.student_id
+      JOIN courses c ON c.id = cr.course_id
+      ORDER BY cr.requested_at DESC
+    `);
+
+    res.render('admin-registrations', { user: req.session.user, registrations: registrationsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Finance Dashboard
+app.get('/sis/admin/finance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    // Get Fee Structures
+    const feesRes = await pool.query(`SELECT * FROM fee_structure ORDER BY program, semester`);
+
+    // Get Student Balances (Total Fee for their program - Total Payments)
+    const balancesRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester,
+             COALESCE((SELECT SUM(amount) FROM fee_structure fs WHERE fs.program = sp.class_level AND fs.semester = sp.current_semester), 0) as total_fee,
+             COALESCE((SELECT SUM(amount) FROM payments p WHERE p.student_id = u.id), 0) as total_paid
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student'
+    `);
+
+    // Calculate remaining balance
+    const balances = balancesRes.rows.map(b => ({
+      ...b,
+      balance: Number(b.total_fee) - Number(b.total_paid)
+    }));
+
+    res.render('admin-finance', { user: req.session.user, fees: feesRes.rows, balances });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 3. Add Fee Structure
+app.post('/sis/admin/finance/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  const { program, semester, amount } = req.body;
+  try {
+    await pool.query(`INSERT INTO fee_structure (program, semester, amount) VALUES ($1, $2, $3)`, [program, Number(semester), Number(amount)]);
+    req.flash('success', 'Fee structure added.');
+    res.redirect('/sis/admin/finance');
+  } catch (err) {
+    req.flash('error', 'Error adding fee: ' + err.message);
+    res.redirect('/sis/admin/finance');
+  }
+});
+
+
+
+
+
+// ============================================
 // --- ADMIN DASHBOARD ---
 // ============================================
 app.get('/sis/admin', requireLogin, async (req, res) => {

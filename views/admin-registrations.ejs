@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LuxMind SIS - All Registrations</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1.2rem 1rem; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
+    .data-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; }
+    
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #d97706; }
+    .badge.approved { background: #dcfce7; color: #16a34a; }
+    .badge.draft { background: #e2e8f0; color: #475569; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Admin Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/admin" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/admin/students" class="menu-link"><i class="fas fa-users"></i> User Management</a></li>
+      <li><a href="/sis/admin/registrations" class="menu-link active"><i class="fas fa-clipboard-check"></i> All Registrations</a></li>
+      <li><a href="/sis/admin/finance" class="menu-link"><i class="fas fa-wallet"></i> Finance</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>Master Registration List</h1>
+      <p>View every course registration request across the university.</p>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Date Requested</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (registrations.length === 0) { %>
+            <tr><td colspan="4" style="text-align: center; padding: 2rem;">No registrations found.</td></tr>
+          <% } %>
+          <% registrations.forEach(reg => { %>
+            <tr>
+              <td><strong><%= reg.student_name %></strong> <br><small style="color: var(--blue);"><%= reg.username %></small></td>
+              <td><strong><%= reg.course_code %></strong> - <%= reg.course_title %></td>
+              <td><%= new Date(reg.requested_at).toLocaleDateString() %></td>
+              <td><span class="badge <%= reg.status %>"><%= reg.status.replace('_', ' ') %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

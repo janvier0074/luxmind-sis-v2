@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LuxMind SIS - Enter Grades</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+    
+    .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    .roster-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .roster-header { background: var(--navy); color: #fff; padding: 1.5rem; }
+    .roster-header h2 { font-size: 1.2rem; font-weight: 800; }
+    
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { background: #f8fafc; color: #64748b; padding: 1rem; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--frost); }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; }
+    
+    .grade-input { width: 80px; padding: 0.5rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.9rem; text-align: center; }
+    .grade-input:focus { border-color: var(--amber); outline: none; }
+    
+    .badge { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+    .badge-a { background: #dcfce7; color: #16a34a; }
+    .badge-b { background: #e0f2fe; color: #0284c7; }
+    .badge-c { background: #fef3c7; color: #d97706; }
+    .badge-f { background: #fee2e2; color: #dc2626; }
+
+    .btn-save { background: var(--navy); color: #fff; padding: 1rem 2.5rem; border-radius: 100px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
+    .btn-save:hover { background: var(--deep); transform: translateY(-2px); }
+    
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/faculty" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/faculty/attendance" class="menu-link"><i class="fas fa-user-check"></i> Attendance Management</a></li>
+      <li><a href="/sis/faculty/grades" class="menu-link active"><i class="fas fa-pen"></i> Grade Entry</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/faculty/grades" class="back-btn"><i class="fas fa-arrow-left"></i> Back to My Courses</a>
+    
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="roster-container">
+      <div class="roster-header">
+        <h2><%= section.code %> - <%= section.title %> (<%= section.group_name %>)</h2>
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.3rem;">Enter Midterm and Final grades (out of 100).</p>
+      </div>
+
+      <form method="POST" action="/sis/faculty/grades/<%= section.id %>">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Student ID</th>
+              <th>Midterm (100)</th>
+              <th>Final (100)</th>
+              <th>Current Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (students.length === 0) { %>
+              <tr><td colspan="5" style="text-align: center; padding: 2rem;">No students enrolled.</td></tr>
+            <% } %>
+            
+            <% students.forEach(student => { %>
+              <tr>
+                <td><strong><%= student.full_name %></strong></td>
+                <td><%= student.username %></td>
+                <td>
+                  <input type="number" name="midterm_<%= student.user_id %>" class="grade-input" value="<%= student.midterm_grade || '' %>" min="0" max="100" placeholder="0">
+                </td>
+                <td>
+                  <input type="number" name="final_<%= student.user_id %>" class="grade-input" value="<%= student.final_grade || '' %>" min="0" max="100" placeholder="0">
+                </td>
+                <td>
+                  <% if (student.letter_grade) { %>
+                    <span class="badge badge-<%= student.letter_grade.toLowerCase() %>"><%= student.letter_grade %> (<%= student.gpa_points %>)</span>
+                  <% } else { %>
+                    <span style="color: #94a3b8; font-style: italic;">Not graded</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        
+        <div style="padding: 0 1.5rem 1.5rem;">
+          <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Grades</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

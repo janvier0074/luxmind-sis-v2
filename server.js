@@ -660,7 +660,101 @@ app.post('/sis/admin/finance/new', requireLogin, async (req, res) => {
   }
 });
 
+// ============================================
+// --- FACULTY: GRADE ENTRY ---
+// ============================================
 
+// 1. Show list of classes for grade entry
+app.get('/sis/faculty/grades', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+
+  try {
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, s.group_name
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
+
+    res.render('faculty-grades', { user: req.session.user, courses: coursesRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show grade entry form for a specific class
+app.get('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name 
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
+
+    // Get students and their existing grades (if any)
+    const studentsRes = await pool.query(`
+      SELECT u.id as user_id, u.full_name, u.username, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = $1
+      WHERE e.section_id = $1
+    `, [req.params.section_id]);
+
+    res.render('faculty-grades-entry', { 
+      user: req.session.user, 
+      section: sectionRes.rows[0], 
+      students: studentsRes.rows 
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 3. Save grades
+app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+
+  const sectionId = req.params.section_id;
+  const today = new Date().toISOString();
+
+  try {
+    for (const key in req.body) {
+      if (key.startsWith('midterm_')) {
+        const studentId = key.split('_')[1];
+        const midterm = Number(req.body[key]) || 0;
+        const final = Number(req.body['final_' + studentId]) || 0;
+
+        // Calculate total, letter grade, and GPA
+        const total = (midterm + final) / 2;
+        let letter = 'F';
+        let gpa = 0.0;
+
+        if (total >= 90) { letter = 'A'; gpa = 4.0; }
+        else if (total >= 80) { letter = 'B'; gpa = 3.0; }
+        else if (total >= 70) { letter = 'C'; gpa = 2.0; }
+        else if (total >= 60) { letter = 'D'; gpa = 1.0; }
+
+        // Upsert grade (Insert or Update if exists)
+        await pool.query(`
+          INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (student_id, section_id) 
+          DO UPDATE SET midterm_grade = $3, final_grade = $4, letter_grade = $5, gpa_points = $6
+        `, [studentId, sectionId, midterm, final, letter, gpa]);
+      }
+    }
+    req.flash('success', 'Grades saved successfully.');
+    res.redirect('/sis/faculty/grades/' + sectionId);
+  } catch (err) {
+    res.status(500).send("Error saving grades: " + err.message);
+  }
+});
 
 
 

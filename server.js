@@ -756,7 +756,83 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   }
 });
 
+// ============================================
+// --- STUDENT: DOCUMENT REQUESTS ---
+// ============================================
 
+// 1. View Document Requests Page
+app.get('/sis/my/documents', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const requestsRes = await pool.query(`
+      SELECT * FROM document_requests 
+      WHERE student_id = $1 
+      ORDER BY requested_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-documents', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Submit a Document Request
+app.post('/sis/my/documents/request', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  const { document_type } = req.body;
+
+  try {
+    await pool.query(`
+      INSERT INTO document_requests (student_id, document_type, status) 
+      VALUES ($1, $2, 'pending')
+    `, [req.session.user.id, document_type]);
+
+    req.flash('success', 'Document request submitted successfully.');
+    res.redirect('/sis/my/documents');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// ============================================
+// --- ADMIN: DOCUMENT REQUESTS ---
+// ============================================
+
+// 3. Admin View All Requests
+app.get('/sis/admin/documents', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  try {
+    const requestsRes = await pool.query(`
+      SELECT dr.*, u.full_name as student_name, u.username
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      ORDER BY dr.requested_at DESC
+    `);
+
+    res.render('admin-documents', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 4. Admin Process Request (Mark Ready or Reject)
+app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+
+  const { status } = req.body; // 'ready' or 'rejected'
+  const requestId = req.params.id;
+
+  try {
+    await pool.query(`UPDATE document_requests SET status = $1 WHERE id = $2`, [status, requestId]);
+    req.flash('success', 'Request status updated.');
+    res.redirect('/sis/admin/documents');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
 
 // ============================================
 // --- ADMIN DASHBOARD ---

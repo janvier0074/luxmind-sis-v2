@@ -148,12 +148,19 @@
               </div>
             </div>
             
-            <div class="req-actions">
+                        <div class="req-actions" style="text-align: right;">
               <span class="badge <%= req.status %>"><%= req.status %></span>
+              
+              <% if (req.admin_notes) { %>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.5rem; background: var(--ice); padding: 0.5rem; border-radius: 6px; max-width: 250px;">
+                  <i class="fas fa-comment-dots" style="color: var(--blue);"></i> <%= req.admin_notes %>
+                </div>
+              <% } %>
+
               <% if (req.status === 'pending') { %>
                 <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Est. time: 2-3 days</span>
               <% } else if (req.status === 'ready') { %>
-                <a href="#" class="btn-download" onclick="alert('Downloading Document... (Simulation)'); return false;"><i class="fas fa-download"></i> Download</a>
+                <a href="/sis/my/documents/view/<%= req.id %>" target="_blank" class="btn-download"><i class="fas fa-eye"></i> View Document</a>
               <% } %>
             </div>
           </div>

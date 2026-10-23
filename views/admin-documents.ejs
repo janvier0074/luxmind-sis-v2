@@ -147,7 +147,25 @@
                 </div>
               </td>
               <td><%= new Date(req.requested_at).toLocaleDateString() %></td>
-              <td><span class="badge <%= req.status %>"><%= req.status %></span></td>
+                            <td>
+                <span class="badge <%= req.status %>"><%= req.status %></span>
+                <% if (req.admin_notes) { %>
+                  <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; font-style: italic;">"<%= req.admin_notes %>"</div>
+                <% } %>
+              </td>
+              <td>
+                <% if (req.status === 'pending') { %>
+                  <form method="POST" action="/sis/admin/documents/<%= req.id %>/status" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <input type="text" name="admin_notes" placeholder="Message to student (optional)" style="padding: 0.5rem; border: 1px solid var(--frost); border-radius: 6px; font-size: 0.8rem;">
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button type="submit" name="status" value="ready" class="btn-action btn-ready"><i class="fas fa-check"></i> Ready</button>
+                      <button type="submit" name="status" value="rejected" class="btn-action btn-reject"><i class="fas fa-times"></i> Reject</button>
+                    </div>
+                  </form>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-size: 0.8rem; font-weight: 700;">Processed</span>
+                <% } %>
+              </td>
               <td>
                 <% if (req.status === 'pending') { %>
                   <form method="POST" action="/sis/admin/documents/<%= req.id %>/status" style="display: inline;">

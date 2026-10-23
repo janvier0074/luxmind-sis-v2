@@ -822,13 +822,61 @@ app.get('/sis/admin/documents', requireLogin, async (req, res) => {
 app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
 
-  const { status } = req.body; // 'ready' or 'rejected'
+  const { status, admin_notes } = req.body; 
   const requestId = req.params.id;
 
   try {
-    await pool.query(`UPDATE document_requests SET status = $1 WHERE id = $2`, [status, requestId]);
+    await pool.query(
+      `UPDATE document_requests SET status = $1, admin_notes = $2 WHERE id = $3`, 
+      [status, admin_notes || null, requestId]
+    );
     req.flash('success', 'Request status updated.');
     res.redirect('/sis/admin/documents');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// ============================================
+// --- STUDENT: VIEW DYNAMIC DOCUMENT ---
+// ============================================
+app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    // 1. Verify the request exists, belongs to this student, and is READY
+    const reqRes = await pool.query(`
+      SELECT * FROM document_requests 
+      WHERE id = $1 AND student_id = $2 AND status = 'ready'
+    `, [req.params.id, req.session.user.id]);
+
+    if (reqRes.rows.length === 0) {
+      return res.send("Document not ready or unauthorized.");
+    }
+
+    // 2. Fetch the LIVE student data
+    const profileRes = await pool.query(`
+      SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.id = $1
+    `, [req.session.user.id]);
+
+    // 3. Fetch their CURRENT enrolled courses
+    const coursesRes = await pool.query(`
+      SELECT c.code, c.title, c.credits
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+
+    res.render('document-template', {
+      user: req.session.user,
+      profile: profileRes.rows[0],
+      courses: coursesRes.rows,
+      document: reqRes.rows[0],
+      today: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    });
   } catch (err) {
     res.status(500).send("Error: " + err.message);
   }

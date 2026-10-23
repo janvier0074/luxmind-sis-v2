@@ -382,7 +382,13 @@ app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
       WHERE cr.status = 'pending_advisor'
     `);
 
-    res.render('advisor', { user: req.session.user, pendingStudents: studentsRes.rows, pendingCourses: coursesRes.rows });
+    // ADDED GREETING HERE
+    res.render('advisor', { 
+      user: req.session.user, 
+      greeting: getGreeting(),
+      pendingStudents: studentsRes.rows, 
+      pendingCourses: coursesRes.rows 
+    });
   } catch (err) {
     res.status(500).send("Advisor Error: " + err.message);
   }
@@ -423,7 +429,12 @@ app.get('/sis/faculty', requireLogin, async (req, res) => {
       WHERE s.teacher_id = $1
     `, [req.session.user.id]);
 
-    res.render('faculty-dashboard', { user: req.session.user, courses: coursesRes.rows });
+    // ADDED GREETING HERE
+    res.render('faculty-dashboard', { 
+      user: req.session.user, 
+      greeting: getGreeting(),
+      courses: coursesRes.rows 
+    });
   } catch (err) {
     res.status(500).send("Error: " + err.message);
   }
@@ -590,8 +601,10 @@ app.get('/sis/admin', requireLogin, async (req, res) => {
     const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
     const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
 
+    // ADDED GREETING HERE
     res.render('admin-dashboard', { 
       user: req.session.user,
+      greeting: getGreeting(),
       stats: {
         students: studentsCount.rows[0].count,
         teachers: teachersCount.rows[0].count,
@@ -820,7 +833,6 @@ app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
       const s = infoRes.rows[0];
       const statusLabel = status === 'ready' ? 'APPROVED ✅' : 'REJECTED ❌';
       
-      // USE RESEND API INSTEAD OF NODEMAILER
       try {
         await resend.emails.send({
           from: 'LuxMind Registrar <onboarding@resend.dev>',

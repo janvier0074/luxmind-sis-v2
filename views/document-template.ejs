@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Official Document - <%= profile.full_name %></title>
+  <title><%= document.document_type %> - <%= profile.full_name %></title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,9 +20,14 @@
     .content { font-size: 1rem; line-height: 1.8; color: #334155; margin-bottom: 3rem; }
     .content strong { color: #0a1e32; }
     
-    .courses-table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
-    .courses-table th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #0a1e32; border-bottom: 2px solid #e2e8f0; }
-    .courses-table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+    /* Tables for Transcripts and Certificates */
+    .data-table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+    .data-table th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: #0a1e32; border-bottom: 2px solid #e2e8f0; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+    
+    /* Letter Formatting for Recommendation */
+    .letter-body { font-family: 'Times New Roman', serif; font-size: 1.1rem; line-height: 1.8; color: #1a202c; }
+    .letter-body p { margin-bottom: 1.5rem; }
     
     .footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5rem; }
     .signature { text-align: center; }
@@ -52,25 +57,87 @@
 
     <div class="title"><%= document.document_type %></div>
 
-    <div class="content">
-      <p>This is to certify that <strong><%= profile.full_name %></strong>, bearing Student ID <strong><%= profile.admission_number || profile.username %></strong>, is a registered student at LuxMind University.</p>
-      
-      <p>He/She is currently enrolled in the <strong><%= profile.class_level %></strong> program and is in <strong>Semester <%= profile.current_semester %></strong> for the current academic year.</p>
-      
-      <% if (document.document_type === 'Enrollment Certificate' || document.document_type === 'Official Transcript') { %>
-        <p style="margin-top: 2rem;">The following courses are officially registered and active in the student's academic record:</p>
-        <table class="courses-table">
+    <!-- 1. OFFICIAL TRANSCRIPT LAYOUT -->
+    <% if (document.document_type === 'Official Transcript') { %>
+      <div class="content">
+        <p>This official transcript is issued to <strong><%= profile.full_name %></strong> (ID: <%= profile.admission_number || profile.username %>) for the <strong><%= profile.class_level %></strong> program.</p>
+        
+        <table class="data-table">
           <thead>
             <tr>
-              <th>Course Code</th>
+              <th>Code</th>
               <th>Course Title</th>
               <th>Credits</th>
+              <th>Midterm</th>
+              <th>Final</th>
+              <th>Grade</th>
+              <th>GPA</th>
             </tr>
           </thead>
           <tbody>
-            <% if (courses.length === 0) { %>
-              <tr><td colspan="3" style="text-align: center; font-style: italic;">No active enrollments found.</td></tr>
-            <% } %>
+            <% let totalCredits = 0; let totalPoints = 0; %>
+            <% courses.forEach(c => { %>
+              <% 
+                totalCredits += Number(c.credits); 
+                totalPoints += (Number(c.gpa_points || 0) * Number(c.credits));
+              %>
+              <tr>
+                <td><strong><%= c.code %></strong></td>
+                <td><%= c.title %></td>
+                <td><%= c.credits %></td>
+                <td><%= c.midterm_grade || '-' %></td>
+                <td><%= c.final_grade || '-' %></td>
+                <td><strong><%= c.letter_grade || 'N/A' %></strong></td>
+                <td><%= c.gpa_points || '0.0' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        
+        <div style="text-align: right; margin-top: 2rem; border-top: 2px solid #0a1e32; padding-top: 1rem;">
+          <h3 style="color: #0a1e32; font-size: 1.2rem;">Cumulative GPA: <strong><%= totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00' %></strong></h3>
+          <p>Total Credits Attempted: <%= totalCredits %></p>
+        </div>
+      </div>
+
+    <!-- 2. RECOMMENDATION LETTER LAYOUT -->
+    <% } else if (document.document_type === 'Recommendation Letter') { %>
+      <div class="letter-body">
+        <p><strong>To Whom It May Concern,</strong></p>
+        <p>It is with great pleasure that I recommend <strong><%= profile.full_name %></strong> for academic and professional opportunities. As a student in the <strong><%= profile.class_level %></strong> program at LuxMind University, <%= profile.full_name.split(' ')[0] %> has consistently demonstrated dedication, academic excellence, and a strong work ethic.</p>
+        <p>Currently in Semester <%= profile.current_semester %>, <%= profile.full_name.split(' ')[0] %> has actively engaged in coursework, maintained good academic standing, and contributed positively to the university community.</p>
+        <p>I am confident that <%= profile.full_name.split(' ')[0] %> will continue to excel and be a valuable asset to any institution or organization. Please feel free to contact the Registrar's Office for any further information.</p>
+        <p>Sincerely,</p>
+      </div>
+
+    <!-- 3. STUDENT ID LETTER LAYOUT -->
+    <% } else if (document.document_type === 'Student ID Letter') { %>
+      <div class="content">
+        <p>This letter confirms the identity and enrollment status of the bearer:</p>
+        <table class="data-table" style="width: 70%; margin: 2rem auto;">
+          <tbody>
+            <tr><th>Full Name</th><td><strong><%= profile.full_name %></strong></td></tr>
+            <tr><th>Student Number</th><td><%= profile.admission_number || profile.username %></td></tr>
+            <tr><th>Program</th><td><%= profile.class_level %></td></tr>
+            <tr><th>Current Semester</th><td>Semester <%= profile.current_semester %></td></tr>
+            <tr><th>Email Address</th><td><%= profile.email %></td></tr>
+          </tbody>
+        </table>
+        <p>This student is officially registered at LuxMind University and is entitled to all campus privileges.</p>
+      </div>
+
+    <!-- 4. DEFAULT CERTIFICATE (Enrollment / Graduation) -->
+    <% } else { %>
+      <div class="content">
+        <p>This is to certify that <strong><%= profile.full_name %></strong>, bearing Student ID <strong><%= profile.admission_number || profile.username %></strong>, is a registered student at LuxMind University.</p>
+        <p>He/She is currently enrolled in the <strong><%= profile.class_level %></strong> program and is in <strong>Semester <%= profile.current_semester %></strong> for the current academic year.</p>
+        
+        <p style="margin-top: 2rem;">The following courses are officially registered and active in the student's academic record:</p>
+        <table class="data-table">
+          <thead>
+            <tr><th>Course Code</th><th>Course Title</th><th>Credits</th></tr>
+          </thead>
+          <tbody>
             <% courses.forEach(c => { %>
               <tr>
                 <td><strong><%= c.code %></strong></td>
@@ -80,23 +147,21 @@
             <% }) %>
           </tbody>
         </table>
-      <% } %>
-      
-      <p style="margin-top: 2rem;">This document is issued upon the request of the student for whatever legal purpose it may serve.</p>
-    </div>
+        <p style="margin-top: 2rem;">This document is issued upon the request of the student for whatever legal purpose it may serve.</p>
+      </div>
+    <% } %>
 
+    <!-- FOOTER (Common to all) -->
     <div class="footer">
       <div>
         <p style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Date Issued: <%= today %></p>
-        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Document Reference: DOC-<%= document.id %>-<%= profile.admission_number %></p>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">Ref: DOC-<%= document.id %>-<%= profile.admission_number || profile.username %></p>
       </div>
       <div class="signature">
         <div class="signature-line"></div>
         <p>University Registrar</p>
       </div>
-      <div class="seal">
-        LUXMIND<br>OFFICIAL
-      </div>
+      <div class="seal">LUXMIND<br>OFFICIAL</div>
     </div>
   </div>
 

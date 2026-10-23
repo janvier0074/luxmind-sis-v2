@@ -840,11 +840,12 @@ app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
 // ============================================
 // --- STUDENT: VIEW DYNAMIC DOCUMENT ---
 // ============================================
+// --- STUDENT: VIEW DYNAMIC DOCUMENT ---
+// ============================================
 app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-    // 1. Verify the request exists, belongs to this student, and is READY
     const reqRes = await pool.query(`
       SELECT * FROM document_requests 
       WHERE id = $1 AND student_id = $2 AND status = 'ready'
@@ -854,19 +855,19 @@ app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
       return res.send("Document not ready or unauthorized.");
     }
 
-    // 2. Fetch the LIVE student data
     const profileRes = await pool.query(`
       SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester
-      FROM users u
-      JOIN student_profiles sp ON sp.user_id = u.id
+      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
       WHERE u.id = $1
     `, [req.session.user.id]);
 
-    // 3. Fetch their CURRENT enrolled courses
+    // Fetch enrollments AND grades (for the transcript)
     const coursesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits
+      SELECT c.code, c.title, c.credits, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
+      LEFT JOIN grades g ON g.student_id = e.user_id AND g.section_id = e.section_id
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
@@ -881,7 +882,6 @@ app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
     res.status(500).send("Error: " + err.message);
   }
 });
-
 // ============================================
 // --- ADMIN DASHBOARD ---
 // ============================================

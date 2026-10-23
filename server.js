@@ -778,16 +778,17 @@ app.get('/sis/my/documents', requireLogin, async (req, res) => {
 });
 
 // 2. Submit a Document Request
+// 2. Submit a Document Request
 app.post('/sis/my/documents/request', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
-  const { document_type } = req.body;
+  const { document_type, notes } = req.body;
 
   try {
     await pool.query(`
-      INSERT INTO document_requests (student_id, document_type, status) 
-      VALUES ($1, $2, 'pending')
-    `, [req.session.user.id, document_type]);
+      INSERT INTO document_requests (student_id, document_type, status, notes) 
+      VALUES ($1, $2, 'pending', $3)
+    `, [req.session.user.id, document_type, notes || null]);
 
     req.flash('success', 'Document request submitted successfully.');
     res.redirect('/sis/my/documents');
@@ -795,7 +796,6 @@ app.post('/sis/my/documents/request', requireLogin, async (req, res) => {
     res.status(500).send("Error: " + err.message);
   }
 });
-
 // ============================================
 // --- ADMIN: DOCUMENT REQUESTS ---
 // ============================================

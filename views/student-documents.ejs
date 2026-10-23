@@ -7,7 +7,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); }
+    :root {
+      --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; 
+      --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --success: #1f8a5f; --danger: #b33e2e;
+    }
     body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
     
     .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
@@ -21,31 +25,50 @@
     .menu-link i { width: 25px; color: var(--gold); }
 
     .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
-    .top-bar { margin-bottom: 2rem; }
-    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
-    .top-bar p { color: #64748b; font-size: 0.95rem; }
+    .top-bar { margin-bottom: 2.5rem; }
+    .top-bar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .top-bar p { color: #64748b; font-size: 1rem; font-weight: 500; margin-top: 0.3rem; }
 
-    .layout { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+    .layout { display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start; }
     
-    .form-card { background: #fff; padding: 2rem; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); height: fit-content; }
-    .form-card h3 { margin-bottom: 1.5rem; color: var(--navy); }
+    /* New Request Form */
+    .form-card { background: #fff; padding: 2rem; border-radius: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--frost); position: sticky; top: 2rem; }
+    .form-card h3 { margin-bottom: 1.5rem; color: var(--navy); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
     .form-group { margin-bottom: 1.5rem; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: var(--ice); outline: none; }
-    .btn-submit { background: var(--navy); color: #fff; padding: 1rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; width: 100%; transition: 0.2s; }
-    .btn-submit:hover { background: var(--blue); }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--navy); }
+    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; transition: 0.2s; font-size: 0.95rem; color: var(--navy); }
+    .form-control:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .btn-submit { background: var(--navy); color: #fff; padding: 1rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+    .btn-submit:hover { background: var(--blue); transform: translateY(-2px); }
 
-    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { background: var(--navy); color: #fff; padding: 1.2rem 1rem; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
-    .data-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; }
+    /* Request Cards List */
+    .requests-list { display: flex; flex-direction: column; gap: 1rem; }
+    .request-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); display: flex; align-items: center; justify-content: space-between; transition: 0.2s; position: relative; overflow: hidden; }
+    .request-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px -8px rgba(10,30,50,0.15); }
+    .request-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+    .request-card.pending::before { background: var(--amber); }
+    .request-card.ready::before { background: var(--success); }
+    .request-card.rejected::before { background: var(--danger); }
+
+    .req-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 1.5rem; }
+    .req-icon.pending { background: #fef3c7; color: #d97706; }
+    .req-icon.ready { background: #dcfce7; color: #16a34a; }
+    .req-icon.rejected { background: #fee2e2; color: #dc2626; }
+
+    .req-info h4 { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 0.3rem; }
+    .req-info p { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+    .req-info .notes { font-size: 0.8rem; color: #94a3b8; font-style: italic; margin-top: 0.3rem; }
     
-    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+    .req-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; }
+    .badge { padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
     .badge.pending { background: #fef3c7; color: #d97706; }
     .badge.ready { background: #dcfce7; color: #16a34a; }
     .badge.rejected { background: #fee2e2; color: #dc2626; }
     
-    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; }
+    .btn-download { background: var(--gold); color: var(--navy); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
+    .btn-download:hover { background: var(--amber); transform: scale(1.05); }
+    
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
   </style>
 </head>
 <body>
@@ -67,21 +90,22 @@
   <main class="main-content">
     <div class="top-bar">
       <h1>Document Requests</h1>
-      <p>Request official documents from the Registrar.</p>
+      <p>Request official documents from the Registrar's Office.</p>
     </div>
 
     <% if (flash.success && flash.success.length > 0) { %>
-      <div class="alert-success"><%= flash.success[0] %></div>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
     <% } %>
 
     <div class="layout">
       <!-- Left: Request Form -->
       <div class="form-card">
-        <h3><i class="fas fa-plus-circle" style="color: var(--amber);"></i> New Request</h3>
+        <h3><i class="fas fa-file-signature" style="color: var(--amber);"></i> New Request</h3>
         <form method="POST" action="/sis/my/documents/request">
           <div class="form-group">
             <label>Select Document Type</label>
             <select name="document_type" class="form-control" required>
+              <option value="" disabled selected>-- Choose a document --</option>
               <option value="Enrollment Certificate">Enrollment Certificate</option>
               <option value="Official Transcript">Official Transcript</option>
               <option value="Student ID Letter">Student ID Letter</option>
@@ -89,33 +113,51 @@
               <option value="Graduation Letter">Graduation Letter</option>
             </select>
           </div>
-          <button type="submit" class="btn-submit">Submit Request</button>
+          <div class="form-group">
+            <label>Reason / Special Instructions (Optional)</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="e.g., Needed for a visa application..."></textarea>
+          </div>
+          <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Request</button>
         </form>
       </div>
 
       <!-- Right: Request History -->
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Document Type</th>
-              <th>Date Requested</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (requests.length === 0) { %>
-              <tr><td colspan="3" style="text-align: center; padding: 2rem;">You have not requested any documents yet.</td></tr>
-            <% } %>
-            <% requests.forEach(req => { %>
-              <tr>
-                <td><strong><%= req.document_type %></strong></td>
-                <td><%= new Date(req.requested_at).toLocaleDateString() %></td>
-                <td><span class="badge <%= req.status %>"><%= req.status %></span></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+      <div class="requests-list">
+        <% if (requests.length === 0) { %>
+          <div style="background:#fff; padding: 3rem; border-radius: 1.25rem; text-align: center; color: #64748b; border: 1px solid var(--frost);">
+            <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--frost); margin-bottom: 1rem;"></i>
+            <h3>No requests yet</h3>
+            <p>Submit a form on the left to request your first document.</p>
+          </div>
+        <% } %>
+        
+        <% requests.forEach(req => { %>
+          <div class="request-card <%= req.status %>">
+            <div style="display: flex; align-items: center;">
+              <div class="req-icon <%= req.status %>">
+                <% if(req.status === 'pending') { %><i class="fas fa-clock"></i><% } %>
+                <% if(req.status === 'ready') { %><i class="fas fa-check-circle"></i><% } %>
+                <% if(req.status === 'rejected') { %><i class="fas fa-times-circle"></i><% } %>
+              </div>
+              <div class="req-info">
+                <h4><%= req.document_type %></h4>
+                <p>Requested on: <%= new Date(req.requested_at).toLocaleDateString() %></p>
+                <% if (req.notes) { %>
+                  <div class="notes">Note: "<%= req.notes %>"</div>
+                <% } %>
+              </div>
+            </div>
+            
+            <div class="req-actions">
+              <span class="badge <%= req.status %>"><%= req.status %></span>
+              <% if (req.status === 'pending') { %>
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Est. time: 2-3 days</span>
+              <% } else if (req.status === 'ready') { %>
+                <a href="#" class="btn-download" onclick="alert('Downloading Document... (Simulation)'); return false;"><i class="fas fa-download"></i> Download</a>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
       </div>
     </div>
   </main>

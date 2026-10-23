@@ -238,6 +238,15 @@
   <!-- MAIN CONTENT -->
   <main class="main-content">
     
+    <% if (typeof unseenDocs !== 'undefined' && unseenDocs > 0) { %>
+      <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700;">
+        <div><i class="fas fa-bell" style="margin-right: 0.5rem; animation: pulse 1s infinite;"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %> regarding your document requests.</div>
+        <a href="/sis/my/documents" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">View Now</a>
+      </div>
+      <style>@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }</style>
+    <% } %>
+
+
     <div class="top-bar">
       <div class="greeting">
         <h1>Good night, <%= user.full_name.split(' ')[0] %> 👋</h1>

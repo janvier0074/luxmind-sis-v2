@@ -4,11 +4,20 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const flash = require('connect-flash');
 require('dotenv').config();
+const nodemailer = require('nodemailer');
 
 const app = express();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
+});
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
 });
 
 app.set('view engine', 'ejs');
@@ -18,9 +27,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'luxmind-secret', resave: false, saveUninitialized: false }));
 app.use(flash());
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.flash = { success: req.flash('success'), error: req.flash('error') };
+  res.locals.unseenDocs = 0;
+  
+  if (req.session.user && req.session.user.role === 'student') {
+    try {
+      const r = await pool.query(
+        `SELECT COUNT(*) FROM document_requests WHERE student_id = $1 AND status != 'pending' AND seen_by_student = false`,
+        [req.session.user.id]
+      );
+      res.locals.unseenDocs = parseInt(r.rows[0].count) || 0;
+    } catch (e) { res.locals.unseenDocs = 0; }
+  }
   next();
 });
 
@@ -765,6 +785,12 @@ app.get('/sis/my/documents', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
+
+    // Mark all processed requests as seen
+    await pool.query(
+      `UPDATE document_requests SET seen_by_student = true WHERE student_id = $1 AND status != 'pending'`, 
+      [req.session.user.id]
+    );
     const requestsRes = await pool.query(`
       SELECT * FROM document_requests 
       WHERE student_id = $1 
@@ -818,7 +844,6 @@ app.get('/sis/admin/documents', requireLogin, async (req, res) => {
   }
 });
 
-// 4. Admin Process Request (Mark Ready or Reject)
 app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
 
@@ -827,10 +852,44 @@ app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
 
   try {
     await pool.query(
-      `UPDATE document_requests SET status = $1, admin_notes = $2 WHERE id = $3`, 
+      `UPDATE document_requests SET status = $1, admin_notes = $2, seen_by_student = false WHERE id = $3`, 
       [status, admin_notes || null, requestId]
     );
-    req.flash('success', 'Request status updated.');
+
+    // Send Email
+    const infoRes = await pool.query(`
+      SELECT u.email, u.full_name, dr.document_type
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      WHERE dr.id = $1
+    `, [requestId]);
+
+    if (infoRes.rows.length > 0) {
+      const s = infoRes.rows[0];
+      const statusLabel = status === 'ready' ? 'APPROVED ✅' : 'REJECTED ❌';
+      
+      try {
+        await transporter.sendMail({
+          from: `"LuxMind Registrar" <${process.env.GMAIL_USER}>`,
+          to: s.email,
+          subject: `LuxMind SIS - Document Request ${statusLabel}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
+              <h2 style="color: #0a1e32;">LuxMind University</h2>
+              <p>Dear <strong>${s.full_name}</strong>,</p>
+              <p>Your document request for <strong>${s.document_type}</strong> has been <strong style="color:${status === 'ready' ? 'green' : 'red'};">${statusLabel}</strong>.</p>
+              ${admin_notes ? `<p><strong>Message from the Registrar:</strong> ${admin_notes}</p>` : ''}
+              <p>Please log in to your Student Portal to view and download your document.</p>
+              <a href="https://luxmind-sis-v2.onrender.com/sis/my/documents" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Student Portal</a>
+            </div>
+          `
+        });
+      } catch (mailErr) {
+        console.error('Email failed:', mailErr.message);
+      }
+    }
+
+    req.flash('success', 'Request status updated and email sent.');
     res.redirect('/sis/admin/documents');
   } catch (err) {
     res.status(500).send("Error: " + err.message);

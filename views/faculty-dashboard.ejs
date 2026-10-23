@@ -97,7 +97,7 @@
     
     <div class="top-bar">
       <div class="greeting">
-        <h1>Welcome, <%= user.full_name %></h1>
+       <h1><%= greeting %>, <%= user.full_name.split(' ')[0] %> 👋</h1>
         <p>Here is an overview of your teaching schedule.</p>
       </div>
       <div class="user-pill">

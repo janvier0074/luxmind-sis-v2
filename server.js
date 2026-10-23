@@ -3,8 +3,8 @@ const path = require('path');
 const { Pool } = require('pg');
 const session = require('express-session');
 const flash = require('connect-flash');
+const { Resend } = require('resend');
 require('dotenv').config();
-const nodemailer = require('nodemailer');
 
 const app = express();
 const pool = new Pool({
@@ -12,13 +12,8 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -66,12 +61,11 @@ app.post('/login', async (req, res) => {
     if (result.rows.length > 0) {
       req.session.user = result.rows[0];
       
-      // Route based on exact role
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor/approvals');
       if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
       
-      return res.redirect('/sis/my'); // Student
+      return res.redirect('/sis/my');
     }
     req.flash('error', 'Invalid credentials');
     res.redirect('/login');
@@ -93,7 +87,7 @@ const requireLogin = (req, res, next) => {
 app.get('/', (req, res) => res.redirect('/login'));
 
 // ============================================
-// --- STUDENT DASHBOARD ---
+// --- STUDENT DASHBOARD & ACADEMICS ---
 // ============================================
 app.get('/sis/my', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
@@ -118,9 +112,6 @@ app.get('/sis/my', requireLogin, async (req, res) => {
   }
 });
 
-// ============================================
-// --- STUDENT TIMETABLE ---
-// ============================================
 app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -159,9 +150,6 @@ app.get('/sis/my/timetable', requireLogin, async (req, res) => {
   }
 });
 
-// ============================================
-// --- STUDENT ATTENDANCE ---
-// ============================================
 app.get('/sis/my/attendance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
@@ -189,6 +177,38 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
     res.render('attendance', { user: req.session.user, attendanceData: attendanceData });
   } catch (err) {
     res.status(500).send("Attendance Error: " + err.message);
+  }
+});
+
+app.get('/sis/my/transcript', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const gradesRes = await pool.query(`
+      SELECT c.code, c.title, c.credits, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+      ORDER BY c.semester_number ASC
+    `, [req.session.user.id]);
+
+    const courses = gradesRes.rows;
+
+    let totalCredits = 0;
+    let totalPoints = 0;
+
+    courses.forEach(c => {
+      totalCredits += Number(c.credits);
+      totalPoints += (Number(c.gpa_points) * Number(c.credits));
+    });
+
+    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+
+    res.render('transcript', { user: req.session.user, courses: courses, totalCredits: totalCredits, cgpa: cgpa });
+  } catch (err) {
+    res.status(500).send("Transcript Error: " + err.message);
   }
 });
 
@@ -261,6 +281,87 @@ app.post('/sis/my/registration/submit', requireLogin, async (req, res) => {
 });
 
 // ============================================
+// --- STUDENT: DOCUMENT REQUESTS ---
+// ============================================
+app.get('/sis/my/documents', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    await pool.query(
+      `UPDATE document_requests SET seen_by_student = true WHERE student_id = $1 AND status != 'pending'`, 
+      [req.session.user.id]
+    );
+    const requestsRes = await pool.query(`
+      SELECT * FROM document_requests 
+      WHERE student_id = $1 
+      ORDER BY requested_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-documents', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+app.post('/sis/my/documents/request', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  const { document_type, notes } = req.body;
+
+  try {
+    await pool.query(`
+      INSERT INTO document_requests (student_id, document_type, status, notes) 
+      VALUES ($1, $2, 'pending', $3)
+    `, [req.session.user.id, document_type, notes || null]);
+
+    req.flash('success', 'Document request submitted successfully.');
+    res.redirect('/sis/my/documents');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    const reqRes = await pool.query(`
+      SELECT * FROM document_requests 
+      WHERE id = $1 AND student_id = $2 AND status = 'ready'
+    `, [req.params.id, req.session.user.id]);
+
+    if (reqRes.rows.length === 0) {
+      return res.send("Document not ready or unauthorized.");
+    }
+
+    const profileRes = await pool.query(`
+      SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester
+      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.id = $1
+    `, [req.session.user.id]);
+
+    const coursesRes = await pool.query(`
+      SELECT c.code, c.title, c.credits, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN grades g ON g.student_id = e.user_id AND g.section_id = e.section_id
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+
+    res.render('document-template', {
+      user: req.session.user,
+      profile: profileRes.rows[0],
+      courses: coursesRes.rows,
+      document: reqRes.rows[0],
+      today: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// ============================================
 // --- ADVISOR APPROVALS ---
 // ============================================
 app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
@@ -308,7 +409,7 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 });
 
 // ============================================
-// --- FACULTY: ATTENDANCE MANAGEMENT ---
+// --- FACULTY ROUTES ---
 // ============================================
 app.get('/sis/faculty', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
@@ -392,299 +493,6 @@ app.post('/sis/faculty/attendance/:section_id', requireLogin, async (req, res) =
   }
 });
 
-
-// ============================================
-// --- ADMIN: STUDENT REGISTRY ---
-// ============================================
-
-// 1. List all students
-app.get('/sis/admin/students', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const studentsRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, adv.full_name as advisor_name
-      FROM users u
-      LEFT JOIN student_profiles sp ON sp.user_id = u.id
-      LEFT JOIN users adv ON adv.id = sp.advisor_id
-      WHERE u.role = 'student'
-      ORDER BY u.created_at DESC
-    `);
-
-    res.render('admin-students', { user: req.session.user, students: studentsRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 2. Show Registration Form
-app.get('/sis/admin/students/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor'`);
-    res.render('admin-student-new', { user: req.session.user, advisors: advisorsRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 3. Save New Student
-app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  const { full_name, username, email, class_level, advisor_id, admission_number } = req.body;
-  const defaultPassword = 'Student2026!';
-  const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
-
-  try {
-    // Insert into users
-    const userRes = await pool.query(
-      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id`,
-      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
-    );
-    const userId = userRes.rows[0].id;
-
-    // Insert into student_profiles
-    await pool.query(
-      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id) VALUES ($1, $2, $3, $4, $5)`,
-      [userId, generatedId, class_level || 'Computer Engineering', 1, advisor_id ? Number(advisor_id) : null]
-    );
-
-    req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
-    res.redirect('/sis/admin/students');
-  } catch (err) {
-    req.flash('error', 'Error creating student: ' + err.message);
-    res.redirect('/sis/admin/students/new');
-  }
-});
-
-// ============================================
-// --- ADMIN: TEACHER REGISTRY ---
-// ============================================
-
-// 1. List all teachers
-app.get('/sis/admin/teachers', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const teachersRes = await pool.query(`
-      SELECT id, full_name, username, email, created_at
-      FROM users
-      WHERE role = 'teacher'
-      ORDER BY created_at DESC
-    `);
-
-    res.render('admin-teachers', { user: req.session.user, teachers: teachersRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 2. Show Teacher Registration Form
-app.get('/sis/admin/teachers/new', requireLogin, (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-  res.render('admin-teacher-new', { user: req.session.user });
-});
-
-// 3. Save New Teacher
-app.post('/sis/admin/teachers/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  const { full_name, username, email } = req.body;
-  const defaultPassword = 'Teacher2026!';
-
-  try {
-    await pool.query(
-      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'teacher')`,
-      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
-    );
-
-    req.flash('success', `Teacher ${full_name} created! Password: ${defaultPassword}`);
-    res.redirect('/sis/admin/teachers');
-  } catch (err) {
-    req.flash('error', 'Error creating teacher: ' + err.message);
-    res.redirect('/sis/admin/teachers/new');
-  }
-});
-
-// ============================================
-// --- ADMIN: SECTIONS & GROUPS ---
-// ============================================
-
-// 1. Show all courses and their sections
-app.get('/sis/admin/sections', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    // Get all courses
-    const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC, code ASC`);
-    
-    // Get all sections with teacher names
-    const sectionsRes = await pool.query(`
-      SELECT s.*, u.full_name as teacher_name
-      FROM course_sections s
-      LEFT JOIN users u ON u.id = s.teacher_id
-    `);
-
-    // Group sections by course_id for easy rendering
-    const sectionsByCourse = {};
-    sectionsRes.rows.forEach(sec => {
-      if (!sectionsByCourse[sec.course_id]) sectionsByCourse[sec.course_id] = [];
-      sectionsByCourse[sec.course_id].push(sec);
-    });
-
-    res.render('admin-sections', { 
-      user: req.session.user, 
-      courses: coursesRes.rows, 
-      sectionsByCourse: sectionsByCourse 
-    });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 2. Show form to create a new section for a course
-app.get('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const courseRes = await pool.query(`SELECT * FROM courses WHERE id = $1`, [req.params.course_id]);
-    if (courseRes.rows.length === 0) return res.redirect('/sis/admin/sections');
-
-    const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'teacher' ORDER BY full_name`);
-
-    res.render('admin-section-new', { 
-      user: req.session.user, 
-      course: courseRes.rows[0], 
-      teachers: teachersRes.rows 
-    });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 3. Save the new section to the database
-app.post('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  const courseId = Number(req.params.course_id);
-  const { group_name, teacher_id, day_of_week, start_time, end_time, room, quota } = req.body;
-
-  try {
-    await pool.query(`
-      INSERT INTO course_sections 
-      (course_id, group_name, teacher_id, day_of_week, start_time, end_time, room, max_capacity) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [
-      courseId, 
-      group_name, 
-      teacher_id ? Number(teacher_id) : null, 
-      day_of_week, 
-      start_time, 
-      end_time, 
-      room, 
-      quota ? Number(quota) : 40
-    ]);
-
-    req.flash('success', 'New group created successfully.');
-    res.redirect('/sis/admin/sections');
-  } catch (err) {
-    req.flash('error', 'Error creating group: ' + err.message);
-    res.redirect('/sis/admin/sections/' + courseId + '/new');
-  }
-});
-
-// ============================================
-// --- ADMIN: FINANCE & REGISTRATIONS ---
-// ============================================
-
-// 1. Master Registration List
-app.get('/sis/admin/registrations', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const registrationsRes = await pool.query(`
-      SELECT cr.id, cr.status, cr.requested_at, 
-             u.full_name as student_name, u.username,
-             c.code as course_code, c.title as course_title
-      FROM course_registrations cr
-      JOIN users u ON u.id = cr.student_id
-      JOIN courses c ON c.id = cr.course_id
-      ORDER BY cr.requested_at DESC
-    `);
-
-    res.render('admin-registrations', { user: req.session.user, registrations: registrationsRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 2. Finance Dashboard
-// 2. Finance Dashboard
-app.get('/sis/admin/finance', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const feesRes = await pool.query(`SELECT * FROM fee_structure ORDER BY program, semester`);
-
-    // Get ALL students
-    const studentsRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester
-      FROM users u
-      JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE u.role = 'student'
-    `);
-
-    // Calculate balances in JavaScript (safer than complex SQL joins)
-    const balances = [];
-    for (const student of studentsRes.rows) {
-      // Find the matching fee in the fee array
-      const matchingFee = feesRes.rows.find(f => 
-        f.program.toLowerCase().trim() === student.class_level.toLowerCase().trim() && 
-        Number(f.semester) === Number(student.current_semester)
-      );
-
-      const totalFee = matchingFee ? Number(matchingFee.amount) : 0;
-
-      // Get total paid
-      const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [student.id]);
-      const totalPaid = Number(paidRes.rows[0].total);
-
-      balances.push({
-        ...student,
-        total_fee: totalFee,
-        total_paid: totalPaid,
-        balance: totalFee - totalPaid
-      });
-    }
-
-    res.render('admin-finance', { user: req.session.user, fees: feesRes.rows, balances });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 3. Add Fee Structure
-app.post('/sis/admin/finance/new', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  const { program, semester, amount } = req.body;
-  try {
-    await pool.query(`INSERT INTO fee_structure (program, semester, amount) VALUES ($1, $2, $3)`, [program, Number(semester), Number(amount)]);
-    req.flash('success', 'Fee structure added.');
-    res.redirect('/sis/admin/finance');
-  } catch (err) {
-    req.flash('error', 'Error adding fee: ' + err.message);
-    res.redirect('/sis/admin/finance');
-  }
-});
-
-// ============================================
-// --- FACULTY: GRADE ENTRY ---
-// ============================================
-
-// 1. Show list of classes for grade entry
 app.get('/sis/faculty/grades', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
 
@@ -702,7 +510,6 @@ app.get('/sis/faculty/grades', requireLogin, async (req, res) => {
   }
 });
 
-// 2. Show grade entry form for a specific class
 app.get('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
 
@@ -716,7 +523,6 @@ app.get('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
 
     if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
 
-    // Get students and their existing grades (if any)
     const studentsRes = await pool.query(`
       SELECT u.id as user_id, u.full_name, u.username, 
              g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
@@ -736,12 +542,10 @@ app.get('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   }
 });
 
-// 3. Save grades
 app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
 
   const sectionId = req.params.section_id;
-  const today = new Date().toISOString();
 
   try {
     for (const key in req.body) {
@@ -750,7 +554,6 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         const midterm = Number(req.body[key]) || 0;
         const final = Number(req.body['final_' + studentId]) || 0;
 
-        // Calculate total, letter grade, and GPA
         const total = (midterm + final) / 2;
         let letter = 'F';
         let gpa = 0.0;
@@ -760,7 +563,6 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         else if (total >= 70) { letter = 'C'; gpa = 2.0; }
         else if (total >= 60) { letter = 'D'; gpa = 1.0; }
 
-        // Upsert grade (Insert or Update if exists)
         await pool.query(`
           INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points)
           VALUES ($1, $2, $3, $4, $5, $6)
@@ -777,172 +579,7 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
 });
 
 // ============================================
-// --- STUDENT: DOCUMENT REQUESTS ---
-// ============================================
-
-// 1. View Document Requests Page
-app.get('/sis/my/documents', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
-
-  try {
-
-    // Mark all processed requests as seen
-    await pool.query(
-      `UPDATE document_requests SET seen_by_student = true WHERE student_id = $1 AND status != 'pending'`, 
-      [req.session.user.id]
-    );
-    const requestsRes = await pool.query(`
-      SELECT * FROM document_requests 
-      WHERE student_id = $1 
-      ORDER BY requested_at DESC
-    `, [req.session.user.id]);
-
-    res.render('student-documents', { user: req.session.user, requests: requestsRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// 2. Submit a Document Request
-// 2. Submit a Document Request
-app.post('/sis/my/documents/request', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
-
-  const { document_type, notes } = req.body;
-
-  try {
-    await pool.query(`
-      INSERT INTO document_requests (student_id, document_type, status, notes) 
-      VALUES ($1, $2, 'pending', $3)
-    `, [req.session.user.id, document_type, notes || null]);
-
-    req.flash('success', 'Document request submitted successfully.');
-    res.redirect('/sis/my/documents');
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-// ============================================
-// --- ADMIN: DOCUMENT REQUESTS ---
-// ============================================
-
-// 3. Admin View All Requests
-app.get('/sis/admin/documents', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  try {
-    const requestsRes = await pool.query(`
-      SELECT dr.*, u.full_name as student_name, u.username
-      FROM document_requests dr
-      JOIN users u ON u.id = dr.student_id
-      ORDER BY dr.requested_at DESC
-    `);
-
-    res.render('admin-documents', { user: req.session.user, requests: requestsRes.rows });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'admin') return res.redirect('/login');
-
-  const { status, admin_notes } = req.body; 
-  const requestId = req.params.id;
-
-  try {
-    await pool.query(
-      `UPDATE document_requests SET status = $1, admin_notes = $2, seen_by_student = false WHERE id = $3`, 
-      [status, admin_notes || null, requestId]
-    );
-
-    // Send Email
-    const infoRes = await pool.query(`
-      SELECT u.email, u.full_name, dr.document_type
-      FROM document_requests dr
-      JOIN users u ON u.id = dr.student_id
-      WHERE dr.id = $1
-    `, [requestId]);
-
-    if (infoRes.rows.length > 0) {
-      const s = infoRes.rows[0];
-      const statusLabel = status === 'ready' ? 'APPROVED ✅' : 'REJECTED ❌';
-      
-      try {
-        await transporter.sendMail({
-          from: `"LuxMind Registrar" <${process.env.GMAIL_USER}>`,
-          to: s.email,
-          subject: `LuxMind SIS - Document Request ${statusLabel}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
-              <h2 style="color: #0a1e32;">LuxMind University</h2>
-              <p>Dear <strong>${s.full_name}</strong>,</p>
-              <p>Your document request for <strong>${s.document_type}</strong> has been <strong style="color:${status === 'ready' ? 'green' : 'red'};">${statusLabel}</strong>.</p>
-              ${admin_notes ? `<p><strong>Message from the Registrar:</strong> ${admin_notes}</p>` : ''}
-              <p>Please log in to your Student Portal to view and download your document.</p>
-              <a href="https://luxmind-sis-v2.onrender.com/sis/my/documents" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Student Portal</a>
-            </div>
-          `
-        });
-      } catch (mailErr) {
-        console.error('Email failed:', mailErr.message);
-      }
-    }
-
-    req.flash('success', 'Request status updated and email sent.');
-    res.redirect('/sis/admin/documents');
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-
-// ============================================
-// --- STUDENT: VIEW DYNAMIC DOCUMENT ---
-// ============================================
-// --- STUDENT: VIEW DYNAMIC DOCUMENT ---
-// ============================================
-app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
-
-  try {
-    const reqRes = await pool.query(`
-      SELECT * FROM document_requests 
-      WHERE id = $1 AND student_id = $2 AND status = 'ready'
-    `, [req.params.id, req.session.user.id]);
-
-    if (reqRes.rows.length === 0) {
-      return res.send("Document not ready or unauthorized.");
-    }
-
-    const profileRes = await pool.query(`
-      SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester
-      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE u.id = $1
-    `, [req.session.user.id]);
-
-    // Fetch enrollments AND grades (for the transcript)
-    const coursesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, 
-             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN grades g ON g.student_id = e.user_id AND g.section_id = e.section_id
-      WHERE e.user_id = $1
-    `, [req.session.user.id]);
-
-    res.render('document-template', {
-      user: req.session.user,
-      profile: profileRes.rows[0],
-      courses: coursesRes.rows,
-      document: reqRes.rows[0],
-      today: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-    });
-  } catch (err) {
-    res.status(500).send("Error: " + err.message);
-  }
-});
-// ============================================
-// --- ADMIN DASHBOARD ---
+// --- ADMIN ROUTES ---
 // ============================================
 app.get('/sis/admin', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
@@ -967,50 +604,251 @@ app.get('/sis/admin', requireLogin, async (req, res) => {
   }
 });
 
+// Students
+app.get('/sis/admin/students', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, adv.full_name as advisor_name
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN users adv ON adv.id = sp.advisor_id
+      WHERE u.role = 'student'
+      ORDER BY u.created_at DESC
+    `);
+    res.render('admin-students', { user: req.session.user, students: studentsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
 
-// ============================================
-// --- STUDENT TRANSCRIPT ---
-// ============================================
-app.get('/sis/my/transcript', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'student') return res.redirect('/login');
+app.get('/sis/admin/students/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor'`);
+    res.render('admin-student-new', { user: req.session.user, advisors: advisorsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { full_name, username, email, class_level, advisor_id, admission_number } = req.body;
+  const defaultPassword = 'Student2026!';
+  const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
 
   try {
-    const gradesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, 
-             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
-      FROM grades g
-      JOIN course_sections s ON s.id = g.section_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1
-      ORDER BY c.semester_number ASC
-    `, [req.session.user.id]);
-
-    const courses = gradesRes.rows;
-
-    // Calculate CGPA
-    let totalCredits = 0;
-    let totalPoints = 0;
-
-    courses.forEach(c => {
-      totalCredits += Number(c.credits);
-      totalPoints += (Number(c.gpa_points) * Number(c.credits));
-    });
-
-    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
-
-    res.render('transcript', { 
-      user: req.session.user, 
-      courses: courses, 
-      totalCredits: totalCredits, 
-      cgpa: cgpa 
-    });
+    const userRes = await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id`,
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
+    );
+    const userId = userRes.rows[0].id;
+    await pool.query(
+      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id) VALUES ($1, $2, $3, $4, $5)`,
+      [userId, generatedId, class_level || 'Computer Engineering', 1, advisor_id ? Number(advisor_id) : null]
+    );
+    req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
+    res.redirect('/sis/admin/students');
   } catch (err) {
-    res.status(500).send("Transcript Error: " + err.message);
+    req.flash('error', 'Error creating student: ' + err.message);
+    res.redirect('/sis/admin/students/new');
   }
 });
 
+// Teachers
+app.get('/sis/admin/teachers', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const teachersRes = await pool.query(`SELECT id, full_name, username, email, created_at FROM users WHERE role = 'teacher' ORDER BY created_at DESC`);
+    res.render('admin-teachers', { user: req.session.user, teachers: teachersRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
 
+app.get('/sis/admin/teachers/new', requireLogin, (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  res.render('admin-teacher-new', { user: req.session.user });
+});
 
+app.post('/sis/admin/teachers/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { full_name, username, email } = req.body;
+  const defaultPassword = 'Teacher2026!';
+
+  try {
+    await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'teacher')`,
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword]
+    );
+    req.flash('success', `Teacher ${full_name} created! Password: ${defaultPassword}`);
+    res.redirect('/sis/admin/teachers');
+  } catch (err) {
+    req.flash('error', 'Error creating teacher: ' + err.message);
+    res.redirect('/sis/admin/teachers/new');
+  }
+});
+
+// Sections
+app.get('/sis/admin/sections', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC, code ASC`);
+    const sectionsRes = await pool.query(`
+      SELECT s.*, u.full_name as teacher_name
+      FROM course_sections s
+      LEFT JOIN users u ON u.id = s.teacher_id
+    `);
+    const sectionsByCourse = {};
+    sectionsRes.rows.forEach(sec => {
+      if (!sectionsByCourse[sec.course_id]) sectionsByCourse[sec.course_id] = [];
+      sectionsByCourse[sec.course_id].push(sec);
+    });
+    res.render('admin-sections', { user: req.session.user, courses: coursesRes.rows, sectionsByCourse: sectionsByCourse });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.get('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const courseRes = await pool.query(`SELECT * FROM courses WHERE id = $1`, [req.params.course_id]);
+    if (courseRes.rows.length === 0) return res.redirect('/sis/admin/sections');
+    const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'teacher' ORDER BY full_name`);
+    res.render('admin-section-new', { user: req.session.user, course: courseRes.rows[0], teachers: teachersRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const courseId = Number(req.params.course_id);
+  const { group_name, teacher_id, day_of_week, start_time, end_time, room, quota } = req.body;
+
+  try {
+    await pool.query(`
+      INSERT INTO course_sections 
+      (course_id, group_name, teacher_id, day_of_week, start_time, end_time, room, max_capacity) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [courseId, group_name, teacher_id ? Number(teacher_id) : null, day_of_week, start_time, end_time, room, quota ? Number(quota) : 40]);
+    req.flash('success', 'New group created successfully.');
+    res.redirect('/sis/admin/sections');
+  } catch (err) {
+    req.flash('error', 'Error creating group: ' + err.message);
+    res.redirect('/sis/admin/sections/' + courseId + '/new');
+  }
+});
+
+// Finance & Registrations
+app.get('/sis/admin/registrations', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const registrationsRes = await pool.query(`
+      SELECT cr.id, cr.status, cr.requested_at, u.full_name as student_name, u.username, c.code as course_code, c.title as course_title
+      FROM course_registrations cr
+      JOIN users u ON u.id = cr.student_id
+      JOIN courses c ON c.id = cr.course_id
+      ORDER BY cr.requested_at DESC
+    `);
+    res.render('admin-registrations', { user: req.session.user, registrations: registrationsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.get('/sis/admin/finance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const feesRes = await pool.query(`SELECT * FROM fee_structure ORDER BY program, semester`);
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, sp.class_level, sp.current_semester
+      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student'
+    `);
+    const balances = [];
+    for (const student of studentsRes.rows) {
+      const matchingFee = feesRes.rows.find(f => 
+        f.program.toLowerCase().trim() === student.class_level.toLowerCase().trim() && 
+        Number(f.semester) === Number(student.current_semester)
+      );
+      const totalFee = matchingFee ? Number(matchingFee.amount) : 0;
+      const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [student.id]);
+      const totalPaid = Number(paidRes.rows[0].total);
+      balances.push({ ...student, total_fee: totalFee, total_paid: totalPaid, balance: totalFee - totalPaid });
+    }
+    res.render('admin-finance', { user: req.session.user, fees: feesRes.rows, balances });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/finance/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { program, semester, amount } = req.body;
+  try {
+    await pool.query(`INSERT INTO fee_structure (program, semester, amount) VALUES ($1, $2, $3)`, [program, Number(semester), Number(amount)]);
+    req.flash('success', 'Fee structure added.');
+    res.redirect('/sis/admin/finance');
+  } catch (err) {
+    req.flash('error', 'Error adding fee: ' + err.message);
+    res.redirect('/sis/admin/finance');
+  }
+});
+
+// Admin Documents
+app.get('/sis/admin/documents', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const requestsRes = await pool.query(`
+      SELECT dr.*, u.full_name as student_name, u.username
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      ORDER BY dr.requested_at DESC
+    `);
+    res.render('admin-documents', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { status, admin_notes } = req.body; 
+  const requestId = req.params.id;
+
+  try {
+    await pool.query(
+      `UPDATE document_requests SET status = $1, admin_notes = $2, seen_by_student = false WHERE id = $3`, 
+      [status, admin_notes || null, requestId]
+    );
+
+    const infoRes = await pool.query(`
+      SELECT u.email, u.full_name, dr.document_type
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      WHERE dr.id = $1
+    `, [requestId]);
+
+    if (infoRes.rows.length > 0) {
+      const s = infoRes.rows[0];
+      const statusLabel = status === 'ready' ? 'APPROVED ✅' : 'REJECTED ❌';
+      
+      // USE RESEND API INSTEAD OF NODEMAILER
+      try {
+        await resend.emails.send({
+          from: 'LuxMind Registrar <onboarding@resend.dev>',
+          to: s.email,
+          subject: `LuxMind SIS - Document Request ${statusLabel}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
+              <h2 style="color: #0a1e32;">LuxMind University</h2>
+              <p>Dear <strong>${s.full_name}</strong>,</p>
+              <p>Your document request for <strong>${s.document_type}</strong> has been <strong style="color:${status === 'ready' ? 'green' : 'red'};">${statusLabel}</strong>.</p>
+              ${admin_notes ? `<p><strong>Message from the Registrar:</strong> ${admin_notes}</p>` : ''}
+              <p>Please log in to your Student Portal to view and download your document.</p>
+              <a href="https://luxmind-sis-v2.onrender.com/sis/my/documents" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Student Portal</a>
+            </div>
+          `
+        });
+        console.log('Email sent successfully via Resend.');
+      } catch (mailErr) {
+        console.error('Resend API Error:', mailErr);
+      }
+    }
+
+    req.flash('success', 'Request status updated and email sent.');
+    res.redirect('/sis/admin/documents');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
@@ -1025,7 +863,4 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
   `);
 });
 
-// ============================================
-// --- START SERVER ---
-// ============================================
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

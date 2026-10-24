@@ -362,6 +362,88 @@ app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
 });
 
 // ============================================
+// --- STUDENT FINANCE & SCHOLARSHIP ENGINE ---
+// ============================================
+
+app.get('/sis/my/finance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+
+  try {
+    // 1. Get Student Profile (for Scholarship rules)
+    const profileRes = await pool.query(`
+      SELECT u.full_name, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa
+      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.id = $1
+    `, [req.session.user.id]);
+    
+    const student = profileRes.rows[0];
+
+    // 2. POLICY ENGINE: Automatically calculate the scholarship
+    let scholarshipPercentage = 0;
+    let scholarshipName = 'None';
+
+    // Rule A: International = 50%
+    if (student.is_international) {
+      scholarshipPercentage = 50;
+      scholarshipName = 'International Undergraduate Scholarship';
+    }
+    
+    // Rule B: High GPA = 100%
+    if (student.high_school_gpa && student.high_school_gpa >= 3.5) {
+      scholarshipPercentage = 100;
+      scholarshipName = 'High Honor Merit Scholarship';
+    }
+
+    // 3. Get Base Tuition from Admin's Fee Structure
+    const feeRes = await pool.query(`
+      SELECT amount FROM fee_structure 
+      WHERE LOWER(program) = LOWER($1) AND semester = $2
+    `, [student.class_level, student.current_semester]);
+    
+    const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
+
+    // 4. Calculate Math
+    const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
+    const netTuition = baseTuition - scholarshipAmount;
+
+    // 5. Get Total Payments Made
+    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
+    const totalPaid = Number(paidRes.rows[0].total);
+
+    // 6. Final Debt
+    const debt = netTuition - totalPaid;
+
+    res.render('student-finance', {
+      user: req.session.user,
+      student: student,
+      baseTuition: baseTuition,
+      scholarshipName: scholarshipName,
+      scholarshipPercentage: scholarshipPercentage,
+      scholarshipAmount: scholarshipAmount,
+      netTuition: netTuition,
+      totalPaid: totalPaid,
+      debt: debt
+    });
+  } catch (err) {
+    res.status(500).send("Finance Error: " + err.message);
+  }
+});
+
+// Simulate Payment
+app.post('/sis/my/finance/pay', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const amount = Number(req.body.amount);
+  
+  try {
+    await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, amount]);
+    req.flash('success', `Payment of $${amount} processed successfully.`);
+    res.redirect('/sis/my/finance');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// ============================================
 // --- ADVISOR APPROVALS ---
 // ============================================
 app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {

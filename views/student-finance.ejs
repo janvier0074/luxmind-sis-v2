@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LuxMind SIS - My Finance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Invoice Layout */
+    .finance-layout { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start; }
+    
+    .invoice-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .invoice-header { background: var(--navy); color: #fff; padding: 2rem; border-bottom: 4px solid var(--amber); }
+    .invoice-header h2 { font-size: 1.5rem; font-weight: 800; }
+    .invoice-header p { color: #cbd5e1; font-size: 0.9rem; margin-top: 0.3rem; }
+    
+    .invoice-body { padding: 2rem; }
+    .invoice-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px dashed var(--frost); font-size: 1rem; font-weight: 600; }
+    .invoice-row.total { border-bottom: none; font-size: 1.2rem; font-weight: 800; color: var(--navy); padding-top: 1.5rem; }
+    
+    .scholarship-tag { background: #dcfce7; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; margin-left: 0.5rem; }
+
+    /* Payment Sidebar */
+    .payment-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2rem; text-align: center; }
+    .payment-card h3 { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; }
+    .debt-amount { font-size: 2.5rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem; }
+    
+    .form-group { margin-bottom: 1rem; text-align: left; }
+    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; font-size: 1rem; }
+    .btn-pay { background: var(--navy); color: #fff; padding: 1rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn-pay:hover { background: var(--blue); transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit"></i> Course Registration</a></li>
+      <li><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+      <li><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol"></i> Transcript</a></li>
+      <li><a href="/sis/my/finance" class="menu-link active"><i class="fas fa-wallet"></i> Accounting</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>My Finance</h1>
+      <p>View your tuition, scholarships, and make payments.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="finance-layout">
+      
+      <!-- Left: Official Invoice -->
+      <div class="invoice-card">
+        <div class="invoice-header">
+          <h2>Tuition Invoice</h2>
+          <p><%= student.class_level %> · Semester <%= student.current_semester %></p>
+        </div>
+        
+        <div class="invoice-body">
+          <div class="invoice-row">
+            <span>Base Tuition</span>
+            <span>$<%= baseTuition.toFixed(2) %></span>
+          </div>
+          
+          <div class="invoice-row" style="color: var(--success);">
+            <span>
+              Scholarship 
+              <% if (scholarshipPercentage > 0) { %>
+                <span class="scholarship-tag"><%= scholarshipName %> (<%= scholarshipPercentage %>%)</span>
+              <% } %>
+            </span>
+            <span>- $<%= scholarshipAmount.toFixed(2) %></span>
+          </div>
+
+          <div class="invoice-row" style="background: var(--ice); padding-left: 1rem; padding-right: 1rem; border-radius: 8px; margin: 1rem 0;">
+            <span>Net Tuition (After Scholarship)</span>
+            <span>$<%= netTuition.toFixed(2) %></span>
+          </div>
+          
+          <div class="invoice-row">
+            <span>Amount Paid</span>
+            <span style="color: var(--success);">- $<%= totalPaid.toFixed(2) %></span>
+          </div>
+          
+          <div class="invoice-row total">
+            <span>Remaining Debt</span>
+            <span style="color: <%= debt > 0 ? 'var(--danger)' : 'var(--success)' %>;">$<%= debt.toFixed(2) %></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Payment Action -->
+      <div class="payment-card">
+        <h3>Make a Payment</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Current Balance Due</p>
+        <div class="debt-amount">$<%= debt.toFixed(2) %></div>
+        
+        <% if (debt > 0) { %>
+          <form method="POST" action="/sis/my/finance/pay">
+            <div class="form-group">
+              <label style="font-size: 0.8rem; font-weight: 800; margin-bottom: 0.5rem; display: block;">Amount to Pay ($)</label>
+              <input type="number" name="amount" class="form-control" value="<%= debt %>" max="<%= debt %>" min="1" required>
+            </div>
+            <button type="submit" class="btn-pay"><i class="fas fa-credit-card"></i> Pay Now</button>
+          </form>
+        <% } else { %>
+          <div style="background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; font-weight: 700;">
+            <i class="fas fa-check-circle"></i> Your account is fully paid.
+          </div>
+        <% } %>
+      </div>
+      
+    </div>
+  </main>
+</body>
+</html>

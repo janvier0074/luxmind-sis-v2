@@ -85,7 +85,6 @@
     .tile.highlight { background: linear-gradient(135deg, var(--navy), var(--deep)); color: #fff; border: none; }
     .tile.highlight i { color: var(--amber); }
     .tile.highlight:hover { box-shadow: 0 15px 30px -10px rgba(10, 30, 50, 0.4); }
-
   </style>
 </head>
 <body>
@@ -108,10 +107,10 @@
           <i class="fas fa-file-alt main-icon"></i> Documents <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-pdf main-icon"></i> Transcript Request</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-id-card main-icon"></i> Student ID Request</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-certificate main-icon"></i> Enrollment Certificate</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-envelope-open-text main-icon"></i> Recommendation Letter</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-pdf main-icon"></i> Transcript Request</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-id-card main-icon"></i> Student ID Request</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-certificate main-icon"></i> Enrollment Certificate</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-envelope-open-text main-icon"></i> Recommendation Letter</a></li>
         </ul>
       </li>
 
@@ -143,7 +142,7 @@
         </ul>
       </li>
 
-      <!-- STUDENT MENU (MASSIVE) -->
+      <!-- STUDENT MENU -->
       <li class="menu-item open">
         <a href="#" class="menu-link active" onclick="toggle(event, this)">
           <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
@@ -157,8 +156,8 @@
             </a>
             <ul class="submenu">
               <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-file-invoice main-icon"></i> My Fees</a></li>
-              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-credit-card main-icon"></i> Make a Payment</a></li>
-              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-balance-scale main-icon"></i> Financial Status</a></li>
+              <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-credit-card main-icon"></i> Make a Payment</a></li>
+              <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-balance-scale main-icon"></i> Financial Status</a></li>
             </ul>
           </li>
 
@@ -184,12 +183,11 @@
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Course Withdrawal Application</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum</a></li>
           
-          <!-- THIS IS THE NEW LINE YOU REQUESTED -->
           <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
 
          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
           
-          <!-- EXAM (EXPANDED AS REQUESTED) -->
+          <!-- EXAM -->
           <li class="menu-item">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
               <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
@@ -245,7 +243,6 @@
       </div>
       <style>@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }</style>
     <% } %>
-
 
     <div class="top-bar">
       <div class="greeting">
@@ -315,14 +312,14 @@
         <span>My Transcript</span>
       </a>
 
-      <a href="#" class="tile">
-        <i class="fas fa-list"></i>
-        <span>Curriculum Map</span>
-      </a>
-
-      <a href="#" class="tile">
+      <a href="/sis/my/finance" class="tile">
         <i class="fas fa-file-invoice"></i>
         <span>Financial Statement</span>
+      </a>
+
+      <a href="/sis/my/documents" class="tile">
+        <i class="fas fa-file-alt"></i>
+        <span>Document Requests</span>
       </a>
     </div>
 

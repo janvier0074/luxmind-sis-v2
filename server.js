@@ -49,15 +49,16 @@ function getGreeting() {
 // ============================================
 // --- AUTHENTICATION ---
 // ============================================
-app.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/sis/my');
-  res.render('login', { error: req.flash('error') });
-});
-
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const result = await pool.query(`SELECT * FROM users WHERE username = $1 AND password = $2`, [username, password]);
+    // Check if the input matches a username OR an admission_number
+    const result = await pool.query(`
+      SELECT u.* FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE (u.username = $1 OR sp.admission_number = $1) AND u.password = $2
+    `, [username, password]);
+    
     if (result.rows.length > 0) {
       req.session.user = result.rows[0];
       

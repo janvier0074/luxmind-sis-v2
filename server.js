@@ -643,7 +643,9 @@ app.get('/sis/admin/students/new', requireLogin, async (req, res) => {
 
 app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
-  const { full_name, username, email, class_level, advisor_id, admission_number } = req.body;
+  
+  // ADDED: is_international and high_school_gpa
+  const { full_name, username, email, class_level, advisor_id, admission_number, is_international, high_school_gpa } = req.body;
   const defaultPassword = 'Student2026!';
   const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
 
@@ -653,10 +655,23 @@ app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
       [full_name, username, email || username + '@luxmind.edu', defaultPassword]
     );
     const userId = userRes.rows[0].id;
+    
+    // UPDATED: Includes is_international and high_school_gpa
     await pool.query(
-      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id) VALUES ($1, $2, $3, $4, $5)`,
-      [userId, generatedId, class_level || 'Computer Engineering', 1, advisor_id ? Number(advisor_id) : null]
+      `INSERT INTO student_profiles 
+       (user_id, admission_number, class_level, current_semester, advisor_id, is_international, high_school_gpa) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        userId, 
+        generatedId, 
+        class_level || 'Computer Engineering', 
+        1, 
+        advisor_id ? Number(advisor_id) : null,
+        is_international === 'true', 
+        high_school_gpa ? Number(high_school_gpa) : null
+      ]
     );
+    
     req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
     res.redirect('/sis/admin/students');
   } catch (err) {

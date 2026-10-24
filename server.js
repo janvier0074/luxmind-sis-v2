@@ -49,10 +49,14 @@ function getGreeting() {
 // ============================================
 // --- AUTHENTICATION ---
 // ============================================
+app.get('/login', (req, res) => {
+  if (req.session.user) return res.redirect('/sis/my');
+  res.render('login', { error: req.flash('error') });
+});
+
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    // Check if the input matches a username OR an admission_number
     const result = await pool.query(`
       SELECT u.* FROM users u
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
@@ -365,12 +369,10 @@ app.get('/sis/my/documents/view/:id', requireLogin, async (req, res) => {
 // ============================================
 // --- STUDENT FINANCE & SCHOLARSHIP ENGINE ---
 // ============================================
-
 app.get('/sis/my/finance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
 
   try {
-    // 1. Get Student Profile (for Scholarship rules)
     const profileRes = await pool.query(`
       SELECT u.full_name, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa
       FROM users u JOIN student_profiles sp ON sp.user_id = u.id
@@ -379,39 +381,30 @@ app.get('/sis/my/finance', requireLogin, async (req, res) => {
     
     const student = profileRes.rows[0];
 
-    // 2. POLICY ENGINE: Automatically calculate the scholarship
     let scholarshipPercentage = 0;
     let scholarshipName = 'None';
 
-    // Rule A: International = 50%
     if (student.is_international) {
       scholarshipPercentage = 50;
       scholarshipName = 'International Undergraduate Scholarship';
     }
     
-    // Rule B: High GPA = 100%
     if (student.high_school_gpa && student.high_school_gpa >= 3.5) {
       scholarshipPercentage = 100;
       scholarshipName = 'High Honor Merit Scholarship';
     }
 
-    // 3. Get Base Tuition from Admin's Fee Structure
     const feeRes = await pool.query(`
       SELECT amount FROM fee_structure 
       WHERE LOWER(program) = LOWER($1) AND semester = $2
     `, [student.class_level, student.current_semester]);
     
     const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
-
-    // 4. Calculate Math
     const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
     const netTuition = baseTuition - scholarshipAmount;
 
-    // 5. Get Total Payments Made
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaid = Number(paidRes.rows[0].total);
-
-    // 6. Final Debt
     const debt = netTuition - totalPaid;
 
     res.render('student-finance', {
@@ -430,7 +423,6 @@ app.get('/sis/my/finance', requireLogin, async (req, res) => {
   }
 });
 
-// Simulate Payment
 app.post('/sis/my/finance/pay', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   const amount = Number(req.body.amount);
@@ -465,7 +457,6 @@ app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
       WHERE cr.status = 'pending_advisor'
     `);
 
-    // ADDED GREETING HERE
     res.render('advisor', { 
       user: req.session.user, 
       greeting: getGreeting(),
@@ -512,7 +503,6 @@ app.get('/sis/faculty', requireLogin, async (req, res) => {
       WHERE s.teacher_id = $1
     `, [req.session.user.id]);
 
-    // ADDED GREETING HERE
     res.render('faculty-dashboard', { 
       user: req.session.user, 
       greeting: getGreeting(),
@@ -684,7 +674,6 @@ app.get('/sis/admin', requireLogin, async (req, res) => {
     const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
     const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
 
-    // ADDED GREETING HERE
     res.render('admin-dashboard', { 
       user: req.session.user,
       greeting: getGreeting(),
@@ -700,7 +689,6 @@ app.get('/sis/admin', requireLogin, async (req, res) => {
   }
 });
 
-// Students
 app.get('/sis/admin/students', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   try {
@@ -727,7 +715,6 @@ app.get('/sis/admin/students/new', requireLogin, async (req, res) => {
 app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   
-  // ADDED: is_international and high_school_gpa
   const { full_name, username, email, class_level, advisor_id, admission_number, is_international, high_school_gpa } = req.body;
   const defaultPassword = 'Student2026!';
   const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
@@ -739,7 +726,6 @@ app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
     );
     const userId = userRes.rows[0].id;
     
-    // UPDATED: Includes is_international and high_school_gpa
     await pool.query(
       `INSERT INTO student_profiles 
        (user_id, admission_number, class_level, current_semester, advisor_id, is_international, high_school_gpa) 
@@ -763,7 +749,6 @@ app.post('/sis/admin/students/new', requireLogin, async (req, res) => {
   }
 });
 
-// Teachers
 app.get('/sis/admin/teachers', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   try {
@@ -795,7 +780,6 @@ app.post('/sis/admin/teachers/new', requireLogin, async (req, res) => {
   }
 });
 
-// Sections
 app.get('/sis/admin/sections', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   try {
@@ -843,7 +827,6 @@ app.post('/sis/admin/sections/:course_id/new', requireLogin, async (req, res) =>
   }
 });
 
-// Finance & Registrations
 app.get('/sis/admin/registrations', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   try {
@@ -895,7 +878,6 @@ app.post('/sis/admin/finance/new', requireLogin, async (req, res) => {
   }
 });
 
-// Admin Documents
 app.get('/sis/admin/documents', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'admin') return res.redirect('/login');
   try {

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Announcements</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .announcements-list { display: flex; flex-direction: column; gap: 1.2rem; max-width: 900px; }
+    .ann-card { background: #fff; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 1.5rem; border-left: 5px solid var(--danger); }
+    .ann-card.new { border-left-color: #dc2626; background: #fef2f2; }
+    .ann-card.old { border-left-color: #94a3b8; }
+    .ann-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; gap: 1rem; flex-wrap: wrap; }
+    .ann-header h3 { font-size: 1.1rem; font-weight: 800; color: var(--navy); flex: 1; min-width: 200px; }
+    .ann-badge { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 0.3rem 0.7rem; border-radius: 100px; background: var(--navy); color: var(--gold); white-space: nowrap; }
+    .ann-message { color: #475569; font-weight: 500; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; }
+    .ann-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8; font-weight: 600; flex-wrap: wrap; gap: 0.5rem; }
+    .new-tag { background: #dc2626; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 100px; margin-left: 0.5rem; text-transform: uppercase; }
+    .empty-state { background: #fff; padding: 4rem 2rem; border-radius: 1.25rem; text-align: center; color: #64748b; border: 1px solid var(--frost); }
+    .empty-state i { font-size: 3rem; color: var(--frost); margin-bottom: 1rem; }
+
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item"><a href="/sis/my/announcements" class="menu-link active"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+      <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
+      <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+      <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> Transcript</a></li>
+      <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-wallet main-icon"></i> Accounting</a></li>
+      <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-alt main-icon"></i> Document Requests</a></li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Announcements</h1>
+      <p>Messages from your teachers for the courses you are enrolled in.</p>
+    </div>
+
+    <div class="announcements-list">
+      <% if (announcements.length === 0) { %>
+        <div class="empty-state">
+          <i class="fas fa-bullhorn"></i>
+          <h3>No announcements yet</h3>
+          <p>When your teachers post a message, it will appear here.</p>
+        </div>
+      <% } %>
+      
+      <% announcements.forEach(ann => { 
+           const isNew = (new Date() - new Date(ann.created_at)) < (7 * 24 * 60 * 60 * 1000);
+      %>
+        <div class="ann-card <%= isNew ? 'new' : 'old' %>">
+          <div class="ann-header">
+            <h3>
+              <%= ann.title %>
+              <% if (isNew) { %><span class="new-tag">New</span><% } %>
+            </h3>
+            <span class="ann-badge"><%= ann.course_code %></span>
+          </div>
+          <p class="ann-message"><%= ann.message %></p>
+          <div class="ann-footer">
+            <span><i class="fas fa-user-tie"></i> <%= ann.teacher_name %> · <%= ann.course_title %></span>
+            <span><i class="fas fa-clock"></i> <%= new Date(ann.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

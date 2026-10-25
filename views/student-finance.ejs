@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LuxMind SIS - My Finance</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -10,7 +11,7 @@
     :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
     body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
     
-    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
     .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.2rem; font-weight: 800; }
@@ -20,7 +21,7 @@
     .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
     .menu-link i { width: 25px; color: var(--gold); }
 
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
     .top-bar { margin-bottom: 2rem; }
     .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
     .top-bar p { color: #64748b; font-size: 0.95rem; }
@@ -36,10 +37,10 @@
     .invoice-header p { color: #cbd5e1; font-size: 0.9rem; margin-top: 0.3rem; }
     
     .invoice-body { padding: 2rem; }
-    .invoice-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px dashed var(--frost); font-size: 1rem; font-weight: 600; }
+    .invoice-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px dashed var(--frost); font-size: 1rem; font-weight: 600; flex-wrap: wrap; gap: 0.5rem; }
     .invoice-row.total { border-bottom: none; font-size: 1.2rem; font-weight: 800; color: var(--navy); padding-top: 1.5rem; }
     
-    .scholarship-tag { background: #dcfce7; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; margin-left: 0.5rem; }
+    .scholarship-tag { background: #dcfce7; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; margin-left: 0.5rem; display: inline-block; margin-top: 0.3rem; }
 
     /* Payment Sidebar */
     .payment-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2rem; text-align: center; }
@@ -50,10 +51,33 @@
     .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; font-size: 1rem; }
     .btn-pay { background: var(--navy); color: #fff; padding: 1rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.2s; }
     .btn-pay:hover { background: var(--blue); transform: translateY(-2px); }
+
+    /* --- MOBILE FIXES --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 280px; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .btn-back { display: inline-flex; }
+      
+      .finance-layout { grid-template-columns: 1fr !important; gap: 1rem !important; }
+      .invoice-body { padding: 1.5rem; }
+    }
   </style>
 </head>
 <body>
-  <aside class="sidebar">
+
+  <!-- Mobile Hamburger Button & Overlay -->
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-mark">L</div>
       <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
@@ -64,11 +88,15 @@
       <li><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
       <li><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol"></i> Transcript</a></li>
       <li><a href="/sis/my/finance" class="menu-link active"><i class="fas fa-wallet"></i> Accounting</a></li>
+      <li><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-alt"></i> Document Requests</a></li>
       <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
+    <!-- Back Button -->
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
     <div class="top-bar">
       <h1>My Finance</h1>
       <p>View your tuition, scholarships, and make payments.</p>
@@ -143,5 +171,12 @@
       
     </div>
   </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
 </body>
 </html>

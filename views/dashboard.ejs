@@ -148,6 +148,10 @@
              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
             </ul>
           </li>
+          
+          <!-- NEW EXAM PROGRAM LINK ADDED HERE -->
+          <li class="menu-item"><a href="/sis/my/exams" class="menu-link"><i class="fas fa-file-signature main-icon"></i> Exam Program</a></li>
+          
           <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
         </ul>
@@ -235,13 +239,16 @@
         <i class="fas fa-file-alt"></i>
         <span>Document Requests</span>
       </a>
+      <!-- NEW EXAM QUICK ACTION ADDED HERE -->
+      <a href="/sis/my/exams" class="tile">
+        <i class="fas fa-file-signature"></i>
+        <span>Exam Program</span>
+      </a>
     </div>
 
   </main>
 
-  
   <script>
-    // 1. Toggle menu function
     function toggle(event, element) {
       event.preventDefault();
       const parent = element.parentElement;
@@ -249,7 +256,6 @@
       const submenu = parent.querySelector('.submenu');
       if (submenu) {
         submenu.classList.toggle('open');
-        // Save the state to browser memory
         const text = element.innerText.trim().split('\n')[0]; 
         if (parent.classList.contains('open')) {
           localStorage.setItem('menu_' + text, 'open');
@@ -259,7 +265,6 @@
       }
     }
 
-    // 2. Mobile toggle function
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');
@@ -269,7 +274,6 @@
       }
     }
 
-    // 3. Restore open menus on page load
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.menu-link').forEach(link => {
         if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {

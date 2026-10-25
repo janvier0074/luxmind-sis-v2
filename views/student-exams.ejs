@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Exam Program</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1.2rem 1rem; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
+    .data-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; vertical-align: middle; }
+    
+    .exam-badge { background: var(--mist); color: var(--blue); padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; display: inline-block; }
+
+    /* --- MOBILE FIXES --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .btn-back { display: inline-flex; }
+      .table-container { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit"></i> Course Registration</a></li>
+      <li><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+      <li><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol"></i> Transcript</a></li>
+      <li><a href="/sis/my/finance" class="menu-link"><i class="fas fa-wallet"></i> Accounting</a></li>
+      <li><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-alt"></i> Document Requests</a></li>
+      <li><a href="/sis/my/exams" class="menu-link active"><i class="fas fa-file-signature"></i> Exam Program</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Exam Program</h1>
+      <p>Your upcoming exam schedule for this semester.</p>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Exam Type</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Room</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (exams.length === 0) { %>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 3rem; color: #64748b;">
+                <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                No exams scheduled yet. Check back later.
+              </td>
+            </tr>
+          <% } %>
+          
+          <% exams.forEach(exam => { %>
+            <tr>
+              <td>
+                <strong style="color: var(--blue);"><%= exam.code %></strong><br>
+                <span style="font-size: 0.8rem; color: #64748b;"><%= exam.title %></span>
+              </td>
+              <td><span class="exam-badge"><%= exam.exam_type %></span></td>
+              <td><%= new Date(exam.exam_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+              <td><%= exam.start_time %></td>
+              <td><%= exam.room %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

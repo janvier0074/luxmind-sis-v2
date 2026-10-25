@@ -942,6 +942,56 @@ app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
   }
 });
 
+
+// ============================================
+// --- ADMIN: EXAM PROGRAM ---
+// ============================================
+app.get('/sis/admin/exams', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const examsRes = await pool.query(`
+      SELECT e.*, c.code, c.title 
+      FROM exams e
+      JOIN courses c ON c.id = e.course_id
+      ORDER BY e.exam_date ASC
+    `);
+    const coursesRes = await pool.query(`SELECT id, code, title FROM courses ORDER BY code`);
+    res.render('admin-exams', { user: req.session.user, exams: examsRes.rows, courses: coursesRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/exams/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { course_id, exam_type, exam_date, start_time, room } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO exams (course_id, exam_type, exam_date, start_time, room) 
+      VALUES ($1, $2, $3, $4, $5)
+    `, [Number(course_id), exam_type, exam_date, start_time, room]);
+    req.flash('success', 'Exam scheduled successfully.');
+    res.redirect('/sis/admin/exams');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// ============================================
+// --- STUDENT: EXAM PROGRAM ---
+// ============================================
+app.get('/sis/my/exams', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    const examsRes = await pool.query(`
+      SELECT e.*, c.code, c.title 
+      FROM exams e
+      JOIN courses c ON c.id = e.course_id
+      JOIN enrollments en ON en.course_id = c.id
+      WHERE en.user_id = $1
+      ORDER BY e.exam_date ASC
+    `, [req.session.user.id]);
+    res.render('student-exams', { user: req.session.user, exams: examsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================

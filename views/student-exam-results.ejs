@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Exam Results</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.8rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
+    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+
+    /* Main Content */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    /* CIU Style Compact Table */
+    .table-wrapper { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow-x: auto; width: 100%; max-width: 900px; }
+    .result-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+    .result-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .result-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+    .result-table tr:last-child td { border-bottom: none; }
+    .result-table tr:hover { background: var(--ice); }
+    
+    /* Grade Badges (Inline Colors) */
+    .grade-badge { padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 800; font-size: 0.85rem; display: inline-block; }
+    .grade-A { background: #dcfce7; color: #16a34a; }
+    .grade-B { background: #e0f2fe; color: #0284c7; }
+    .grade-C { background: #fef3c7; color: #d97706; }
+    .grade-D { background: #ffedd5; color: #ea580c; }
+    .grade-F { background: #fee2e2; color: #dc2626; }
+
+    /* GPA Summary Card */
+    .gpa-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 1.5rem; margin-top: 1.5rem; max-width: 300px; text-align: center; }
+    .gpa-card h3 { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 800; margin-bottom: 0.5rem; }
+    .gpa-card p { font-size: 2.5rem; font-weight: 800; color: var(--blue); }
+
+    /* Mobile Fixes */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item open">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu open">
+              <li class="menu-item"><a href="/sis/my/exams" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
+              <li class="menu-item"><a href="/sis/my/exam-results" class="menu-link active"><i class="fas fa-poll main-icon"></i> Exam Result</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objection</a></li>
+              <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exam Application</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Exam Results</h1>
+      <p>Your official grades and GPA for this semester.</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th>Course Code</th>
+            <th>Course Title</th>
+            <th>Credits</th>
+            <th>Midterm</th>
+            <th>Final</th>
+            <th>Grade</th>
+            <th>GPA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (results.length === 0) { %>
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">No grades published yet.</td>
+            </tr>
+          <% } %>
+          
+          <% results.forEach(r => { %>
+            <tr>
+              <td><strong style="color: var(--blue);"><%= r.code %></strong></td>
+              <td><%= r.title %></td>
+              <td><%= r.credits %></td>
+              <td><%= r.midterm_grade || '-' %></td>
+              <td><%= r.final_grade || '-' %></td>
+              <td>
+                <% if (r.letter_grade) { %>
+                  <span class="grade-badge grade-<%= r.letter_grade %>"><%= r.letter_grade %></span>
+                <% } else { %>
+                  <span style="color: #94a3b8;">-</span>
+                <% } %>
+              </td>
+              <td><strong><%= r.gpa_points || '0.0' %></strong></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Compact GPA Card -->
+    <div class="gpa-card">
+      <h3>Semester GPA</h3>
+      <p><%= semesterGPA %></p>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) {
+        submenu.classList.toggle('open');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -991,6 +991,43 @@ app.get('/sis/my/exams', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+// ============================================
+// --- STUDENT: EXAM RESULTS ---
+// ============================================
+app.get('/sis/my/exam-results', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    const resultsRes = await pool.query(`
+      SELECT c.code, c.title, c.credits, 
+             g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+      ORDER BY c.code ASC
+    `, [req.session.user.id]);
+
+    // Calculate current semester CGPA for this specific view
+    let totalPoints = 0;
+    let totalCredits = 0;
+    resultsRes.rows.forEach(r => {
+      totalCredits += Number(r.credits);
+      totalPoints += (Number(r.gpa_points) * Number(r.credits));
+    });
+    const semesterGPA = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+
+    res.render('student-exam-results', { 
+      user: req.session.user, 
+      results: resultsRes.rows,
+      semesterGPA: semesterGPA
+    });
+  } catch (err) { 
+    res.status(500).send("Error: " + err.message); 
+  }
+});
+
+
+
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

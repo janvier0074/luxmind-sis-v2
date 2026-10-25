@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LuxMind SIS - Admin Documents</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -10,7 +11,7 @@
     :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); }
     body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
     
-    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
     .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.2rem; font-weight: 800; }
@@ -20,12 +21,11 @@
     .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
     .menu-link i { width: 25px; color: var(--gold); }
 
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
     .top-bar { margin-bottom: 2rem; }
     .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
     .top-bar p { color: #64748b; font-size: 0.95rem; }
 
-    /* Stats */
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
     .stat-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; }
     .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
@@ -35,22 +35,12 @@
     .stat-info h3 { font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-weight: 800; }
     .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); }
 
-    /* Table */
     .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
     .data-table th { background: var(--navy); color: #fff; padding: 1.2rem 1rem; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
     .data-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; vertical-align: top; }
-    .data-table tr:hover { background: var(--ice); }
     
-    .student-info { display: flex; flex-direction: column; }
-    .student-info strong { color: var(--navy); font-size: 1rem; }
-    .student-info span { color: var(--blue); font-size: 0.8rem; margin-top: 0.2rem; }
-    
-    .doc-info { display: flex; flex-direction: column; }
-    .doc-info strong { color: var(--navy); }
-    .doc-info .note { font-size: 0.75rem; color: #94a3b8; font-style: italic; margin-top: 0.3rem; font-weight: 500; max-width: 250px; }
-    
-    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
     .badge.pending { background: #fef3c7; color: #d97706; }
     .badge.ready { background: #dcfce7; color: #16a34a; }
     .badge.rejected { background: #fee2e2; color: #dc2626; }
@@ -60,30 +50,25 @@
     .btn-ready:hover { background: #16a34a; color: #fff; transform: translateY(-2px); }
     .btn-reject { background: #fee2e2; color: #dc2626; }
     .btn-reject:hover { background: #dc2626; color: #fff; transform: translateY(-2px); }
-  
-    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
+
+    /* --- MOBILE FIXES --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
 
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar { transform: translateX(-100%); }
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
       .btn-back { display: inline-flex; }
-      .layout, .finance-layout, .attendance-grid, .tile-grid, .course-grid, .stats-grid, .semester-grid, .weekly-grid, .data-table { 
-        grid-template-columns: 1fr !important; 
-        gap: 1rem !important; 
-      }
-      .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .table-container { overflow-x: auto; }
     }
-
   </style>
 </head>
 <body>
-
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
@@ -98,11 +83,11 @@
       <li><a href="/sis/admin/registrations" class="menu-link"><i class="fas fa-clipboard-check"></i> All Registrations</a></li>
       <li><a href="/sis/admin/finance" class="menu-link"><i class="fas fa-wallet"></i> Finance</a></li>
       <li><a href="/sis/admin/documents" class="menu-link active"><i class="fas fa-file-alt"></i> Document Requests</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
-
     <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
 
     <div class="top-bar">
@@ -116,7 +101,6 @@
       const rejectedCount = requests.filter(r => r.status === 'rejected').length;
     %>
     
-    <!-- STATS -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
@@ -160,26 +144,21 @@
           <% requests.forEach(req => { %>
             <tr>
               <td>
-                <div class="student-info">
-                  <strong><%= req.student_name %></strong>
-                  <span>ID: <%= req.username %></span>
+                <div style="display: flex; flex-direction: column;">
+                  <strong style="color: var(--navy); font-size: 1rem;"><%= req.student_name %></strong>
+                  <span style="color: var(--blue); font-size: 0.8rem; margin-top: 0.2rem;">ID: <%= req.username %></span>
                 </div>
               </td>
               <td>
-                <div class="doc-info">
-                  <strong><%= req.document_type %></strong>
+                <div style="display: flex; flex-direction: column;">
+                  <strong style="color: var(--navy);"><%= req.document_type %></strong>
                   <% if (req.notes) { %>
-                    <span class="note">"<%= req.notes %>"</span>
+                    <span style="font-size: 0.75rem; color: #94a3b8; font-style: italic; margin-top: 0.3rem; font-weight: 500; max-width: 250px;">"<%= req.notes %>"</span>
                   <% } %>
                 </div>
               </td>
               <td><%= new Date(req.requested_at).toLocaleDateString() %></td>
-                            <td>
-                <span class="badge <%= req.status %>"><%= req.status %></span>
-                <% if (req.admin_notes) { %>
-                  <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; font-style: italic;">"<%= req.admin_notes %>"</div>
-                <% } %>
-              </td>
+              <td><span class="badge <%= req.status %>"><%= req.status %></span></td>
               <td>
                 <% if (req.status === 'pending') { %>
                   <form method="POST" action="/sis/admin/documents/<%= req.id %>/status" style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -193,20 +172,6 @@
                   <span style="color: #94a3b8; font-size: 0.8rem; font-weight: 700;">Processed</span>
                 <% } %>
               </td>
-              <td>
-                <% if (req.status === 'pending') { %>
-                  <form method="POST" action="/sis/admin/documents/<%= req.id %>/status" style="display: inline;">
-                    <input type="hidden" name="status" value="ready">
-                    <button type="submit" class="btn-action btn-ready"><i class="fas fa-check"></i> Mark Ready</button>
-                  </form>
-                  <form method="POST" action="/sis/admin/documents/<%= req.id %>/status" style="display: inline;">
-                    <input type="hidden" name="status" value="rejected">
-                    <button type="submit" class="btn-action btn-reject"><i class="fas fa-times"></i> Reject</button>
-                  </form>
-                <% } else { %>
-                  <span style="color: #94a3b8; font-size: 0.8rem; font-weight: 700;">Processed</span>
-                <% } %>
-              </td>
             </tr>
           <% }) %>
         </tbody>
@@ -215,47 +180,10 @@
   </main>
 
   <script>
-    // 1. Toggle menu function
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) {
-        submenu.classList.toggle('open');
-        // Save the state to browser memory
-        const text = element.innerText.trim().split('\n')[0]; 
-        if (parent.classList.contains('open')) {
-          localStorage.setItem('menu_' + text, 'open');
-        } else {
-          localStorage.removeItem('menu_' + text);
-        }
-      }
-    }
-
-    // 2. Mobile toggle function
     function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) {
-        sb.classList.toggle('active');
-        ov.classList.toggle('active');
-      }
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
     }
-
-    // 3. Restore open menus on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu-link').forEach(link => {
-        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
-          const text = link.innerText.trim().split('\n')[0];
-          if (localStorage.getItem('menu_' + text) === 'open') {
-            link.parentElement.classList.add('open');
-            link.nextElementSibling.classList.add('open');
-          }
-        }
-      });
-    });
   </script>
-
 </body>
 </html>

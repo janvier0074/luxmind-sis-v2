@@ -2,19 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LuxMind SIS - Document Requests</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-    :root {
-      --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; 
-      --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12);
-      --success: #1f8a5f; --danger: #b33e2e;
-    }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
     body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
     
-    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
     .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.2rem; font-weight: 800; }
@@ -24,14 +21,13 @@
     .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
     .menu-link i { width: 25px; color: var(--gold); }
 
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
-    .top-bar { margin-bottom: 2.5rem; }
-    .top-bar h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
-    .top-bar p { color: #64748b; font-size: 1rem; font-weight: 500; margin-top: 0.3rem; }
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
 
     .layout { display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start; }
     
-    /* New Request Form */
     .form-card { background: #fff; padding: 2rem; border-radius: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--frost); position: sticky; top: 2rem; }
     .form-card h3 { margin-bottom: 1.5rem; color: var(--navy); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
     .form-group { margin-bottom: 1.5rem; }
@@ -41,16 +37,14 @@
     .btn-submit { background: var(--navy); color: #fff; padding: 1rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
     .btn-submit:hover { background: var(--blue); transform: translateY(-2px); }
 
-    /* Request Cards List */
     .requests-list { display: flex; flex-direction: column; gap: 1rem; }
-    .request-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); display: flex; align-items: center; justify-content: space-between; transition: 0.2s; position: relative; overflow: hidden; }
-    .request-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px -8px rgba(10,30,50,0.15); }
+    .request-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); display: flex; align-items: center; justify-content: space-between; transition: 0.2s; position: relative; overflow: hidden; flex-wrap: wrap; gap: 1rem; }
     .request-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
     .request-card.pending::before { background: var(--amber); }
     .request-card.ready::before { background: var(--success); }
     .request-card.rejected::before { background: var(--danger); }
 
-    .req-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 1.5rem; }
+    .req-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 1.5rem; flex-shrink: 0; }
     .req-icon.pending { background: #fef3c7; color: #d97706; }
     .req-icon.ready { background: #dcfce7; color: #16a34a; }
     .req-icon.rejected { background: #fee2e2; color: #dc2626; }
@@ -67,32 +61,28 @@
     
     .btn-download { background: var(--gold); color: var(--navy); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
     .btn-download:hover { background: var(--amber); transform: scale(1.05); }
-    
     .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
-  
-    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
+
+    /* --- MOBILE FIXES --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
 
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar { transform: translateX(-100%); }
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
       .btn-back { display: inline-flex; }
-      .layout, .finance-layout, .attendance-grid, .tile-grid, .course-grid, .stats-grid, .semester-grid, .weekly-grid, .data-table { 
-        grid-template-columns: 1fr !important; 
-        gap: 1rem !important; 
-      }
-      .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
+      .layout { grid-template-columns: 1fr; gap: 1rem; }
+      .request-card { flex-direction: column; align-items: flex-start; }
+      .req-actions { align-items: flex-start; width: 100%; margin-top: 1rem; }
+      .form-card { position: static; }
     }
-
   </style>
 </head>
 <body>
-
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
@@ -106,13 +96,13 @@
       <li><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit"></i> Course Registration</a></li>
       <li><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
       <li><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol"></i> Transcript</a></li>
+      <li><a href="/sis/my/finance" class="menu-link"><i class="fas fa-wallet"></i> Accounting</a></li>
       <li><a href="/sis/my/documents" class="menu-link active"><i class="fas fa-file-alt"></i> Document Requests</a></li>
       <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
-
     <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
 
     <div class="top-bar">
@@ -125,7 +115,6 @@
     <% } %>
 
     <div class="layout">
-      <!-- Left: Request Form -->
       <div class="form-card">
         <h3><i class="fas fa-file-signature" style="color: var(--amber);"></i> New Request</h3>
         <form method="POST" action="/sis/my/documents/request">
@@ -148,7 +137,6 @@
         </form>
       </div>
 
-      <!-- Right: Request History -->
       <div class="requests-list">
         <% if (requests.length === 0) { %>
           <div style="background:#fff; padding: 3rem; border-radius: 1.25rem; text-align: center; color: #64748b; border: 1px solid var(--frost);">
@@ -175,7 +163,7 @@
               </div>
             </div>
             
-                        <div class="req-actions" style="text-align: right;">
+            <div class="req-actions">
               <span class="badge <%= req.status %>"><%= req.status %></span>
               
               <% if (req.admin_notes) { %>
@@ -197,47 +185,10 @@
   </main>
 
   <script>
-    // 1. Toggle menu function
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) {
-        submenu.classList.toggle('open');
-        // Save the state to browser memory
-        const text = element.innerText.trim().split('\n')[0]; 
-        if (parent.classList.contains('open')) {
-          localStorage.setItem('menu_' + text, 'open');
-        } else {
-          localStorage.removeItem('menu_' + text);
-        }
-      }
-    }
-
-    // 2. Mobile toggle function
     function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) {
-        sb.classList.toggle('active');
-        ov.classList.toggle('active');
-      }
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
     }
-
-    // 3. Restore open menus on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu-link').forEach(link => {
-        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
-          const text = link.innerText.trim().split('\n')[0];
-          if (localStorage.getItem('menu_' + text) === 'open') {
-            link.parentElement.classList.add('open');
-            link.nextElementSibling.classList.add('open');
-          }
-        }
-      });
-    });
   </script>
-
 </body>
 </html>

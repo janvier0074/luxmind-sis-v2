@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Course Materials</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.6rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; }
+
+    /* Main Content */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    /* Form Card */
+    .form-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2.5rem; max-width: 800px; }
+    .course-header-box { background: var(--navy); color: #fff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-bottom: 3px solid var(--amber); }
+    .course-header-box h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .course-header-box p { color: var(--gold); font-size: 0.9rem; font-weight: 700; }
+    
+    .form-group { margin-bottom: 1.8rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--navy); }
+    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; font-size: 0.95rem; color: var(--navy); transition: 0.2s; }
+    .form-control:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    
+    .btn-submit { background: var(--navy); color: #fff; padding: 1rem 2.5rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-submit:hover { background: var(--blue); transform: translateY(-2px); }
+    
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .form-card { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> My Courses <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link active"><i class="fas fa-list main-icon"></i> Course List</a></li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Course Materials</h1>
+      <p>Add syllabus and Moodle links for your students.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="course-header-box">
+        <h2><%= course.code %> - <%= course.title %></h2>
+        <p>Provide your students with the necessary learning materials.</p>
+      </div>
+
+      <% if (flash.success && flash.success.length > 0) { %>
+        <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+      <% } %>
+
+      <form method="POST" action="/sis/faculty/courses/<%= course.id %>/materials">
+        <div class="form-group">
+          <label><i class="fas fa-file-pdf" style="color: var(--danger); margin-right: 0.5rem;"></i> Syllabus Link (PDF / Google Drive)</label>
+          <input type="url" name="syllabus_url" class="form-control" placeholder="https://drive.google.com/..." value="<%= course.syllabus_url || '' %>">
+          <small style="color: #94a3b8; font-weight: 600; margin-top: 0.3rem; display: block;">Students will see a "Syllabus" button on their timetable.</small>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-external-link-alt" style="color: var(--amber); margin-right: 0.5rem;"></i> Moodle Course Link</label>
+          <input type="url" name="moodle_url" class="form-control" placeholder="https://moodle.luxmind.edu/course/..." value="<%= course.moodle_url || '' %>">
+          <small style="color: #94a3b8; font-weight: 600; margin-top: 0.3rem; display: block;">Students will see a "MOODLE" button on their timetable.</small>
+        </div>
+
+        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Materials</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

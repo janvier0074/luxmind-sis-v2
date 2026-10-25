@@ -149,8 +149,6 @@
             </ul>
           </li>
           
-          <!-- NEW EXAM PROGRAM LINK ADDED HERE -->
-                   <!-- EXAM MENU (NESTED) -->
           <li class="menu-item">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
               <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
@@ -176,9 +174,16 @@
     <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
 
     <% if (typeof unseenDocs !== 'undefined' && unseenDocs > 0) { %>
-      <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
-        <div><i class="fas fa-bell"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %>.</div>
+      <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
+        <div><i class="fas fa-bell"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %> regarding document requests.</div>
         <a href="/sis/my/documents" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">View Now</a>
+      </div>
+    <% } %>
+
+    <% if (typeof announcementCount !== 'undefined' && announcementCount > 0) { %>
+      <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
+        <div><i class="fas fa-bullhorn"></i> You have <strong><%= announcementCount %></strong> new announcement<%= announcementCount > 1 ? 's' : '' %> from your teachers.</div>
+        <a href="/sis/my/announcements" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">View Announcements</a>
       </div>
     <% } %>
 
@@ -250,10 +255,13 @@
         <i class="fas fa-file-alt"></i>
         <span>Document Requests</span>
       </a>
-      <!-- NEW EXAM QUICK ACTION ADDED HERE -->
       <a href="/sis/my/exams" class="tile">
         <i class="fas fa-file-signature"></i>
         <span>Exam Program</span>
+      </a>
+      <a href="/sis/my/announcements" class="tile">
+        <i class="fas fa-bullhorn"></i>
+        <span>Announcements</span>
       </a>
     </div>
 

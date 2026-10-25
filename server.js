@@ -110,8 +110,22 @@ app.get('/sis/my', requireLogin, async (req, res) => {
     const credits = creditsRes.rows[0].total_credits;
 
     const stats = { gpa: '3.85', credits: credits, balance: 1250, semester: profile.current_semester };
+
+         // Count new announcements (last 7 days)
+    const newAnnCount = await pool.query(`
+      SELECT COUNT(*) FROM course_announcements a
+      JOIN course_sections s ON s.id = a.section_id
+      JOIN enrollments e ON e.section_id = s.id
+      WHERE e.user_id = $1 AND a.created_at > NOW() - INTERVAL '7 days'
+    `, [req.session.user.id]);
     
-    res.render('dashboard', { user: req.session.user, profile: profile, stats: stats, greeting: getGreeting() });
+          res.render('dashboard', { 
+      user: req.session.user, 
+      profile: profile, 
+      stats: stats, 
+      greeting: getGreeting(),
+      announcementCount: parseInt(newAnnCount.rows[0].count) || 0
+    });
   } catch (err) {
     res.status(500).send("Dashboard Error: " + err.message);
   }
@@ -638,14 +652,24 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         const midterm = Number(req.body[key]) || 0;
         const final = Number(req.body['final_' + studentId]) || 0;
 
+               // Calculate total, CIU letter grade, and GPA
         const total = (midterm + final) / 2;
         let letter = 'F';
         let gpa = 0.0;
 
-        if (total >= 90) { letter = 'A'; gpa = 4.0; }
-        else if (total >= 80) { letter = 'B'; gpa = 3.0; }
-        else if (total >= 70) { letter = 'C'; gpa = 2.0; }
-        else if (total >= 60) { letter = 'D'; gpa = 1.0; }
+        if (total >= 97) { letter = 'A+'; gpa = 4.0; }
+        else if (total >= 93) { letter = 'A'; gpa = 4.0; }
+        else if (total >= 90) { letter = 'A-'; gpa = 3.7; }
+        else if (total >= 87) { letter = 'B+'; gpa = 3.3; }
+        else if (total >= 83) { letter = 'B'; gpa = 3.0; }
+        else if (total >= 80) { letter = 'B-'; gpa = 2.7; }
+        else if (total >= 77) { letter = 'C+'; gpa = 2.3; }
+        else if (total >= 73) { letter = 'C'; gpa = 2.0; }
+        else if (total >= 70) { letter = 'C-'; gpa = 1.7; }
+        else if (total >= 67) { letter = 'D+'; gpa = 1.3; }
+        else if (total >= 63) { letter = 'D'; gpa = 1.0; }
+        else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
+        else { letter = 'F'; gpa = 0.0; }
 
         await pool.query(`
           INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points)
@@ -1026,7 +1050,298 @@ app.get('/sis/my/exam-results', requireLogin, async (req, res) => {
   }
 });
 
+// ============================================
+// --- FACULTY: MY COURSES ---
+// ============================================
+app.get('/sis/faculty/courses', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  try {
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, c.credits, s.group_name, s.day_of_week, s.start_time, s.room,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
 
+    res.render('faculty-courses', { 
+      user: req.session.user, 
+      courses: coursesRes.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+
+// ============================================
+// --- FACULTY: COURSE MATERIALS ---
+// ============================================
+
+// 1. Show Materials Form
+app.get('/sis/faculty/courses/:course_id/materials', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  try {
+    // Verify the teacher actually teaches this course
+    const courseRes = await pool.query(`
+      SELECT c.id, c.code, c.title, c.syllabus_url, c.moodle_url 
+      FROM courses c
+      JOIN course_sections s ON s.course_id = c.id
+      WHERE c.id = $1 AND s.teacher_id = $2
+      LIMIT 1
+    `, [req.params.course_id, req.session.user.id]);
+
+    if (courseRes.rows.length === 0) return res.redirect('/sis/faculty/courses');
+
+    res.render('faculty-course-materials', { 
+      user: req.session.user, 
+      course: courseRes.rows[0],
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Save Materials
+app.post('/sis/faculty/courses/:course_id/materials', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  const { syllabus_url, moodle_url } = req.body;
+  const courseId = req.params.course_id;
+
+  try {
+    await pool.query(`
+      UPDATE courses 
+      SET syllabus_url = $1, moodle_url = $2 
+      WHERE id = $3
+    `, [syllabus_url || null, moodle_url || null, courseId]);
+
+    req.flash('success', 'Course materials updated successfully.');
+    res.redirect('/sis/faculty/courses');
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+
+// ============================================
+// --- FACULTY: ATTENDANCE HISTORY ---
+// ============================================
+
+// 1. Show Attendance History (Summary of dates)
+app.get('/sis/faculty/attendance-history/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  try {
+    // Verify the teacher actually teaches this course
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name 
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/courses');
+
+    // Get the history grouped by date
+    const historyRes = await pool.query(`
+      SELECT date, 
+             COUNT(CASE WHEN status = 'Present' THEN 1 END) as present_count,
+             COUNT(CASE WHEN status = 'Absent' THEN 1 END) as absent_count,
+             COUNT(CASE WHEN status = 'Late' THEN 1 END) as late_count,
+             COUNT(*) as total_students
+      FROM attendance 
+      WHERE section_id = $1
+      GROUP BY date
+      ORDER BY date DESC
+    `, [req.params.section_id]);
+
+    res.render('faculty-attendance-history', { 
+      user: req.session.user, 
+      section: sectionRes.rows[0],
+      history: historyRes.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// 2. Show Detailed Roster for a specific past date
+app.get('/sis/faculty/attendance-history/:section_id/:date', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name 
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/courses');
+
+    // Get the exact roster for that day
+    const rosterRes = await pool.query(`
+      SELECT u.full_name, u.username, a.status
+      FROM attendance a
+      JOIN users u ON u.id = a.student_id
+      WHERE a.section_id = $1 AND a.date = $2
+      ORDER BY u.full_name ASC
+    `, [req.params.section_id, req.params.date]);
+
+    res.render('faculty-attendance-detail', { 
+      user: req.session.user, 
+      section: sectionRes.rows[0],
+      roster: rosterRes.rows,
+      date: req.params.date,
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+// ============================================
+// --- FACULTY: GRADE DISTRIBUTION ---
+// ============================================
+app.get('/sis/faculty/grades/:section_id/summary', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name 
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/courses');
+
+    // Count how many students got each grade
+    const distRes = await pool.query(`
+      SELECT letter_grade, COUNT(*) as count
+      FROM grades
+      WHERE section_id = $1 AND letter_grade IS NOT NULL
+      GROUP BY letter_grade
+    `, [req.params.section_id]);
+
+    // Initialize all possible grades with 0
+    const distribution = {
+      'A+': 0, 'A': 0, 'A-': 0,
+      'B+': 0, 'B': 0, 'B-': 0,
+      'C+': 0, 'C': 0, 'C-': 0,
+      'D+': 0, 'D': 0, 'D-': 0,
+      'F': 0
+    };
+
+    distRes.rows.forEach(row => {
+      if (distribution[row.letter_grade] !== undefined) {
+        distribution[row.letter_grade] = Number(row.count);
+      }
+    });
+
+    res.render('faculty-grades-summary', { 
+      user: req.session.user, 
+      section: sectionRes.rows[0],
+      distribution: distribution,
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+
+
+
+// ============================================
+// --- STUDENT: ANNOUNCEMENTS PAGE ---
+// ============================================
+app.get('/sis/my/announcements', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    const annRes = await pool.query(`
+      SELECT a.*, c.code as course_code, c.title as course_title, u.full_name as teacher_name
+      FROM course_announcements a
+      JOIN course_sections s ON s.id = a.section_id
+      JOIN courses c ON c.id = s.course_id
+      JOIN users u ON u.id = a.teacher_id
+      JOIN enrollments e ON e.section_id = s.id
+      WHERE e.user_id = $1
+      ORDER BY a.created_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-announcements', { 
+      user: req.session.user, 
+      announcements: annRes.rows 
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// ============================================
+// --- FACULTY: CLASS ANNOUNCEMENTS ---
+// ============================================
+
+// 1. List all announcements by this teacher
+app.get('/sis/faculty/announcements', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const annRes = await pool.query(`
+      SELECT a.*, c.code, c.title, s.group_name
+      FROM course_announcements a
+      JOIN course_sections s ON s.id = a.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE a.teacher_id = $1
+      ORDER BY a.created_at DESC
+    `, [req.session.user.id]);
+
+    res.render('faculty-announcements', { 
+      user: req.session.user, 
+      announcements: annRes.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Show Form to create announcement
+app.get('/sis/faculty/announcements/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, s.group_name
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
+
+    res.render('faculty-announcement-new', { 
+      user: req.session.user, 
+      courses: coursesRes.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 3. Save Announcement
+app.post('/sis/faculty/announcements/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const { section_id, title, message } = req.body;
+  
+  try {
+    await pool.query(`
+      INSERT INTO course_announcements (section_id, teacher_id, title, message)
+      VALUES ($1, $2, $3, $4)
+    `, [Number(section_id), req.session.user.id, title, message]);
+    
+    req.flash('success', 'Announcement posted successfully.');
+    res.redirect('/sis/faculty/announcements');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
 
 
 // ============================================

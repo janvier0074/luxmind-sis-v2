@@ -34,10 +34,34 @@
     .badge.pending { background: #fef3c7; color: #d97706; }
     .badge.approved { background: #dcfce7; color: #16a34a; }
     .badge.draft { background: #e2e8f0; color: #475569; }
+  
+    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: none; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      .btn-back { display: inline-flex; }
+      .layout, .finance-layout, .attendance-grid, .tile-grid, .course-grid, .stats-grid, .semester-grid, .weekly-grid, .data-table { 
+        grid-template-columns: 1fr !important; 
+        gap: 1rem !important; 
+      }
+      .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+
   </style>
 </head>
 <body>
-  <aside class="sidebar">
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-mark">L</div>
       <div class="brand-name">LuxMind SIS <span>Admin Portal</span></div>
@@ -51,6 +75,9 @@
   </aside>
 
   <main class="main-content">
+
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
     <div class="top-bar">
       <h1>Master Registration List</h1>
       <p>View every course registration request across the university.</p>
@@ -82,5 +109,15 @@
       </table>
     </div>
   </main>
+<script>
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+</script>
 </body>
 </html>

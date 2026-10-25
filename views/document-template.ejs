@@ -167,3 +167,46 @@
 
 </body>
 </html>
+
+  <script>
+    // 1. Toggle menu function
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) {
+        submenu.classList.toggle('open');
+        // Save the state to browser memory
+        const text = element.innerText.trim().split('\n')[0]; 
+        if (parent.classList.contains('open')) {
+          localStorage.setItem('menu_' + text, 'open');
+        } else {
+          localStorage.removeItem('menu_' + text);
+        }
+      }
+    }
+
+    // 2. Mobile toggle function
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+
+    // 3. Restore open menus on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.menu-link').forEach(link => {
+        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
+          const text = link.innerText.trim().split('\n')[0];
+          if (localStorage.getItem('menu_' + text) === 'open') {
+            link.parentElement.classList.add('open');
+            link.nextElementSibling.classList.add('open');
+          }
+        }
+      });
+    });
+  </script>

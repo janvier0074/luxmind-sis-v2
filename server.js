@@ -949,7 +949,7 @@ app.post('/sis/admin/documents/:id/status', requireLogin, async (req, res) => {
               <p>Your document request for <strong>${s.document_type}</strong> has been <strong style="color:${status === 'ready' ? 'green' : 'red'};">${statusLabel}</strong>.</p>
               ${admin_notes ? `<p><strong>Message from the Registrar:</strong> ${admin_notes}</p>` : ''}
               <p>Please log in to your Student Portal to view and download your document.</p>
-              <a href="https://luxmind-sis-v2.onrender.com/sis/my/documents" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Student Portal</a>
+             <a href="${process.env.APP_URL}/sis/my/documents" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Student Portal</a>
             </div>
           `
         });

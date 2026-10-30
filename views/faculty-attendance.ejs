@@ -215,8 +215,8 @@
           <div class="qr-grid">
             <% hours.forEach(hour => { %>
               <div class="qr-box">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://luxmind-sis-v2.onrender.com/sis/my/attendance/scan?section_id=<%= section.id %>&date=<%= today %>&hour=<%= hour %>" alt="QR Code">
-                <span>Hour <%= hour %></span>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=<%= process.env.APP_URL %>/sis/my/attendance/scan?section_id=<%= section.id %>&date=<%= today %>&hour=<%= hour %>" alt="QR Code">
+ <span>Hour <%= hour %></span>
               </div>
             <% }) %>
           </div>

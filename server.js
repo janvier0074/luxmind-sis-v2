@@ -1398,6 +1398,85 @@ app.post('/sis/my/profile/update', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+// ============================================
+// --- COURSE EVALUATION SYSTEM ---
+// ============================================
+
+// 1. Student: View Courses to Evaluate
+app.get('/sis/my/evaluations', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // Get enrolled courses and check if already evaluated
+    const coursesRes = await pool.query(`
+      SELECT c.code, c.title, s.id as section_id, u.full_name as teacher_name,
+             (SELECT id FROM course_evaluations e WHERE e.student_id = $1 AND e.section_id = s.id) as evaluated
+      FROM enrollments en
+      JOIN course_sections s ON s.id = en.section_id
+      JOIN courses c ON c.id = en.course_id
+      LEFT JOIN users u ON u.id = s.teacher_id
+      WHERE en.user_id = $1
+    `, [req.session.user.id]);
+
+    res.render('student-evaluations', { 
+      user: req.session.user, 
+      courses: coursesRes.rows 
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Student: Submit Evaluation
+app.post('/sis/my/evaluations/submit', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const { section_id, rating, feedback } = req.body;
+  
+  try {
+    // Upsert: Insert or update if they are changing their mind
+    await pool.query(`
+      INSERT INTO course_evaluations (student_id, section_id, rating, feedback)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (student_id, section_id) 
+      DO UPDATE SET rating = $3, feedback = $4
+    `, [req.session.user.id, Number(section_id), Number(rating), feedback]);
+
+    req.flash('success', 'Thank you! Your anonymous evaluation has been submitted.');
+    res.redirect('/sis/my/evaluations');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 3. Teacher: View Results
+app.get('/sis/faculty/evaluations', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    // Get average rating per course
+    const statsRes = await pool.query(`
+      SELECT c.code, c.title, s.group_name,
+             ROUND(AVG(e.rating), 1) as avg_rating,
+             COUNT(e.id) as total_responses
+      FROM course_evaluations e
+      JOIN course_sections s ON s.id = e.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      GROUP BY c.code, c.title, s.group_name
+    `, [req.session.user.id]);
+
+    // Get all anonymous feedback
+    const feedbackRes = await pool.query(`
+      SELECT c.code, e.rating, e.feedback, e.created_at
+      FROM course_evaluations e
+      JOIN course_sections s ON s.id = e.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1 AND e.feedback IS NOT NULL AND e.feedback != ''
+      ORDER BY e.created_at DESC
+    `, [req.session.user.id]);
+
+    res.render('faculty-evaluations', { 
+      user: req.session.user, 
+      stats: statsRes.rows,
+      feedback: feedbackRes.rows
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

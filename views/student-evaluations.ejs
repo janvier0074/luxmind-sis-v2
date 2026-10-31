@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Course Evaluations</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; font-size: 0.85rem; }
+
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+    .eval-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .eval-header { background: var(--navy); color: #fff; padding: 1.2rem; border-bottom: 3px solid var(--amber); }
+    .eval-header h3 { font-size: 1.1rem; font-weight: 800; }
+    .eval-header p { font-size: 0.8rem; color: #cbd5e1; margin-top: 0.2rem; }
+    .eval-body { padding: 1.5rem; }
+    
+    .star-rating { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem; }
+    .star-rating input { display: none; }
+    .star-rating label { font-size: 2rem; color: #cbd5e1; cursor: pointer; transition: color 0.2s; }
+    .star-rating input:checked ~ label, .star-rating label:hover, .star-rating label:hover ~ label { color: var(--amber); }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-control { width: 100%; padding: 0.9rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; background: var(--ice); resize: vertical; min-height: 80px; }
+    .btn-submit { background: var(--blue); color: #fff; padding: 0.8rem; border-radius: 8px; border: none; font-weight: 800; font-size: 0.85rem; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn-submit:hover { background: var(--navy); }
+    .btn-submit:disabled { background: #cbd5e1; cursor: not-allowed; }
+    
+    .evaluated-badge { background: #dcfce7; color: #16a34a; padding: 0.8rem; border-radius: 8px; text-align: center; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .course-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li><a href="/sis/my/evaluations" class="menu-link active"><i class="fas fa-poll main-icon"></i> Course Evaluations</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Course Evaluations</h1>
+      <p>Provide anonymous feedback to improve your courses.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="course-grid">
+      <% courses.forEach(c => { %>
+        <div class="eval-card">
+          <div class="eval-header">
+            <h3><%= c.code %> - <%= c.title %></h3>
+            <p><i class="fas fa-chalkboard-teacher"></i> <%= c.teacher_name || 'TBA' %></p>
+          </div>
+          <div class="eval-body">
+            <% if (c.evaluated) { %>
+              <div class="evaluated-badge">
+                <i class="fas fa-check-circle"></i> Evaluation Submitted
+              </div>
+            <% } else { %>
+              <form method="POST" action="/sis/my/evaluations/submit">
+                <input type="hidden" name="section_id" value="<%= c.section_id %>">
+                
+                <div class="form-group">
+                  <label style="font-size: 0.8rem; font-weight: 800; display: block; margin-bottom: 0.5rem;">Rate this course (1-5 Stars)</label>
+                  <div class="star-rating">
+                    <input type="radio" id="star5_<%= c.section_id %>" name="rating" value="5" required/><label for="star5_<%= c.section_id %>" class="fas fa-star"></label>
+                    <input type="radio" id="star4_<%= c.section_id %>" name="rating" value="4" /><label for="star4_<%= c.section_id %>" class="fas fa-star"></label>
+                    <input type="radio" id="star3_<%= c.section_id %>" name="rating" value="3" /><label for="star3_<%= c.section_id %>" class="fas fa-star"></label>
+                    <input type="radio" id="star2_<%= c.section_id %>" name="rating" value="2" /><label for="star2_<%= c.section_id %>" class="fas fa-star"></label>
+                    <input type="radio" id="star1_<%= c.section_id %>" name="rating" value="1" /><label for="star1_<%= c.section_id %>" class="fas fa-star"></label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label style="font-size: 0.8rem; font-weight: 800; display: block; margin-bottom: 0.5rem;">Anonymous Feedback (Optional)</label>
+                  <textarea name="feedback" class="form-control" placeholder="What did you like? What could be improved?"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Evaluation</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

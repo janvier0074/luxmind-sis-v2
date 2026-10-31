@@ -1497,4 +1497,7 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
   `);
 });
 
+// --- HEALTH CHECK FOR KEEP-ALIVE ---
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

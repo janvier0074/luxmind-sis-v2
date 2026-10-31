@@ -111,7 +111,7 @@
     <ul class="sidebar-menu">
       <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
       <li class="menu-item"><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
-             <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> University News</a></li>
+      <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> University News</a></li>
       <li class="menu-item"><a href="/sis/my/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
       
       <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-building main-icon"></i> Accommodation</a></li>
@@ -150,9 +150,10 @@
               <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
             </a>
             <ul class="submenu open">
-             <li class="menu-item"><a href="/sis/my/attendance" class="menu-link"><i class="fas fa-check-square main-icon"></i> Attendance Detail</a></li>
+              <li class="menu-item"><a href="/sis/my/attendance" class="menu-link"><i class="fas fa-check-square main-icon"></i> Attendance Detail</a></li>
               <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
-             <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="/sis/my/withdrawal" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Course Withdrawal</a></li>
             </ul>
           </li>
           
@@ -162,14 +163,14 @@
             </a>
             <ul class="submenu">
               <li class="menu-item"><a href="/sis/my/exams" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
-             <li class="menu-item"><a href="/sis/my/exam-results" class="menu-link"><i class="fas fa-poll main-icon"></i> Exam Result</a></li>
+              <li class="menu-item"><a href="/sis/my/exam-results" class="menu-link"><i class="fas fa-poll main-icon"></i> Exam Result</a></li>
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objection</a></li>
               <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exam Application</a></li>
             </ul>
           </li>
           
           <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
-         <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
         </ul>
       </li>
       <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
@@ -186,7 +187,6 @@
         <a href="/sis/my/documents" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">View Now</a>
       </div>
     <% } %>
-
 
     <% if (typeof globalAnnouncementCount !== 'undefined' && globalAnnouncementCount > 0) { %>
       <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
@@ -281,6 +281,10 @@
       <a href="/sis/my/messages" class="tile">
         <i class="fas fa-envelope"></i>
         <span>Messaging</span>
+      </a>
+      <a href="/sis/my/withdrawal" class="tile">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Course Withdrawal</span>
       </a>
     </div>
 

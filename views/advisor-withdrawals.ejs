@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Withdrawal Requests</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --danger: #b33e2e; --success: #1f8a5f; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; }
+    
+    .btn-action { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: 0.2s; margin-right: 0.5rem; }
+    .btn-approve { background: #dcfce7; color: #16a34a; }
+    .btn-approve:hover { background: #16a34a; color: #fff; }
+    .btn-reject { background: #fee2e2; color: #dc2626; }
+    .btn-reject:hover { background: #dc2626; color: #fff; }
+
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; font-size: 0.85rem; }
+    .alert-success { background: #dcfce7; color: #16a34a; }
+    .alert-error { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Advisor Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
+      <li><a href="/sis/advisor/withdrawals" class="menu-link active"><i class="fas fa-sign-out-alt main-icon"></i> Withdrawal Requests</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>Withdrawal Requests</h1>
+      <p>Review and approve student requests to drop courses.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %><div class="alert alert-success"><%= flash.success[0] %></div><% } %>
+    <% if (flash.error && flash.error.length > 0) { %><div class="alert alert-error"><%= flash.error[0] %></div><% } %>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Reason</th>
+            <th>Date Requested</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (requests.length === 0) { %>
+            <tr><td colspan="5" style="text-align: center; padding: 2rem;">No pending withdrawal requests.</td></tr>
+          <% } %>
+          <% requests.forEach(r => { %>
+            <tr>
+              <td><strong><%= r.student_name %></strong><br><small style="color: var(--blue);"><%= r.username %></small></td>
+              <td><strong><%= r.code %></strong> - <%= r.title %></td>
+              <td><%= r.reason %></td>
+              <td><%= new Date(r.requested_at).toLocaleDateString() %></td>
+              <td>
+                <form method="POST" action="/sis/advisor/withdrawals/<%= r.id %>/approve" style="display:inline;">
+                  <button type="submit" class="btn-action btn-approve" onclick="return confirm('Approve withdrawal? The student will be dropped from the course.');">Approve</button>
+                </form>
+                <form method="POST" action="/sis/advisor/withdrawals/<%= r.id %>/reject" style="display:inline;">
+                  <button type="submit" class="btn-action btn-reject">Reject</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

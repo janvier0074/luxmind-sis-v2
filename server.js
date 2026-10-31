@@ -929,6 +929,108 @@ app.get('/sis/announcements', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+// ============================================
+// --- COURSE WITHDRAWAL SYSTEM ---
+// ============================================
+
+// 1. Student View & Request Form
+app.get('/sis/my/withdrawal', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // Get courses the student is currently enrolled in
+    const enrolledRes = await pool.query(`
+      SELECT c.id, c.code, c.title 
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+
+    // Get past withdrawal requests
+    const requestsRes = await pool.query(`
+      SELECT w.*, c.code, c.title 
+      FROM course_withdrawals w
+      JOIN courses c ON c.id = w.course_id
+      WHERE w.student_id = $1
+      ORDER BY w.requested_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-withdrawal', { 
+      user: req.session.user, 
+      enrolled: enrolledRes.rows, 
+      requests: requestsRes.rows 
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Student Submit Request
+app.post('/sis/my/withdrawal/request', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const { course_id, reason } = req.body;
+  try {
+    // Check if a pending request already exists
+    const existing = await pool.query(`SELECT id FROM course_withdrawals WHERE student_id = $1 AND course_id = $2 AND status = 'pending'`, [req.session.user.id, Number(course_id)]);
+    if (existing.rows.length > 0) {
+      req.flash('error', 'You already have a pending request for this course.');
+      return res.redirect('/sis/my/withdrawal');
+    }
+    await pool.query(`
+      INSERT INTO course_withdrawals (student_id, course_id, reason) 
+      VALUES ($1, $2, $3)
+    `, [req.session.user.id, Number(course_id), reason]);
+    
+    req.flash('success', 'Withdrawal request submitted to your Advisor.');
+    res.redirect('/sis/my/withdrawal');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 3. Advisor View Requests
+app.get('/sis/advisor/withdrawals', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const requestsRes = await pool.query(`
+      SELECT w.*, c.code, c.title, u.full_name as student_name, u.username
+      FROM course_withdrawals w
+      JOIN courses c ON c.id = w.course_id
+      JOIN users u ON u.id = w.student_id
+      WHERE w.status = 'pending'
+      ORDER BY w.requested_at ASC
+    `);
+    res.render('advisor-withdrawals', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 4. Advisor Approve Request (The Magic Step)
+app.post('/sis/advisor/withdrawals/:id/approve', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'admin') return res.redirect('/login');
+  const requestId = req.params.id;
+  try {
+    // Get the request details
+    const reqRes = await pool.query(`SELECT student_id, course_id FROM course_withdrawals WHERE id = $1`, [requestId]);
+    const { student_id, course_id } = reqRes.rows[0];
+
+    // Delete from enrollments
+    await pool.query(`DELETE FROM enrollments WHERE user_id = $1 AND course_id = $2`, [student_id, course_id]);
+    
+    // Update request status
+    await pool.query(`UPDATE course_withdrawals SET status = 'approved', reviewed_at = NOW() WHERE id = $1`, [requestId]);
+    
+    req.flash('success', 'Withdrawal approved. Student has been dropped from the course.');
+    res.redirect('/sis/advisor/withdrawals');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 5. Advisor Reject Request
+app.post('/sis/advisor/withdrawals/:id/reject', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor' && req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    await pool.query(`UPDATE course_withdrawals SET status = 'rejected', reviewed_at = NOW() WHERE id = $1`, [req.params.id]);
+    req.flash('error', 'Withdrawal request rejected.');
+    res.redirect('/sis/advisor/withdrawals');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+
+
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

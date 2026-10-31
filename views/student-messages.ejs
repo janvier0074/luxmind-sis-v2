@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - My Messages</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .inbox-list { display: flex; flex-direction: column; gap: 1rem; max-width: 800px; }
+    .msg-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); border-left: 5px solid var(--blue); }
+    .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .msg-header h3 { font-size: 1rem; font-weight: 800; color: var(--navy); }
+    .msg-sender { font-size: 0.75rem; font-weight: 800; color: var(--blue); text-transform: uppercase; background: var(--ice); padding: 0.2rem 0.6rem; border-radius: 100px; }
+    .msg-body { color: #475569; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
+    
+    .reply-box { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .reply-input { flex: 1; padding: 0.8rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; }
+    .btn-reply { background: var(--navy); color: #fff; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .btn-reply:hover { background: var(--blue); }
+
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .reply-box { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li><a href="/sis/my/messages" class="menu-link active"><i class="fas fa-envelope main-icon"></i> My Messages</a></li>
+      <li><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>My Messages</h1>
+      <p>Direct messages from your teachers.</p>
+    </div>
+
+    <div class="inbox-list">
+      <% if (inbox.length === 0) { %>
+        <div style="background:#fff; padding: 3rem; border-radius: 1rem; text-align: center; color: #64748b; border: 1px solid var(--frost);">
+          <i class="fas fa-envelope-open" style="font-size: 3rem; color: var(--frost); margin-bottom: 1rem;"></i>
+          <h3>Your inbox is empty</h3>
+        </div>
+      <% } %>
+      
+      <% inbox.forEach(msg => { %>
+        <div class="msg-card">
+          <div class="msg-header">
+            <h3><%= msg.subject %></h3>
+            <span class="msg-sender"><i class="fas fa-user-tie"></i> From: <%= msg.sender_name %></span>
+          </div>
+          <div class="msg-body"><%= msg.body %></div>
+          <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;"><i class="fas fa-clock"></i> <%= new Date(msg.created_at).toLocaleDateString() %></div>
+          
+          <!-- Reply Form -->
+          <form method="POST" action="/sis/my/messages/reply" class="reply-box">
+            <input type="hidden" name="receiver_id" value="<%= msg.sender_id %>">
+            <input type="hidden" name="subject" value="<%= msg.subject %>">
+            <input type="text" name="body" class="reply-input" placeholder="Type your reply here..." required>
+            <button type="submit" class="btn-reply"><i class="fas fa-reply"></i> Reply</button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

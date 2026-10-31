@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - My Profile</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; font-size: 0.85rem; }
+
+    /* Premium Layout */
+    .profile-layout { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: start; }
+    
+    /* Left: Identity Card */
+    .id-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; text-align: center; }
+    .id-card-header { background: linear-gradient(135deg, var(--navy), var(--blue)); padding: 2rem 1rem; color: #fff; border-bottom: 4px solid var(--amber); }
+    .avatar { width: 80px; height: 80px; background: var(--gold); color: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; margin: 0 auto 1rem; }
+    .id-card-header h2 { font-size: 1.2rem; font-weight: 800; }
+    .id-card-header p { font-size: 0.8rem; color: var(--gold); margin-top: 0.2rem; font-weight: 700; letter-spacing: 1px; }
+    .id-card-body { padding: 1.5rem; text-align: left; }
+    .info-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px dashed var(--frost); font-size: 0.85rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row span { color: #64748b; font-weight: 600; }
+    .info-row strong { color: var(--navy); font-weight: 800; text-align: right; }
+
+    /* Right: Edit Form Card */
+    .form-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2rem; }
+    .form-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--navy); }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full { grid-column: span 2; }
+    .form-group label { font-size: 0.8rem; font-weight: 800; margin-bottom: 0.4rem; color: #475569; }
+    .form-control { padding: 0.9rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.9rem; background: var(--ice); }
+    .form-control:focus { border-color: var(--amber); outline: none; background: #fff; }
+    .form-control:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
+    
+    .btn-save { background: var(--navy); color: #fff; padding: 1rem 2.5rem; border-radius: 8px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-save:hover { background: var(--blue); transform: translateY(-2px); }
+
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 900px) {
+      .profile-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li><a href="/sis/my/profile" class="menu-link active"><i class="fas fa-address-card main-icon"></i> My Profile</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>My Profile</h1>
+      <p>View your academic details and update your contact information.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="profile-layout">
+      
+      <!-- Left: Identity Card -->
+      <div class="id-card">
+        <div class="id-card-header">
+          <div class="avatar"><%= profile.full_name.charAt(0) %></div>
+          <h2><%= profile.full_name %></h2>
+          <p><%= profile.admission_number || profile.username %></p>
+        </div>
+        <div class="id-card-body">
+          <div class="info-row"><span>Program</span><strong><%= profile.class_level %></strong></div>
+          <div class="info-row"><span>Semester</span><strong>Semester <%= profile.current_semester %></strong></div>
+          <div class="info-row"><span>Advisor</span><strong><%= profile.advisor_name || 'Not Assigned' %></strong></div>
+          <div class="info-row"><span>Email</span><strong><%= profile.email %></strong></div>
+        </div>
+      </div>
+
+      <!-- Right: Edit Form -->
+      <div class="form-card">
+        <h3><i class="fas fa-edit" style="color: var(--amber);"></i> Edit Contact Information</h3>
+        <form method="POST" action="/sis/my/profile/update">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name (Read-Only)</label>
+              <input type="text" class="form-control" value="<%= profile.full_name %>" disabled>
+            </div>
+            <div class="form-group">
+              <label>Student ID (Read-Only)</label>
+              <input type="text" class="form-control" value="<%= profile.admission_number || profile.username %>" disabled>
+            </div>
+            
+            <div class="form-group full">
+              <label>Phone Number</label>
+              <input type="text" name="phone" class="form-control" value="<%= profile.phone || '' %>" placeholder="e.g. +90 533 123 4567">
+            </div>
+            
+            <div class="form-group full">
+              <label>Home Address</label>
+              <input type="text" name="home_address" class="form-control" value="<%= profile.home_address || '' %>" placeholder="Your full home address">
+            </div>
+
+            <div class="form-group">
+              <label>Guardian Name</label>
+              <input type="text" name="guardian_name" class="form-control" value="<%= profile.guardian_name || '' %>" placeholder="Guardian's full name">
+            </div>
+            <div class="form-group">
+              <label>Guardian Phone</label>
+              <input type="text" name="guardian_phone" class="form-control" value="<%= profile.guardian_phone || '' %>" placeholder="Guardian's phone number">
+            </div>
+            <div class="form-group full">
+              <label>Guardian Relationship</label>
+              <input type="text" name="guardian_relationship" class="form-control" value="<%= profile.guardian_relationship || '' %>" placeholder="e.g. Father, Mother, Uncle">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

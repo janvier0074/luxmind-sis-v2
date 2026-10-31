@@ -1352,6 +1352,51 @@ app.post('/sis/faculty/makeup-exams/:id/action', requireLogin, async (req, res) 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+// ============================================
+// --- STUDENT PROFILE & CONTACT INFO ---
+// ============================================
+
+// 1. View Profile
+app.get('/sis/my/profile', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    const profileRes = await pool.query(`
+      SELECT 
+        u.full_name, u.username, u.email,
+        sp.admission_number, sp.class_level, sp.current_semester, 
+        sp.phone, sp.home_address, sp.guardian_name, sp.guardian_phone, sp.guardian_relationship,
+        adv.full_name as advisor_name
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN users adv ON adv.id = sp.advisor_id
+      WHERE u.id = $1
+    `, [req.session.user.id]);
+
+    if (profileRes.rows.length === 0) return res.redirect('/sis/my');
+
+    res.render('my-profile', { 
+      user: req.session.user, 
+      profile: profileRes.rows[0] 
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Update Contact Info
+app.post('/sis/my/profile/update', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const { phone, home_address, guardian_name, guardian_phone, guardian_relationship } = req.body;
+  
+  try {
+    await pool.query(`
+      UPDATE student_profiles 
+      SET phone = $1, home_address = $2, guardian_name = $3, guardian_phone = $4, guardian_relationship = $5
+      WHERE user_id = $6
+    `, [phone, home_address, guardian_name, guardian_phone, guardian_relationship, req.session.user.id]);
+
+    req.flash('success', 'Contact information updated successfully.');
+    res.redirect('/sis/my/profile');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
 
 
 // ============================================

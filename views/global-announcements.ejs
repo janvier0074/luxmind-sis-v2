@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - University Announcements</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .ann-list { display: flex; flex-direction: column; gap: 1rem; max-width: 900px; }
+    .ann-item { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); border-left: 4px solid var(--amber); }
+    .ann-item h4 { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 0.5rem; }
+    .ann-item p { font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 1rem; }
+    .ann-date { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+    
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS</div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="javascript:history.back()" class="menu-link"><i class="fas fa-arrow-left main-icon"></i> Back to Dashboard</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>University Announcements</h1>
+      <p>Official news and updates from the Administration.</p>
+    </div>
+
+    <div class="ann-list">
+      <% if (announcements.length === 0) { %>
+        <div style="background:#fff; padding: 2rem; border-radius: 1rem; text-align: center; color: #64748b;">No announcements have been posted yet.</div>
+      <% } %>
+      <% announcements.forEach(ann => { 
+           const isNew = (new Date() - new Date(ann.created_at)) < (3 * 24 * 60 * 60 * 1000); // New if less than 3 days old
+      %>
+        <div class="ann-item" style="<%= isNew ? 'background: #fffbeb;' : '' %>">
+          <h4><%= ann.title %> <% if(isNew) { %><span style="background:#dc2626; color:#fff; font-size:0.6rem; padding:0.1rem 0.4rem; border-radius:4px; margin-left:0.5rem;">NEW</span><% } %></h4>
+          <p><%= ann.message %></p>
+          <div class="ann-date"><i class="fas fa-clock"></i> Posted on <%= new Date(ann.created_at).toLocaleDateString() %></div>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+</body>
+</html>

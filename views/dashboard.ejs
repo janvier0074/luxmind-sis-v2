@@ -111,6 +111,7 @@
     <ul class="sidebar-menu">
       <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
       <li class="menu-item"><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+             <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> University News</a></li>
       <li class="menu-item"><a href="/sis/my/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
       
       <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-building main-icon"></i> Accommodation</a></li>
@@ -183,6 +184,14 @@
       <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
         <div><i class="fas fa-bell"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %> regarding document requests.</div>
         <a href="/sis/my/documents" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">View Now</a>
+      </div>
+    <% } %>
+
+
+    <% if (typeof globalAnnouncementCount !== 'undefined' && globalAnnouncementCount > 0) { %>
+      <div style="background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; flex-wrap: wrap; gap: 1rem;">
+        <div><i class="fas fa-university"></i> You have <strong><%= globalAnnouncementCount %></strong> new university announcement<%= globalAnnouncementCount > 1 ? 's' : '' %>.</div>
+        <a href="/sis/announcements" style="background: #dc2626; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 800;">Read Now</a>
       </div>
     <% } %>
 

@@ -116,13 +116,17 @@ app.get('/sis/my', requireLogin, async (req, res) => {
       JOIN enrollments e ON e.section_id = s.id
       WHERE e.user_id = $1 AND a.created_at > NOW() - INTERVAL '7 days'
     `, [req.session.user.id]);
+    const globalAnnCount = await pool.query(`
+      SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
+    `);
     
-    res.render('dashboard', { 
+       res.render('dashboard', { 
       user: req.session.user, 
       profile: profile, 
       stats: stats, 
       greeting: getGreeting(),
-      announcementCount: parseInt(newAnnCount.rows[0].count) || 0
+      announcementCount: parseInt(newAnnCount.rows[0].count) || 0,
+      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
     });
   } catch (err) {
     res.status(500).send("Dashboard Error: " + err.message);
@@ -368,8 +372,17 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 app.get('/sis/faculty', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
+        const globalAnnCount = await pool.query(`
+      SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
+    `);
     const coursesRes = await pool.query(`SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
-    res.render('faculty-dashboard', { user: req.session.user, greeting: getGreeting(), courses: coursesRes.rows });
+       res.render('faculty-dashboard', { 
+      user: req.session.user, 
+      greeting: getGreeting(), 
+      courses: coursesRes.rows,
+      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
+    });
+
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
@@ -881,6 +894,41 @@ app.post('/sis/my/messages/reply', requireLogin, async (req, res) => {
     res.redirect('/sis/my/messages');
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
+
+
+// ============================================
+// --- ADMIN: GLOBAL ANNOUNCEMENTS ---
+// ============================================
+
+// 1. Admin View & Create
+app.get('/sis/admin/announcements', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  try {
+    const annRes = await pool.query(`SELECT * FROM global_announcements ORDER BY created_at DESC`);
+    res.render('admin-announcements', { user: req.session.user, announcements: annRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+app.post('/sis/admin/announcements/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'admin') return res.redirect('/login');
+  const { title, message } = req.body;
+  try {
+    await pool.query(`INSERT INTO global_announcements (title, message) VALUES ($1, $2)`, [title, message]);
+    req.flash('success', 'Global announcement posted successfully.');
+    res.redirect('/sis/admin/announcements');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// ============================================
+// --- STUDENT/TEACHER: READ GLOBAL ANNOUNCEMENTS ---
+// ============================================
+app.get('/sis/announcements', requireLogin, async (req, res) => {
+  try {
+    const annRes = await pool.query(`SELECT * FROM global_announcements ORDER BY created_at DESC`);
+    res.render('global-announcements', { user: req.session.user, announcements: annRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

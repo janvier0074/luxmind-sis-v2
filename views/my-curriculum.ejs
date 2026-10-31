@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - My Curriculum</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { 
+      --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; 
+      --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); 
+      --success: #1f8a5f; --danger: #b33e2e; --sky: #3b7cb9;
+    }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
+
+    /* Main Content */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    /* Progress Bar */
+    .progress-card { background: #fff; padding: 1.5rem; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); margin-bottom: 2rem; }
+    .progress-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.8rem; }
+    .progress-header h3 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    .progress-header span { font-size: 1.2rem; font-weight: 800; color: var(--blue); }
+    .progress-bg { background: var(--ice); height: 14px; border-radius: 100px; overflow: hidden; border: 1px solid var(--frost); }
+    .progress-fill { background: linear-gradient(90deg, var(--success), #4ade80); height: 100%; border-radius: 100px; transition: width 0.5s ease; }
+    .progress-labels { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8rem; font-weight: 600; color: #64748b; }
+
+    /* Horizontal Scroll Container */
+    .curriculum-wrapper { 
+      overflow-x: auto; 
+      padding-bottom: 1.5rem; 
+      -webkit-overflow-scrolling: touch; 
+    }
+    /* Custom Scrollbar for desktop */
+    .curriculum-wrapper::-webkit-scrollbar { height: 8px; }
+    .curriculum-wrapper::-webkit-scrollbar-track { background: var(--ice); border-radius: 10px; }
+    .curriculum-wrapper::-webkit-scrollbar-thumb { background: var(--frost); border-radius: 10px; }
+
+    .curriculum-grid { 
+      display: grid; 
+      grid-template-columns: repeat(8, 280px); 
+      gap: 1.2rem; 
+      min-width: 100%; 
+    }
+
+    /* Semester Column */
+    .semester-col { background: #fff; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; display: flex; flex-direction: column; }
+    .semester-header { background: var(--navy); color: #fff; padding: 0.8rem 1rem; font-weight: 800; font-size: 0.85rem; text-align: center; border-bottom: 3px solid var(--amber); }
+    .course-list { padding: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+
+    /* Course Card */
+    .course-card { padding: 0.8rem; border-radius: 8px; border-left: 5px solid; display: flex; flex-direction: column; gap: 0.3rem; }
+    .course-code { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .course-name { font-size: 0.8rem; font-weight: 700; line-height: 1.3; }
+    .course-credits { font-size: 0.65rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 100px; display: inline-block; width: fit-content; margin-top: 0.3rem; }
+
+    /* CIU STATUS COLORS */
+    .status-passed { background: #dcfce7; border-left-color: #16a34a; }
+    .status-passed .course-code { color: #16a34a; }
+    .status-passed .course-credits { background: #bbf7d0; color: #166534; }
+
+    .status-enrolled { background: #e0f2fe; border-left-color: #0284c7; }
+    .status-enrolled .course-code { color: #0284c7; }
+    .status-enrolled .course-credits { background: #bae6fd; color: #075985; }
+
+    .status-not_taken { background: #fff; border-left-color: #cbd5e1; border-top: 1px solid var(--frost); border-right: 1px solid var(--frost); border-bottom: 1px solid var(--frost); }
+    .status-not_taken .course-code { color: #64748b; }
+    .status-not_taken .course-credits { background: #f1f5f9; color: #475569; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      
+      /* Adjust grid for mobile */
+      .curriculum-grid { grid-template-columns: repeat(8, 240px); gap: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li><a href="/sis/my/curriculum" class="menu-link active"><i class="fas fa-list main-icon"></i> My Curriculum</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>My Curriculum</h1>
+      <p>Track your graduation progress. Swipe horizontally to see all semesters.</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-card">
+      <div class="progress-header">
+        <h3>Graduation Progress</h3>
+        <span><%= progress %>%</span>
+      </div>
+      <div class="progress-bg">
+        <div class="progress-fill" style="width: <%= progress %>%;"></div>
+      </div>
+      <div class="progress-labels">
+        <span>Earned: <%= earnedCredits %> Credits</span>
+        <span>Total Required: <%= totalCredits %> Credits</span>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.8rem; font-weight: 700; color: var(--navy); flex-wrap: wrap;">
+      <span><span style="display:inline-block; width:12px; height:12px; background:#dcfce7; border:1px solid #16a34a; border-radius:3px; margin-right:5px;"></span> Passed</span>
+      <span><span style="display:inline-block; width:12px; height:12px; background:#e0f2fe; border:1px solid #0284c7; border-radius:3px; margin-right:5px;"></span> Currently Enrolled</span>
+      <span><span style="display:inline-block; width:12px; height:12px; background:#fff; border:1px solid #cbd5e1; border-radius:3px; margin-right:5px;"></span> Not Taken</span>
+    </div>
+
+    <!-- Horizontal Scroll Grid -->
+    <div class="curriculum-wrapper">
+      <div class="curriculum-grid">
+        <% for (let sem = 1; sem <= 8; sem++) { %>
+          <div class="semester-col">
+            <div class="semester-header">Semester <%= sem %></div>
+            <div class="course-list">
+              <% if (!curriculum[sem] || curriculum[sem].length === 0) { %>
+                <div style="text-align:center; font-size:0.75rem; color:#94a3b8; padding: 1rem;">No courses</div>
+              <% } %>
+              
+              <% (curriculum[sem] || []).forEach(course => { %>
+                <div class="course-card status-<%= course.status %>">
+                  <div class="course-code"><%= course.course_code || 'N/A' %></div>
+                  <div class="course-name"><%= course.course_name %></div>
+                  <div class="course-credits"><%= course.credits %> Credits</div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

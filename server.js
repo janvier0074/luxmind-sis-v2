@@ -1030,7 +1030,78 @@ app.post('/sis/advisor/withdrawals/:id/reject', requireLogin, async (req, res) =
 });
 
 
+// ============================================
+// --- STUDENT: MY CURRICULUM ---
+// ============================================
+app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // 1. Get student's program
+    const profileRes = await pool.query(`SELECT class_level FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
+    const level = profileRes.rows[0]?.class_level || 'Computer Engineering';
 
+    // 2. Get the full curriculum for this program
+    const currRes = await pool.query(`
+      SELECT * FROM curriculum 
+      WHERE program_level = $1 
+      ORDER BY semester_number, course_name
+    `, [level]);
+
+    // 3. Get passed courses (grade exists and is not F)
+    const passedRes = await pool.query(`
+      SELECT c.title, c.credits 
+      FROM grades g 
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1 AND g.letter_grade NOT IN ('F', 'N/A', NULL)
+    `, [req.session.user.id]);
+
+    // 4. Get currently enrolled courses
+    const enrolledRes = await pool.query(`
+      SELECT c.title, c.credits 
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+
+    // 5. Calculate progress and map status
+    let totalCredits = 0;
+    let earnedCredits = 0;
+    
+    const curriculum = currRes.rows.map(curr => {
+      totalCredits += Number(curr.credits);
+      
+      const isPassed = passedRes.rows.some(p => p.title.toLowerCase() === curr.course_name.toLowerCase());
+      const isEnrolled = enrolledRes.rows.some(e => e.title.toLowerCase() === curr.course_name.toLowerCase());
+      
+      if (isPassed) earnedCredits += Number(curr.credits);
+
+      let status = 'not_taken';
+      if (isPassed) status = 'passed';
+      else if (isEnrolled) status = 'enrolled';
+
+      return { ...curr, status };
+    });
+
+    // 6. Group by semester (1-8)
+    const bySem = {};
+    for (let i = 1; i <= 8; i++) bySem[i] = [];
+    curriculum.forEach(c => {
+      const sem = c.semester_number || 1;
+      if (bySem[sem]) bySem[sem].push(c);
+    });
+
+    res.render('my-curriculum', {
+      user: req.session.user,
+      curriculum: bySem,
+      totalCredits,
+      earnedCredits,
+      progress: totalCredits > 0 ? Math.round((earnedCredits / totalCredits) * 100) : 0
+    });
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

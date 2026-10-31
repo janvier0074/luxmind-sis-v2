@@ -1250,6 +1250,109 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+// ============================================
+// --- MAKEUP EXAM SYSTEM ---
+// ============================================
+
+// 1. Student: View Makeup Application Page
+app.get('/sis/my/makeup-exams', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // Get courses the student is enrolled in
+    const enrolledRes = await pool.query(`
+      SELECT c.id, c.code, c.title 
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      WHERE e.user_id = $1
+    `, [req.session.user.id]);
+
+    // Get past requests
+    const requestsRes = await pool.query(`
+      SELECT m.*, c.code, c.title 
+      FROM makeup_exam_requests m
+      JOIN courses c ON c.id = m.course_id
+      WHERE m.student_id = $1
+      ORDER BY m.created_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-makeup-exams', { 
+      user: req.session.user, 
+      enrolled: enrolledRes.rows, 
+      requests: requestsRes.rows 
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Student: Submit Request
+app.post('/sis/my/makeup-exams/request', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const { course_id, exam_type, reason } = req.body;
+  try {
+    const existing = await pool.query(`
+      SELECT id FROM makeup_exam_requests 
+      WHERE student_id = $1 AND course_id = $2 AND exam_type = $3 AND status = 'pending'
+    `, [req.session.user.id, Number(course_id), exam_type]);
+
+    if (existing.rows.length > 0) {
+      req.flash('error', 'You already have a pending makeup request for this exam.');
+      return res.redirect('/sis/my/makeup-exams');
+    }
+
+    await pool.query(`
+      INSERT INTO makeup_exam_requests (student_id, course_id, exam_type, reason) 
+      VALUES ($1, $2, $3, $4)
+    `, [req.session.user.id, Number(course_id), exam_type, reason]);
+    
+    req.flash('success', 'Makeup exam request submitted to your teacher.');
+    res.redirect('/sis/my/makeup-exams');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 3. Teacher: View Makeup Queue
+app.get('/sis/faculty/makeup-exams', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const requestsRes = await pool.query(`
+      SELECT m.*, c.code, c.title, u.full_name as student_name, u.username
+      FROM makeup_exam_requests m
+      JOIN courses c ON c.id = m.course_id
+      JOIN users u ON u.id = m.student_id
+      JOIN enrollments e ON e.course_id = c.id AND e.user_id = m.student_id
+      JOIN course_sections s ON s.id = e.section_id
+      WHERE s.teacher_id = $1 AND m.status = 'pending'
+      ORDER BY m.created_at ASC
+    `, [req.session.user.id]);
+    res.render('faculty-makeup-exams', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 4. Teacher: Approve/Reject Request
+app.post('/sis/faculty/makeup-exams/:id/action', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const requestId = req.params.id;
+  const { action, scheduled_date, scheduled_room, teacher_notes } = req.body;
+  
+  try {
+    if (action === 'approve') {
+      await pool.query(`
+        UPDATE makeup_exam_requests 
+        SET status = 'approved', scheduled_date = $1, scheduled_room = $2, teacher_notes = $3 
+        WHERE id = $4
+      `, [scheduled_date, scheduled_room, teacher_notes, requestId]);
+      req.flash('success', 'Makeup exam approved and scheduled.');
+    } else {
+      await pool.query(`
+        UPDATE makeup_exam_requests 
+        SET status = 'rejected', teacher_notes = $1 
+        WHERE id = $2
+      `, [teacher_notes || 'Request rejected.', requestId]);
+      req.flash('error', 'Makeup request rejected.');
+    }
+    res.redirect('/sis/faculty/makeup-exams');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+
 
 // ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---

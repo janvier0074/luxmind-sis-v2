@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -189,6 +189,19 @@
     }
     .logout-pill:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 
+    /* Language Switcher */
+    .lang-switcher {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #fff; padding: 0.5rem 1rem; border-radius: 100px;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
+    }
+    .lang-switcher i { color: var(--amber); font-size: 0.9rem; }
+    .lang-switcher select {
+      border: none; background: transparent; font-family: inherit;
+      font-weight: 700; font-size: 0.85rem; color: var(--navy);
+      cursor: pointer; outline: none;
+    }
+
     /* Stats */
     .stats-grid {
       display: grid;
@@ -331,18 +344,18 @@
       <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
     </div>
     <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
-      <li class="menu-item"><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
-      <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> University News</a></li>
-      <li class="menu-item"><a href="/sis/my/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
+      <li class="menu-item"><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> <%= lang.announcements || 'Announcements' %></a></li>
+      <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> <%= lang.university_news || 'University News' %></a></li>
+      <li class="menu-item"><a href="/sis/my/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> <%= lang.messaging || 'Messaging' %></a></li>
 
-      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-building main-icon"></i> Accommodation</a></li>
-      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-dumbbell main-icon"></i> LuxMind Arena</a></li>
-      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-users main-icon"></i> Clubs</a></li>
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-building main-icon"></i> <%= lang.accommodation || 'Accommodation' %></a></li>
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-dumbbell main-icon"></i> <%= lang.arena || 'LuxMind Arena' %></a></li>
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-users main-icon"></i> <%= lang.clubs || 'Clubs' %></a></li>
 
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-file-alt main-icon"></i> Documents <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-file-alt main-icon"></i> <%= lang.documents || 'Documents' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-pdf main-icon"></i> Transcript Request</a></li>
@@ -354,12 +367,12 @@
 
       <li class="menu-item open">
         <a href="#" class="menu-link active" onclick="toggle(event, this)">
-          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-user-graduate main-icon"></i> <%= lang.student || 'Student' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu open">
           <li class="menu-item">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
-              <i class="fas fa-wallet main-icon"></i> Accounting <i class="fas fa-chevron-right arrow"></i>
+              <i class="fas fa-wallet main-icon"></i> <%= lang.accounting || 'Accounting' %> <i class="fas fa-chevron-right arrow"></i>
             </a>
             <ul class="submenu">
               <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-file-invoice main-icon"></i> My Fees</a></li>
@@ -369,7 +382,7 @@
           </li>
           <li class="menu-item open">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
-              <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
+              <i class="fas fa-book-open main-icon"></i> <%= lang.course || 'Course' %> <i class="fas fa-chevron-right arrow"></i>
             </a>
             <ul class="submenu open">
               <li class="menu-item"><a href="/sis/my/attendance" class="menu-link"><i class="fas fa-check-square main-icon"></i> Attendance Detail</a></li>
@@ -377,13 +390,13 @@
               <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
               <li class="menu-item"><a href="/sis/my/withdrawal" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Course Withdrawal</a></li>
               <!-- ✅ NEW: Course Evaluation -->
-              <li class="menu-item"><a href="/sis/my/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> Course Evaluation</a></li>
+              <li class="menu-item"><a href="/sis/my/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> <%= lang.course_evaluation || 'Course Evaluation' %></a></li>
             </ul>
           </li>
 
           <li class="menu-item">
             <a href="#" class="menu-link" onclick="toggle(event, this)">
-              <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
+              <i class="fas fa-file-signature main-icon"></i> <%= lang.exam || 'Exam' %> <i class="fas fa-chevron-right arrow"></i>
             </a>
             <ul class="submenu">
               <li class="menu-item"><a href="/sis/my/exams" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
@@ -393,14 +406,14 @@
             </ul>
           </li>
 
-          <li class="menu-item"><a href="/sis/my/curriculum" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum</a></li>
-          <li class="menu-item"><a href="/sis/my/profile" class="menu-link"><i class="fas fa-address-card main-icon"></i> Contact Information</a></li>
-          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
-          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
+          <li class="menu-item"><a href="/sis/my/curriculum" class="menu-link"><i class="fas fa-list main-icon"></i> <%= lang.curriculum || 'Curriculum' %></a></li>
+          <li class="menu-item"><a href="/sis/my/profile" class="menu-link"><i class="fas fa-address-card main-icon"></i> <%= lang.contact_information || 'Contact Information' %></a></li>
+          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> <%= lang.transcript || 'My Transcript' %></a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> <%= lang.document_request || 'Document Request' %></a></li>
         </ul>
       </li>
 
-      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
     </ul>
   </aside>
 
@@ -435,12 +448,21 @@
         <p>Here is what is happening with your academics today.</p>
       </div>
       <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div class="lang-switcher">
+          <i class="fas fa-globe"></i>
+          <select onchange="window.location.href='/set-language/' + this.value">
+            <option value="en" <%= (typeof locale !== 'undefined' && locale === 'en') ? 'selected' : '' %>>English</option>
+            <option value="fr" <%= (typeof locale !== 'undefined' && locale === 'fr') ? 'selected' : '' %>>Français</option>
+            <option value="sw" <%= (typeof locale !== 'undefined' && locale === 'sw') ? 'selected' : '' %>>Kiswahili</option>
+            <option value="rn" <%= (typeof locale !== 'undefined' && locale === 'rn') ? 'selected' : '' %>>Ikirundi</option>
+          </select>
+        </div>
         <div class="user-pill">
           <i class="fas fa-user-circle"></i>
           <%= user.admission_number || user.username %>
         </div>
         <a href="/logout" class="logout-pill">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i> <%= lang.logout || 'Logout' %>
         </a>
       </div>
     </div>
@@ -470,7 +492,7 @@
       </div>
     </div>
 
-    <div class="section-title"><i class="fas fa-th-large"></i> Quick Actions</div>
+    <div class="section-title"><i class="fas fa-th-large"></i> <%= lang.quick_actions || 'Quick Actions' %></div>
 
     <div class="tile-grid">
       <a href="/sis/my/registration" class="tile highlight">
@@ -487,7 +509,7 @@
       </a>
       <a href="/sis/my/transcript" class="tile">
         <i class="fas fa-list-ol"></i>
-        <span>My Transcript</span>
+        <span><%= lang.transcript || 'My Transcript' %></span>
       </a>
       <a href="/sis/my/finance" class="tile">
         <i class="fas fa-file-invoice"></i>
@@ -503,11 +525,11 @@
       </a>
       <a href="/sis/my/announcements" class="tile">
         <i class="fas fa-bullhorn"></i>
-        <span>Announcements</span>
+        <span><%= lang.announcements || 'Announcements' %></span>
       </a>
       <a href="/sis/my/messages" class="tile">
         <i class="fas fa-envelope"></i>
-        <span>Messaging</span>
+        <span><%= lang.messaging || 'Messaging' %></span>
       </a>
       <a href="/sis/my/withdrawal" class="tile">
         <i class="fas fa-sign-out-alt"></i>
@@ -516,7 +538,7 @@
       <!-- ✅ NEW: Course Evaluation Quick Action -->
       <a href="/sis/my/evaluations" class="tile">
         <i class="fas fa-poll"></i>
-        <span>Course Evaluation</span>
+        <span><%= lang.course_evaluation || 'Course Evaluation' %></span>
       </a>
     </div>
 

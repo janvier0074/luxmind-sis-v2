@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxMind SIS - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
+      --shadow-hover: 0 15px 30px -10px rgba(10, 30, 50, 0.18);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(245, 166, 35, 0.06), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(30, 77, 123, 0.05), transparent 40%),
+        var(--ice);
+      min-height: 100vh;
+      display: flex;
+      color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, var(--navy) 0%, var(--deep) 100%);
+      color: #fff;
+      position: fixed;
+      top: 0; bottom: 0; left: 0;
+      overflow-y: auto;
+      box-shadow: 4px 0 30px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      scrollbar-width: thin;
+      scrollbar-color: #1e3a5f transparent;
+    }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+
+    .sidebar-brand {
+      padding: 1.8rem 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky; top: 0;
+      background: var(--navy);
+      z-index: 10;
+    }
+    .brand-mark {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--amber), var(--gold));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800; color: var(--navy);
+      box-shadow: 0 4px 12px rgba(245, 166, 35, 0.35);
+    }
+    .brand-name { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span {
+      display: block; font-size: 0.62rem; color: var(--gold);
+      letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-top: 2px;
+    }
+
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link {
+      display: flex; align-items: center;
+      padding: 0.75rem 1.5rem;
+      color: #94a3b8; text-decoration: none;
+      font-size: 0.85rem; font-weight: 600;
+      transition: var(--transition);
+      border-left: 3px solid transparent;
+    }
+    .menu-link:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+      border-left-color: var(--amber);
+    }
+    .menu-link i.main-icon {
+      width: 25px; color: var(--gold);
+      font-size: 0.9rem; opacity: 0.85;
+      transition: var(--transition);
+    }
+    .menu-link:hover i.main-icon { opacity: 1; transform: scale(1.08); }
+    .menu-link .arrow {
+      margin-left: auto; font-size: 0.65rem;
+      transition: transform 0.3s ease;
+    }
+    .menu-link.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(245, 166, 35, 0.18), transparent);
+      border-left-color: var(--gold);
+    }
+    .menu-link.active i.main-icon { color: var(--gold); opacity: 1; }
+
+    .submenu {
+      list-style: none;
+      display: none;
+      background: rgba(0,0,0,0.18);
+      border-left: 2px solid transparent;
+      animation: slideDown 0.25s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.78rem; padding-top: 0.6rem; padding-bottom: 0.6rem; }
+    .submenu .menu-link i.main-icon { color: #cbd5e1; opacity: 0.6; }
+    .submenu .menu-link:hover i.main-icon { color: var(--gold); opacity: 1; }
+    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.73rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* --- MAIN CONTENT --- */
+    .main-content {
+      margin-left: 280px;
+      padding: 2.5rem;
+      flex: 1;
+      width: calc(100% - 280px);
+      transition: margin 0.3s ease;
+    }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: var(--blue); font-weight: 800; text-decoration: none;
+      margin-bottom: 1rem; font-size: 0.85rem;
+      padding: 0.4rem 0.8rem; border-radius: 8px;
+      transition: var(--transition);
+    }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    /* Notification banners */
+    .notif-banner {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; flex-wrap: wrap; gap: 1rem;
+      box-shadow: 0 4px 12px -4px rgba(220, 38, 38, 0.2);
+      transition: var(--transition);
+    }
+    .notif-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -6px rgba(220, 38, 38, 0.3); }
+    .notif-btn {
+      background: #dc2626; color: #fff;
+      padding: 0.6rem 1.2rem; border-radius: 8px;
+      text-decoration: none; font-size: 0.82rem; font-weight: 800;
+      transition: var(--transition);
+    }
+    .notif-btn:hover { background: #b91c1c; transform: scale(1.03); }
+
+    /* Top bar */
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .greeting h1 {
+      font-size: 1.8rem; font-weight: 800;
+      color: var(--navy); letter-spacing: -0.5px;
+    }
+    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
+    .user-pill {
+      background: #fff; padding: 0.55rem 1.1rem; border-radius: 100px;
+      display: flex; align-items: center; gap: 0.8rem;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
+      font-weight: 700; font-size: 0.88rem;
+    }
+    .user-pill i { color: var(--amber); }
+    .logout-pill {
+      background: linear-gradient(135deg, #b33e2e, #8b2d20);
+      color: white;
+      padding: 0.55rem 1.1rem; border-radius: 100px;
+      text-decoration: none; font-weight: 700; font-size: 0.88rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      box-shadow: var(--shadow-soft);
+      transition: var(--transition);
+    }
+    .logout-pill:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      display: flex; align-items: center; gap: 1.2rem;
+      transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--gold); }
+    .stat-icon {
+      width: 55px; height: 55px; border-radius: 15px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .stat-icon.gpa     { background: #e0f2fe; color: #0284c7; }
+    .stat-icon.credits { background: #dcfce7; color: #16a34a; }
+    .stat-icon.finance { background: #fef3c7; color: #d97706; }
+    .stat-info h3 {
+      font-size: 0.78rem; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+    }
+    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.2rem; }
+    .stat-info small { font-size: 0.75rem; font-weight: 600; color: var(--danger); }
+
+    /* Section Title */
+    .section-title {
+      font-size: 1.05rem; font-weight: 800; color: var(--navy);
+      margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .section-title i { color: var(--amber); }
+
+    /* Tiles */
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+    }
+    .tile {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      text-decoration: none; color: var(--navy);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      transition: var(--transition);
+      min-height: 160px;
+      position: relative;
+      overflow: hidden;
+    }
+    .tile::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(245,166,35,0.08), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .tile:hover {
+      transform: translateY(-5px);
+      border-color: var(--amber);
+      box-shadow: var(--shadow-hover);
+    }
+    .tile:hover::before { opacity: 1; }
+    .tile i {
+      font-size: 2.2rem; color: var(--blue);
+      margin-bottom: 1rem;
+      transition: var(--transition);
+      position: relative; z-index: 1;
+    }
+    .tile:hover i { color: var(--amber); transform: scale(1.12) rotate(-3deg); }
+    .tile span {
+      font-size: 0.9rem; font-weight: 700;
+      line-height: 1.3;
+      position: relative; z-index: 1;
+    }
+    .tile.highlight {
+      background: linear-gradient(135deg, var(--navy), var(--deep));
+      color: #fff; border: none;
+    }
+    .tile.highlight:hover { box-shadow: 0 15px 35px -8px rgba(10, 30, 50, 0.4); }
+    .tile.highlight i { color: var(--amber); }
+
+    /* --- MOBILE --- */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed; top: 1rem; left: 1rem; z-index: 1001;
+      background: var(--navy); color: var(--gold);
+      border: none; width: 45px; height: 45px; border-radius: 10px;
+      font-size: 1.2rem; cursor: pointer;
+      box-shadow: var(--shadow-soft);
+      align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .mobile-menu-btn:hover { background: var(--deep); }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(10,30,50,0.5); z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 280px; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .btn-back { display: inline-flex; }
+      .top-bar { flex-direction: column; align-items: flex-start; }
+      .greeting h1 { font-size: 1.4rem; }
+      .user-pill { width: 100%; justify-content: center; }
+      .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .tile-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .tile { min-height: 130px; padding: 1rem; }
+      .tile i { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    }
+    @media (max-width: 480px) {
+      .tile-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item"><a href="/sis/my/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+      <li class="menu-item"><a href="/sis/announcements" class="menu-link"><i class="fas fa-university main-icon"></i> University News</a></li>
+      <li class="menu-item"><a href="/sis/my/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
+
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-building main-icon"></i> Accommodation</a></li>
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-dumbbell main-icon"></i> LuxMind Arena</a></li>
+      <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-users main-icon"></i> Clubs</a></li>
+
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-file-alt main-icon"></i> Documents <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-pdf main-icon"></i> Transcript Request</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-id-card main-icon"></i> Student ID Request</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-certificate main-icon"></i> Enrollment Certificate</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-envelope-open-text main-icon"></i> Recommendation Letter</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-wallet main-icon"></i> Accounting <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-file-invoice main-icon"></i> My Fees</a></li>
+              <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-credit-card main-icon"></i> Make a Payment</a></li>
+              <li class="menu-item"><a href="/sis/my/finance" class="menu-link"><i class="fas fa-balance-scale main-icon"></i> Financial Status</a></li>
+            </ul>
+          </li>
+          <li class="menu-item open">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-book-open main-icon"></i> Course <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu open">
+              <li class="menu-item"><a href="/sis/my/attendance" class="menu-link"><i class="fas fa-check-square main-icon"></i> Attendance Detail</a></li>
+              <li class="menu-item"><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit main-icon"></i> Course Registration</a></li>
+              <li class="menu-item"><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Timetable</a></li>
+              <li class="menu-item"><a href="/sis/my/withdrawal" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Course Withdrawal</a></li>
+              <!-- ✅ NEW: Course Evaluation -->
+              <li class="menu-item"><a href="/sis/my/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> Course Evaluation</a></li>
+            </ul>
+          </li>
+
+          <li class="menu-item">
+            <a href="#" class="menu-link" onclick="toggle(event, this)">
+              <i class="fas fa-file-signature main-icon"></i> Exam <i class="fas fa-chevron-right arrow"></i>
+            </a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="/sis/my/exams" class="menu-link"><i class="fas fa-calendar-day main-icon"></i> Exam Program</a></li>
+              <li class="menu-item"><a href="/sis/my/exam-results" class="menu-link"><i class="fas fa-poll main-icon"></i> Exam Result</a></li>
+              <li class="menu-item"><a href="/sis/my/exam-objections" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objection</a></li>
+              <li class="menu-item"><a href="/sis/my/makeup-exams" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exam Application</a></li>
+            </ul>
+          </li>
+
+          <li class="menu-item"><a href="/sis/my/curriculum" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum</a></li>
+          <li class="menu-item"><a href="/sis/my/profile" class="menu-link"><i class="fas fa-address-card main-icon"></i> Contact Information</a></li>
+          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
+          <li class="menu-item"><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-download main-icon"></i> Document Request</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <% if (typeof unseenDocs !== 'undefined' && unseenDocs > 0) { %>
+      <div class="notif-banner">
+        <div><i class="fas fa-bell"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %> regarding document requests.</div>
+        <a href="/sis/my/documents" class="notif-btn">View Now</a>
+      </div>
+    <% } %>
+
+    <% if (typeof globalAnnouncementCount !== 'undefined' && globalAnnouncementCount > 0) { %>
+      <div class="notif-banner">
+        <div><i class="fas fa-university"></i> You have <strong><%= globalAnnouncementCount %></strong> new university announcement<%= globalAnnouncementCount > 1 ? 's' : '' %>.</div>
+        <a href="/sis/announcements" class="notif-btn">Read Now</a>
+      </div>
+    <% } %>
+
+    <% if (typeof announcementCount !== 'undefined' && announcementCount > 0) { %>
+      <div class="notif-banner" style="margin-bottom: 1.5rem;">
+        <div><i class="fas fa-bullhorn"></i> You have <strong><%= announcementCount %></strong> new announcement<%= announcementCount > 1 ? 's' : '' %> from your teachers.</div>
+        <a href="/sis/my/announcements" class="notif-btn">View Announcements</a>
+      </div>
+    <% } %>
+
+    <div class="top-bar">
+      <div class="greeting">
+        <h1><%= greeting %>, <%= user.full_name.split(' ')[0] %> 👋</h1>
+        <p>Here is what is happening with your academics today.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div class="user-pill">
+          <i class="fas fa-user-circle"></i>
+          <%= user.admission_number || user.username %>
+        </div>
+        <a href="/logout" class="logout-pill">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gpa"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+          <h3>Current CGPA</h3>
+          <p><%= stats.gpa %> <span style="font-size: 1rem; color: #64748b;">/ 4.0</span></p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon credits"><i class="fas fa-medal"></i></div>
+        <div class="stat-info">
+          <h3>Credits Earned</h3>
+          <p><%= stats.credits %> <span style="font-size: 1rem; color: #64748b;">/ 120</span></p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon finance"><i class="fas fa-wallet"></i></div>
+        <div class="stat-info">
+          <h3>Account Balance</h3>
+          <p>$<%= stats.balance %></p>
+          <small>Payment required</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><i class="fas fa-th-large"></i> Quick Actions</div>
+
+    <div class="tile-grid">
+      <a href="/sis/my/registration" class="tile highlight">
+        <i class="fas fa-edit"></i>
+        <span>Course Registration</span>
+      </a>
+      <a href="/sis/my/timetable" class="tile">
+        <i class="fas fa-calendar-alt"></i>
+        <span>My Timetable</span>
+      </a>
+      <a href="/sis/my/attendance" class="tile">
+        <i class="fas fa-check-circle"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="/sis/my/transcript" class="tile">
+        <i class="fas fa-list-ol"></i>
+        <span>My Transcript</span>
+      </a>
+      <a href="/sis/my/finance" class="tile">
+        <i class="fas fa-file-invoice"></i>
+        <span>Financial Statement</span>
+      </a>
+      <a href="/sis/my/documents" class="tile">
+        <i class="fas fa-file-alt"></i>
+        <span>Document Requests</span>
+      </a>
+      <a href="/sis/my/exams" class="tile">
+        <i class="fas fa-file-signature"></i>
+        <span>Exam Program</span>
+      </a>
+      <a href="/sis/my/announcements" class="tile">
+        <i class="fas fa-bullhorn"></i>
+        <span>Announcements</span>
+      </a>
+      <a href="/sis/my/messages" class="tile">
+        <i class="fas fa-envelope"></i>
+        <span>Messaging</span>
+      </a>
+      <a href="/sis/my/withdrawal" class="tile">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Course Withdrawal</span>
+      </a>
+      <!-- ✅ NEW: Course Evaluation Quick Action -->
+      <a href="/sis/my/evaluations" class="tile">
+        <i class="fas fa-poll"></i>
+        <span>Course Evaluation</span>
+      </a>
+    </div>
+
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) {
+        submenu.classList.toggle('open');
+      }
+    }
+
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+  </script>
+
+</body>
+</html>

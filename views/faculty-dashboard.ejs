@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -176,6 +176,19 @@
     }
     .user-pill i { color: var(--amber); font-size: 1rem; }
 
+    /* Language Switcher */
+    .lang-switcher {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #fff; padding: 0.5rem 1rem; border-radius: 100px;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
+    }
+    .lang-switcher i { color: var(--amber); font-size: 0.9rem; }
+    .lang-switcher select {
+      border: none; background: transparent; font-family: inherit;
+      font-weight: 700; font-size: 0.85rem; color: var(--navy);
+      cursor: pointer; outline: none;
+    }
+
     /* Stats Grid */
     .stats-grid {
       display: grid;
@@ -316,13 +329,13 @@
 
     <ul class="sidebar-menu">
       <li class="menu-item">
-        <a href="/sis/faculty" class="menu-link active"><i class="fas fa-home main-icon"></i> Dashboard</a>
+        <a href="/sis/faculty" class="menu-link active"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a>
       </li>
 
       <!-- 1. MY COURSES -->
       <li class="menu-item open">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-book-open main-icon"></i> My Courses <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu open">
           <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-list main-icon"></i> Course List</a></li>
@@ -355,7 +368,7 @@
           <!-- ✅ UPDATED: Course Evaluations -->
           <li class="menu-item">
             <a href="/sis/faculty/evaluations" class="menu-link">
-              <i class="fas fa-poll main-icon"></i> Course Evaluations
+              <i class="fas fa-poll main-icon"></i> <%= lang.course_evaluations || 'Course Evaluations' %>
             </a>
           </li>
         </ul>
@@ -364,7 +377,7 @@
       <!-- 2. GRADING & EXAMS -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-pen main-icon"></i> Grading & Exams <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-pen main-icon"></i> <%= lang.grading_exams || 'Grading & Exams' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="/sis/faculty/grades" class="menu-link"><i class="fas fa-marker main-icon"></i> Gradebook Entry</a></li>
@@ -389,7 +402,7 @@
       <!-- 3. ADVISING -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-user-friends main-icon"></i> Advising <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-user-friends main-icon"></i> <%= lang.advising || 'Advising' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
@@ -403,7 +416,7 @@
       <!-- 4. STUDENT REQUESTS -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-envelope-open-text main-icon"></i> Student Requests <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-envelope-open-text main-icon"></i> <%= lang.student_requests || 'Student Requests' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-alt main-icon"></i> Document Requests</a></li>
@@ -416,7 +429,7 @@
       <!-- 5. RESEARCH & PROJECTS -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-flask main-icon"></i> Research & Projects <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-flask main-icon"></i> <%= lang.research_projects || 'Research & Projects' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-microscope main-icon"></i> My Projects</a></li>
@@ -429,7 +442,7 @@
       <!-- 6. COMMUNICATION (FIXED: removed broken <li> inside <a>) -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-comments main-icon"></i> Communication <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-comments main-icon"></i> <%= lang.communication || 'Communication' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="/sis/faculty/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
@@ -442,7 +455,7 @@
       <!-- 7. FACULTY SERVICES -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-building main-icon"></i> Faculty Services <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-building main-icon"></i> <%= lang.faculty_services || 'Faculty Services' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-door-open main-icon"></i> Room Reservation</a></li>
@@ -455,12 +468,12 @@
       <!-- 8. SYSTEM -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-cog main-icon"></i> System <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-cog main-icon"></i> <%= lang.system || 'System' %> <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-cog main-icon"></i> My Profile</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-key main-icon"></i> Change Password</a></li>
-          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
         </ul>
       </li>
     </ul>
@@ -475,9 +488,20 @@
         <h1><%= greeting %>, <%= user.full_name.split(' ')[0] %> 👋</h1>
         <p>Here is an overview of your teaching and advising tasks.</p>
       </div>
-      <div class="user-pill">
-        <i class="fas fa-chalkboard-teacher"></i>
-        Faculty Member
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div class="lang-switcher">
+          <i class="fas fa-globe"></i>
+          <select onchange="window.location.href='/set-language/' + this.value">
+            <option value="en" <%= (typeof locale !== 'undefined' && locale === 'en') ? 'selected' : '' %>>English</option>
+            <option value="fr" <%= (typeof locale !== 'undefined' && locale === 'fr') ? 'selected' : '' %>>Français</option>
+            <option value="sw" <%= (typeof locale !== 'undefined' && locale === 'sw') ? 'selected' : '' %>>Kiswahili</option>
+            <option value="rn" <%= (typeof locale !== 'undefined' && locale === 'rn') ? 'selected' : '' %>>Ikirundi</option>
+          </select>
+        </div>
+        <div class="user-pill">
+          <i class="fas fa-chalkboard-teacher"></i>
+          Faculty Member
+        </div>
       </div>
     </div>
 
@@ -514,7 +538,7 @@
     </div>
 
     <!-- QUICK ACTIONS -->
-    <div class="section-title"><i class="fas fa-th-large"></i> Quick Actions</div>
+    <div class="section-title"><i class="fas fa-th-large"></i> <%= lang.quick_actions || 'Quick Actions' %></div>
 
     <div class="tile-grid">
       <a href="/sis/faculty/attendance" class="tile">
@@ -540,7 +564,7 @@
       <!-- ✅ NEW QUICK ACTION for Course Evaluations -->
       <a href="/sis/faculty/evaluations" class="tile">
         <i class="fas fa-poll"></i>
-        <span>Course Evaluations</span>
+        <span><%= lang.course_evaluations || 'Course Evaluations' %></span>
       </a>
     </div>
 

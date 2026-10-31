@@ -4,6 +4,17 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const flash = require('connect-flash');
 const { Resend } = require('resend');
+
+// ============================================
+// --- i18n: LANGUAGE DICTIONARIES ---
+// ============================================
+const langDicts = {
+  en: require('./lang/en.json'),
+  fr: require('./lang/fr.json'),
+  sw: require('./lang/sw.json'),
+  rn: require('./lang/rn.json')
+};
+
 require('dotenv').config();
 
 const app = express();
@@ -19,6 +30,17 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({ secret: 'luxmind-secret', resave: false, saveUninitialized: false }));
+
+// ============================================
+// --- i18n: MIDDLEWARE (injects lang into every EJS) ---
+// ============================================
+app.use((req, res, next) => {
+  const selected = (req.session && req.session.language) || 'en';
+  res.locals.lang = langDicts[selected] || langDicts.en;
+  res.locals.locale = langDicts[selected] ? selected : 'en';
+  next();
+});
+
 app.use(flash());
 
 app.use(async (req, res, next) => {
@@ -91,6 +113,17 @@ const requireLogin = (req, res, next) => {
 app.get('/', (req, res) => res.redirect('/login'));
 
 // ============================================
+// --- i18n: LANGUAGE SWITCHER ROUTE ---
+// ============================================
+app.get('/set-language/:locale', (req, res) => {
+  const { locale } = req.params;
+  if (langDicts[locale]) {
+    req.session.language = locale;
+  }
+  res.redirect(req.get('referer') || '/sis/my');
+});
+
+// ============================================
 // --- STUDENT DASHBOARD & ACADEMICS ---
 // ============================================
 app.get('/sis/my', requireLogin, async (req, res) => {
@@ -120,7 +153,7 @@ app.get('/sis/my', requireLogin, async (req, res) => {
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
     
-       res.render('dashboard', { 
+    res.render('dashboard', { 
       user: req.session.user, 
       profile: profile, 
       stats: stats, 
@@ -372,17 +405,16 @@ app.post('/sis/advisor/approvals/approve', requireLogin, async (req, res) => {
 app.get('/sis/faculty', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
-        const globalAnnCount = await pool.query(`
+    const globalAnnCount = await pool.query(`
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
     const coursesRes = await pool.query(`SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
-       res.render('faculty-dashboard', { 
+    res.render('faculty-dashboard', { 
       user: req.session.user, 
       greeting: getGreeting(), 
       courses: coursesRes.rows,
       globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
     });
-
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
@@ -937,7 +969,6 @@ app.get('/sis/announcements', requireLogin, async (req, res) => {
 app.get('/sis/my/withdrawal', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    // Get courses the student is currently enrolled in
     const enrolledRes = await pool.query(`
       SELECT c.id, c.code, c.title 
       FROM enrollments e
@@ -945,7 +976,6 @@ app.get('/sis/my/withdrawal', requireLogin, async (req, res) => {
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
-    // Get past withdrawal requests
     const requestsRes = await pool.query(`
       SELECT w.*, c.code, c.title 
       FROM course_withdrawals w
@@ -967,7 +997,6 @@ app.post('/sis/my/withdrawal/request', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   const { course_id, reason } = req.body;
   try {
-    // Check if a pending request already exists
     const existing = await pool.query(`SELECT id FROM course_withdrawals WHERE student_id = $1 AND course_id = $2 AND status = 'pending'`, [req.session.user.id, Number(course_id)]);
     if (existing.rows.length > 0) {
       req.flash('error', 'You already have a pending request for this course.');
@@ -999,19 +1028,15 @@ app.get('/sis/advisor/withdrawals', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 4. Advisor Approve Request (The Magic Step)
+// 4. Advisor Approve Request
 app.post('/sis/advisor/withdrawals/:id/approve', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor' && req.session.user.role !== 'admin') return res.redirect('/login');
   const requestId = req.params.id;
   try {
-    // Get the request details
     const reqRes = await pool.query(`SELECT student_id, course_id FROM course_withdrawals WHERE id = $1`, [requestId]);
     const { student_id, course_id } = reqRes.rows[0];
 
-    // Delete from enrollments
     await pool.query(`DELETE FROM enrollments WHERE user_id = $1 AND course_id = $2`, [student_id, course_id]);
-    
-    // Update request status
     await pool.query(`UPDATE course_withdrawals SET status = 'approved', reviewed_at = NOW() WHERE id = $1`, [requestId]);
     
     req.flash('success', 'Withdrawal approved. Student has been dropped from the course.');
@@ -1036,18 +1061,15 @@ app.post('/sis/advisor/withdrawals/:id/reject', requireLogin, async (req, res) =
 app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    // 1. Get student's program
     const profileRes = await pool.query(`SELECT class_level FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
     const level = profileRes.rows[0]?.class_level || 'Computer Engineering';
 
-    // 2. Get the full curriculum for this program
     const currRes = await pool.query(`
       SELECT * FROM curriculum 
       WHERE program_level = $1 
       ORDER BY semester_number, course_name
     `, [level]);
 
-    // 3. Get passed courses (grade exists and is not F)
     const passedRes = await pool.query(`
       SELECT c.title, c.credits 
       FROM grades g 
@@ -1056,7 +1078,6 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
       WHERE g.student_id = $1 AND g.letter_grade NOT IN ('F', 'N/A', NULL)
     `, [req.session.user.id]);
 
-    // 4. Get currently enrolled courses
     const enrolledRes = await pool.query(`
       SELECT c.title, c.credits 
       FROM enrollments e
@@ -1064,7 +1085,6 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
-    // 5. Calculate progress and map status
     let totalCredits = 0;
     let earnedCredits = 0;
     
@@ -1083,7 +1103,6 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
       return { ...curr, status };
     });
 
-    // 6. Group by semester (1-8)
     const bySem = {};
     for (let i = 1; i <= 8; i++) bySem[i] = [];
     curriculum.forEach(c => {
@@ -1111,7 +1130,6 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
 app.get('/sis/my/exam-objections', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    // Get courses student has grades in (only these can be objected to)
     const gradedRes = await pool.query(`
       SELECT DISTINCT c.id, c.code, c.title, s.id as section_id, g.letter_grade, g.final_grade
       FROM grades g
@@ -1120,7 +1138,6 @@ app.get('/sis/my/exam-objections', requireLogin, async (req, res) => {
       WHERE g.student_id = $1
     `, [req.session.user.id]);
 
-    // Get past objections
     const objRes = await pool.query(`
       SELECT o.*, c.code, c.title, u.full_name as teacher_name
       FROM exam_objections o
@@ -1144,7 +1161,6 @@ app.post('/sis/my/exam-objections/new', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   const { section_id, reason } = req.body;
   try {
-    // Prevent duplicate pending objections on the same section
     const existing = await pool.query(`
       SELECT id FROM exam_objections 
       WHERE student_id = $1 AND section_id = $2 AND status = 'pending'
@@ -1190,7 +1206,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
   const { action, new_final_grade, new_midterm_grade, teacher_response } = req.body;
   
   try {
-    // Get the objection details
     const objRes = await pool.query(`
       SELECT o.*, s.teacher_id 
       FROM exam_objections o
@@ -1203,7 +1218,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
     if (obj.teacher_id !== req.session.user.id) return res.redirect('/sis/faculty/exam-objections');
 
     if (action === 'resolve' && new_final_grade !== undefined) {
-      // Recalculate letter grade based on new grades
       const mid = Number(new_midterm_grade) || 0;
       const fin = Number(new_final_grade) || 0;
       const total = (mid + fin) / 2;
@@ -1223,7 +1237,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
       else if (total >= 63) { letter = 'D'; gpa = 1.0; }
       else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
 
-      // Update the grade
       await pool.query(`
         UPDATE grades SET midterm_grade = $1, final_grade = $2, letter_grade = $3, gpa_points = $4 
         WHERE student_id = $5 AND section_id = $6
@@ -1237,7 +1250,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
 
       req.flash('success', 'Grade corrected and objection resolved.');
     } else {
-      // Dismiss
       await pool.query(`
         UPDATE exam_objections 
         SET status = 'dismissed', teacher_response = $1, resolved_at = NOW() 
@@ -1258,7 +1270,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, r
 app.get('/sis/my/makeup-exams', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    // Get courses the student is enrolled in
     const enrolledRes = await pool.query(`
       SELECT c.id, c.code, c.title 
       FROM enrollments e
@@ -1266,7 +1277,6 @@ app.get('/sis/my/makeup-exams', requireLogin, async (req, res) => {
       WHERE e.user_id = $1
     `, [req.session.user.id]);
 
-    // Get past requests
     const requestsRes = await pool.query(`
       SELECT m.*, c.code, c.title 
       FROM makeup_exam_requests m
@@ -1406,7 +1416,6 @@ app.post('/sis/my/profile/update', requireLogin, async (req, res) => {
 app.get('/sis/my/evaluations', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    // Get enrolled courses and check if already evaluated
     const coursesRes = await pool.query(`
       SELECT c.code, c.title, s.id as section_id, u.full_name as teacher_name,
              (SELECT id FROM course_evaluations e WHERE e.student_id = $1 AND e.section_id = s.id) as evaluated
@@ -1430,7 +1439,6 @@ app.post('/sis/my/evaluations/submit', requireLogin, async (req, res) => {
   const { section_id, rating, feedback } = req.body;
   
   try {
-    // Upsert: Insert or update if they are changing their mind
     await pool.query(`
       INSERT INTO course_evaluations (student_id, section_id, rating, feedback)
       VALUES ($1, $2, $3, $4)
@@ -1447,7 +1455,6 @@ app.post('/sis/my/evaluations/submit', requireLogin, async (req, res) => {
 app.get('/sis/faculty/evaluations', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
-    // Get average rating per course
     const statsRes = await pool.query(`
       SELECT c.code, c.title, s.group_name,
              ROUND(AVG(e.rating), 1) as avg_rating,
@@ -1459,7 +1466,6 @@ app.get('/sis/faculty/evaluations', requireLogin, async (req, res) => {
       GROUP BY c.code, c.title, s.group_name
     `, [req.session.user.id]);
 
-    // Get all anonymous feedback
     const feedbackRes = await pool.query(`
       SELECT c.code, e.rating, e.feedback, e.created_at
       FROM course_evaluations e

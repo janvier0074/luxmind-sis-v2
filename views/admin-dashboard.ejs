@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,6 +52,19 @@
     .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
     .user-pill i { color: var(--amber); }
 
+    /* Language Switcher */
+    .lang-switcher {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #fff; padding: 0.5rem 1rem; border-radius: 100px;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
+    }
+    .lang-switcher i { color: var(--amber); font-size: 0.9rem; }
+    .lang-switcher select {
+      border: none; background: transparent; font-family: inherit;
+      font-weight: 700; font-size: 0.85rem; color: var(--navy);
+      cursor: pointer; outline: none;
+    }
+
     /* Dashboard Cards */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
     .stat-card { background: #fff; padding: 1.5rem; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1.2rem; }
@@ -102,7 +115,7 @@
     </div>
 
     <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/admin" class="menu-link active"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item"><a href="/sis/admin" class="menu-link active"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
       
       <!-- USER MANAGEMENT -->
       <li class="menu-item open">
@@ -166,8 +179,8 @@
           <i class="fas fa-cog main-icon"></i> System Settings <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
-          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> <%= lang.announcements || 'Announcements' %></a></li>
+          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
         </ul>
       </li>
     </ul>
@@ -184,9 +197,20 @@
         <h1><%= greeting %>, Registrar 👋</h1>
         <p>University overview and control center.</p>
       </div>
-      <div class="user-pill">
-        <i class="fas fa-user-shield"></i>
-        <%= user.full_name || user.username %>
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div class="lang-switcher">
+          <i class="fas fa-globe"></i>
+          <select onchange="window.location.href='/set-language/' + this.value">
+            <option value="en" <%= (typeof locale !== 'undefined' && locale === 'en') ? 'selected' : '' %>>English</option>
+            <option value="fr" <%= (typeof locale !== 'undefined' && locale === 'fr') ? 'selected' : '' %>>Français</option>
+            <option value="sw" <%= (typeof locale !== 'undefined' && locale === 'sw') ? 'selected' : '' %>>Kiswahili</option>
+            <option value="rn" <%= (typeof locale !== 'undefined' && locale === 'rn') ? 'selected' : '' %>>Ikirundi</option>
+          </select>
+        </div>
+        <div class="user-pill">
+          <i class="fas fa-user-shield"></i>
+          <%= user.full_name || user.username %>
+        </div>
       </div>
     </div>
 

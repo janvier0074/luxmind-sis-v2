@@ -1104,6 +1104,154 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
 });
 
 // ============================================
+// --- EXAM OBJECTION SYSTEM ---
+// ============================================
+
+// 1. Student: View Objections Page
+app.get('/sis/my/exam-objections', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // Get courses student has grades in (only these can be objected to)
+    const gradedRes = await pool.query(`
+      SELECT DISTINCT c.id, c.code, c.title, s.id as section_id, g.letter_grade, g.final_grade
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+    `, [req.session.user.id]);
+
+    // Get past objections
+    const objRes = await pool.query(`
+      SELECT o.*, c.code, c.title, u.full_name as teacher_name
+      FROM exam_objections o
+      JOIN course_sections s ON s.id = o.section_id
+      JOIN courses c ON c.id = s.course_id
+      JOIN users u ON u.id = s.teacher_id
+      WHERE o.student_id = $1
+      ORDER BY o.requested_at DESC
+    `, [req.session.user.id]);
+
+    res.render('student-exam-objections', {
+      user: req.session.user,
+      graded: gradedRes.rows,
+      objections: objRes.rows
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 2. Student: Submit Objection
+app.post('/sis/my/exam-objections/new', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  const { section_id, reason } = req.body;
+  try {
+    // Prevent duplicate pending objections on the same section
+    const existing = await pool.query(`
+      SELECT id FROM exam_objections 
+      WHERE student_id = $1 AND section_id = $2 AND status = 'pending'
+    `, [req.session.user.id, Number(section_id)]);
+    if (existing.rows.length > 0) {
+      req.flash('error', 'You already have a pending objection for this course.');
+      return res.redirect('/sis/my/exam-objections');
+    }
+
+    await pool.query(`
+      INSERT INTO exam_objections (student_id, section_id, reason) 
+      VALUES ($1, $2, $3)
+    `, [req.session.user.id, Number(section_id), reason]);
+    
+    req.flash('success', 'Objection submitted to your teacher for review.');
+    res.redirect('/sis/my/exam-objections');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 3. Teacher: View Objections
+app.get('/sis/faculty/exam-objections', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const objRes = await pool.query(`
+      SELECT o.*, c.code, c.title, u.full_name as student_name, u.username,
+             g.midterm_grade, g.final_grade, g.letter_grade
+      FROM exam_objections o
+      JOIN course_sections s ON s.id = o.section_id
+      JOIN courses c ON c.id = s.course_id
+      JOIN users u ON u.id = o.student_id
+      LEFT JOIN grades g ON g.student_id = o.student_id AND g.section_id = o.section_id
+      WHERE s.teacher_id = $1 AND o.status = 'pending'
+      ORDER BY o.requested_at ASC
+    `, [req.session.user.id]);
+    res.render('faculty-exam-objections', { user: req.session.user, objections: objRes.rows });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+// 4. Teacher: Resolve (Correct or Dismiss)
+app.post('/sis/faculty/exam-objections/:id/resolve', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const objectionId = req.params.id;
+  const { action, new_final_grade, new_midterm_grade, teacher_response } = req.body;
+  
+  try {
+    // Get the objection details
+    const objRes = await pool.query(`
+      SELECT o.*, s.teacher_id 
+      FROM exam_objections o
+      JOIN course_sections s ON s.id = o.section_id
+      WHERE o.id = $1
+    `, [objectionId]);
+
+    if (objRes.rows.length === 0) return res.redirect('/sis/faculty/exam-objections');
+    const obj = objRes.rows[0];
+    if (obj.teacher_id !== req.session.user.id) return res.redirect('/sis/faculty/exam-objections');
+
+    if (action === 'resolve' && new_final_grade !== undefined) {
+      // Recalculate letter grade based on new grades
+      const mid = Number(new_midterm_grade) || 0;
+      const fin = Number(new_final_grade) || 0;
+      const total = (mid + fin) / 2;
+      let letter = 'F';
+      let gpa = 0.0;
+
+      if (total >= 97) { letter = 'A+'; gpa = 4.0; }
+      else if (total >= 93) { letter = 'A'; gpa = 4.0; }
+      else if (total >= 90) { letter = 'A-'; gpa = 3.7; }
+      else if (total >= 87) { letter = 'B+'; gpa = 3.3; }
+      else if (total >= 83) { letter = 'B'; gpa = 3.0; }
+      else if (total >= 80) { letter = 'B-'; gpa = 2.7; }
+      else if (total >= 77) { letter = 'C+'; gpa = 2.3; }
+      else if (total >= 73) { letter = 'C'; gpa = 2.0; }
+      else if (total >= 70) { letter = 'C-'; gpa = 1.7; }
+      else if (total >= 67) { letter = 'D+'; gpa = 1.3; }
+      else if (total >= 63) { letter = 'D'; gpa = 1.0; }
+      else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
+
+      // Update the grade
+      await pool.query(`
+        UPDATE grades SET midterm_grade = $1, final_grade = $2, letter_grade = $3, gpa_points = $4 
+        WHERE student_id = $5 AND section_id = $6
+      `, [mid, fin, letter, gpa, obj.student_id, obj.section_id]);
+
+      await pool.query(`
+        UPDATE exam_objections 
+        SET status = 'resolved', teacher_response = $1, resolved_at = NOW() 
+        WHERE id = $2
+      `, [teacher_response || 'Grade corrected by teacher.', objectionId]);
+
+      req.flash('success', 'Grade corrected and objection resolved.');
+    } else {
+      // Dismiss
+      await pool.query(`
+        UPDATE exam_objections 
+        SET status = 'dismissed', teacher_response = $1, resolved_at = NOW() 
+        WHERE id = $2
+      `, [teacher_response || 'Grade is correct as entered.', objectionId]);
+      req.flash('error', 'Objection dismissed.');
+    }
+
+    res.redirect('/sis/faculty/exam-objections');
+  } catch (err) { res.status(500).send("Error: " + err.message); }
+});
+
+
+// ============================================
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================
 app.get('/sis/my/:page', requireLogin, (req, res) => {

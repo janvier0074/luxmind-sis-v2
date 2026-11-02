@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= section.code %> Roster — LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%),
+        var(--ice);
+      min-height: 100vh; display: flex; color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Sidebar (same as grid page) */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* Main */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: var(--blue); font-weight: 800; text-decoration: none;
+      margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem;
+      border-radius: 8px; transition: var(--transition);
+    }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    /* Section header card */
+    .section-hero {
+      background: linear-gradient(135deg, var(--navy), var(--deep));
+      border-radius: 1.5rem;
+      padding: 2rem;
+      color: #fff;
+      margin-bottom: 1.6rem;
+      box-shadow: 0 20px 40px -16px rgba(10,30,50,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .section-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -20%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,200,87,0.15), transparent 70%);
+      pointer-events: none;
+    }
+    .section-hero-code {
+      font-size: 0.75rem; font-weight: 800; color: var(--gold);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .section-hero h1 {
+      font-size: 1.9rem; font-weight: 800;
+      letter-spacing: -0.5px; margin-bottom: 0.8rem;
+      position: relative;
+    }
+    .section-hero-meta {
+      display: flex; flex-wrap: wrap; gap: 0.8rem;
+      position: relative;
+    }
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.4rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.75rem; font-weight: 700;
+      backdrop-filter: blur(4px);
+    }
+    .hero-pill i { color: var(--gold); font-size: 0.75rem; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.6rem; }
+    .stat-card {
+      background: #fff; padding: 1.1rem 1.3rem;
+      border-radius: 1rem; box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      display: flex; align-items: center; gap: 0.9rem;
+      transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--gold); }
+    .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; }
+    .stat-icon.total { background: #e0f2fe; color: #0284c7; }
+    .stat-icon.att   { background: #dcfce7; color: #16a34a; }
+    .stat-icon.graded{ background: #fef3c7; color: #d97706; }
+    .stat-icon.risk  { background: #fee2e2; color: #b91c1c; }
+    .stat-info h3 { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+    .stat-info p { font-size: 1.35rem; font-weight: 800; color: var(--navy); margin-top: 0.05rem; line-height: 1; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .toolbar h2 {
+      font-size: 1rem; font-weight: 800;
+      color: var(--navy); display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toolbar h2 i { color: var(--amber); }
+    .search-box {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #fff; padding: 0.55rem 1rem;
+      border-radius: 100px; border: 1px solid var(--frost);
+      box-shadow: var(--shadow-soft);
+      transition: var(--transition);
+      min-width: 260px;
+    }
+    .search-box:focus-within { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,166,35,0.12); }
+    .search-box i { color: var(--amber); font-size: 0.85rem; }
+    .search-box input {
+      border: none; outline: none; background: transparent;
+      font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      color: var(--navy); width: 100%;
+    }
+    .search-box input::placeholder { color: #94a3b8; font-weight: 500; }
+
+    /* Table */
+    .table-wrap {
+      background: #fff;
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      min-width: 900px;
+    }
+    thead {
+      background: linear-gradient(135deg, var(--navy), var(--deep));
+      position: sticky; top: 0;
+    }
+    thead th {
+      color: var(--gold);
+      font-size: 0.68rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      padding: 1rem 1.1rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid #eef2f7;
+      transition: background 0.15s ease;
+    }
+    tbody tr:hover { background: #fbfdff; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td {
+      padding: 0.9rem 1.1rem;
+      font-size: 0.82rem; font-weight: 600;
+      color: var(--navy);
+      vertical-align: middle;
+    }
+
+    .student-cell { display: flex; align-items: center; gap: 0.7rem; }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px -4px rgba(10,30,50,0.3);
+    }
+    .student-name { font-weight: 800; font-size: 0.85rem; line-height: 1.2; }
+    .student-sub { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+
+    .contact-cell { font-size: 0.75rem; color: #64748b; font-weight: 600; line-height: 1.35; }
+    .contact-cell .email { color: var(--blue); word-break: break-all; }
+
+    /* Attendance bar */
+    .att-cell { display: flex; flex-direction: column; gap: 0.35rem; min-width: 110px; }
+    .att-row { display: flex; justify-content: space-between; align-items: center; }
+    .att-pct { font-size: 0.8rem; font-weight: 800; }
+    .att-pct.ok { color: var(--success); }
+    .att-pct.warn { color: #d97706; }
+    .att-pct.risk { color: var(--danger); }
+    .att-pct.none { color: #94a3b8; font-size: 0.75rem; }
+    .att-sub { font-size: 0.65rem; color: #94a3b8; font-weight: 700; }
+    .att-bar {
+      width: 100%; height: 6px;
+      background: #eef2f7;
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .att-bar-fill {
+      height: 100%; border-radius: 100px;
+      transition: width 0.4s ease;
+    }
+    .att-bar-fill.ok { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .att-bar-fill.warn { background: linear-gradient(90deg, #fbbf24, #d97706); }
+    .att-bar-fill.risk { background: linear-gradient(90deg, #f87171, #dc2626); }
+
+    /* Grade pills */
+    .grade-pill {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.75rem; font-weight: 800;
+      min-width: 42px; text-align: center;
+    }
+    .grade-pill.a { background: #dcfce7; color: #15803d; }
+    .grade-pill.b { background: #dbeafe; color: #1e40af; }
+    .grade-pill.c { background: #fef3c7; color: #b45309; }
+    .grade-pill.d { background: #fed7aa; color: #9a3412; }
+    .grade-pill.f { background: #fee2e2; color: #991b1b; }
+    .grade-pill.none { background: #f1f5f9; color: #94a3b8; font-weight: 700; }
+
+    .num-pill {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      background: #f1f5f9;
+      border-radius: 6px;
+      font-size: 0.75rem; font-weight: 700;
+      color: #475569;
+    }
+
+    /* Action */
+    .action-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: #f1f5f9; color: var(--blue);
+      text-decoration: none; font-size: 0.85rem;
+      transition: var(--transition);
+    }
+    .action-btn:hover { background: var(--amber); color: #fff; transform: scale(1.08); }
+
+    /* Empty state */
+    .empty-row {
+      text-align: center;
+      padding: 4rem 2rem !important;
+      color: #94a3b8 !important;
+    }
+    .empty-row i { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; color: var(--frost); }
+    .empty-row h3 { color: var(--navy); font-size: 1rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .empty-row p { font-size: 0.8rem; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+      .section-hero { padding: 1.5rem; }
+      .section-hero h1 { font-size: 1.3rem; }
+      .search-box { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %> <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-list main-icon"></i> Course List</a></li>
+          <li class="menu-item"><a href="/sis/faculty/class-roster" class="menu-link active"><i class="fas fa-users main-icon"></i> Class Roster</a></li>
+          <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-folder main-icon"></i> Content & Materials <i class="fas fa-chevron-right arrow"></i></a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="#" class="menu-link">Upload Syllabus</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Lecture Notes/Slides</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Add Moodle Links</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Course Weights</a></li>
+            </ul>
+          </li>
+          <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-check-square main-icon"></i> Attendance <i class="fas fa-chevron-right arrow"></i></a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="/sis/faculty/attendance" class="menu-link">Take Attendance</a></li>
+              <li class="menu-item"><a href="/sis/faculty/attendance" class="menu-link">Generate QR Code</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">History & Reports</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Low Attendance (&lt;70%)</a></li>
+            </ul>
+          </li>
+          <li class="menu-item"><a href="/sis/faculty/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> <%= lang.course_evaluations || 'Course Evaluations' %></a></li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-pen main-icon"></i> <%= lang.grading_exams || 'Grading & Exams' %> <i class="fas fa-chevron-right arrow"></i></a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/grades" class="menu-link"><i class="fas fa-marker main-icon"></i> Gradebook Entry</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Grade Distribution</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Export Grades</a></li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/faculty/class-roster" class="btn-back"><i class="fas fa-arrow-left"></i> Back to All Sections</a>
+
+    <!-- Section Hero -->
+    <div class="section-hero">
+      <div class="section-hero-code"><%= section.code %> · <%= section.group_name || 'Group' %></div>
+      <h1><%= section.title %></h1>
+      <div class="section-hero-meta">
+        <span class="hero-pill"><i class="fas fa-calendar-alt"></i> <%= section.day_of_week || 'TBA' %></span>
+        <span class="hero-pill"><i class="fas fa-clock"></i> <%= (section.start_time || 'TBA') + ' — ' + (section.end_time || 'TBA') %></span>
+        <span class="hero-pill"><i class="fas fa-door-open"></i> <%= section.room || 'Room TBA' %></span>
+        <span class="hero-pill"><i class="fas fa-medal"></i> <%= section.credits %> credits</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total"><i class="fas fa-users"></i></div>
+        <div class="stat-info"><h3>Enrolled</h3><p><%= roster.length %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon att"><i class="fas fa-user-check"></i></div>
+        <div class="stat-info"><h3>Avg Attendance</h3><p><%= avgAttendance !== null ? avgAttendance + '%' : '—' %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon graded"><i class="fas fa-pen"></i></div>
+        <div class="stat-info"><h3>Graded</h3><p><%= gradedCount %> / <%= roster.length %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon risk"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="stat-info"><h3>At Risk</h3><p><%= atRiskCount %></p></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <h2><i class="fas fa-user-graduate"></i> Student Roster</h2>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search by name, ID, or email..." oninput="filterRoster()">
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Contact</th>
+              <th>Attendance</th>
+              <th>Midterm</th>
+              <th>Final</th>
+              <th>Grade</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody">
+            <% if (roster.length === 0) { %>
+              <tr>
+                <td colspan="7" class="empty-row">
+                  <i class="fas fa-user-slash"></i>
+                  <h3>No students enrolled yet</h3>
+                  <p>Students will appear here once their registration is approved.</p>
+                </td>
+              </tr>
+            <% } %>
+
+            <% roster.forEach(st => { %>
+              <% 
+                const initials = (st.full_name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const colors = ['#1e4d7b', '#0284c7', '#9333ea', '#d97706', '#16a34a', '#b91c1c'];
+                const colorIdx = (st.full_name || 'A').charCodeAt(0) % colors.length;
+                const attCls = st.attendance_pct === null ? 'none' : (st.attendance_pct >= 80 ? 'ok' : (st.attendance_pct >= 70 ? 'warn' : 'risk'));
+                let gradeCls = 'none';
+                if (st.letter_grade) {
+                  const first = st.letter_grade[0].toUpperCase();
+                  gradeCls = first === 'A' ? 'a' : first === 'B' ? 'b' : first === 'C' ? 'c' : first === 'D' ? 'd' : 'f';
+                }
+              %>
+              <tr data-search="<%= (st.full_name + ' ' + (st.admission_number || '') + ' ' + (st.email || '')).toLowerCase() %>">
+                <td>
+                  <div class="student-cell">
+                    <div class="avatar" style="background: <%= colors[colorIdx] %>;"><%= initials %></div>
+                    <div>
+                      <div class="student-name"><%= st.full_name %></div>
+                      <div class="student-sub"><%= st.admission_number || '—' %></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="contact-cell">
+                    <div class="email"><%= st.email || '—' %></div>
+                    <div><%= st.phone || 'No phone' %></div>
+                  </div>
+                </td>
+                <td>
+                  <div class="att-cell">
+                    <% if (st.attendance_pct === null) { %>
+                      <span class="att-pct none">No records</span>
+                    <% } else { %>
+                      <div class="att-row">
+                        <span class="att-pct <%= attCls %>"><%= st.attendance_pct %>%</span>
+                        <span class="att-sub"><%= st.present_count %>/<%= st.total_attendance %></span>
+                      </div>
+                      <div class="att-bar"><div class="att-bar-fill <%= attCls %>" style="width: <%= st.attendance_pct %>%"></div></div>
+                    <% } %>
+                  </div>
+                </td>
+                <td>
+                  <% if (st.midterm_grade !== null && st.midterm_grade !== undefined) { %>
+                    <span class="num-pill"><%= Number(st.midterm_grade).toFixed(0) %></span>
+                  <% } else { %>
+                    <span class="grade-pill none">—</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (st.final_grade !== null && st.final_grade !== undefined) { %>
+                    <span class="num-pill"><%= Number(st.final_grade).toFixed(0) %></span>
+                  <% } else { %>
+                    <span class="grade-pill none">—</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="grade-pill <%= gradeCls %>"><%= st.letter_grade || '—' %></span>
+                </td>
+                <td>
+                  <a href="/sis/faculty/messages" class="action-btn" title="Message student"><i class="fas fa-envelope"></i></a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+    }
+    function filterRoster() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      document.querySelectorAll('#rosterBody tr[data-search]').forEach(row => {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

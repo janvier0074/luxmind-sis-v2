@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Roster — LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%),
+        var(--ice);
+      min-height: 100vh; display: flex; color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* Main */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: var(--blue); font-weight: 800; text-decoration: none;
+      margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem;
+      border-radius: 8px; transition: var(--transition);
+    }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    .page-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .page-title { display: flex; align-items: center; gap: 1rem; }
+    .page-title-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 1.5rem;
+      box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4);
+    }
+    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: #fff; padding: 1.25rem 1.4rem;
+      border-radius: 1rem; box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      display: flex; align-items: center; gap: 1rem;
+      transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--gold); }
+    .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .stat-icon.sections { background: #e0f2fe; color: #0284c7; }
+    .stat-icon.students { background: #dcfce7; color: #16a34a; }
+    .stat-icon.credits  { background: #fef3c7; color: #d97706; }
+    .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; line-height: 1; }
+
+    /* Section grid */
+    .section-label {
+      font-size: 1.05rem; font-weight: 800; color: var(--navy);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-label i { color: var(--amber); }
+
+    .roster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.4rem;
+    }
+    .roster-card {
+      background: #fff;
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--frost);
+      overflow: hidden;
+      transition: var(--transition);
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column;
+      position: relative;
+    }
+    .roster-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(245,166,35,0.06), transparent 70%);
+      opacity: 0; transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .roster-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--amber);
+    }
+    .roster-card:hover::after { opacity: 1; }
+
+    .roster-card-head {
+      background: linear-gradient(135deg, var(--navy), var(--deep));
+      padding: 1.1rem 1.3rem;
+      display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .roster-code {
+      font-size: 0.7rem; font-weight: 800; color: var(--gold);
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .roster-group {
+      background: rgba(255,200,87,0.15);
+      color: var(--gold);
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.65rem; font-weight: 800;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      border: 1px solid rgba(255,200,87,0.3);
+    }
+
+    .roster-card-body {
+      padding: 1.3rem;
+      position: relative; z-index: 1;
+      flex: 1;
+      display: flex; flex-direction: column;
+    }
+    .roster-title {
+      font-size: 1.05rem; font-weight: 800;
+      color: var(--navy); line-height: 1.35;
+      margin-bottom: 1rem;
+    }
+    .roster-meta {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      font-size: 0.78rem; color: #64748b; font-weight: 600;
+      margin-bottom: 1.2rem;
+    }
+    .roster-meta-row { display: flex; align-items: center; gap: 0.5rem; }
+    .roster-meta-row i { color: var(--amber); width: 16px; font-size: 0.8rem; }
+
+    .roster-card-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 1rem; border-top: 1px solid var(--frost);
+      margin-top: auto; position: relative; z-index: 1;
+    }
+    .student-count {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; font-weight: 700; color: var(--blue);
+    }
+    .student-count i { color: var(--amber); }
+    .view-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.75rem; font-weight: 800;
+      color: var(--navy); padding: 0.4rem 0.9rem;
+      border-radius: 100px; background: var(--gold);
+      transition: var(--transition);
+    }
+    .roster-card:hover .view-btn {
+      background: var(--amber); color: #fff;
+      transform: translateX(3px);
+    }
+
+    /* Empty state */
+    .empty-state {
+      background: #fff; padding: 4rem 2rem;
+      border-radius: 1.25rem; border: 2px dashed var(--frost);
+      text-align: center; grid-column: 1 / -1;
+    }
+    .empty-state i {
+      font-size: 3rem; color: var(--frost);
+      margin-bottom: 1rem; display: block;
+    }
+    .empty-state h3 {
+      font-size: 1.1rem; font-weight: 800;
+      color: var(--navy); margin-bottom: 0.4rem;
+    }
+    .empty-state p { color: #64748b; font-size: 0.85rem; font-weight: 500; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+      .page-title h1 { font-size: 1.3rem; }
+      .page-title-icon { width: 44px; height: 44px; font-size: 1.2rem; }
+    }
+    @media (max-width: 500px) {
+      .roster-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
+
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %> <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-list main-icon"></i> Course List</a></li>
+          <li class="menu-item"><a href="/sis/faculty/class-roster" class="menu-link active"><i class="fas fa-users main-icon"></i> Class Roster</a></li>
+          <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-folder main-icon"></i> Content & Materials <i class="fas fa-chevron-right arrow"></i></a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="#" class="menu-link">Upload Syllabus</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Lecture Notes/Slides</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Add Moodle Links</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Course Weights</a></li>
+            </ul>
+          </li>
+          <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-check-square main-icon"></i> Attendance <i class="fas fa-chevron-right arrow"></i></a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="/sis/faculty/attendance" class="menu-link">Take Attendance</a></li>
+              <li class="menu-item"><a href="/sis/faculty/attendance" class="menu-link">Generate QR Code</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">History & Reports</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Low Attendance (&lt;70%)</a></li>
+            </ul>
+          </li>
+          <li class="menu-item"><a href="/sis/faculty/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> <%= lang.course_evaluations || 'Course Evaluations' %></a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-pen main-icon"></i> <%= lang.grading_exams || 'Grading & Exams' %> <i class="fas fa-chevron-right arrow"></i></a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/grades" class="menu-link"><i class="fas fa-marker main-icon"></i> Gradebook Entry</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-chart-pie main-icon"></i> Grade Distribution</a></li>
+          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-export main-icon"></i> Export Grades</a></li>
+          <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-file-signature main-icon"></i> Exam Management <i class="fas fa-chevron-right arrow"></i></a>
+            <ul class="submenu">
+              <li class="menu-item"><a href="#" class="menu-link">Exam Schedule</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Proctoring Schedule</a></li>
+              <li class="menu-item"><a href="/sis/faculty/exam-objections" class="menu-link">Exam Objections</a></li>
+              <li class="menu-item"><a href="/sis/faculty/makeup-exams" class="menu-link">Makeup Exams</a></li>
+              <li class="menu-item"><a href="#" class="menu-link">Publish Results</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-user-friends main-icon"></i> <%= lang.advising || 'Advising' %> <i class="fas fa-chevron-right arrow"></i></a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">My Advisees</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="#" class="menu-link" onclick="toggle(event, this)"><i class="fas fa-comments main-icon"></i> <%= lang.communication || 'Communication' %> <i class="fas fa-chevron-right arrow"></i></a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+          <li class="menu-item"><a href="/sis/faculty/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+    <div class="page-header">
+      <div class="page-title">
+        <div class="page-title-icon"><i class="fas fa-users-viewfinder"></i></div>
+        <div>
+          <h1>Class Roster</h1>
+          <p>View live student rosters for every section you teach</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon sections"><i class="fas fa-layer-group"></i></div>
+        <div class="stat-info"><h3>My Sections</h3><p><%= sections.length %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon students"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-info"><h3>Total Students</h3><p><%= totalStudents %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon credits"><i class="fas fa-medal"></i></div>
+        <div class="stat-info"><h3>Total Credits</h3><p><%= totalCredits %></p></div>
+      </div>
+    </div>
+
+    <div class="section-label"><i class="fas fa-list"></i> Select a section to view its roster</div>
+
+    <div class="roster-grid">
+      <% if (sections.length === 0) { %>
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <h3>No sections assigned</h3>
+          <p>You are not assigned to teach any sections yet. Contact the registrar to be assigned.</p>
+        </div>
+      <% } %>
+
+      <% sections.forEach(sec => { %>
+        <a href="/sis/faculty/class-roster/<%= sec.section_id %>" class="roster-card">
+          <div class="roster-card-head">
+            <span class="roster-code"><%= sec.code %></span>
+            <span class="roster-group"><%= sec.group_name || '—' %></span>
+          </div>
+          <div class="roster-card-body">
+            <div class="roster-title"><%= sec.title %></div>
+            <div class="roster-meta">
+              <div class="roster-meta-row">
+                <i class="fas fa-calendar-alt"></i>
+                <span><%= sec.day_of_week || 'TBA' %></span>
+              </div>
+              <div class="roster-meta-row">
+                <i class="fas fa-clock"></i>
+                <span><%= (sec.start_time || 'TBA') + ' — ' + (sec.end_time || 'TBA') %></span>
+              </div>
+              <div class="roster-meta-row">
+                <i class="fas fa-door-open"></i>
+                <span><%= sec.room || 'Room TBA' %></span>
+              </div>
+            </div>
+            <div class="roster-card-footer">
+              <span class="student-count"><i class="fas fa-users"></i> <%= sec.student_count %> student<%= Number(sec.student_count) !== 1 ? 's' : '' %></span>
+              <span class="view-btn">View <i class="fas fa-arrow-right"></i></span>
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+    }
+  </script>
+</body>
+</html>

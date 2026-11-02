@@ -766,6 +766,108 @@ app.post('/sis/faculty/courses/:course_id/materials', requireLogin, async (req, 
 });
 
 // ============================================
+// --- FACULTY: CLASS ROSTER ---
+// ============================================
+app.get('/sis/faculty/class-roster', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionsRes = await pool.query(`
+      SELECT 
+        s.id AS section_id,
+        c.code, c.title, c.credits,
+        s.group_name,
+        s.day_of_week, s.start_time, s.end_time, s.room,
+        (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
+
+    const totalStudents = sectionsRes.rows.reduce((sum, s) => sum + Number(s.student_count), 0);
+    const totalCredits = sectionsRes.rows.reduce((sum, s) => sum + Number(s.credits), 0);
+
+    res.render('faculty-class-roster', {
+      user: req.session.user,
+      sections: sectionsRes.rows,
+      totalStudents,
+      totalCredits,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Class Roster Error: " + err.message); }
+});
+
+app.get('/sis/faculty/class-roster/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, c.credits, s.group_name,
+             s.day_of_week, s.start_time, s.end_time, s.room
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/class-roster');
+
+    const rosterRes = await pool.query(`
+      SELECT 
+        u.id AS user_id,
+        u.full_name,
+        u.email,
+        sp.admission_number,
+        sp.class_level,
+        sp.current_semester,
+        sp.phone,
+        COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN a.id END) AS present_count,
+        COUNT(DISTINCT a.id) AS total_attendance,
+        g.midterm_grade,
+        g.final_grade,
+        g.letter_grade,
+        g.gpa_points
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN attendance a ON a.student_id = u.id AND a.section_id = e.section_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id
+      WHERE e.section_id = $1
+      GROUP BY u.id, u.full_name, u.email, sp.admission_number, sp.class_level,
+               sp.current_semester, sp.phone, g.midterm_grade, g.final_grade,
+               g.letter_grade, g.gpa_points
+      ORDER BY u.full_name ASC
+    `, [req.params.section_id]);
+
+    const roster = rosterRes.rows.map(r => {
+      const present = Number(r.present_count || 0);
+      const total = Number(r.total_attendance || 0);
+      return {
+        ...r,
+        attendance_pct: total > 0 ? Math.round((present / total) * 100) : null,
+        present_count: present,
+        total_attendance: total
+      };
+    });
+
+    const withAttendance = roster.filter(r => r.attendance_pct !== null);
+    const avgAttendance = withAttendance.length > 0
+      ? Math.round(withAttendance.reduce((s, r) => s + r.attendance_pct, 0) / withAttendance.length)
+      : null;
+    const atRiskCount = roster.filter(r => r.attendance_pct !== null && r.attendance_pct < 70).length;
+    const gradedCount = roster.filter(r => r.letter_grade).length;
+
+    res.render('faculty-class-roster-detail', {
+      user: req.session.user,
+      section: sectionRes.rows[0],
+      roster,
+      avgAttendance,
+      atRiskCount,
+      gradedCount,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Roster Detail Error: " + err.message); }
+});
+
+// ============================================
 // --- FACULTY: ATTENDANCE HISTORY ---
 // ============================================
 app.get('/sis/faculty/attendance-history/:section_id', requireLogin, async (req, res) => {

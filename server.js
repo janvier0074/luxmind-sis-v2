@@ -1,3 +1,8 @@
+
+
+
+
+
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -5,6 +10,11 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const { Resend } = require('resend');
 
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
+});
 // ============================================
 // --- i18n: LANGUAGE DICTIONARIES ---
 // ============================================
@@ -1118,6 +1128,82 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
     res.redirect('/sis/faculty/course-weights/' + sectionId);
   } catch (err) { res.status(500).send("Save Weights Error: " + err.message); }
 });
+
+
+
+
+// ============================================
+// --- FACULTY: PROFILE & PASSWORD ---
+// ============================================
+app.get('/sis/faculty/profile', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const profileRes = await pool.query(`
+      SELECT u.id, u.full_name, u.email, u.username, u.role, 
+             u.profile_picture_url, u.phone, u.office_hours, u.bio, u.cv_url
+      FROM users u WHERE u.id = $1
+    `, [req.session.user.id]);
+    
+    if (profileRes.rows.length === 0) return res.redirect('/login');
+    res.render('faculty-profile', { user: profileRes.rows[0], greeting: getGreeting() });
+  } catch (err) { res.status(500).send("Profile Error: " + err.message); }
+});
+
+app.post('/sis/faculty/profile', requireLogin, upload.single('profile_picture'), async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const { phone, office_hours, bio, cv_url } = req.body;
+  
+  try {
+    let updateQuery = `UPDATE users SET phone = $1, office_hours = $2, bio = $3, cv_url = $4 WHERE id = $5`;
+    let queryParams = [phone, office_hours, bio, cv_url, req.session.user.id];
+
+    // If a new profile picture was uploaded, convert to base64 and save
+    if (req.file) {
+      const b64 = req.file.buffer.toString('base64');
+      const mime = req.file.mimetype;
+      const dataUrl = `data:${mime};base64,${b64}`;
+      updateQuery = `UPDATE users SET phone = $1, office_hours = $2, bio = $3, cv_url = $4, profile_picture_url = $5 WHERE id = $6`;
+      queryParams = [phone, office_hours, bio, cv_url, dataUrl, req.session.user.id];
+      
+      // Update the session so the new image shows immediately in the top bar
+      req.session.user.profile_picture_url = dataUrl;
+    }
+
+    await pool.query(updateQuery, queryParams);
+    req.flash('success', 'Profile updated successfully.');
+    res.redirect('/sis/faculty/profile');
+  } catch (err) { res.status(500).send("Update Profile Error: " + err.message); }
+});
+
+app.post('/sis/faculty/change-password', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const { current_password, new_password, confirm_password } = req.body;
+
+  try {
+    if (new_password !== confirm_password) {
+      req.flash('error', 'New passwords do not match.');
+      return res.redirect('/sis/faculty/profile#security');
+    }
+    if (new_password.length < 8) {
+      req.flash('error', 'New password must be at least 8 characters.');
+      return res.redirect('/sis/faculty/profile#security');
+    }
+
+    const userRes = await pool.query(`SELECT password FROM users WHERE id = $1`, [req.session.user.id]);
+    if (userRes.rows[0].password !== current_password) {
+      req.flash('error', 'Current password is incorrect.');
+      return res.redirect('/sis/faculty/profile#security');
+    }
+
+    await pool.query(`UPDATE users SET password = $1 WHERE id = $2`, [new_password, req.session.user.id]);
+    req.flash('success', 'Password changed successfully.');
+    res.redirect('/sis/faculty/profile#security');
+  } catch (err) { res.status(500).send("Password Error: " + err.message); }
+});
+
+// ============================================
+// --- FACULTY: CONTENT & MATERIALS HUB ---
+// ============================================
 
 
 app.get('/sis/faculty/course-materials', requireLogin, async (req, res) => {

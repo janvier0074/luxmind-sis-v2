@@ -227,14 +227,7 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
 app.get('/sis/my/transcript', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    const gradesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
-      FROM grades g
-      JOIN course_sections s ON s.id = g.section_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1
-      ORDER BY c.semester_number ASC
-    `, [req.session.user.id]);
+        const gradesRes = await pool.query(` SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.semester_number ASC `, [req.session.user.id]);
 
     const courses = gradesRes.rows;
     let totalCredits = 0;
@@ -508,7 +501,17 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
         else { letter = 'F'; gpa = 0.0; }
 
-        await pool.query(`INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (student_id, section_id) DO UPDATE SET midterm_grade = $3, final_grade = $4, letter_grade = $5, gpa_points = $6`, [studentId, sectionId, midterm, final, letter, gpa]);
+               // CIU: Insert as draft (is_published = false). If it already exists, keep its publish status but update the grades.
+        await pool.query(`
+          INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points, is_published) 
+          VALUES ($1, $2, $3, $4, $5, $6, false) 
+          ON CONFLICT (student_id, section_id) DO UPDATE 
+          SET midterm_grade = EXCLUDED.midterm_grade, 
+              final_grade = EXCLUDED.final_grade, 
+              letter_grade = EXCLUDED.letter_grade, 
+              gpa_points = EXCLUDED.gpa_points
+          -- Note: is_published is NOT updated here, so if it was published, it stays published.
+        `, [studentId, sectionId, midterm, final, letter, gpa]);
         gradesSaved++;
       }
     }
@@ -750,7 +753,7 @@ app.get('/sis/my/exams', requireLogin, async (req, res) => {
 app.get('/sis/my/exam-results', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    const resultsRes = await pool.query(`SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 ORDER BY c.code ASC`, [req.session.user.id]);
+        const resultsRes = await pool.query(`SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.code ASC`, [req.session.user.id]);
     let totalPoints = 0;
     let totalCredits = 0;
     resultsRes.rows.forEach(r => {
@@ -907,6 +910,66 @@ app.get('/sis/faculty/class-roster/:section_id', requireLogin, async (req, res) 
 // ============================================
 
 // 1. Hub — list all sections with weight status
+
+
+// ============================================
+// --- FACULTY: PUBLISH GRADES ---
+// ============================================
+app.get('/sis/faculty/publish-results', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionsRes = await pool.query(`
+      SELECT s.id AS section_id, c.code, c.title, s.group_name,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.letter_grade IS NOT NULL) AS graded_count,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.is_published = true AND g.letter_grade IS NOT NULL) AS published_count,
+             (SELECT MAX(published_at) FROM grades g WHERE g.section_id = s.id AND g.is_published = true) AS last_published
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
+
+    res.render('faculty-publish-results', { user: req.session.user, sections: sectionsRes.rows, greeting: getGreeting() });
+  } catch (err) { res.status(500).send("Publish Hub Error: " + err.message); }
+});
+
+app.post('/sis/faculty/grades/:section_id/publish', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const sectionId = req.params.section_id;
+  try {
+    const secRes = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
+    if (secRes.rows.length === 0) return res.redirect('/sis/faculty/publish-results');
+
+    await pool.query(`
+      UPDATE grades 
+      SET is_published = true, published_at = NOW() 
+      WHERE section_id = $1 AND is_published = false
+    `, [sectionId]);
+
+    req.flash('success', 'All grades for this section have been published.');
+    res.redirect('/sis/faculty/publish-results');
+  } catch (err) { res.status(500).send("Publish Error: " + err.message); }
+});
+
+app.post('/sis/faculty/grades/:section_id/unpublish', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const sectionId = req.params.section_id;
+  try {
+    const secRes = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
+    if (secRes.rows.length === 0) return res.redirect('/sis/faculty/publish-results');
+
+    await pool.query(`
+      UPDATE grades 
+      SET is_published = false, published_at = NULL 
+      WHERE section_id = $1
+    `, [sectionId]);
+
+    req.flash('success', 'Grades unpublished. Students can no longer see them until re-published.');
+    res.redirect('/sis/faculty/publish-results');
+  } catch (err) { res.status(500).send("Unpublish Error: " + err.message); }
+});
+
 app.get('/sis/faculty/course-weights', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
@@ -1457,12 +1520,12 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
 app.get('/sis/my/exam-objections', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-    const gradedRes = await pool.query(`
+        const gradedRes = await pool.query(`
       SELECT DISTINCT c.id, c.code, c.title, s.id as section_id, g.letter_grade, g.final_grade
       FROM grades g
       JOIN course_sections s ON s.id = g.section_id
       JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1
+      WHERE g.student_id = $1 AND g.is_published = true
     `, [req.session.user.id]);
 
     const objRes = await pool.query(`

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= section.code %> Weights — LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%),
+        var(--ice);
+      min-height: 100vh; display: flex; color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* Main */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: var(--blue); font-weight: 800; text-decoration: none;
+      margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem;
+      border-radius: 8px; transition: var(--transition);
+    }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    /* Section hero */
+    .section-hero {
+      background: linear-gradient(135deg, var(--navy), var(--deep));
+      border-radius: 1.5rem; padding: 2rem; color: #fff;
+      margin-bottom: 1.6rem;
+      box-shadow: 0 20px 40px -16px rgba(10,30,50,0.4);
+      position: relative; overflow: hidden;
+    }
+    .section-hero::before {
+      content: '';
+      position: absolute; top: -50%; right: -20%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,200,87,0.15), transparent 70%);
+      pointer-events: none;
+    }
+    .section-hero-code {
+      font-size: 0.75rem; font-weight: 800; color: var(--gold);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 0.5rem; position: relative;
+    }
+    .section-hero h1 {
+      font-size: 1.8rem; font-weight: 800;
+      letter-spacing: -0.5px; margin-bottom: 0.8rem;
+      position: relative;
+    }
+    .section-hero-meta { display: flex; flex-wrap: wrap; gap: 0.8rem; position: relative; }
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.4rem 0.9rem; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 700;
+      backdrop-filter: blur(4px);
+    }
+    .hero-pill i { color: var(--gold); font-size: 0.75rem; }
+    .hero-pill.locked { background: rgba(254,226,226,0.9); color: #991b1b; border-color: rgba(248,113,113,0.4); }
+    .hero-pill.locked i { color: #991b1b; }
+    .hero-pill.editable { background: rgba(220,252,231,0.9); color: #15803d; border-color: rgba(34,197,94,0.4); }
+    .hero-pill.editable i { color: #15803d; }
+
+    /* Alert messages */
+    .alert {
+      padding: 0.9rem 1.2rem; border-radius: 12px;
+      margin-bottom: 1rem; font-weight: 700; font-size: 0.85rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .alert.success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+
+    /* Card */
+    .card {
+      background: #fff; border-radius: 1.25rem;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 1.2rem 1.4rem;
+      border-bottom: 1px solid #eef2f7;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-head h2 {
+      font-size: 1rem; font-weight: 800; color: var(--navy);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-head h2 i { color: var(--amber); }
+    .card-body { padding: 1.4rem; }
+
+    /* Weight editor */
+    .lock-notice {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border: 1px solid #f87171; color: #991b1b;
+      padding: 1rem 1.2rem; border-radius: 12px;
+      margin-bottom: 1.3rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+      font-size: 0.82rem; font-weight: 600;
+    }
+    .lock-notice i { font-size: 1.2rem; color: #b91c1c; margin-top: 0.05rem; }
+    .lock-notice strong { font-weight: 800; }
+
+    .weight-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin-bottom: 1.2rem;
+    }
+    .weight-field label {
+      display: block;
+      font-size: 0.72rem; font-weight: 800;
+      color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 0.5rem;
+    }
+    .weight-field label .midterm-dot { color: var(--blue); }
+    .weight-field label .final-dot { color: var(--amber); }
+    .weight-input-wrap {
+      position: relative;
+      background: #f8fafc; border: 2px solid var(--frost);
+      border-radius: 12px; overflow: hidden;
+      transition: var(--transition);
+    }
+    .weight-input-wrap:focus-within {
+      border-color: var(--amber);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(245,166,35,0.12);
+    }
+    .weight-input-wrap input {
+      width: 100%; padding: 0.9rem 2.8rem 0.9rem 1rem;
+      border: none; background: transparent; outline: none;
+      font-family: inherit; font-size: 1.5rem; font-weight: 800;
+      color: var(--navy);
+    }
+    .weight-input-wrap input:disabled {
+      color: #94a3b8; cursor: not-allowed;
+    }
+    .weight-input-wrap .pct {
+      position: absolute; right: 1rem; top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem; font-weight: 800; color: #94a3b8;
+      pointer-events: none;
+    }
+
+    /* Sum indicator */
+    .sum-indicator {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.8rem 1rem;
+      background: #f8fafc; border-radius: 12px;
+      border: 2px solid #eef2f7;
+      font-size: 0.8rem; font-weight: 700;
+      margin-bottom: 1.2rem;
+      transition: var(--transition);
+    }
+    .sum-indicator.valid {
+      background: #f0fdf4; border-color: #86efac; color: #15803d;
+    }
+    .sum-indicator.invalid {
+      background: #fef2f2; border-color: #fca5a5; color: #991b1b;
+    }
+    .sum-indicator .sum-left { display: flex; align-items: center; gap: 0.5rem; }
+    .sum-indicator .sum-left i { font-size: 1rem; }
+    .sum-indicator .sum-right { font-weight: 800; font-size: 0.95rem; }
+
+    /* Preview bar */
+    .preview-bar {
+      display: flex; height: 12px;
+      border-radius: 100px; overflow: hidden;
+      margin-bottom: 0.6rem;
+      box-shadow: inset 0 1px 3px rgba(10,30,50,0.08);
+    }
+    .preview-bar .pm { background: var(--blue); transition: width 0.3s ease; }
+    .preview-bar .pf { background: var(--amber); transition: width 0.3s ease; }
+    .preview-labels {
+      display: flex; justify-content: space-between;
+      font-size: 0.7rem; font-weight: 700; color: #64748b;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Reason field */
+    .reason-field { margin-bottom: 1.2rem; }
+    .reason-field label {
+      display: block; font-size: 0.72rem; font-weight: 800;
+      color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 0.5rem;
+    }
+    .reason-field input {
+      width: 100%; padding: 0.75rem 1rem;
+      border: 2px solid var(--frost); border-radius: 10px;
+      font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      color: var(--navy); outline: none;
+      transition: var(--transition);
+      background: #f8fafc;
+    }
+    .reason-field input:focus {
+      border-color: var(--amber);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(245,166,35,0.12);
+    }
+    .reason-field input::placeholder { color: #94a3b8; font-weight: 500; }
+
+    /* Save button */
+    .btn-save {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.5rem; width: 100%;
+      padding: 0.95rem 1.4rem;
+      background: linear-gradient(135deg, var(--amber), var(--gold));
+      color: var(--navy); font-family: inherit;
+      font-size: 0.9rem; font-weight: 800;
+      border: none; border-radius: 12px;
+      cursor: pointer; transition: var(--transition);
+      box-shadow: 0 8px 20px -6px rgba(245,166,35,0.4);
+    }
+    .btn-save:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -8px rgba(245,166,35,0.5);
+    }
+    .btn-save:disabled {
+      background: #e2e8f0; color: #94a3b8;
+      cursor: not-allowed; box-shadow: none;
+    }
+
+    /* Distribution card */
+    .dist-list { display: flex; flex-direction: column; gap: 0.7rem; }
+    .dist-row {
+      display: flex; align-items: center; gap: 0.8rem;
+    }
+    .dist-label {
+      width: 60px; font-size: 0.75rem; font-weight: 800;
+      color: #475569;
+    }
+    .dist-bar-wrap {
+      flex: 1; height: 22px;
+      background: #f1f5f9; border-radius: 8px; overflow: hidden;
+    }
+    .dist-bar-fill {
+      height: 100%; border-radius: 8px;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 0.6rem;
+      font-size: 0.65rem; font-weight: 800; color: #fff;
+      transition: width 0.4s ease;
+    }
+    .dist-bar-fill.a { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .dist-bar-fill.b { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .dist-bar-fill.c { background: linear-gradient(135deg, #fbbf24, #d97706); }
+    .dist-bar-fill.d { background: linear-gradient(135deg, #fb923c, #ea580c); }
+    .dist-bar-fill.f { background: linear-gradient(135deg, #f87171, #dc2626); }
+    .dist-count {
+      width: 40px; text-align: right;
+      font-size: 0.75rem; font-weight: 800; color: var(--navy);
+    }
+
+    /* Audit */
+    .audit-item {
+      display: flex; gap: 0.8rem;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .audit-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .audit-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--amber); flex-shrink: 0; margin-top: 0.4rem;
+    }
+    .audit-body { flex: 1; }
+    .audit-title {
+      font-size: 0.78rem; font-weight: 800; color: var(--navy);
+      margin-bottom: 0.2rem;
+    }
+    .audit-meta {
+      font-size: 0.68rem; color: #94a3b8; font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    .audit-change {
+      font-size: 0.72rem; font-weight: 700; color: #475569;
+      background: #f8fafc; padding: 0.4rem 0.6rem;
+      border-radius: 6px; display: inline-block;
+    }
+    .audit-reason {
+      font-size: 0.7rem; color: #64748b; font-weight: 600;
+      font-style: italic; margin-top: 0.3rem;
+    }
+    .empty-audit {
+      text-align: center; padding: 2rem 0;
+      color: #94a3b8; font-size: 0.8rem; font-weight: 600;
+    }
+    .empty-audit i { font-size: 1.8rem; color: var(--frost); display: block; margin-bottom: 0.5rem; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .section-hero { padding: 1.5rem; }
+      .section-hero h1 { font-size: 1.3rem; }
+      .weight-inputs { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %> <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-list main-icon"></i> Course List</a></li>
+          <li class="menu-item"><a href="/sis/faculty/class-roster" class="menu-link"><i class="fas fa-users main-icon"></i> Class Roster</a></li>
+          <li class="menu-item"><a href="/sis/faculty/course-materials" class="menu-link"><i class="fas fa-folder main-icon"></i> Content & Materials</a></li>
+          <li class="menu-item"><a href="/sis/faculty/course-weights" class="menu-link active"><i class="fas fa-sliders main-icon"></i> Course Weights</a></li>
+          <li class="menu-item"><a href="/sis/faculty/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> <%= lang.course_evaluations || 'Course Evaluations' %></a></li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="/sis/faculty/grades" class="menu-link"><i class="fas fa-pen main-icon"></i> Gradebook Entry</a></li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/faculty/course-weights" class="btn-back"><i class="fas fa-arrow-left"></i> Back to All Sections</a>
+
+    <div class="section-hero">
+      <div class="section-hero-code"><%= section.code %> · <%= section.group_name || 'Group' %></div>
+      <h1><%= section.title %></h1>
+      <div class="section-hero-meta">
+        <span class="hero-pill"><i class="fas fa-medal"></i> <%= section.credits %> credits</span>
+        <span class="hero-pill"><i class="fas fa-users"></i> <%= section.student_count %> students</span>
+        <span class="hero-pill"><i class="fas fa-pen"></i> <%= section.grade_count %> graded</span>
+        <% if (section.weights_locked) { %>
+          <span class="hero-pill locked"><i class="fas fa-lock"></i> Weights Locked</span>
+        <% } else { %>
+          <span class="hero-pill editable"><i class="fas fa-pen-to-square"></i> Editable</span>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="alert success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash.error && flash.error.length) { %>
+      <div class="alert error"><i class="fas fa-exclamation-circle"></i> <%= flash.error[0] %></div>
+    <% } %>
+
+    <div class="grid-2">
+
+      <!-- Weight editor -->
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="fas fa-sliders"></i> Weight Configuration</h2>
+        </div>
+        <div class="card-body">
+
+          <% if (section.weights_locked) { %>
+            <div class="lock-notice">
+              <i class="fas fa-lock"></i>
+              <div>
+                <strong>Weights are locked.</strong>
+                <%= section.grade_count %> grade<%= Number(section.grade_count) !== 1 ? 's have' : ' has' %> been entered for this section.
+                <% if (section.locked_by_name) { %> Locked by <%= section.locked_by_name %>. <% } %>
+                Contact the registrar to request an unlock.
+              </div>
+            </div>
+          <% } %>
+
+          <form action="/sis/faculty/course-weights/<%= section.id %>" method="POST" id="weightsForm">
+            <div class="weight-inputs">
+              <div class="weight-field">
+                <label><span class="midterm-dot">●</span> Midterm Weight</label>
+                <div class="weight-input-wrap">
+                  <input type="number" name="midterm_weight" id="midtermInput"
+                         value="<%= section.midterm_weight %>"
+                         min="0" max="100" step="1"
+                         <%= section.weights_locked ? 'disabled' : '' %>
+                         oninput="updateSum()" required>
+                  <span class="pct">%</span>
+                </div>
+              </div>
+              <div class="weight-field">
+                <label><span class="final-dot">●</span> Final Weight</label>
+                <div class="weight-input-wrap">
+                  <input type="number" name="final_weight" id="finalInput"
+                         value="<%= section.final_weight %>"
+                         min="0" max="100" step="1"
+                         <%= section.weights_locked ? 'disabled' : '' %>
+                         oninput="updateSum()" required>
+                  <span class="pct">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sum-indicator" id="sumIndicator">
+              <span class="sum-left"><i class="fas fa-calculator"></i> Total must equal 100%</span>
+              <span class="sum-right" id="sumValue">—</span>
+            </div>
+
+            <div class="preview-bar">
+              <div class="pm" id="pmBar" style="width: <%= section.midterm_weight %>%"></div>
+              <div class="pf" id="pfBar" style="width: <%= section.final_weight %>%"></div>
+            </div>
+            <div class="preview-labels">
+              <span id="pmLabel">Midterm <%= section.midterm_weight %>%</span>
+              <span id="pfLabel">Final <%= section.final_weight %>%</span>
+            </div>
+
+            <% if (!section.weights_locked) { %>
+              <div class="reason-field">
+                <label>Reason for change <span style="color: #94a3b8; font-weight: 600;">(optional)</span></label>
+                <input type="text" name="reason" placeholder="e.g., Adjusted per department policy" maxlength="200">
+              </div>
+            <% } %>
+
+            <button type="submit" class="btn-save" id="saveBtn" <%= section.weights_locked ? 'disabled' : '' %>>
+              <i class="fas fa-<%= section.weights_locked ? 'lock' : 'check' %>"></i>
+              <%= section.weights_locked ? 'Locked — Cannot Save' : 'Save Weights' %>
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+      <!-- Distribution + Audit -->
+      <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-head">
+            <h2><i class="fas fa-chart-bar"></i> Current Distribution</h2>
+          </div>
+          <div class="card-body">
+            <% 
+              const dist = distribution || {};
+              const aC = Number(dist.a_count || 0);
+              const bC = Number(dist.b_count || 0);
+              const cC = Number(dist.c_count || 0);
+              const dC = Number(dist.d_count || 0);
+              const fC = Number(dist.f_count || 0);
+              const total = Number(dist.total_graded || 0);
+              const maxV = Math.max(aC, bC, cC, dC, fC, 1);
+            %>
+            <% if (total === 0) { %>
+              <div class="empty-audit" style="padding: 1rem 0;">
+                <i class="fas fa-inbox"></i>
+                No grades entered yet.
+              </div>
+            <% } else { %>
+              <div class="dist-list">
+                <div class="dist-row">
+                  <span class="dist-label">A / A-</span>
+                  <div class="dist-bar-wrap"><div class="dist-bar-fill a" style="width: <%= Math.round((aC/maxV)*100) %>%;"><%= aC %></div></div>
+                  <span class="dist-count"><%= aC %></span>
+                </div>
+                <div class="dist-row">
+                  <span class="dist-label">B / B-</span>
+                  <div class="dist-bar-wrap"><div class="dist-bar-fill b" style="width: <%= Math.round((bC/maxV)*100) %>%;"><%= bC %></div></div>
+                  <span class="dist-count"><%= bC %></span>
+                </div>
+                <div class="dist-row">
+                  <span class="dist-label">C / C-</span>
+                  <div class="dist-bar-wrap"><div class="dist-bar-fill c" style="width: <%= Math.round((cC/maxV)*100) %>%;"><%= cC %></div></div>
+                  <span class="dist-count"><%= cC %></span>
+                </div>
+                <div class="dist-row">
+                  <span class="dist-label">D / D-</span>
+                  <div class="dist-bar-wrap"><div class="dist-bar-fill d" style="width: <%= Math.round((dC/maxV)*100) %>%;"><%= dC %></div></div>
+                  <span class="dist-count"><%= dC %></span>
+                </div>
+                <div class="dist-row">
+                  <span class="dist-label">F</span>
+                  <div class="dist-bar-wrap"><div class="dist-bar-fill f" style="width: <%= Math.round((fC/maxV)*100) %>%;"><%= fC %></div></div>
+                  <span class="dist-count"><%= fC %></span>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2><i class="fas fa-history"></i> Change History</h2>
+          </div>
+          <div class="card-body">
+            <% if (audit.length === 0) { %>
+              <div class="empty-audit">
+                <i class="fas fa-scroll"></i>
+                No changes recorded yet.
+              </div>
+            <% } else { %>
+              <% audit.forEach(a => { %>
+                <div class="audit-item">
+                  <div class="audit-dot"></div>
+                  <div class="audit-body">
+                    <div class="audit-title"><%= a.changed_by_name %></div>
+                    <div class="audit-meta"><%= new Date(a.changed_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></div>
+                    <div class="audit-change">
+                      <%= a.old_midterm %>% / <%= a.old_final %>% → <%= a.new_midterm %>% / <%= a.new_final %>%
+                    </div>
+                    <% if (a.reason) { %>
+                      <div class="audit-reason">"<%= a.reason %>"</div>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+    }
+
+    function updateSum() {
+      const mEl = document.getElementById('midtermInput');
+      const fEl = document.getElementById('finalInput');
+      if (!mEl || !fEl) return;
+      const m = Number(mEl.value) || 0;
+      const f = Number(fEl.value) || 0;
+      const sum = m + f;
+      const indicator = document.getElementById('sumIndicator');
+      const sumVal = document.getElementById('sumValue');
+      const saveBtn = document.getElementById('saveBtn');
+
+      sumVal.textContent = m + '% + ' + f + '% = ' + sum + '%';
+
+      if (sum === 100) {
+        indicator.classList.add('valid');
+        indicator.classList.remove('invalid');
+        if (saveBtn && !saveBtn.dataset.locked) saveBtn.disabled = false;
+      } else {
+        indicator.classList.add('invalid');
+        indicator.classList.remove('valid');
+        if (saveBtn && !saveBtn.dataset.locked) saveBtn.disabled = true;
+      }
+
+      const pmBar = document.getElementById('pmBar');
+      const pfBar = document.getElementById('pfBar');
+      const pmLabel = document.getElementById('pmLabel');
+      const pfLabel = document.getElementById('pfLabel');
+      if (pmBar) pmBar.style.width = Math.max(0, Math.min(100, m)) + '%';
+      if (pfBar) pfBar.style.width = Math.max(0, Math.min(100, f)) + '%';
+      if (pmLabel) pmLabel.textContent = 'Midterm ' + m + '%';
+      if (pfLabel) pfLabel.textContent = 'Final ' + f + '%';
+    }
+
+    // Initial validation on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const saveBtn = document.getElementById('saveBtn');
+      if (saveBtn && saveBtn.disabled) saveBtn.dataset.locked = '1';
+      updateSum();
+    });
+  </script>
+</body>
+</html>

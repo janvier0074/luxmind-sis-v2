@@ -468,12 +468,29 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   const sectionId = req.params.section_id;
   try {
+    // --- CIU: fetch section weights + lock state before calculating ---
+    const secInfoRes = await pool.query(`
+      SELECT midterm_weight, final_weight, weights_locked
+      FROM course_sections
+      WHERE id = $1 AND teacher_id = $2
+    `, [sectionId, req.session.user.id]);
+
+    if (secInfoRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
+
+    const secInfo = secInfoRes.rows[0];
+    const mw = Number(secInfo.midterm_weight) || 50;
+    const fw = Number(secInfo.final_weight) || 50;
+
+    let gradesSaved = 0;
     for (const key in req.body) {
       if (key.startsWith('midterm_')) {
         const studentId = key.split('_')[1];
         const midterm = Number(req.body[key]) || 0;
         const final = Number(req.body['final_' + studentId]) || 0;
-        const total = (midterm + final) / 2;
+
+        // --- CIU: weighted total instead of simple average ---
+        const total = (midterm * mw / 100) + (final * fw / 100);
+
         let letter = 'F';
         let gpa = 0.0;
 
@@ -492,9 +509,22 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         else { letter = 'F'; gpa = 0.0; }
 
         await pool.query(`INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (student_id, section_id) DO UPDATE SET midterm_grade = $3, final_grade = $4, letter_grade = $5, gpa_points = $6`, [studentId, sectionId, midterm, final, letter, gpa]);
+        gradesSaved++;
       }
     }
-    req.flash('success', 'Grades saved successfully.');
+
+    // --- CIU: auto-lock weights the moment first grade is saved ---
+    let lockMsg = '';
+    if (gradesSaved > 0 && !secInfo.weights_locked) {
+      await pool.query(`
+        UPDATE course_sections
+        SET weights_locked = true, weights_locked_at = NOW(), weights_locked_by = $1
+        WHERE id = $2
+      `, [req.session.user.id, sectionId]);
+      lockMsg = ' Weights are now locked.';
+    }
+
+    req.flash('success', `Grades saved successfully using weights: Midterm ${mw}%, Final ${fw}%.${lockMsg}`);
     res.redirect('/sis/faculty/grades/' + sectionId);
   } catch (err) { res.status(500).send("Error saving grades: " + err.message); }
 });
@@ -869,6 +899,164 @@ app.get('/sis/faculty/class-roster/:section_id', requireLogin, async (req, res) 
 // ============================================
 // --- FACULTY: CONTENT & MATERIALS HUB ---
 // ============================================
+
+
+
+// ============================================
+// --- FACULTY: COURSE WEIGHTS (CIU-compliant) ---
+// ============================================
+
+// 1. Hub — list all sections with weight status
+app.get('/sis/faculty/course-weights', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionsRes = await pool.query(`
+      SELECT 
+        s.id AS section_id,
+        c.code, c.title, c.credits,
+        s.group_name,
+        s.midterm_weight, s.final_weight,
+        s.weights_locked, s.weights_locked_at,
+        (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.letter_grade IS NOT NULL) AS grade_count,
+        (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
+
+    const stats = {
+      total: sectionsRes.rows.length,
+      locked: sectionsRes.rows.filter(r => r.weights_locked).length,
+      unlocked: sectionsRes.rows.filter(r => !r.weights_locked).length,
+      custom: sectionsRes.rows.filter(r => Number(r.midterm_weight) !== 50 || Number(r.final_weight) !== 50).length
+    };
+
+    res.render('faculty-course-weights', {
+      user: req.session.user,
+      sections: sectionsRes.rows,
+      stats,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Weights Hub Error: " + err.message); }
+});
+
+// 2. Detail — edit/validate one section's weights
+app.get('/sis/faculty/course-weights/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, c.credits, s.group_name,
+             s.midterm_weight, s.final_weight,
+             s.weights_locked, s.weights_locked_at,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.letter_grade IS NOT NULL) AS grade_count,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count,
+             u.full_name AS locked_by_name
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      LEFT JOIN users u ON u.id = s.weights_locked_by
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/course-weights');
+    const section = sectionRes.rows[0];
+
+    const auditRes = await pool.query(`
+      SELECT a.*, u.full_name AS changed_by_name
+      FROM weight_audit_log a
+      JOIN users u ON u.id = a.changed_by
+      WHERE a.section_id = $1
+      ORDER BY a.changed_at DESC
+      LIMIT 10
+    `, [req.params.section_id]);
+
+    const distRes = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE letter_grade IN ('A+','A','A-')) AS a_count,
+        COUNT(*) FILTER (WHERE letter_grade IN ('B+','B','B-')) AS b_count,
+        COUNT(*) FILTER (WHERE letter_grade IN ('C+','C','C-')) AS c_count,
+        COUNT(*) FILTER (WHERE letter_grade IN ('D+','D','D-')) AS d_count,
+        COUNT(*) FILTER (WHERE letter_grade = 'F') AS f_count,
+        COUNT(*) FILTER (WHERE letter_grade IS NOT NULL) AS total_graded
+      FROM grades
+      WHERE section_id = $1
+    `, [req.params.section_id]);
+
+    res.render('faculty-course-weights-detail', {
+      user: req.session.user,
+      section,
+      audit: auditRes.rows,
+      distribution: distRes.rows[0],
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Weights Detail Error: " + err.message); }
+});
+
+// 3. Save — validate sum = 100, lock check, audit log
+app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const sectionId = req.params.section_id;
+
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.midterm_weight, s.final_weight, s.weights_locked,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.letter_grade IS NOT NULL) AS grade_count
+      FROM course_sections s
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [sectionId, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/course-weights');
+    const section = sectionRes.rows[0];
+
+    // LOCK CHECK
+    if (section.weights_locked) {
+      req.flash('error', 'Weights are locked because grades have been entered. Contact the registrar to unlock.');
+      return res.redirect('/sis/faculty/course-weights/' + sectionId);
+    }
+
+    // SAFETY: if grades exist but somehow not locked, lock now and refuse
+    if (Number(section.grade_count) > 0) {
+      await pool.query(`
+        UPDATE course_sections
+        SET weights_locked = true, weights_locked_at = NOW(), weights_locked_by = $1
+        WHERE id = $2
+      `, [req.session.user.id, sectionId]);
+      req.flash('error', 'Weights auto-locked because grades exist. Contact the registrar to unlock.');
+      return res.redirect('/sis/faculty/course-weights/' + sectionId);
+    }
+
+    const midtermWeight = Number(req.body.midterm_weight);
+    const finalWeight = Number(req.body.final_weight);
+
+    if (!Number.isInteger(midtermWeight) || !Number.isInteger(finalWeight) ||
+        midtermWeight < 0 || finalWeight < 0 ||
+        midtermWeight > 100 || finalWeight > 100) {
+      req.flash('error', 'Weights must be whole numbers between 0 and 100.');
+      return res.redirect('/sis/faculty/course-weights/' + sectionId);
+    }
+
+    if (midtermWeight + finalWeight !== 100) {
+      req.flash('error', `Weights must sum to exactly 100%. You entered ${midtermWeight} + ${finalWeight} = ${midtermWeight + finalWeight}%.`);
+      return res.redirect('/sis/faculty/course-weights/' + sectionId);
+    }
+
+    await pool.query(`
+      UPDATE course_sections
+      SET midterm_weight = $1, final_weight = $2
+      WHERE id = $3
+    `, [midtermWeight, finalWeight, sectionId]);
+
+    await pool.query(`
+      INSERT INTO weight_audit_log (section_id, changed_by, old_midterm, old_final, new_midterm, new_final, reason)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [sectionId, req.session.user.id, section.midterm_weight, section.final_weight, midtermWeight, finalWeight, req.body.reason || null]);
+
+    req.flash('success', `Weights updated to Midterm ${midtermWeight}% / Final ${finalWeight}%.`);
+    res.redirect('/sis/faculty/course-weights/' + sectionId);
+  } catch (err) { res.status(500).send("Save Weights Error: " + err.message); }
+});
+
+
 app.get('/sis/faculty/course-materials', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {

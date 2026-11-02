@@ -866,6 +866,43 @@ app.get('/sis/faculty/class-roster/:section_id', requireLogin, async (req, res) 
     });
   } catch (err) { res.status(500).send("Roster Detail Error: " + err.message); }
 });
+// ============================================
+// --- FACULTY: CONTENT & MATERIALS HUB ---
+// ============================================
+app.get('/sis/faculty/course-materials', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const sectionsRes = await pool.query(`
+      SELECT 
+        s.id AS section_id,
+        c.id AS course_id,
+        c.code, c.title, c.credits,
+        c.syllabus_url, c.moodle_url,
+        s.group_name,
+        s.day_of_week, s.start_time, s.room,
+        (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
+
+    const rows = sectionsRes.rows;
+    const stats = {
+      total: rows.length,
+      withSyllabus: rows.filter(r => r.syllabus_url).length,
+      withMoodle: rows.filter(r => r.moodle_url).length,
+      needsAttention: rows.filter(r => !r.syllabus_url || !r.moodle_url).length
+    };
+
+    res.render('faculty-course-materials-hub', {
+      user: req.session.user,
+      sections: rows,
+      stats,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Materials Hub Error: " + err.message); }
+});
 
 // ============================================
 // --- FACULTY: ATTENDANCE HISTORY ---

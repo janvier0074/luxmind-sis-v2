@@ -14,48 +14,84 @@
       --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
       --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
       --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
     
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    /* Sidebar */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; }
     .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.1rem; font-weight: 800; }
     .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
     .sidebar-menu { list-style: none; padding: 0.5rem 0; }
-    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border-left: 3px solid transparent; }
-    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(245,166,35,0.18); border-left-color: var(--gold); }
-    .menu-link i { width: 22px; color: var(--gold); }
-    .submenu { list-style: none; background: rgba(0,0,0,0.18); }
-    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.15), transparent); border-left-color: var(--gold); }
+    .menu-link i { width: 24px; color: var(--gold); font-size: 0.9rem; }
+    .submenu { list-style: none; background: rgba(0,0,0,0.15); padding: 0.5rem 0; }
+    .submenu .menu-link { padding-left: 3rem; font-size: 0.8rem; }
 
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; }
-    
-    .student-hero { background: linear-gradient(135deg, var(--navy), var(--deep)); border-radius: 1.5rem; padding: 2rem; color: #fff; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-    .hero-avatar { width: 80px; height: 80px; border-radius: 20px; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: var(--navy); }
-    .hero-title h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem; }
-    .hero-subtitle { font-size: 0.9rem; color: #cbd5e1; display: flex; gap: 1rem; }
-    
-    .hero-right { display: flex; gap: 1rem; }
-    .hero-stat { background: rgba(255,255,255,0.1); padding: 1rem 1.5rem; border-radius: 1rem; text-align: center; }
-    .hero-stat span { display: block; font-size: 0.65rem; color: var(--gold); text-transform: uppercase; font-weight: 800; margin-bottom: 0.3rem; }
-    .hero-stat strong { font-size: 1.5rem; font-weight: 800; }
+    /* Main Content */
+    .main-content { margin-left: 280px; padding: 3rem; flex: 1; width: calc(100% - 280px); max-width: 1400px; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.85rem; transition: var(--transition); }
+    .btn-back:hover { color: var(--amber); transform: translateX(-3px); }
 
-    .progress-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .info-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); overflow: hidden; }
-    .card-head { padding: 1.2rem; border-bottom: 1px solid #eef2f7; }
-    .card-head h2 { font-size: 1rem; font-weight: 800; }
-    .card-body { padding: 1.4rem; }
+    /* Premium Hero Card */
+    .hero-card { background: linear-gradient(135deg, var(--navy), var(--deep)); border-radius: 1.5rem; padding: 2.5rem; color: #fff; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 20px 40px -10px rgba(10,30,50,0.4); position: relative; overflow: hidden; }
+    .hero-card::before { content: ''; position: absolute; top: -50%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,200,87,0.15), transparent 60%); pointer-events: none; }
     
-    .enrollment-item { padding: 1rem; background: #f8fafc; border-radius: 10px; margin-bottom: 0.8rem; }
-    .code { font-size: 0.75rem; font-weight: 800; color: var(--blue); background: #e0f2fe; padding: 0.2rem 0.5rem; border-radius: 6px; }
-    .title { font-size: 0.9rem; font-weight: 800; margin-top: 0.4rem; }
+    .hero-left { display: flex; align-items: center; gap: 1.5rem; position: relative; z-index: 1; }
+    .hero-avatar { width: 90px; height: 90px; border-radius: 24px; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; color: var(--navy); box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 4px solid rgba(255,255,255,0.1); }
+    .hero-title h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.3rem; }
+    .hero-subtitle { font-size: 0.9rem; color: #cbd5e1; font-weight: 600; display: flex; gap: 1.5rem; align-items: center; }
+    .hero-subtitle i { color: var(--gold); margin-right: 0.3rem; }
+
+    .hero-right { display: flex; gap: 1rem; position: relative; z-index: 1; }
+    .hero-stat { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 1rem 2rem; border-radius: 1rem; text-align: center; backdrop-filter: blur(10px); }
+    .hero-stat span { display: block; font-size: 0.7rem; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem; }
+    .hero-stat strong { font-size: 1.8rem; font-weight: 800; }
+
+    /* Two Column Layout */
+    .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
     
-    .semester-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--frost); }
-    .grade-badge { padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
-    .grade-a { background: #dcfce7; color: #15803d; }
-    .grade-f { background: #fee2e2; color: #991b1b; }
+    .info-card { background: #fff; border-radius: 1.5rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    .card-head { padding: 1.5rem; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 0.8rem; background: #f8fafc; }
+    .card-head i { color: var(--amber); font-size: 1.2rem; }
+    .card-head h2 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    .card-body { padding: 1.5rem; }
+
+    /* Enrollments */
+    .enrollment-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #fff; border: 1px solid var(--frost); border-radius: 1rem; margin-bottom: 1rem; transition: var(--transition); }
+    .enrollment-item:hover { border-color: var(--amber); box-shadow: 0 4px 12px rgba(245,166,35,0.1); }
+    .enrollment-code { font-size: 0.75rem; font-weight: 800; color: var(--blue); background: #e0f2fe; padding: 0.2rem 0.6rem; border-radius: 6px; display: inline-block; margin-bottom: 0.4rem; }
+    .enrollment-title { font-size: 0.95rem; font-weight: 800; color: var(--navy); }
+    .enrollment-teacher { font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 0.2rem; }
+    .enrollment-credits { font-size: 0.9rem; font-weight: 800; color: var(--amber); background: #fef3c7; padding: 0.4rem 0.8rem; border-radius: 8px; }
+
+    /* Transcript */
+    .semester-group { margin-bottom: 2rem; }
+    .semester-group:last-child { margin-bottom: 0; }
+    .semester-title { font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--frost); display: flex; align-items: center; gap: 0.5rem; }
+    .semester-title i { color: var(--amber); }
+    
+    .course-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px dashed #eef2f7; }
+    .course-row:last-child { border-bottom: none; }
+    .course-info .course-code { font-weight: 800; font-size: 0.85rem; color: var(--blue); }
+    .course-info .course-name { font-weight: 600; font-size: 0.85rem; color: #475569; }
+    
+    .grade-badge { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800; }
+    .grade-a { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .grade-b { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+    .grade-c { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+    .grade-f { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    /* Mobile */
+    @media (max-width: 1024px) {
+      .layout-grid { grid-template-columns: 1fr; }
+      .hero-card { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    }
   </style>
 </head>
 <body>
@@ -77,61 +113,94 @@
   <main class="main-content">
     <a href="/sis/advisor/advisees" class="btn-back"><i class="fas fa-arrow-left"></i> Back to My Advisees</a>
 
-    <div class="student-hero">
-      <div class="hero-left" style="display: flex; gap: 1.5rem; align-items: center;">
-        <div class="hero-avatar"><%= student.full_name.substring(0,2).toUpperCase() %></div>
+    <div class="hero-card">
+      <div class="hero-left">
+        <% const initials = student.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(); %>
+        <div class="hero-avatar"><%= initials %></div>
         <div class="hero-title">
           <h1><%= student.full_name %></h1>
           <div class="hero-subtitle">
-            <span><i class="fas fa-id-card"></i> <%= student.admission_number %></span>
+            <span><i class="fas fa-id-card"></i> <%= student.admission_number || 'No ID' %></span>
             <span><i class="fas fa-graduation-cap"></i> <%= student.class_level %></span>
           </div>
         </div>
       </div>
       <div class="hero-right">
-        <div class="hero-stat"><span>CGPA</span><strong><%= cgpa %></strong></div>
-        <div class="hero-stat"><span>Credits</span><strong><%= totalCredits %></strong></div>
+        <div class="hero-stat">
+          <span>Cumulative GPA</span>
+          <strong><%= cgpa %></strong>
+        </div>
+        <div class="hero-stat">
+          <span>Credits Earned</span>
+          <strong><%= totalCredits %></strong>
+        </div>
       </div>
     </div>
 
-    <div class="progress-layout">
+    <div class="layout-grid">
+      
+      <!-- Current Enrollments -->
       <div class="info-card">
-        <div class="card-head"><h2><i class="fas fa-book-reader" style="color: var(--amber);"></i> Current Enrollments</h2></div>
+        <div class="card-head">
+          <i class="fas fa-book-reader"></i>
+          <h2>Active Enrollments</h2>
+        </div>
         <div class="card-body">
           <% if (enrollments.length === 0) { %>
-            <p style="color: #94a3b8; font-size: 0.85rem;">No active enrollments.</p>
+            <div style="text-align: center; padding: 3rem 0; color: #94a3b8;">
+              <i class="fas fa-inbox" style="font-size: 2.5rem; color: var(--frost); display: block; margin-bottom: 1rem;"></i>
+              <p style="font-size: 0.9rem; font-weight: 600;">No active course enrollments.</p>
+            </div>
           <% } %>
           <% enrollments.forEach(enr => { %>
             <div class="enrollment-item">
-              <span class="code"><%= enr.code %></span>
-              <div class="title"><%= enr.title %> (<%= enr.credits %> cr)</div>
+              <div>
+                <span class="enrollment-code"><%= enr.code %></span>
+                <div class="enrollment-title"><%= enr.title %></div>
+                <div class="enrollment-teacher"><i class="fas fa-chalkboard-teacher"></i> <%= enr.teacher_name || 'TBA' %> • <%= enr.day_of_week || 'TBA' %> <%= enr.start_time || '' %></div>
+              </div>
+              <div class="enrollment-credits"><%= enr.credits %> cr</div>
             </div>
           <% }) %>
         </div>
       </div>
 
+      <!-- Academic Transcript -->
       <div class="info-card">
-        <div class="card-head"><h2><i class="fas fa-scroll" style="color: var(--amber);"></i> Academic Transcript</h2></div>
+        <div class="card-head">
+          <i class="fas fa-scroll"></i>
+          <h2>Academic Transcript (Published)</h2>
+        </div>
         <div class="card-body">
           <% if (Object.keys(transcript).length === 0) { %>
-            <p style="color: #94a3b8; font-size: 0.85rem;">No published grades yet.</p>
+            <div style="text-align: center; padding: 3rem 0; color: #94a3b8;">
+              <i class="fas fa-file-alt" style="font-size: 2.5rem; color: var(--frost); display: block; margin-bottom: 1rem;"></i>
+              <p style="font-size: 0.9rem; font-weight: 600;">No published grades on record yet.</p>
+            </div>
           <% } %>
-          <% Object.keys(transcript).forEach(sem => { %>
-            <div style="margin-bottom: 1.5rem;">
-              <div class="semester-title">Semester <%= sem %></div>
+          <% Object.keys(transcript).sort((a,b) => a-b).forEach(sem => { %>
+            <div class="semester-group">
+              <div class="semester-title"><i class="fas fa-calendar-alt"></i> Semester <%= sem %></div>
               <% transcript[sem].forEach(c => { 
                 const lg = c.letter_grade || 'F';
-                const gClass = lg.startsWith('A') ? 'grade-a' : 'grade-f';
+                let gClass = 'grade-f';
+                if (lg.startsWith('A')) gClass = 'grade-a';
+                else if (lg.startsWith('B')) gClass = 'grade-b';
+                else if (lg.startsWith('C')) gClass = 'grade-c';
               %>
-                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #eef2f7; font-size: 0.85rem;">
-                  <div><strong><%= c.code %></strong> - <%= c.title %></div>
-                  <span class="grade-badge <%= gClass %>"><%= lg %></span>
+                <div class="course-row">
+                  <div class="course-info">
+                    <div class="course-code"><%= c.code %></div>
+                    <div class="course-name"><%= c.title %></div>
+                  </div>
+                  <div class="grade-badge <%= gClass %>"><%= lg %></div>
                 </div>
               <% }) %>
             </div>
           <% }) %>
         </div>
       </div>
+
     </div>
   </main>
 </body>

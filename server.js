@@ -9,13 +9,13 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const flash = require('connect-flash');
 const { Resend } = require('resend');
-
 const multer = require('multer');
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
 });
-// ============================================
+
+============================================
 // --- i18n: LANGUAGE DICTIONARIES ---
 // ============================================
 const langDicts = {

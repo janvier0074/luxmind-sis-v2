@@ -1,8 +1,14 @@
 require('dotenv').config(); // <--- MUST BE LINE 1
 
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
+// Safely initialize Supabase (prevents server crash if keys are missing)
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+} else {
+  console.warn("⚠️ WARNING: Supabase keys are missing in environment variables. File uploads will not work.");
+}
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');

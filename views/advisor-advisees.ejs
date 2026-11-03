@@ -1,97 +1,139 @@
-// ============================================
-// --- ADVISOR: MY ADVISEES & ACADEMIC PROGRESS ---
-// ============================================
-app.get('/sis/advisor/advisees', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
-  try {
-    const adviseesRes = await pool.query(`
-      SELECT u.id, u.full_name, u.email, sp.admission_number, sp.class_level, sp.current_semester,
-             COALESCE((SELECT ROUND(SUM(g.gpa_points * c.credits) / NULLIF(SUM(c.credits), 0), 2)
-                       FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id
-                       WHERE g.student_id = u.id AND g.is_published = true), 0.00) as cgpa,
-             COALESCE((SELECT SUM(c.credits)
-                       FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id
-                       WHERE g.student_id = u.id AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true), 0) as credits_earned
-      FROM student_profiles sp
-      JOIN users u ON u.id = sp.user_id
-      WHERE sp.advisor_id = $1
-      ORDER BY u.full_name ASC
-    `, [req.session.user.id]);
-
-    // Calculate stats for the dashboard
-    const advisees = adviseesRes.rows;
-    const totalAdvisees = advisees.length;
-    const avgCGPA = totalAdvisees > 0 ? (advisees.reduce((sum, s) => sum + Number(s.cgpa), 0) / totalAdvisees).toFixed(2) : '0.00';
-    const atRiskCount = advisees.filter(s => Number(s.cgpa) < 2.0).length;
-
-    res.render('advisor-advisees', { 
-      user: req.session.user, 
-      advisees, 
-      totalAdvisees, 
-      avgCGPA, 
-      atRiskCount,
-      greeting: getGreeting() 
-    });
-  } catch (err) { res.status(500).send("Advisees Error: " + err.message); }
-});
-
-app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
-  try {
-    // Verify this student actually belongs to this advisor
-    const studentRes = await pool.query(`
-      SELECT u.id, u.full_name, u.email, sp.admission_number, sp.class_level, sp.current_semester
-      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE u.id = $1 AND sp.advisor_id = $2
-    `, [req.params.student_id, req.session.user.id]);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Advisees — LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
     
-    if (studentRes.rows.length === 0) return res.redirect('/sis/advisor/advisees');
-    const student = studentRes.rows[0];
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(245,166,35,0.18); border-left-color: var(--gold); }
+    .menu-link i { width: 22px; color: var(--gold); }
+    .submenu { list-style: none; background: rgba(0,0,0,0.18); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; }
 
-    // Get Published Grades
-    const gradesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, c.semester_number, g.letter_grade, g.gpa_points
-      FROM grades g
-      JOIN course_sections s ON s.id = g.section_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1 AND g.is_published = true
-      ORDER BY c.semester_number ASC, c.code ASC
-    `, [student.id]);
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; }
+    .page-title h1 { font-size: 1.7rem; font-weight: 800; }
+    .page-title p { color: #64748b; font-size: 0.9rem; }
 
-    // Get Current Enrollments
-    const enrollmentsRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, s.day_of_week, s.start_time, u.full_name as teacher_name
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN course_sections s ON s.id = e.section_id
-      LEFT JOIN users u ON u.id = s.teacher_id
-      WHERE e.user_id = $1
-    `, [student.id]);
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2rem 0; }
+    .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); display: flex; align-items: center; gap: 1rem; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .stat-icon.total { background: #e0f2fe; color: #0284c7; }
+    .stat-icon.gpa { background: #dcfce7; color: #16a34a; }
+    .stat-icon.risk { background: #fee2e2; color: #b91c1c; }
 
-    // Calculate CGPA & Credits
-    let totalPoints = 0, totalCredits = 0;
-    gradesRes.rows.forEach(g => {
-      totalCredits += Number(g.credits);
-      totalPoints += (Number(g.gpa_points) * Number(g.credits));
-    });
-    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+    .table-wrap { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--navy); color: var(--gold); padding: 1rem; text-align: left; font-size: 0.7rem; text-transform: uppercase; }
+    td { padding: 1rem; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; font-weight: 600; }
+    
+    .student-cell { display: flex; align-items: center; gap: 0.7rem; }
+    .avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; }
+    .badge-gpa { padding: 0.3rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+    .gpa-high { background: #dcfce7; color: #15803d; }
+    .gpa-low { background: #fee2e2; color: #991b1b; }
+    .btn-action { padding: 0.5rem 1rem; background: #f1f5f9; color: var(--blue); text-decoration: none; border-radius: 8px; font-size: 0.75rem; font-weight: 800; }
+    .btn-action:hover { background: var(--amber); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-mark">L</div><div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div></div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/faculty" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li>
+        <a href="#" class="menu-link active"><i class="fas fa-user-friends"></i> Advising</a>
+        <ul class="submenu">
+          <li><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle"></i> Approvals</a></li>
+          <li><a href="/sis/advisor/advisees" class="menu-link active"><i class="fas fa-users"></i> My Advisees</a></li>
+        </ul>
+      </li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
 
-    // Group transcript by semester
-    const transcript = {};
-    gradesRes.rows.forEach(g => {
-      const sem = g.semester_number || 1;
-      if (!transcript[sem]) transcript[sem] = [];
-      transcript[sem].push(g);
-    });
+  <main class="main-content">
+    <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <div class="page-title">
+      <h1>My Advisees</h1>
+      <p>Monitor academic progress for your assigned students</p>
+    </div>
 
-    res.render('advisor-student-progress', { 
-      user: req.session.user, 
-      student, 
-      transcript, 
-      enrollments: enrollmentsRes.rows,
-      cgpa,
-      totalCredits,
-      greeting: getGreeting() 
-    });
-  } catch (err) { res.status(500).send("Progress Error: " + err.message); }
-});
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total"><i class="fas fa-user-graduate"></i></div>
+        <div><h3>Total Advisees</h3><h2><%= totalAdvisees %></h2></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gpa"><i class="fas fa-chart-line"></i></div>
+        <div><h3>Average CGPA</h3><h2><%= avgCGPA %></h2></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon risk"><i class="fas fa-triangle-exclamation"></i></div>
+        <div><h3>At Risk (< 2.0)</h3><h2><%= atRiskCount %></h2></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Program</th>
+            <th>CGPA</th>
+            <th>Credits</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (advisees.length === 0) { %>
+            <tr><td colspan="5" style="text-align:center; padding: 3rem;">No advisees assigned yet.</td></tr>
+          <% } %>
+          <% advisees.forEach(student => { %>
+            <% 
+              const cgpaNum = Number(student.cgpa);
+              const gpaClass = cgpaNum >= 3.0 ? 'gpa-high' : (cgpaNum < 2.0 ? 'gpa-low' : '');
+              const initials = student.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            %>
+            <tr>
+              <td>
+                <div class="student-cell">
+                  <div class="avatar" style="background: var(--blue);"><%= initials %></div>
+                  <div>
+                    <div style="font-weight: 800;"><%= student.full_name %></div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;"><%= student.admission_number %></div>
+                  </div>
+                </div>
+              </td>
+              <td><%= student.class_level %> (Sem <%= student.current_semester %>)</td>
+              <td><span class="badge-gpa <%= gpaClass %>"><%= cgpaNum.toFixed(2) %></span></td>
+              <td><%= student.credits_earned %></td>
+              <td><a href="/sis/advisor/advisees/<%= student.id %>" class="btn-action">View Progress</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

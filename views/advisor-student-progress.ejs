@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Advisees — LuxMind SIS</title>
+  <title>Academic Progress — LuxMind SIS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,259 +13,126 @@
     :root {
       --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
       --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
-      --success: #1f8a5f; --danger: #b33e2e;
       --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
-      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
-      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
     
-    /* Sidebar */
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
-    .sidebar::-webkit-scrollbar { width: 5px; }
-    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
-    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
-    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
-    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
-    .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
-    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
-    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
-    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
-    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
-    .submenu.open { display: block; border-left-color: var(--amber); }
-    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
-    .menu-item.open > .menu-link { color: #fff; }
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(245,166,35,0.18); border-left-color: var(--gold); }
+    .menu-link i { width: 22px; color: var(--gold); }
+    .submenu { list-style: none; background: rgba(0,0,0,0.18); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; }
 
-    /* Main Content */
     .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); }
-    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
-
-    /* Top Header */
-    .page-header { margin-bottom: 2rem; }
-    .page-title { display: flex; align-items: center; gap: 1rem; }
-    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4); }
-    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
-    .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
-
-    /* Stats */
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
-    .stat-card { background: #fff; padding: 1.2rem 1.3rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; transition: var(--transition); }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--gold); }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
-    .stat-icon.total { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.gpa { background: #dcfce7; color: #16a34a; }
-    .stat-icon.risk { background: #fee2e2; color: #b91c1c; }
-    .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
-    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; line-height: 1; }
-
-    /* Toolbar */
-    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
-    .search-box { display: flex; align-items: center; gap: 0.5rem; background: #fff; padding: 0.6rem 1rem; border-radius: 100px; border: 1px solid var(--frost); box-shadow: var(--shadow-soft); min-width: 300px; transition: var(--transition); }
-    .search-box:focus-within { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,166,35,0.12); }
-    .search-box i { color: var(--amber); font-size: 0.9rem; }
-    .search-box input { border: none; outline: none; background: transparent; font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--navy); width: 100%; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; }
     
-    /* Table */
-    .table-wrap { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    thead { background: linear-gradient(135deg, var(--navy), var(--deep)); }
-    thead th { color: var(--gold); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; padding: 1rem 1.1rem; text-align: left; white-space: nowrap; }
-    tbody tr { border-bottom: 1px solid #eef2f7; transition: background 0.15s ease; }
-    tbody tr:hover { background: #fbfdff; }
-    tbody td { padding: 0.9rem 1.1rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); vertical-align: middle; }
+    .student-hero { background: linear-gradient(135deg, var(--navy), var(--deep)); border-radius: 1.5rem; padding: 2rem; color: #fff; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .hero-avatar { width: 80px; height: 80px; border-radius: 20px; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: var(--navy); }
+    .hero-title h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .hero-subtitle { font-size: 0.9rem; color: #cbd5e1; display: flex; gap: 1rem; }
     
-    .student-cell { display: flex; align-items: center; gap: 0.7rem; }
-    .avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 800; color: #fff; flex-shrink: 0; }
-    .student-name { font-weight: 800; font-size: 0.85rem; line-height: 1.2; }
-    .student-sub { font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+    .hero-right { display: flex; gap: 1rem; }
+    .hero-stat { background: rgba(255,255,255,0.1); padding: 1rem 1.5rem; border-radius: 1rem; text-align: center; }
+    .hero-stat span { display: block; font-size: 0.65rem; color: var(--gold); text-transform: uppercase; font-weight: 800; margin-bottom: 0.3rem; }
+    .hero-stat strong { font-size: 1.5rem; font-weight: 800; }
 
-    .badge-gpa { display: inline-flex; align-items: center; justify-content: center; padding: 0.35rem 0.8rem; border-radius: 100px; font-size: 0.8rem; font-weight: 800; min-width: 55px; }
-    .gpa-high { background: #dcfce7; color: #15803d; }
-    .gpa-mid { background: #fef3c7; color: #b45309; }
-    .gpa-low { background: #fee2e2; color: #991b1b; }
-
-    .status-badge { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-    .status-good { color: #16a34a; }
-    .status-risk { color: #dc2626; }
-
-    .btn-action { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 8px; background: #f1f5f9; color: var(--blue); text-decoration: none; font-size: 0.75rem; font-weight: 800; transition: var(--transition); }
-    .btn-action:hover { background: var(--amber); color: #fff; }
-
-    /* Mobile */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
-      .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
-      .page-title h1 { font-size: 1.3rem; }
-      .page-title-icon { width: 44px; height: 44px; font-size: 1.2rem; }
-      .search-box { min-width: 100%; }
-    }
+    .progress-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .info-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); overflow: hidden; }
+    .card-head { padding: 1.2rem; border-bottom: 1px solid #eef2f7; }
+    .card-head h2 { font-size: 1rem; font-weight: 800; }
+    .card-body { padding: 1.4rem; }
+    
+    .enrollment-item { padding: 1rem; background: #f8fafc; border-radius: 10px; margin-bottom: 0.8rem; }
+    .code { font-size: 0.75rem; font-weight: 800; color: var(--blue); background: #e0f2fe; padding: 0.2rem 0.5rem; border-radius: 6px; }
+    .title { font-size: 0.9rem; font-weight: 800; margin-top: 0.4rem; }
+    
+    .semester-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--frost); }
+    .grade-badge { padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+    .grade-a { background: #dcfce7; color: #15803d; }
+    .grade-f { background: #fee2e2; color: #991b1b; }
   </style>
 </head>
 <body>
-
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">L</div>
-      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
-    </div>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-mark">L</div><div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div></div>
     <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
-      <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %></a></li>
-      
-      <li class="menu-item open">
-        <a href="#" class="menu-link active" onclick="toggle(event, this)">
-          <i class="fas fa-user-friends main-icon"></i> <%= lang.advising || 'Advising' %> <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu open">
-          <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
-          <li class="menu-item"><a href="/sis/advisor/advisees" class="menu-link active"><i class="fas fa-users main-icon"></i> My Advisees</a></li>
+      <li><a href="/sis/faculty" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li>
+        <a href="#" class="menu-link active"><i class="fas fa-user-friends"></i> Advising</a>
+        <ul class="submenu">
+          <li><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle"></i> Approvals</a></li>
+          <li><a href="/sis/advisor/advisees" class="menu-link active"><i class="fas fa-users"></i> My Advisees</a></li>
         </ul>
       </li>
-      
-      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
-    <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <a href="/sis/advisor/advisees" class="btn-back"><i class="fas fa-arrow-left"></i> Back to My Advisees</a>
 
-    <div class="page-header">
-      <div class="page-title">
-        <div class="page-title-icon"><i class="fas fa-users-viewfinder"></i></div>
-        <div>
-          <h1>My Advisees</h1>
-          <p>Monitor academic progress and standing for your assigned students</p>
+    <div class="student-hero">
+      <div class="hero-left" style="display: flex; gap: 1.5rem; align-items: center;">
+        <div class="hero-avatar"><%= student.full_name.substring(0,2).toUpperCase() %></div>
+        <div class="hero-title">
+          <h1><%= student.full_name %></h1>
+          <div class="hero-subtitle">
+            <span><i class="fas fa-id-card"></i> <%= student.admission_number %></span>
+            <span><i class="fas fa-graduation-cap"></i> <%= student.class_level %></span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-stat"><span>CGPA</span><strong><%= cgpa %></strong></div>
+        <div class="hero-stat"><span>Credits</span><strong><%= totalCredits %></strong></div>
+      </div>
+    </div>
+
+    <div class="progress-layout">
+      <div class="info-card">
+        <div class="card-head"><h2><i class="fas fa-book-reader" style="color: var(--amber);"></i> Current Enrollments</h2></div>
+        <div class="card-body">
+          <% if (enrollments.length === 0) { %>
+            <p style="color: #94a3b8; font-size: 0.85rem;">No active enrollments.</p>
+          <% } %>
+          <% enrollments.forEach(enr => { %>
+            <div class="enrollment-item">
+              <span class="code"><%= enr.code %></span>
+              <div class="title"><%= enr.title %> (<%= enr.credits %> cr)</div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="card-head"><h2><i class="fas fa-scroll" style="color: var(--amber);"></i> Academic Transcript</h2></div>
+        <div class="card-body">
+          <% if (Object.keys(transcript).length === 0) { %>
+            <p style="color: #94a3b8; font-size: 0.85rem;">No published grades yet.</p>
+          <% } %>
+          <% Object.keys(transcript).forEach(sem => { %>
+            <div style="margin-bottom: 1.5rem;">
+              <div class="semester-title">Semester <%= sem %></div>
+              <% transcript[sem].forEach(c => { 
+                const lg = c.letter_grade || 'F';
+                const gClass = lg.startsWith('A') ? 'grade-a' : 'grade-f';
+              %>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #eef2f7; font-size: 0.85rem;">
+                  <div><strong><%= c.code %></strong> - <%= c.title %></div>
+                  <span class="grade-badge <%= gClass %>"><%= lg %></span>
+                </div>
+              <% }) %>
+            </div>
+          <% }) %>
         </div>
       </div>
     </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon total"><i class="fas fa-user-graduate"></i></div>
-        <div class="stat-info"><h3>Total Advisees</h3><p><%= totalAdvisees %></p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon gpa"><i class="fas fa-chart-line"></i></div>
-        <div class="stat-info"><h3>Average CGPA</h3><p><%= avgCGPA %></p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon risk"><i class="fas fa-triangle-exclamation"></i></div>
-        <div class="stat-info"><h3>At Risk (< 2.0)</h3><p><%= atRiskCount %></p></div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <h2 style="font-size: 1.05rem; font-weight: 800; color: var(--navy); display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-list" style="color: var(--amber);"></i> Advisee List</h2>
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="Search by name, ID, or program..." oninput="filterTable()">
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Program / Semester</th>
-              <th>CGPA</th>
-              <th>Credits Earned</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="adviseeBody">
-            <% if (advisees.length === 0) { %>
-              <tr>
-                <td colspan="6" style="text-align: center; padding: 4rem 2rem; color: #94a3b8;">
-                  <i class="fas fa-inbox" style="font-size: 2.5rem; color: var(--frost); display: block; margin-bottom: 0.8rem;"></i>
-                  <h3 style="color: var(--navy); font-size: 1rem; font-weight: 800; margin-bottom: 0.3rem;">No advisees assigned</h3>
-                  <p style="font-size: 0.8rem;">The registrar has not assigned any students to you yet.</p>
-                </td>
-              </tr>
-            <% } %>
-
-            <% advisees.forEach(student => { %>
-              <% 
-                const cgpaNum = Number(student.cgpa);
-                let gpaClass = 'gpa-mid';
-                if (cgpaNum >= 3.0) gpaClass = 'gpa-high';
-                if (cgpaNum < 2.0) gpaClass = 'gpa-low';
-                
-                const isRisk = cgpaNum < 2.0;
-                const colors = ['#1e4d7b', '#0284c7', '#9333ea', '#d97706', '#16a34a', '#b91c1c'];
-                const colorIdx = (student.full_name || 'A').charCodeAt(0) % colors.length;
-                const initials = student.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-              %>
-              <tr data-search="<%= (student.full_name + ' ' + (student.admission_number || '') + ' ' + (student.class_level || '')).toLowerCase() %>">
-                <td>
-                  <div class="student-cell">
-                    <div class="avatar" style="background: <%= colors[colorIdx] %>;"><%= initials %></div>
-                    <div>
-                      <div class="student-name"><%= student.full_name %></div>
-                      <div class="student-sub"><%= student.admission_number || '—' %></div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div style="font-size: 0.8rem; font-weight: 700; color: var(--navy);"><%= student.class_level %></div>
-                  <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">Semester <%= student.current_semester %></div>
-                </td>
-                <td><span class="badge-gpa <%= gpaClass %>"><%= cgpaNum.toFixed(2) %></span></td>
-                <td><span style="font-size: 0.85rem; font-weight: 800; color: var(--navy);"><%= student.credits_earned %></span> <span style="font-size: 0.7rem; color: #64748b;">credits</span></td>
-                <td>
-                  <span class="status-badge <%= isRisk ? 'status-risk' : 'status-good' %>">
-                    <i class="fas <%= isRisk ? 'fa-circle-exclamation' : 'fa-check-circle' %>"></i>
-                    <%= isRisk ? 'Probation' : 'Good Standing' %>
-                  </span>
-                </td>
-                <td>
-                  <a href="/sis/advisor/advisees/<%= student.id %>" class="btn-action">View Progress <i class="fas fa-arrow-right"></i></a>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </main>
-
-  <script>
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) submenu.classList.toggle('open');
-    }
-    function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
-    }
-    function filterTable() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      document.querySelectorAll('#adviseeBody tr[data-search]').forEach(row => {
-        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
-      });
-    }
-  </script>
 </body>
 </html>

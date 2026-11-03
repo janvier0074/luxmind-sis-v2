@@ -62,7 +62,7 @@
     .alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
     /* Drag & Drop Zone */
-    .dropzone { border: 2px dashed var(--frost); border-radius: 1rem; padding: 2.5rem 1rem; text-align: center; cursor: pointer; transition: var(--transition); position: relative; background: #fbfdff; }
+    .dropzone { border: 2px dashed var(--frost); border-radius: 1rem; padding: 2.5rem 1rem; text-align: center; cursor: pointer; transition: var(--transition); position: relative; background: #fbfdff; display: block; }
     .dropzone:hover { border-color: var(--amber); background: #fff; box-shadow: 0 0 20px rgba(245,166,35,0.1); }
     .dropzone input[type="file"] { display: none; }
     .dropzone-icon { font-size: 2.5rem; color: var(--amber); margin-bottom: 1rem; display: block; animation: float 3s ease-in-out infinite; }
@@ -103,7 +103,8 @@
     .week-title { font-size: 0.9rem; font-weight: 800; color: var(--navy); }
     
     .file-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .file-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem; background: #fff; border-radius: 8px; border: 1px solid #eef2f7; font-size: 0.8rem; font-weight: 600; }
+    .file-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem; background: #fff; border-radius: 8px; border: 1px solid #eef2f7; font-size: 0.8rem; font-weight: 600; transition: var(--transition); }
+    .file-item:hover { border-color: var(--amber); box-shadow: 0 2px 8px rgba(245,166,35,0.1); }
     .file-icon { color: var(--blue); font-size: 1rem; }
 
     /* Moodle Card */
@@ -180,7 +181,9 @@
                   <div class="history-info">
                     <i class="fas fa-file-pdf <%= syl.is_current ? 'current' : '' %>"></i>
                     <div>
-                      <div class="history-title"><%= syl.file_name %></div>
+                      <a href="<%= syl.file_url %>" target="_blank" style="text-decoration: none; color: inherit;">
+                        <div class="history-title"><%= syl.file_name %> <i class="fas fa-download" style="font-size: 0.7rem; color: var(--blue);"></i></div>
+                      </a>
                       <div class="history-date"><%= new Date(syl.uploaded_at).toLocaleDateString() %></div>
                     </div>
                   </div>
@@ -235,7 +238,7 @@
             </div>
             <div class="form-group">
               <label class="dropzone" style="padding: 1.5rem;">
-                <input type="file" name="material" required>
+                <input type="file" name="material" required onchange="this.form.submit()">
                 <i class="fas fa-file-upload dropzone-icon" style="font-size: 1.8rem; margin-bottom: 0.5rem;"></i>
                 <div class="dropzone-text" style="font-size: 0.8rem;">Select file to upload</div>
               </label>
@@ -259,7 +262,9 @@
                         <div class="file-item">
                           <i class="fas fa-file-pdf file-icon"></i>
                           <div>
-                            <div style="font-weight: 800;"><%= note.title %></div>
+                            <a href="<%= note.file_url %>" target="_blank" style="text-decoration: none; color: inherit;">
+                              <div style="font-weight: 800;"><%= note.title %> <i class="fas fa-download" style="font-size: 0.7rem; color: var(--blue);"></i></div>
+                            </a>
                             <div style="font-size: 0.7rem; color: #64748b;"><%= note.file_name %></div>
                           </div>
                         </div>

@@ -1,6 +1,7 @@
 
 
-
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 
 const express = require('express');
@@ -1357,19 +1358,29 @@ app.post('/sis/faculty/course-materials/:section_id/syllabus', requireLogin, upl
       return res.redirect('/sis/faculty/course-materials/' + sectionId);
     }
 
-    // Get current max version
+    // 1. Upload to Supabase Storage
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `syllabus/${sectionId}_${Date.now()}.${fileExt}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('course-materials')
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+
+    if (uploadError) throw uploadError;
+
+    // 2. Get Public URL
+    const { data: { publicUrl } } = supabase.storage.from('course-materials').getPublicUrl(fileName);
+
+    // 3. Save to Database
     const vRes = await pool.query(`SELECT MAX(version_number) as max_v FROM syllabus_versions WHERE section_id = $1`, [sectionId]);
     const nextVersion = (vRes.rows[0].max_v || 0) + 1;
 
-    // Set all old syllabi to inactive
     await pool.query(`UPDATE syllabus_versions SET is_current = false WHERE section_id = $1`, [sectionId]);
 
-    // Insert new syllabus
-    const b64 = req.file.buffer.toString('base64');
     await pool.query(`
-      INSERT INTO syllabus_versions (section_id, version_number, file_name, file_type, file_data, uploaded_by, is_current)
+      INSERT INTO syllabus_versions (section_id, version_number, file_name, file_type, file_url, uploaded_by, is_current)
       VALUES ($1, $2, $3, $4, $5, $6, true)
-    `, [sectionId, nextVersion, req.file.originalname, req.file.mimetype, b64, req.session.user.id]);
+    `, [sectionId, nextVersion, req.file.originalname, req.file.mimetype, publicUrl, req.session.user.id]);
 
     req.flash('success', `Syllabus Version ${nextVersion} uploaded successfully!`);
     res.redirect('/sis/faculty/course-materials/' + sectionId);
@@ -1386,11 +1397,24 @@ app.post('/sis/faculty/course-materials/:section_id/notes', requireLogin, upload
       return res.redirect('/sis/faculty/course-materials/' + sectionId);
     }
     
-    const b64 = req.file.buffer.toString('base64');
+    // 1. Upload to Supabase Storage
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `notes/${sectionId}_week${week_number}_${Date.now()}.${fileExt}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('course-materials')
+      .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+
+    if (uploadError) throw uploadError;
+
+    // 2. Get Public URL
+    const { data: { publicUrl } } = supabase.storage.from('course-materials').getPublicUrl(fileName);
+
+    // 3. Save to Database
     await pool.query(`
-      INSERT INTO course_materials (section_id, week_number, title, file_name, file_type, file_data, uploaded_by)
+      INSERT INTO course_materials (section_id, week_number, title, file_name, file_type, file_url, uploaded_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [sectionId, Number(week_number), title, req.file.originalname, req.file.mimetype, b64, req.session.user.id]);
+    `, [sectionId, Number(week_number), title, req.file.originalname, req.file.mimetype, publicUrl, req.session.user.id]);
 
     req.flash('success', 'Lecture material uploaded successfully!');
     res.redirect('/sis/faculty/course-materials/' + sectionId);

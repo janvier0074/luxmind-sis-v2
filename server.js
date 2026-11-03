@@ -1,8 +1,7 @@
-
+require('dotenv').config(); // <--- MUST BE LINE 1
 
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
 
 const express = require('express');
 const path = require('path');
@@ -13,7 +12,7 @@ const { Resend } = require('resend');
 const multer = require('multer');
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // Increased to 5MB for PDFs
 });
 
 // ============================================
@@ -25,8 +24,6 @@ const langDicts = {
   sw: require('./lang/sw.json'),
   rn: require('./lang/rn.json')
 };
-
-require('dotenv').config();
 
 const app = express();
 const pool = new Pool({
@@ -43,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'luxmind-secret', resave: false, saveUninitialized: false }));
 
 // ============================================
-// --- i18n: MIDDLEWARE (injects lang into every EJS) ---
+// --- i18n: MIDDLEWARE ---
 // ============================================
 app.use((req, res, next) => {
   const selected = (req.session && req.session.language) || 'en';
@@ -238,7 +235,7 @@ app.get('/sis/my/attendance', requireLogin, async (req, res) => {
 app.get('/sis/my/transcript', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-        const gradesRes = await pool.query(` SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.semester_number ASC `, [req.session.user.id]);
+    const gradesRes = await pool.query(` SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.semester_number ASC `, [req.session.user.id]);
 
     const courses = gradesRes.rows;
     let totalCredits = 0;
@@ -377,13 +374,6 @@ app.post('/sis/my/finance/pay', requireLogin, async (req, res) => {
 });
 
 // ============================================
-// --- ADVISOR APPROVALS ---
-// ============================================
-
-
-
-// ============================================
-// ============================================
 // --- ADVISOR: MY ADVISEES & ACADEMIC PROGRESS ---
 // ============================================
 app.get('/sis/advisor/advisees', requireLogin, async (req, res) => {
@@ -475,11 +465,6 @@ app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Progress Error: " + err.message); }
 });
 
-
-
-
-
-
 app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
@@ -564,7 +549,7 @@ app.get('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   try {
     const sectionRes = await pool.query(`SELECT s.id, c.code, c.title, s.group_name FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.id = $1 AND s.teacher_id = $2`, [req.params.section_id, req.session.user.id]);
     if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
-    const studentsRes = await pool.query(`SELECT u.id as user_id, u.full_name, u.username, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM enrollments e JOIN users u ON u.id = e.user_id LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = $1 WHERE e.section_id = $1`, [req.params.section_id]);
+    const studentsRes = await pool.query(`SELECT u.id as user_id, u.full_name, u.username, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points, g.is_published FROM enrollments e JOIN users u ON u.id = e.user_id LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = $1 WHERE e.section_id = $1`, [req.params.section_id]);
     res.render('faculty-grades-entry', { user: req.session.user, section: sectionRes.rows[0], students: studentsRes.rows });
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
@@ -573,7 +558,6 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   const sectionId = req.params.section_id;
   try {
-    // --- CIU: fetch section weights + lock state before calculating ---
     const secInfoRes = await pool.query(`
       SELECT midterm_weight, final_weight, weights_locked
       FROM course_sections
@@ -593,7 +577,6 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         const midterm = Number(req.body[key]) || 0;
         const final = Number(req.body['final_' + studentId]) || 0;
 
-        // --- CIU: weighted total instead of simple average ---
         const total = (midterm * mw / 100) + (final * fw / 100);
 
         let letter = 'F';
@@ -613,7 +596,6 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
         else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
         else { letter = 'F'; gpa = 0.0; }
 
-               // CIU: Insert as draft (is_published = false). If it already exists, keep its publish status but update the grades.
         await pool.query(`
           INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points, is_published) 
           VALUES ($1, $2, $3, $4, $5, $6, false) 
@@ -622,13 +604,11 @@ app.post('/sis/faculty/grades/:section_id', requireLogin, async (req, res) => {
               final_grade = EXCLUDED.final_grade, 
               letter_grade = EXCLUDED.letter_grade, 
               gpa_points = EXCLUDED.gpa_points
-          -- Note: is_published is NOT updated here, so if it was published, it stays published.
         `, [studentId, sectionId, midterm, final, letter, gpa]);
         gradesSaved++;
       }
     }
 
-    // --- CIU: auto-lock weights the moment first grade is saved ---
     let lockMsg = '';
     if (gradesSaved > 0 && !secInfo.weights_locked) {
       await pool.query(`
@@ -865,7 +845,7 @@ app.get('/sis/my/exams', requireLogin, async (req, res) => {
 app.get('/sis/my/exam-results', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-        const resultsRes = await pool.query(`SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.code ASC`, [req.session.user.id]);
+    const resultsRes = await pool.query(`SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.code ASC`, [req.session.user.id]);
     let totalPoints = 0;
     let totalCredits = 0;
     resultsRes.rows.forEach(r => {
@@ -885,28 +865,6 @@ app.get('/sis/faculty/courses', requireLogin, async (req, res) => {
   try {
     const coursesRes = await pool.query(`SELECT s.id as section_id, c.id as course_id, c.code, c.title, c.credits, s.group_name, s.day_of_week, s.start_time, s.room, (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
     res.render('faculty-courses', { user: req.session.user, courses: coursesRes.rows, greeting: getGreeting() });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
-});
-
-// ============================================
-// --- FACULTY: COURSE MATERIALS ---
-// ============================================
-app.get('/sis/faculty/courses/:course_id/materials', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
-  try {
-    const courseRes = await pool.query(`SELECT c.id, c.code, c.title, c.syllabus_url, c.moodle_url FROM courses c JOIN course_sections s ON s.course_id = c.id WHERE c.id = $1 AND s.teacher_id = $2 LIMIT 1`, [req.params.course_id, req.session.user.id]);
-    if (courseRes.rows.length === 0) return res.redirect('/sis/faculty/courses');
-    res.render('faculty-course-materials', { user: req.session.user, course: courseRes.rows[0], greeting: getGreeting() });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
-});
-
-app.post('/sis/faculty/courses/:course_id/materials', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
-  const { syllabus_url, moodle_url } = req.body;
-  try {
-    await pool.query(`UPDATE courses SET syllabus_url = $1, moodle_url = $2 WHERE id = $3`, [syllabus_url || null, moodle_url || null, req.params.course_id]);
-    req.flash('success', 'Course materials updated successfully.');
-    res.redirect('/sis/faculty/courses');
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
@@ -1011,18 +969,6 @@ app.get('/sis/faculty/class-roster/:section_id', requireLogin, async (req, res) 
     });
   } catch (err) { res.status(500).send("Roster Detail Error: " + err.message); }
 });
-// ============================================
-// --- FACULTY: CONTENT & MATERIALS HUB ---
-// ============================================
-
-
-
-// ============================================
-// --- FACULTY: COURSE WEIGHTS (CIU-compliant) ---
-// ============================================
-
-// 1. Hub — list all sections with weight status
-
 
 // ============================================
 // --- FACULTY: PUBLISH GRADES ---
@@ -1116,7 +1062,6 @@ app.get('/sis/faculty/course-weights', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Weights Hub Error: " + err.message); }
 });
 
-// 2. Detail — edit/validate one section's weights
 app.get('/sis/faculty/course-weights/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
@@ -1167,7 +1112,6 @@ app.get('/sis/faculty/course-weights/:section_id', requireLogin, async (req, res
   } catch (err) { res.status(500).send("Weights Detail Error: " + err.message); }
 });
 
-// 3. Save — validate sum = 100, lock check, audit log
 app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   const sectionId = req.params.section_id;
@@ -1183,13 +1127,11 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
     if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/course-weights');
     const section = sectionRes.rows[0];
 
-    // LOCK CHECK
     if (section.weights_locked) {
       req.flash('error', 'Weights are locked because grades have been entered. Contact the registrar to unlock.');
       return res.redirect('/sis/faculty/course-weights/' + sectionId);
     }
 
-    // SAFETY: if grades exist but somehow not locked, lock now and refuse
     if (Number(section.grade_count) > 0) {
       await pool.query(`
         UPDATE course_sections
@@ -1231,9 +1173,6 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
   } catch (err) { res.status(500).send("Save Weights Error: " + err.message); }
 });
 
-
-
-
 // ============================================
 // --- FACULTY: PROFILE & PASSWORD ---
 // ============================================
@@ -1259,7 +1198,6 @@ app.post('/sis/faculty/profile', requireLogin, upload.single('profile_picture'),
     let updateQuery = `UPDATE users SET phone = $1, office_hours = $2, bio = $3, cv_url = $4 WHERE id = $5`;
     let queryParams = [phone, office_hours, bio, cv_url, req.session.user.id];
 
-    // If a new profile picture was uploaded, convert to base64 and save
     if (req.file) {
       const b64 = req.file.buffer.toString('base64');
       const mime = req.file.mimetype;
@@ -1267,7 +1205,6 @@ app.post('/sis/faculty/profile', requireLogin, upload.single('profile_picture'),
       updateQuery = `UPDATE users SET phone = $1, office_hours = $2, bio = $3, cv_url = $4, profile_picture_url = $5 WHERE id = $6`;
       queryParams = [phone, office_hours, bio, cv_url, dataUrl, req.session.user.id];
       
-      // Update the session so the new image shows immediately in the top bar
       req.session.user.profile_picture_url = dataUrl;
     }
 
@@ -1304,17 +1241,11 @@ app.post('/sis/faculty/change-password', requireLogin, async (req, res) => {
 });
 
 // ============================================
-// --- FACULTY: CONTENT & MATERIALS HUB ---
-// ============================================
-
-
-// ============================================
 // --- FACULTY: CONTENT & MATERIALS DETAIL ---
 // ============================================
 app.get('/sis/faculty/course-materials/:section_id', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
-    // Get Section Details
     const sectionRes = await pool.query(`
       SELECT s.id, c.code, c.title, c.credits, s.group_name, s.moodle_url,
              (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count
@@ -1324,12 +1255,10 @@ app.get('/sis/faculty/course-materials/:section_id', requireLogin, async (req, r
 
     if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/course-materials');
 
-    // Get Syllabus History
     const syllabusRes = await pool.query(`
       SELECT * FROM syllabus_versions WHERE section_id = $1 ORDER BY version_number DESC
     `, [req.params.section_id]);
 
-    // Get Lecture Notes grouped by Week
     const notesRes = await pool.query(`
       SELECT * FROM course_materials WHERE section_id = $1 ORDER BY week_number ASC, uploaded_at DESC
     `, [req.params.section_id]);
@@ -1358,7 +1287,6 @@ app.post('/sis/faculty/course-materials/:section_id/syllabus', requireLogin, upl
       return res.redirect('/sis/faculty/course-materials/' + sectionId);
     }
 
-    // 1. Upload to Supabase Storage
     const fileExt = req.file.originalname.split('.').pop();
     const fileName = `syllabus/${sectionId}_${Date.now()}.${fileExt}`;
     
@@ -1368,10 +1296,8 @@ app.post('/sis/faculty/course-materials/:section_id/syllabus', requireLogin, upl
 
     if (uploadError) throw uploadError;
 
-    // 2. Get Public URL
     const { data: { publicUrl } } = supabase.storage.from('course-materials').getPublicUrl(fileName);
 
-    // 3. Save to Database
     const vRes = await pool.query(`SELECT MAX(version_number) as max_v FROM syllabus_versions WHERE section_id = $1`, [sectionId]);
     const nextVersion = (vRes.rows[0].max_v || 0) + 1;
 
@@ -1397,7 +1323,6 @@ app.post('/sis/faculty/course-materials/:section_id/notes', requireLogin, upload
       return res.redirect('/sis/faculty/course-materials/' + sectionId);
     }
     
-    // 1. Upload to Supabase Storage
     const fileExt = req.file.originalname.split('.').pop();
     const fileName = `notes/${sectionId}_week${week_number}_${Date.now()}.${fileExt}`;
     
@@ -1407,10 +1332,8 @@ app.post('/sis/faculty/course-materials/:section_id/notes', requireLogin, upload
 
     if (uploadError) throw uploadError;
 
-    // 2. Get Public URL
     const { data: { publicUrl } } = supabase.storage.from('course-materials').getPublicUrl(fileName);
 
-    // 3. Save to Database
     await pool.query(`
       INSERT INTO course_materials (section_id, week_number, title, file_name, file_type, file_url, uploaded_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -1430,8 +1353,6 @@ app.post('/sis/faculty/course-materials/:section_id/moodle', requireLogin, async
     res.redirect('/sis/faculty/course-materials/' + req.params.section_id);
   } catch (err) { res.status(500).send("Moodle Update Error: " + err.message); }
 });
-
-
 
 app.get('/sis/faculty/course-materials', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
@@ -1833,7 +1754,7 @@ app.get('/sis/my/curriculum', requireLogin, async (req, res) => {
 app.get('/sis/my/exam-objections', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'student') return res.redirect('/login');
   try {
-        const gradedRes = await pool.query(`
+    const gradedRes = await pool.query(`
       SELECT DISTINCT c.id, c.code, c.title, s.id as section_id, g.letter_grade, g.final_grade
       FROM grades g
       JOIN course_sections s ON s.id = g.section_id

@@ -474,66 +474,6 @@ app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Progress Error: " + err.message); }
 });
 
-app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
-  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
-  try {
-    // Verify this student actually belongs to this advisor
-    const studentRes = await pool.query(`
-      SELECT u.id, u.full_name, u.email, sp.admission_number, sp.class_level, sp.current_semester
-      FROM users u JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE u.id = $1 AND sp.advisor_id = $2
-    `, [req.params.student_id, req.session.user.id]);
-    
-    if (studentRes.rows.length === 0) return res.redirect('/sis/advisor/advisees');
-    const student = studentRes.rows[0];
-
-    // Get Published Grades
-    const gradesRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, c.semester_number, g.letter_grade, g.gpa_points
-      FROM grades g
-      JOIN course_sections s ON s.id = g.section_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1 AND g.is_published = true
-      ORDER BY c.semester_number ASC, c.code ASC
-    `, [student.id]);
-
-    // Get Current Enrollments
-    const enrollmentsRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, s.day_of_week, s.start_time, u.full_name as teacher_name
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN course_sections s ON s.id = e.section_id
-      LEFT JOIN users u ON u.id = s.teacher_id
-      WHERE e.user_id = $1
-    `, [student.id]);
-
-    // Calculate CGPA & Credits
-    let totalPoints = 0, totalCredits = 0;
-    gradesRes.rows.forEach(g => {
-      totalCredits += Number(g.credits);
-      totalPoints += (Number(g.gpa_points) * Number(g.credits));
-    });
-    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
-
-    // Group transcript by semester
-    const transcript = {};
-    gradesRes.rows.forEach(g => {
-      const sem = g.semester_number || 1;
-      if (!transcript[sem]) transcript[sem] = [];
-      transcript[sem].push(g);
-    });
-
-    res.render('advisor-student-progress', { 
-      user: req.session.user, 
-      student, 
-      transcript, 
-      enrollments: enrollmentsRes.rows,
-      cgpa,
-      totalCredits,
-      greeting: getGreeting() 
-    });
-  } catch (err) { res.status(500).send("Progress Error: " + err.message); }
-});
 
 
 

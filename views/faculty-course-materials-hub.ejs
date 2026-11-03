@@ -330,8 +330,7 @@
         </div>
       <% } %>
 
-      <% sections.forEach(sec => { %>
-        <a href="/sis/faculty/courses/<%= sec.course_id %>/materials" class="course-card">
+      <% sections.forEach(sec => { %><a href="/sis/faculty/course-materials/<%= sec.section_id %>" class="course-card">
           <div class="course-head">
             <span class="course-code"><%= sec.code %></span>
             <span class="course-group"><%= sec.group_name || '—' %></span>

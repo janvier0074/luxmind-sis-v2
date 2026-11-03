@@ -1307,6 +1307,108 @@ app.post('/sis/faculty/change-password', requireLogin, async (req, res) => {
 // ============================================
 
 
+// ============================================
+// --- FACULTY: CONTENT & MATERIALS DETAIL ---
+// ============================================
+app.get('/sis/faculty/course-materials/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    // Get Section Details
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, c.credits, s.group_name, s.moodle_url,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count
+      FROM course_sections s JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1 AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/course-materials');
+
+    // Get Syllabus History
+    const syllabusRes = await pool.query(`
+      SELECT * FROM syllabus_versions WHERE section_id = $1 ORDER BY version_number DESC
+    `, [req.params.section_id]);
+
+    // Get Lecture Notes grouped by Week
+    const notesRes = await pool.query(`
+      SELECT * FROM course_materials WHERE section_id = $1 ORDER BY week_number ASC, uploaded_at DESC
+    `, [req.params.section_id]);
+    
+    const notesByWeek = {};
+    for (let i = 1; i <= 14; i++) notesByWeek[i] = [];
+    notesRes.rows.forEach(n => {
+      if (notesByWeek[n.week_number]) notesByWeek[n.week_number].push(n);
+    });
+
+    res.render('faculty-materials-detail', {
+      user: req.session.user,
+      section: sectionRes.rows[0],
+      syllabus: syllabusRes.rows,
+      notesByWeek
+    });
+  } catch (err) { res.status(500).send("Materials Error: " + err.message); }
+});
+
+app.post('/sis/faculty/course-materials/:section_id/syllabus', requireLogin, upload.single('syllabus'), async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const sectionId = req.params.section_id;
+  try {
+    if (!req.file) {
+      req.flash('error', 'Please select a file to upload.');
+      return res.redirect('/sis/faculty/course-materials/' + sectionId);
+    }
+
+    // Get current max version
+    const vRes = await pool.query(`SELECT MAX(version_number) as max_v FROM syllabus_versions WHERE section_id = $1`, [sectionId]);
+    const nextVersion = (vRes.rows[0].max_v || 0) + 1;
+
+    // Set all old syllabi to inactive
+    await pool.query(`UPDATE syllabus_versions SET is_current = false WHERE section_id = $1`, [sectionId]);
+
+    // Insert new syllabus
+    const b64 = req.file.buffer.toString('base64');
+    await pool.query(`
+      INSERT INTO syllabus_versions (section_id, version_number, file_name, file_type, file_data, uploaded_by, is_current)
+      VALUES ($1, $2, $3, $4, $5, $6, true)
+    `, [sectionId, nextVersion, req.file.originalname, req.file.mimetype, b64, req.session.user.id]);
+
+    req.flash('success', `Syllabus Version ${nextVersion} uploaded successfully!`);
+    res.redirect('/sis/faculty/course-materials/' + sectionId);
+  } catch (err) { res.status(500).send("Syllabus Upload Error: " + err.message); }
+});
+
+app.post('/sis/faculty/course-materials/:section_id/notes', requireLogin, upload.single('material'), async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const sectionId = req.params.section_id;
+  const { week_number, title } = req.body;
+  try {
+    if (!req.file) {
+      req.flash('error', 'Please select a file to upload.');
+      return res.redirect('/sis/faculty/course-materials/' + sectionId);
+    }
+    
+    const b64 = req.file.buffer.toString('base64');
+    await pool.query(`
+      INSERT INTO course_materials (section_id, week_number, title, file_name, file_type, file_data, uploaded_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [sectionId, Number(week_number), title, req.file.originalname, req.file.mimetype, b64, req.session.user.id]);
+
+    req.flash('success', 'Lecture material uploaded successfully!');
+    res.redirect('/sis/faculty/course-materials/' + sectionId);
+  } catch (err) { res.status(500).send("Note Upload Error: " + err.message); }
+});
+
+app.post('/sis/faculty/course-materials/:section_id/moodle', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  const { moodle_url } = req.body;
+  try {
+    await pool.query(`UPDATE course_sections SET moodle_url = $1 WHERE id = $2`, [moodle_url, req.params.section_id]);
+    req.flash('success', 'Moodle link updated successfully!');
+    res.redirect('/sis/faculty/course-materials/' + req.params.section_id);
+  } catch (err) { res.status(500).send("Moodle Update Error: " + err.message); }
+});
+
+
+
 app.get('/sis/faculty/course-materials', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {

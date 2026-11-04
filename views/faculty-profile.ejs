@@ -15,12 +15,15 @@
       --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
       --success: #1f8a5f; --danger: #b33e2e;
       --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
-      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
       --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
     
-    /* PREVENTS HORIZONTAL SCROLLING ON MOBILE */
-    html, body { overflow-x: hidden; width: 100%; }
+    /* 🔥 KILL HORIZONTAL SCROLLING */
+    html, body { 
+      overflow-x: hidden; 
+      max-width: 100vw; 
+      width: 100%;
+    }
     
     body {
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -28,11 +31,13 @@
         radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%),
         radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%),
         var(--ice);
-      min-height: 100vh; display: flex; color: var(--navy);
+      min-height: 100vh; 
+      display: flex; 
+      color: var(--navy);
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Sidebar */
+    /* --- SIDEBAR --- */
     .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
     .sidebar::-webkit-scrollbar { width: 5px; }
     .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
@@ -53,28 +58,49 @@
     .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
     .menu-item.open > .menu-link { color: #fff; }
 
-    /* Main Content */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    /* --- MAIN CONTENT (CSS GRID NO WRAPPERS) --- */
+    .main-content { 
+      margin-left: 280px; 
+      padding: 2.5rem; 
+      flex: 1; 
+      width: calc(100% - 280px);
+      max-width: calc(100vw - 280px);
+      /* Layout Grid: Identity on left, Forms on right */
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-areas: 
+        "header header"
+        "identity contact"
+        "identity security";
+      gap: 1.5rem;
+      align-items: start;
+    }
 
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); }
-    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
-
-    .page-header { margin-bottom: 2rem; }
+    .page-header { grid-area: header; margin-bottom: 1rem; }
     .page-title { display: flex; align-items: center; gap: 1rem; }
     .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4); }
     .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
     .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
 
-    /* Flash Messages */
-    .alert { padding: 0.9rem 1.2rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; }
+    .btn-back { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 0.5rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); width: fit-content; }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    /* Alerts */
+    .alert { grid-column: 1 / -1; padding: 0.9rem 1.2rem; border-radius: 12px; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; }
     .alert.success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
     .alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-    /* Layout */
-    .profile-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; align-items: start; }
-
-    /* Left Column: Identity Card */
-    .identity-card { background: #fff; border-radius: 1.5rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; position: sticky; top: 2rem; }
+    /* --- LEFT COLUMN: IDENTITY CARD --- */
+    .identity-card { 
+      grid-area: identity; 
+      background: #fff; 
+      border-radius: 1.5rem; 
+      box-shadow: var(--shadow-soft); 
+      border: 1px solid var(--frost); 
+      overflow: hidden; 
+      position: sticky; 
+      top: 2rem; 
+    }
     .identity-banner { height: 100px; background: linear-gradient(135deg, var(--navy), var(--blue)); }
     .identity-body { padding: 0 2rem 2rem; text-align: center; margin-top: -50px; }
     
@@ -86,54 +112,73 @@
 
     .identity-name { font-size: 1.3rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
     .identity-role { font-size: 0.75rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-    .identity-email { font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 1.5rem; word-break: break-all; }
+    .identity-email { font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 1.5rem; word-break: break-word; }
 
     .file-upload-btn { display: block; width: 100%; padding: 0.75rem; background: #f8fafc; border: 2px dashed var(--frost); border-radius: 12px; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--blue); cursor: pointer; transition: var(--transition); }
     .file-upload-btn:hover { border-color: var(--amber); background: #fff; color: var(--amber); }
     .file-upload-input { display: none; }
 
-    /* Right Column: Forms */
-    .forms-col { display: flex; flex-direction: column; gap: 1.5rem; }
-    
-    .form-card { background: #fff; border-radius: 1.5rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    /* --- RIGHT COLUMN: FORMS --- */
+    .form-card { 
+      background: #fff; 
+      border-radius: 1.5rem; 
+      box-shadow: var(--shadow-soft); 
+      border: 1px solid var(--frost); 
+      overflow: hidden; 
+      width: 100%;
+    }
+    .form-card.contact { grid-area: contact; }
+    .form-card.security { grid-area: security; }
+
     .form-card-head { padding: 1.3rem 1.5rem; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 0.8rem; }
     .form-card-head i { font-size: 1.1rem; color: var(--amber); }
     .form-card-head h2 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
     
     .form-card-body { padding: 1.5rem; }
     
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; width: 100%; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
     .form-group.full { grid-column: 1 / -1; }
     .form-group label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-control { width: 100%; padding: 0.85rem 1rem; border: 2px solid var(--frost); border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy); transition: var(--transition); background: #f8fafc; outline: none; }
+    .form-control { width: 100%; max-width: 100%; padding: 0.85rem 1rem; border: 2px solid var(--frost); border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy); transition: var(--transition); background: #f8fafc; outline: none; }
     .form-control:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 4px rgba(245,166,35,0.12); }
     .form-control:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
     textarea.form-control { resize: vertical; min-height: 80px; }
 
     .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.9rem 1.8rem; background: linear-gradient(135deg, var(--amber), var(--gold)); color: var(--navy); font-family: inherit; font-size: 0.85rem; font-weight: 800; border: none; border-radius: 100px; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 12px -4px rgba(245,166,35,0.4); }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -6px rgba(245,166,35,0.5); }
-
     .btn-danger { background: linear-gradient(135deg, #b33e2e, #8b2d20); color: #fff; box-shadow: 0 4px 12px -4px rgba(179,62,46,0.4); }
     .btn-danger:hover { box-shadow: 0 8px 16px -6px rgba(179,62,46,0.5); }
 
-    /* Mobile Hamburger Menu */
+    /* --- MOBILE MENU & RESPONSIVE --- */
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
     
+    /* MOBILE BREAKPOINT */
     @media (max-width: 1024px) {
-      .profile-layout { grid-template-columns: 1fr; }
+      .main-content { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 1.5rem;
+      }
       .identity-card { position: static; }
     }
-    
+
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
       .sidebar { transform: translateX(-100%); }
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
       
-      /* Forces everything to stack properly on mobile to prevent overlap */
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      /* Reset layout for mobile screen */
+      .main-content { 
+        margin-left: 0 !important; 
+        width: 100% !important; 
+        max-width: 100vw !important;
+        padding: 1.5rem !important; 
+        padding-top: 5rem !important; 
+      }
+      
       .page-title h1 { font-size: 1.3rem; }
       .page-title-icon { width: 44px; height: 44px; font-size: 1.2rem; }
       .form-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
@@ -146,6 +191,7 @@
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
+  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-mark">L</div>
@@ -168,10 +214,12 @@
     </ul>
   </aside>
 
+  <!-- MAIN CONTENT -->
   <main class="main-content">
+    
     <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
 
-    <div class="page-header">
+    <header class="page-header">
       <div class="page-title">
         <div class="page-title-icon"><i class="fas fa-user-circle"></i></div>
         <div>
@@ -179,7 +227,7 @@
           <p>Manage your personal information and account security</p>
         </div>
       </div>
-    </div>
+    </header>
 
     <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
       <div class="alert success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
@@ -188,115 +236,108 @@
       <div class="alert error"><i class="fas fa-exclamation-circle"></i> <%= flash.error[0] %></div>
     <% } %>
 
-    <div class="profile-layout">
-      
-      <!-- LEFT COLUMN: IDENTITY -->
-      <div class="identity-card">
-        <div class="identity-banner"></div>
-        <div class="identity-body">
-          
-          <form action="/sis/faculty/profile" method="POST" enctype="multipart/form-data" id="profilePicForm">
-            <label for="profile_picture" class="avatar-wrap">
-              <% if (user.profile_picture_url) { %>
-                <img src="<%= user.profile_picture_url %>" alt="Profile" class="avatar-img">
-              <% } else { %>
-                <div class="avatar-initials"><%= user.full_name.charAt(0).toUpperCase() %></div>
-              <% } %>
-              <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
-            </label>
-            <input type="file" id="profile_picture" name="profile_picture" class="file-upload-input" accept="image/*" onchange="document.getElementById('profilePicForm').submit();">
-            <!-- Hidden inputs to preserve other data when just changing picture -->
-            <input type="hidden" name="phone" value="<%= user.phone || '' %>">
-            <input type="hidden" name="office_hours" value="<%= user.office_hours || '' %>">
-            <input type="hidden" name="bio" value="<%= user.bio || '' %>">
-            <input type="hidden" name="cv_url" value="<%= user.cv_url || '' %>">
-          </form>
-
-          <div class="identity-name"><%= user.full_name %></div>
-          <div class="identity-role"><%= user.role %></div>
-          <div class="identity-email"><i class="fas fa-envelope"></i> <%= user.email %></div>
-          
-          <label for="profile_picture" class="file-upload-btn">
-            <i class="fas fa-camera"></i> Change Picture
-          </label>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN: FORMS -->
-      <div class="forms-col">
+    <!-- IDENTITY CARD -->
+    <section class="identity-card">
+      <div class="identity-banner"></div>
+      <div class="identity-body">
         
-        <!-- Contact & Info Form -->
-        <div class="form-card">
-          <div class="form-card-head">
-            <i class="fas fa-address-card"></i>
-            <h2>Contact & Academic Info</h2>
-          </div>
-          <div class="form-card-body">
-            <form action="/sis/faculty/profile" method="POST" enctype="multipart/form-data">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Full Name (Read-only)</label>
-                  <input type="text" class="form-control" value="<%= user.full_name %>" disabled>
-                </div>
-                <div class="form-group">
-                  <label>Email (Read-only)</label>
-                  <input type="text" class="form-control" value="<%= user.email %>" disabled>
-                </div>
-                <div class="form-group">
-                  <label>Phone Number</label>
-                  <input type="text" name="phone" class="form-control" value="<%= user.phone || '' %>" placeholder="+90 555 123 4567">
-                </div>
-                <div class="form-group">
-                  <label>Office Hours</label>
-                  <input type="text" name="office_hours" class="form-control" value="<%= user.office_hours || '' %>" placeholder="Mon/Wed 14:00 - 16:00">
-                </div>
-                <div class="form-group full">
-                  <label>CV Link (URL)</label>
-                  <input type="url" name="cv_url" class="form-control" value="<%= user.cv_url || '' %>" placeholder="https://example.com/my-cv.pdf">
-                </div>
-                <div class="form-group full">
-                  <label>Short Bio</label>
-                  <textarea name="bio" class="form-control" placeholder="Tell students a bit about your background..."><%= user.bio || '' %></textarea>
-                </div>
-              </div>
-              <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Profile Info</button>
-            </form>
-          </div>
-        </div>
+        <form action="/sis/faculty/profile" method="POST" enctype="multipart/form-data" id="profilePicForm">
+          <label for="profile_picture" class="avatar-wrap">
+            <% if (user.profile_picture_url) { %>
+              <img src="<%= user.profile_picture_url %>" alt="Profile" class="avatar-img">
+            <% } else { %>
+              <div class="avatar-initials"><%= user.full_name.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+          </label>
+          <input type="file" id="profile_picture" name="profile_picture" class="file-upload-input" accept="image/*" onchange="document.getElementById('profilePicForm').submit();">
+          
+          <!-- Hidden inputs to preserve data -->
+          <input type="hidden" name="phone" value="<%= user.phone || '' %>">
+          <input type="hidden" name="office_hours" value="<%= user.office_hours || '' %>">
+          <input type="hidden" name="bio" value="<%= user.bio || '' %>">
+          <input type="hidden" name="cv_url" value="<%= user.cv_url || '' %>">
+        </form>
 
-        <!-- Security / Password Form -->
-        <div class="form-card" id="security">
-          <div class="form-card-head">
-            <i class="fas fa-shield-alt"></i>
-            <h2>Change Password</h2>
-          </div>
-          <div class="form-card-body">
-            <form action="/sis/faculty/change-password" method="POST">
-              <div class="form-grid">
-                <div class="form-group full">
-                  <label>Current Password</label>
-                  <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
-                </div>
-                <div class="form-group">
-                  <label>New Password</label>
-                  <input type="password" name="new_password" class="form-control" required placeholder="Min. 8 characters">
-                </div>
-                <div class="form-group">
-                  <label>Confirm New Password</label>
-                  <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
-                </div>
-              </div>
-              <button type="submit" class="btn-primary btn-danger"><i class="fas fa-key"></i> Update Password</button>
-            </form>
-          </div>
-        </div>
-
+        <h2 class="identity-name"><%= user.full_name %></h2>
+        <p class="identity-role"><%= user.role %></p>
+        <p class="identity-email"><i class="fas fa-envelope"></i> <%= user.email %></p>
+        
+        <label for="profile_picture" class="file-upload-btn">
+          <i class="fas fa-camera"></i> Change Picture
+        </label>
       </div>
-    </div>
+    </section>
+
+    <!-- CONTACT FORM -->
+    <section class="form-card contact">
+      <header class="form-card-head">
+        <i class="fas fa-address-card"></i>
+        <h2>Contact & Academic Info</h2>
+      </header>
+      <div class="form-card-body">
+        <form action="/sis/faculty/profile" method="POST" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name (Read-only)</label>
+              <input type="text" class="form-control" value="<%= user.full_name %>" disabled>
+            </div>
+            <div class="form-group">
+              <label>Email (Read-only)</label>
+              <input type="text" class="form-control" value="<%= user.email %>" disabled>
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="text" name="phone" class="form-control" value="<%= user.phone || '' %>" placeholder="+90 555 123 4567">
+            </div>
+            <div class="form-group">
+              <label>Office Hours</label>
+              <input type="text" name="office_hours" class="form-control" value="<%= user.office_hours || '' %>" placeholder="Mon/Wed 14:00 - 16:00">
+            </div>
+            <div class="form-group full">
+              <label>CV Link (URL)</label>
+              <input type="url" name="cv_url" class="form-control" value="<%= user.cv_url || '' %>" placeholder="https://example.com/my-cv.pdf">
+            </div>
+            <div class="form-group full">
+              <label>Short Bio</label>
+              <textarea name="bio" class="form-control" placeholder="Tell students a bit about your background..."><%= user.bio || '' %></textarea>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Profile Info</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- SECURITY FORM -->
+    <section class="form-card security" id="security">
+      <header class="form-card-head">
+        <i class="fas fa-shield-alt"></i>
+        <h2>Change Password</h2>
+      </header>
+      <div class="form-card-body">
+        <form action="/sis/faculty/change-password" method="POST">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Current Password</label>
+              <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" name="new_password" class="form-control" required placeholder="Min. 8 characters">
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
+            </div>
+          </div>
+          <button type="submit" class="btn-primary btn-danger"><i class="fas fa-key"></i> Update Password</button>
+        </form>
+      </div>
+    </section>
+
   </main>
 
   <script>
-    // Toggle Submenus
     function toggle(event, element) {
       event.preventDefault();
       const parent = element.parentElement;
@@ -304,8 +345,6 @@
       const submenu = parent.querySelector('.submenu');
       if (submenu) submenu.classList.toggle('open');
     }
-
-    // Toggle Mobile Sidebar (HAMBURGER MENU)
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');

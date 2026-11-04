@@ -874,6 +874,79 @@ app.get('/sis/faculty/courses', requireLogin, async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+
+
+// ============================================
+// --- STUDENT: COURSE MATERIALS ---
+// ============================================
+app.get('/sis/my/materials', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    const sectionsRes = await pool.query(`
+      SELECT s.id AS section_id, c.code, c.title, c.credits, s.group_name, u.full_name AS teacher_name
+      FROM enrollments e
+      JOIN course_sections s ON s.id = e.section_id
+      JOIN courses c ON c.id = s.course_id
+      LEFT JOIN users u ON u.id = s.teacher_id
+      WHERE e.user_id = $1
+      ORDER BY c.code ASC
+    `, [req.session.user.id]);
+
+    res.render('student-materials-hub', { 
+      user: req.session.user, 
+      sections: sectionsRes.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Materials Hub Error: " + err.message); }
+});
+
+app.get('/sis/my/materials/:section_id', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'student') return res.redirect('/login');
+  try {
+    // Verify student is actually enrolled in this section
+    const enrollCheck = await pool.query(`
+      SELECT s.id, c.code, c.title, c.credits, s.group_name, s.moodle_url, u.full_name AS teacher_name
+      FROM enrollments e
+      JOIN course_sections s ON s.id = e.section_id
+      JOIN courses c ON c.id = s.course_id
+      LEFT JOIN users u ON u.id = s.teacher_id
+      WHERE e.user_id = $1 AND s.id = $2
+    `, [req.session.user.id, req.params.section_id]);
+
+    if (enrollCheck.rows.length === 0) return res.redirect('/sis/my/materials');
+    const section = enrollCheck.rows[0];
+
+    // Get active syllabus
+    const syllabusRes = await pool.query(`
+      SELECT * FROM syllabus_versions WHERE section_id = $1 AND is_current = true LIMIT 1
+    `, [req.params.section_id]);
+
+    // Get lecture notes
+    const notesRes = await pool.query(`
+      SELECT * FROM course_materials WHERE section_id = $1 ORDER BY week_number ASC, uploaded_at DESC
+    `, [req.params.section_id]);
+
+    const notesByWeek = {};
+    for (let i = 1; i <= 14; i++) notesByWeek[i] = [];
+    notesRes.rows.forEach(n => {
+      if (notesByWeek[n.week_number]) notesByWeek[n.week_number].push(n);
+    });
+
+    res.render('student-materials-detail', {
+      user: req.session.user,
+      section,
+      syllabus: syllabusRes.rows[0] || null,
+      notesByWeek,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Materials Detail Error: " + err.message); }
+});
+
+
+
+
+
+
 // ============================================
 // --- FACULTY: CLASS ROSTER ---
 // ============================================

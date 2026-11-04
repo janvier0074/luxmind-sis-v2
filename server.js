@@ -2202,5 +2202,9 @@ app.get('/sis/my/:page', requireLogin, (req, res) => {
 
 // --- HEALTH CHECK FOR KEEP-ALIVE ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('<pre style="background:#fee2e2;padding:2rem;color:#991b1b;font-size:1rem;">' + err.stack + '</pre>');
+});
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

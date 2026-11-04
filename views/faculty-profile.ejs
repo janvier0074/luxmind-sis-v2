@@ -18,6 +18,10 @@
       --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
       --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
+    
+    /* PREVENTS HORIZONTAL SCROLLING ON MOBILE */
+    html, body { overflow-x: hidden; width: 100%; }
+    
     body {
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
       background:
@@ -28,7 +32,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Sidebar (Same as dashboard) */
+    /* Sidebar */
     .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
     .sidebar::-webkit-scrollbar { width: 5px; }
     .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
@@ -113,7 +117,7 @@
     .btn-danger { background: linear-gradient(135deg, #b33e2e, #8b2d20); color: #fff; box-shadow: 0 4px 12px -4px rgba(179,62,46,0.4); }
     .btn-danger:hover { box-shadow: 0 8px 16px -6px rgba(179,62,46,0.5); }
 
-    /* Mobile */
+    /* Mobile Hamburger Menu */
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
     
@@ -121,20 +125,24 @@
       .profile-layout { grid-template-columns: 1fr; }
       .identity-card { position: static; }
     }
+    
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
       .sidebar { transform: translateX(-100%); }
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      
+      /* Forces everything to stack properly on mobile to prevent overlap */
+      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
       .page-title h1 { font-size: 1.3rem; }
       .page-title-icon { width: 44px; height: 44px; font-size: 1.2rem; }
-      .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .form-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
     }
   </style>
 </head>
 <body>
 
+  <!-- HAMBURGER BUTTON & OVERLAY -->
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
@@ -288,6 +296,7 @@
   </main>
 
   <script>
+    // Toggle Submenus
     function toggle(event, element) {
       event.preventDefault();
       const parent = element.parentElement;
@@ -295,10 +304,15 @@
       const submenu = parent.querySelector('.submenu');
       if (submenu) submenu.classList.toggle('open');
     }
+
+    // Toggle Mobile Sidebar (HAMBURGER MENU)
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+      if (sb && ov) { 
+        sb.classList.toggle('active'); 
+        ov.classList.toggle('active'); 
+      }
     }
   </script>
 </body>

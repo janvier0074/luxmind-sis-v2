@@ -1,112 +1,196 @@
 <!DOCTYPE html>
-<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rectorate Command Center — LuxMind SIS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
-      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
-      --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
-      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      --bg-dark: #050b14;
+      --bg-panel: #0a1628;
+      --bg-glass: rgba(10, 22, 40, 0.85);
+      --gold: #ffc857;
+      --gold-glow: rgba(255, 200, 87, 0.15);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #1e3a5f;
+      --success: #10b981;
+      --danger: #ef4444;
+      --amber: #f59e0b;
     }
+    
     html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      background: radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%), radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%), var(--ice);
-      min-height: 100vh; display: flex; color: var(--navy);
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh; 
+      display: flex;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(255, 200, 87, 0.04), transparent 30%),
+        radial-gradient(circle at 85% 30%, rgba(30, 77, 123, 0.2), transparent 40%);
     }
 
-    /* --- MASSIVE SIDEBAR --- */
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; }
-    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+    /* --- UNIQUE FLOATING SIDEBAR --- */
+    .sidebar { 
+      width: 280px; 
+      background: var(--bg-glass); 
+      backdrop-filter: blur(12px);
+      color: #fff; 
+      position: fixed; 
+      top: 0; bottom: 0; left: 0; 
+      overflow-y: auto; 
+      border-right: 1px solid var(--border);
+      z-index: 1000; 
+      transition: transform 0.3s ease; 
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
     
-    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .sidebar-brand { 
+      padding: 2rem 1.5rem; 
+      display: flex; align-items: center; gap: 1rem; 
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,200,87,0.05), transparent);
+    }
+    .brand-mark { 
+      width: 40px; height: 40px; 
+      background: var(--gold); 
+      border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center; 
+      font-size: 1.4rem; font-weight: 800; color: var(--bg-dark); 
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+    .brand-name { font-size: 1.15rem; font-weight: 800; letter-spacing: 1px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
     .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
-    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
-    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; }
+    .menu-link { 
+      display: flex; align-items: center; padding: 0.7rem 1.5rem; 
+      color: var(--text-muted); text-decoration: none; font-size: 0.8rem; 
+      font-weight: 600; transition: all 0.2s; border-left: 3px solid transparent; 
+    }
+    .menu-link:hover { color: var(--gold); background: rgba(255,255,255,0.03); border-left-color: var(--gold); }
+    .menu-link i.main-icon { width: 24px; color: var(--gold); font-size: 0.9rem; opacity: 0.7; }
     .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
-    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .menu-link.active { color: var(--gold); background: linear-gradient(90deg, var(--gold-glow), transparent); border-left-color: var(--gold); }
+    .menu-link.active i.main-icon { opacity: 1; }
     
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
-    .submenu.open { display: block; border-left-color: var(--amber); }
-    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.3); border-left: 1px solid var(--border); margin-left: 1.5rem; }
+    .submenu.open { display: block; border-left-color: var(--gold); }
+    .submenu .menu-link { padding-left: 1.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; border-left: none; }
     .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
     .menu-item.open > .menu-link { color: #fff; }
 
-    /* --- MAIN CONTENT (NO NESTED DIVS) --- */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); display: flex; flex-direction: column; gap: 1.5rem; }
+    /* --- MAIN DASHBOARD --- */
+    .main-content { 
+      margin-left: 280px; 
+      padding: 2.5rem; 
+      flex: 1; 
+      width: calc(100% - 280px); 
+      max-width: calc(100vw - 280px); 
+      display: flex; 
+      flex-direction: column; 
+      gap: 2rem; 
+    }
+
+    .top-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    .page-title h1 { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
+    .header-actions { display: flex; gap: 1rem; align-items: center; }
+    .user-badge { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-panel); padding: 0.5rem 1rem; border-radius: 100px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: 600; }
+    .user-badge i { color: var(--gold); }
+
+    /* Top Metrics */
+    .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .metric-card { 
+      background: var(--bg-panel); 
+      border: 1px solid var(--border); 
+      border-radius: 1rem; 
+      padding: 1.5rem; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--border); }
+    .metric-card.gold::before { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+    .metric-card h3 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .metric-card .value { font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .metric-card .sub { font-size: 0.75rem; color: var(--gold); font-weight: 600; }
     
-    .page-title { display: flex; align-items: center; gap: 1rem; }
-    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; }
-    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); }
-    .page-title p { color: #64748b; font-size: 0.9rem; }
-
-    /* Stats */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
-    .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
-    .stat-icon.blue { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.gold { background: #fef3c7; color: #d97706; }
-    .stat-icon.green { background: #dcfce7; color: #16a34a; }
-    .stat-icon.red { background: #fee2e2; color: #b91c1c; }
-    .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
-    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; }
-
-    /* Layout Grid */
-    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; }
-
-    /* SMARTASK Board */
-    .card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; width: 100%; }
-    .card-head { padding: 1.2rem 1.4rem; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
-    .card-head h2 { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
-    .card-head h2 i { color: var(--amber); }
+    /* Unique Grid Layout */
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; }
     
-    .task-list { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
-    .task-item { padding: 1rem; border: 1px solid var(--frost); border-radius: 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
-    .task-info h4 { font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
-    .task-info p { font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem; }
-    .task-meta { display: flex; gap: 0.5rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
-    .tag { padding: 0.2rem 0.5rem; border-radius: 100px; }
-    .tag.dept { background: #e0f2fe; color: #0284c7; }
-    .tag.date { background: #f1f5f9; color: #475569; }
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 1.25rem; overflow: hidden; }
+    .panel-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .panel-header h2 { font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.6rem; }
+    .panel-header h2 i { color: var(--gold); }
     
-    .btn-complete { background: #dcfce7; color: #15803d; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
-    .btn-complete:hover { background: #16a34a; color: #fff; }
+    /* Task List */
+    .task-feed { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .task-item { 
+      background: rgba(0,0,0,0.2); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 1.2rem; 
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    }
+    .task-info h4 { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem; }
+    .task-info p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+    .task-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .tag { font-size: 0.65rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tag.dept { background: rgba(30, 77, 123, 0.4); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.2); }
+    .tag.date { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+    .tag.status.pending { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
+    .tag.status.completed { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    
+    .btn-complete { 
+      background: transparent; border: 1px solid var(--success); color: var(--success); 
+      padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; 
+      cursor: pointer; transition: all 0.2s; 
+    }
+    .btn-complete:hover { background: var(--success); color: var(--bg-dark); }
 
-    /* Create Task Form */
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 0.3rem; text-transform: uppercase; }
-    .form-control { width: 100%; padding: 0.75rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; }
-    .form-control:focus { border-color: var(--amber); }
-    .btn-primary { width: 100%; padding: 0.8rem; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
-    .btn-primary:hover { background: var(--deep); }
+    /* Form */
+    .directive-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .form-group label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .form-control { 
+      width: 100%; padding: 0.8rem 1rem; 
+      background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+      border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.85rem; 
+      outline: none; transition: border 0.2s;
+    }
+    .form-control:focus { border-color: var(--gold); }
+    .form-control option { background: var(--bg-dark); color: #fff; }
+    .btn-primary { 
+      background: var(--gold); color: var(--bg-dark); 
+      padding: 1rem; border: none; border-radius: 8px; 
+      font-size: 0.9rem; font-weight: 800; cursor: pointer; 
+      transition: all 0.2s; margin-top: 0.5rem;
+      box-shadow: 0 4px 15px var(--gold-glow);
+    }
+    .btn-primary:hover { background: #ffd67a; transform: translateY(-2px); }
 
     /* Mobile */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; }
-    
-    @media (max-width: 1200px) {
-      .content-grid { grid-template-columns: 1fr; }
-    }
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--bg-panel); color: var(--gold); border: 1px solid var(--border); width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; backdrop-filter: blur(3px); }
+
+    @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1024px) { .metrics-row { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
       .sidebar { transform: translateX(-100%); }
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
       .main-content { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; padding: 1.5rem !important; padding-top: 5rem !important; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .metrics-row { grid-template-columns: 1fr; }
+      .task-item { flex-direction: column; }
     }
   </style>
 </head>
@@ -118,11 +202,14 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-mark">R</div>
-      <div class="brand-name">LuxMind SIS <span>Rectorate Portal</span></div>
+      <div class="brand-name">Rectorate <span>Command Center</span></div>
     </div>
+    
     <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/rectorate" class="menu-link active"><i class="fas fa-chart-pie main-icon"></i> Command Center</a></li>
-      
+      <!-- 1. OVERVIEW -->
+      <li class="menu-item"><a href="/sis/rectorate" class="menu-link active"><i class="fas fa-satellite-dish main-icon"></i> Command Center</a></li>
+
+      <!-- 2. SMARTASK (Coordination) -->
       <li class="menu-item open">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
           <i class="fas fa-tasks main-icon"></i> SMARTASK Coordination <i class="fas fa-chevron-right arrow"></i>
@@ -130,63 +217,107 @@
         <ul class="submenu open">
           <li class="menu-item"><a href="/sis/rectorate" class="menu-link active">Active Directives</a></li>
           <li class="menu-item"><a href="#" class="menu-link">Completed Tasks</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Overdue / Delayed</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Departmental Response</a></li>
         </ul>
       </li>
 
+      <!-- 3. ACADEMIC AFFAIRS -->
       <li class="menu-item">
         <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-university main-icon"></i> Academic Affairs <i class="fas fa-chevron-right arrow"></i>
+          <i class="fas fa-graduation-cap main-icon"></i> Academic Affairs <i class="fas fa-chevron-right arrow"></i>
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link">Senate Approvals</a></li>
           <li class="menu-item"><a href="/sis/rectorate/graduation" class="menu-link">Graduation Pipeline</a></li>
           <li class="menu-item"><a href="#" class="menu-link">Faculty Performance</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Curriculum Oversight</a></li>
         </ul>
       </li>
 
-      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+      <!-- 4. ADMINISTRATIVE AFFAIRS -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-building main-icon"></i> Administrative Affairs <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link">Registrar Follow-up</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Finance Directorate</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">HR & Staffing</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Campus & IT</a></li>
+        </ul>
+      </li>
+
+      <!-- 5. EVALUATION & REPORTS -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-chart-line main-icon"></i> Institutional Reports <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link">Completion Rates</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Student Satisfaction</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Audit Trail</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item" style="margin-top: 1rem; border-top: 1px solid var(--border);"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
-    <header class="page-title">
-      <div class="page-title-icon"><i class="fas fa-university"></i></div>
-      <div>
+    
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="page-title">
         <h1>Command Center</h1>
-        <p>Coordinate the university through active task management</p>
+        <p>Coordinating the university through active task management and live metrics.</p>
+      </div>
+      <div class="header-actions">
+        <div class="user-badge">
+          <i class="fas fa-user-shield"></i> Rectorate Access
+        </div>
       </div>
     </header>
 
-    <!-- Top Stats -->
-    <section class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon blue"><i class="fas fa-user-graduate"></i></div>
-        <div class="stat-info"><h3>Total Students</h3><p><%= stats.students %></p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon gold"><i class="fas fa-chalkboard-teacher"></i></div>
-        <div class="stat-info"><h3>Staff</h3><p><%= stats.teachers %></p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="fas fa-clock"></i></div>
-        <div class="stat-info"><h3>Pending Tasks</h3><p><%= stats.pendingTasks %></p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-        <div class="stat-info"><h3>Completion Rate</h3><p><%= stats.completionRate %>%</p></div>
-      </div>
+    <!-- Metrics Row -->
+    <section class="metrics-row">
+      <article class="metric-card gold">
+        <h3>Completion Rate</h3>
+        <div class="value"><%= stats.completionRate %>%</div>
+        <div class="sub"><i class="fas fa-arrow-up"></i> System efficiency</div>
+      </article>
+      <article class="metric-card">
+        <h3>Pending Tasks</h3>
+        <div class="value"><%= stats.pendingTasks %></div>
+        <div class="sub" style="color: var(--amber);">Requires attention</div>
+      </article>
+      <article class="metric-card">
+        <h3>Total Students</h3>
+        <div class="value"><%= stats.students %></div>
+        <div class="sub" style="color: var(--text-muted);">Enrolled university-wide</div>
+      </article>
+      <article class="metric-card">
+        <h3>Academic Staff</h3>
+        <div class="value"><%= stats.teachers %></div>
+        <div class="sub" style="color: var(--text-muted);">Active teachers & advisors</div>
+      </article>
     </section>
 
-    <section class="content-grid">
+    <!-- Dashboard Grid -->
+    <section class="dashboard-grid">
       
-      <!-- SMARTASK List -->
-      <article class="card">
-        <header class="card-head">
-          <h2><i class="fas fa-list-check"></i> Active University Directives</h2>
+      <!-- Left: Active Directives -->
+      <article class="panel">
+        <header class="panel-header">
+          <h2><i class="fas fa-satellite"></i> Active University Directives</h2>
+          <span class="tag dept"><%= tasks.length %> Total</span>
         </header>
-        <div class="task-list">
+        <div class="task-feed">
           <% if (tasks.length === 0) { %>
-            <p style="text-align: center; color: #94a3b8; padding: 2rem;">No active tasks. Use the form to issue a directive.</p>
+            <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+              <i class="fas fa-clipboard-check" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+              <p>No active tasks. Use the panel on the right to issue a directive.</p>
+            </div>
           <% } %>
           
           <% tasks.forEach(t => { %>
@@ -194,12 +325,10 @@
               <div class="task-info">
                 <h4><%= t.title %></h4>
                 <p><%= t.description %></p>
-                <div class="task-meta">
-                  <span class="tag dept"><%= t.assigned_to_dept %></span>
-                  <span class="tag date"><i class="far fa-calendar-alt"></i> Due: <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'No deadline' %></span>
-                  <span class="tag <%= t.status === 'Completed' ? 'dept' : '' %>" style="<%= t.status === 'Completed' ? 'background:#dcfce7; color:#15803d;' : 'background:#fef3c7; color:#b45309;' %>">
-                    <%= t.status %>
-                  </span>
+                <div class="task-tags">
+                  <span class="tag dept"><i class="fas fa-building"></i> <%= t.assigned_to_dept %></span>
+                  <span class="tag date"><i class="far fa-calendar-alt"></i> <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'No deadline' %></span>
+                  <span class="tag status <%= t.status.toLowerCase() %>"><%= t.status %></span>
                 </div>
               </div>
               <% if (t.status !== 'Completed') { %>
@@ -212,38 +341,37 @@
         </div>
       </article>
 
-      <!-- Issue Directive Form -->
-      <article class="card">
-        <header class="card-head">
-          <h2><i class="fas fa-bullhorn"></i> Issue New Directive</h2>
+      <!-- Right: Issue New Directive -->
+      <article class="panel">
+        <header class="panel-header">
+          <h2><i class="fas fa-bullhorn"></i> Issue Directive</h2>
         </header>
-        <div style="padding: 1.4rem;">
-          <form action="/sis/rectorate/tasks/create" method="POST">
-            <div class="form-group">
-              <label>Task Title</label>
-              <input type="text" name="title" class="form-control" required placeholder="e.g., Speed up registration">
-            </div>
-            <div class="form-group">
-              <label>Assign To Department</label>
-              <select name="assigned_to_dept" class="form-control" required>
-                <option value="Registrar">Registrar's Office</option>
-                <option value="Faculty">Faculty / Deans</option>
-                <option value="Finance">Accounting Directorate</option>
-                <option value="IT">Computer Center</option>
-                <option value="Student Affairs">Student Services</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Description</label>
-              <textarea name="description" class="form-control" rows="3" required placeholder="Explain the expected outcome..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Deadline</label>
-              <input type="date" name="deadline" class="form-control" required>
-            </div>
-            <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Assign Task</button>
-          </form>
-        </div>
+        <form action="/sis/rectorate/tasks/create" method="POST" class="directive-form">
+          <div class="form-group">
+            <label>Directive Title</label>
+            <input type="text" name="title" class="form-control" required placeholder="e.g., Improve Library Wi-Fi">
+          </div>
+          <div class="form-group">
+            <label>Assign To Department</label>
+            <select name="assigned_to_dept" class="form-control" required>
+              <option value="Registrar">Registrar's Office</option>
+              <option value="Faculty">Faculty / Deans</option>
+              <option value="Finance">Accounting Directorate</option>
+              <option value="IT">Computer Center</option>
+              <option value="Student Affairs">Student Services</option>
+              <option value="Campus">Campus Directorate</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Expected Outcome / Description</label>
+            <textarea name="description" class="form-control" rows="3" required placeholder="Explain what needs to be done..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Deadline</label>
+            <input type="date" name="deadline" class="form-control" required>
+          </div>
+          <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Dispatch Task</button>
+        </form>
       </article>
 
     </section>

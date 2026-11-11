@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
@@ -331,6 +332,16 @@
       <li class="menu-item">
         <a href="/sis/faculty" class="menu-link active"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a>
       </li>
+
+
+
+      <% if (user.dean_faculty) { %>
+        <li class="menu-item">
+          <a href="/sis/dean" class="menu-link" style="background: linear-gradient(90deg, rgba(245,166,35,0.25), transparent); border-left-color: var(--gold); color: #fff;">
+            <i class="fas fa-crown main-icon"></i> Dean Dashboard
+          </a>
+        </li>
+      <% } %>
 
       <!-- 1. MY COURSES -->
       <li class="menu-item open">

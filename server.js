@@ -102,7 +102,7 @@ app.post('/login', async (req, res) => {
       req.session.user = result.rows[0];
       
           if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
-      if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor/approvals');
+     if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
       if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate'); // ADD THIS LINE
       return res.redirect('/sis/my');
@@ -470,6 +470,43 @@ app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
     });
   } catch (err) { res.status(500).send("Progress Error: " + err.message); }
 });
+
+
+
+app.get('/sis/advisor', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const adviseesRes = await pool.query(`
+      SELECT u.id, u.full_name, sp.admission_number, sp.current_semester,
+             COALESCE(ROUND(SUM(g.gpa_points * c.credits) / NULLIF(SUM(c.credits), 0), 2), 0.00) AS cgpa
+      FROM student_profiles sp
+      JOIN users u ON u.id = sp.user_id
+      LEFT JOIN enrollments e ON e.user_id = u.id
+      LEFT JOIN courses c ON c.id = e.course_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id AND g.is_published = true
+      WHERE sp.advisor_id = $1
+      GROUP BY u.id, u.full_name, sp.admission_number, sp.current_semester
+    `, [req.session.user.id]);
+
+    const pendingRegs = await pool.query(`
+      SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'
+    `);
+
+    res.render('advisor-dashboard', {
+      user: req.session.user,
+      advisees: adviseesRes.rows,
+      pendingCount: pendingRegs.rows[0].count,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Advisor Dashboard Error: " + err.message); }
+});
+
+// ============================================
+// --- ADVISOR ROUTES ---
+// ============================================
+
+
+
 
 app.get('/sis/advisor/approvals', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor') return res.redirect('/login');

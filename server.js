@@ -101,10 +101,10 @@ app.post('/login', async (req, res) => {
     if (result.rows.length > 0) {
       req.session.user = result.rows[0];
       
-      if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
+          if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor/approvals');
       if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
-      
+      if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate'); // ADD THIS LINE
       return res.redirect('/sis/my');
     }
     req.flash('error', 'Invalid credentials');
@@ -1260,6 +1260,65 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
 // ============================================
 // --- FACULTY: MY ADVISEES ---
 // ============================================
+
+
+// ============================================
+// --- RECTORATE: EXECUTIVE DASHBOARD ---
+// ============================================
+app.get('/sis/rectorate', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Basic Counts
+    const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);
+    const teachersCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'teacher'`);
+    const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
+    const activeRegs = await pool.query(`SELECT COUNT(*) FROM enrollments`);
+
+    // 2. Financial Pulse
+    const totalBilled = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM fee_structure`);
+    const totalPaid = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM payments`);
+    const outstanding = Number(totalBilled.rows[0].total) - Number(totalPaid.rows[0].total);
+
+    // 3. Academic Risk (Students with CGPA < 2.0)
+    const atRisk = await pool.query(`
+      SELECT COUNT(DISTINCT u.id) 
+      FROM users u
+      JOIN enrollments e ON e.user_id = u.id
+      JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id
+      WHERE u.role = 'student' AND g.gpa_points < 2.0 AND g.is_published = true
+    `);
+
+    // 4. Faculty Workload (Top 5 busiest teachers)
+    const workload = await pool.query(`
+      SELECT u.full_name, COUNT(s.id) AS section_count, 
+             (SELECT COUNT(*) FROM enrollments e JOIN course_sections s2 ON s2.id = e.section_id WHERE s2.teacher_id = u.id) AS student_count
+      FROM users u
+      JOIN course_sections s ON s.teacher_id = u.id
+      WHERE u.role = 'teacher'
+      GROUP BY u.id, u.full_name
+      ORDER BY section_count DESC
+      LIMIT 5
+    `);
+
+    res.render('rectorate-dashboard', {
+      user: req.session.user,
+      stats: {
+        students: studentsCount.rows[0].count,
+        teachers: teachersCount.rows[0].count,
+        courses: coursesCount.rows[0].count,
+        enrollments: activeRegs.rows[0].count,
+        billed: totalBilled.rows[0].total,
+        paid: totalPaid.rows[0].total,
+        outstanding: outstanding,
+        atRisk: atRisk.rows[0].count
+      },
+      workload: workload.rows,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
+});
+
+
 app.get('/sis/faculty/advisees', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {

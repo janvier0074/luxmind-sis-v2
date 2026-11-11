@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rectorate Command Center — LuxMind SIS</title>
   
+  <!-- ⚠️ SAFETY CHECK -->
+  <% 
+    const safeStats = typeof stats !== 'undefined' ? stats : { completionRate: 0, pendingTasks: 0, students: 0, teachers: 0, billed: 0, paid: 0 }; 
+    const safeTasks = typeof tasks !== 'undefined' ? tasks : []; 
+  %>
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -36,24 +42,12 @@
 
     .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     .dark .glass-panel { background: rgba(15, 42, 68, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(255, 255, 255, 0.08); }
-
-    @keyframes pulseGlow { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(245, 166, 35, 0); } }
-    .pulse-glow { animation: pulseGlow 2.5s infinite ease-in-out; }
+    
     @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
     .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
   </style>
 </head>
 <body class="bg-ice-100 dark:bg-navy-950 text-navy-900 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300 antialiased overflow-x-hidden">
-
-  <!-- SPLASH SCREEN -->
-  <aside id="splashScreen" class="fixed inset-0 z-[9999] bg-gradient-to-br from-white via-ice-100 to-slate-200 dark:from-navy-950 dark:via-navy-900 dark:to-navy-800 flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-auto">
-    <figure class="w-20 h-20 bg-navy-900 dark:bg-navy-800 text-gold-500 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-2xl pulse-glow border border-amber-500/30">
-      <i class="fas fa-university"></i>
-    </figure>
-    <h1 class="text-3xl md:text-4xl font-black text-navy-900 dark:text-white tracking-tight mb-2 text-center">Rectorate Command Center</h1>
-    <p class="text-xs font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase text-center">LuxMind SIS — University Governance</p>
-    <p class="mt-8 text-xs text-slate-400 flex items-center gap-2"><i class="fas fa-circle-notch fa-spin text-amber-500"></i> Synchronizing executive systems...</p>
-  </aside>
 
   <!-- MOBILE HEADER -->
   <header class="md:hidden sticky top-0 z-40 bg-navy-900 text-white px-4 py-3 flex items-center justify-between border-b border-navy-800 shadow-md">
@@ -72,10 +66,8 @@
 
   <button id="mobileBackdrop" onclick="closeSidebarDrawer()" class="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-sm hidden md:hidden opacity-0 transition-opacity duration-300"></button>
 
-  <!-- SIDEBAR -->
+  <!-- MASSIVE SIDEBAR -->
   <aside id="sidebar" class="fixed md:sticky top-0 inset-y-0 left-0 z-50 w-72 bg-navy-900 text-white flex flex-col justify-between border-r border-navy-800 shadow-2xl md:shadow-none transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out h-screen overflow-y-auto">
-    
-    <!-- Sidebar Header -->
     <div class="p-6 border-b border-navy-800/80 shrink-0">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -88,148 +80,98 @@
         <button onclick="closeSidebarDrawer()" class="md:hidden text-slate-400 hover:text-white p-1 text-lg"><i class="fas fa-times"></i></button>
       </div>
       <div class="mt-4 px-3 py-1.5 bg-navy-800/80 rounded-lg border border-navy-700/60 flex items-center justify-between text-[11px]">
-        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> Campus Status</span>
-        <span class="text-amber-400 font-bold">ONLINE</span>
+        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> Haspolat Campus</span>
+        <span class="text-amber-400 font-bold">CYPRUS</span>
       </div>
     </div>
 
-    <!-- MASSIVE SIDEBAR NAVIGATION -->
     <nav class="px-3 py-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-navy-700 scrollbar-track-transparent">
-      
-      <!-- 1. EXECUTIVE COMMAND -->
       <div class="mb-4">
         <a href="/sis/rectorate" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all">
           <i class="fas fa-satellite-dish text-sm"></i> Command Center
         </a>
       </div>
 
-      <!-- 2. INSTITUTIONAL COMMUNICATION -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-comments text-amber-500"></i> Communication</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Campus Broadcasts</a>
+          <a href="#" onclick="openModal('broadcastModal'); return false;" class="block py-1.5 text-amber-400 font-bold hover:text-white">Campus Broadcasts</a>
           <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Message Deans</a>
           <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Message Registrar</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Global Announcements</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Official Press Releases</a>
         </div>
       </details>
 
-      <!-- 3. ACADEMIC AFFAIRS -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-graduation-cap text-amber-500"></i> Academic Affairs</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="/sis/rectorate/graduation" class="block py-1.5 text-amber-400 font-bold hover:text-white">Graduation Pipeline</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Curriculum & Senate</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Teaching Quality (YÖK)</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Exam Objections Audit</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Grade Distribution</a>
+          <a href="/sis/rectorate/graduation" class="block py-1.5 text-slate-400 hover:text-white">Graduation Pipeline</a>
+          <a href="/sis/rectorate/senate" class="block py-1.5 text-slate-400 hover:text-white">Senate Approvals</a>
         </div>
       </details>
 
-      <!-- 4. STUDENT AFFAIRS -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-users text-amber-500"></i> Student Affairs</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Registration Oversight</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Withdrawal Appeals</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Student Demographics</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Disciplinary Logs</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Scholarship Recipients</a>
+          <a href="/sis/rectorate/student-affairs" class="block py-1.5 text-slate-400 hover:text-white">Student Oversight</a>
         </div>
       </details>
 
-      <!-- 5. HUMAN RESOURCES -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-chalkboard-teacher text-amber-500"></i> Human Resources</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Faculty Workload</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Advisor Ratios</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Staff Recruitment</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Leave Requests</a>
+          <a href="/sis/rectorate/hr" class="block py-1.5 text-slate-400 hover:text-white">Faculty Workload</a>
         </div>
       </details>
 
-      <!-- 6. FINANCIAL DIRECTORATE -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-wallet text-amber-500"></i> Financial Affairs</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Tuition Collections</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Outstanding Balances</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Payroll & Budget</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Financial Audits</a>
+          <a href="/sis/rectorate/finance" class="block py-1.5 text-slate-400 hover:text-white">Financial Directorate</a>
         </div>
       </details>
 
-      <!-- 7. ADMINISTRATIVE DIRECTORATES -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-building text-amber-500"></i> Admin Directorates</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Registrar's Office</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">International Office</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Campus Directorate</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Computer Center (IT)</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Library Directorate</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Student Services</a>
+          <a href="/sis/rectorate/registrar" class="block py-1.5 text-slate-400 hover:text-white">Registrar Oversight</a>
         </div>
       </details>
 
-      <!-- 8. SMARTASK WORKFLOW -->
       <details class="group border-t border-navy-800 pt-2">
         <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
           <div class="flex items-center gap-2"><i class="fas fa-tasks text-amber-500"></i> SMARTASK Workflow</div>
           <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Task Creation</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Assign to Dept</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Progress Monitoring</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Verification</a>
+          <a href="/sis/rectorate/kpis" class="block py-1.5 text-slate-400 hover:text-white">Performance KPIs</a>
         </div>
       </details>
 
-      <!-- 9. GOVERNANCE BODIES -->
-      <details class="group border-t border-navy-800 pt-2">
-        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
-          <div class="flex items-center gap-2"><i class="fas fa-gavel text-amber-500"></i> Governance</div>
-          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
-        </summary>
-        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Board of Directors</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Senate Meetings</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Deans Coordination</a>
-          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Heads of Depts</a>
-        </div>
-      </details>
-
-      <!-- 10. SYSTEM AUDIT -->
       <div class="border-t border-navy-800 pt-2 mb-8">
         <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
           <i class="fas fa-shield-alt text-amber-500"></i> System Audit Log
         </a>
       </div>
-
     </nav>
 
-    <!-- Sidebar Footer -->
     <footer class="p-4 border-t border-navy-800 bg-navy-950/60 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3">
         <figure class="w-9 h-9 rounded-full bg-amber-500 text-navy-950 font-black flex items-center justify-center text-xs shadow-inner">RC</figure>
@@ -242,165 +184,134 @@
     </footer>
   </aside>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-8">
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 max-w-[1700px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-6">
     
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-navy-800">
       <div>
         <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-widest"><i class="fas fa-landmark"></i> University Governance</div>
-        <h1 class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Executive Command Center</h1>
-        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Coordinating strategic directives, inter-departmental operations, and academic performance.</p>
+        <h1 class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Master Command Center</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Coordinate directives, monitor performance, and communicate with the university.</p>
       </div>
-
       <div class="flex flex-wrap items-center gap-2">
-        <button onclick="toggleDarkMode()" class="hidden md:flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm"><i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i></button>
-        <button onclick="openModal('broadcastModal')" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"><i class="fas fa-bullhorn"></i> Campus Broadcast</button>
-        <button onclick="scrollToDirectiveForm()" class="px-4 py-2 bg-navy-900 dark:bg-amber-500 text-white dark:text-navy-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all"><i class="fas fa-plus"></i> New Directive</button>
+        <button onclick="openModal('broadcastModal')" class="px-3.5 py-2 bg-navy-900 dark:bg-amber-500 text-white dark:text-navy-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all"><i class="fas fa-bullhorn"></i> Campus Broadcast</button>
+        <button onclick="toggleDarkMode()" class="flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm"><i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i></button>
       </div>
     </header>
 
-    <!-- STATS -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+    <!-- 1. STATS ROW -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
         <div class="flex justify-between items-start mb-3">
-          <figure class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-chart-pie"></i></figure>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Live Data</span>
+          <figure class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-chart-pie"></i></figure>
         </div>
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Directive Completion</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight" id="statCompletionRate"><%= stats.completionRate %>%</div>
-        <div class="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full mt-3 overflow-hidden"><div class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: <%= stats.completionRate %>%"></div></div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Completion Rate</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.completionRate %>%</div>
+        <div class="w-full bg-slate-100 dark:bg-navy-800 h-1.5 rounded-full mt-2 overflow-hidden"><div class="bg-emerald-500 h-full rounded-full" style="width: <%= safeStats.completionRate %>%"></div></div>
       </article>
 
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
         <div class="flex justify-between items-start mb-3">
-          <figure class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-clock"></i></figure>
+          <figure class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-clock"></i></figure>
         </div>
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Pending Directives</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight" id="statPendingCount"><%= stats.pendingTasks %></div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Pending Tasks</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.pendingTasks %></div>
       </article>
 
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
         <div class="flex justify-between items-start mb-3">
-          <figure class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-user-graduate"></i></figure>
+          <figure class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-user-graduate"></i></figure>
         </div>
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Enrolled Students</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.students %></div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Total Students</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.students %></div>
       </article>
 
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
         <div class="flex justify-between items-start mb-3">
-          <figure class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-chalkboard-teacher"></i></figure>
+          <figure class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-wallet"></i></figure>
         </div>
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Faculty & Staff</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.teachers %></div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Revenue Collected</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight">$<%= Number(safeStats.paid).toLocaleString() %></div>
       </article>
     </section>
 
-    <!-- CHARTS & LIVE FEED -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-amber-500"></i> Department Directives</h2>
-        </div>
-        <div class="flex-1 min-h-[190px] relative"><canvas id="deptWorkloadChart"></canvas></div>
+    <!-- 2. CHARTS & FEED ROW -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-4 rounded-xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <h2 class="font-extrabold text-xs text-navy-900 dark:text-white mb-2 flex items-center gap-1"><i class="fas fa-chart-bar text-amber-500"></i> Dept Workload</h2>
+        <div class="flex-1 min-h-[150px] relative"><canvas id="deptChart"></canvas></div>
       </article>
 
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-line-chart text-emerald-500"></i> Resolution Velocity</h2>
-        </div>
-        <div class="flex-1 min-h-[190px] relative"><canvas id="trendChart"></canvas></div>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-4 rounded-xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <h2 class="font-extrabold text-xs text-navy-900 dark:text-white mb-2 flex items-center gap-1"><i class="fas fa-chart-line text-emerald-500"></i> Resolution Velocity</h2>
+        <div class="flex-1 min-h-[150px] relative"><canvas id="trendChart"></canvas></div>
       </article>
 
-      <!-- LIVE FEED (SIMULATED) -->
-      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-rss text-rose-500 live-beacon"></i> Campus Live Feed</h2>
-          <button onclick="toggleActivityFeed()" id="feedPauseBtn" class="text-[10px] font-bold text-slate-400 hover:text-amber-500 transition-colors"><i class="fas fa-pause"></i> Pause</button>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-4 rounded-xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="font-extrabold text-xs text-navy-900 dark:text-white flex items-center gap-1"><i class="fas fa-rss text-rose-500 live-beacon"></i> Live Campus Feed</h2>
+          <button onclick="toggleFeed()" id="feedBtn" class="text-[10px] font-bold text-slate-400 hover:text-amber-500"><i class="fas fa-pause"></i> Pause</button>
         </div>
-        <nav id="activityStream" class="space-y-2.5 overflow-y-auto max-h-[200px] pr-1"></nav>
+        <nav id="activityStream" class="space-y-1.5 overflow-y-auto max-h-[150px] pr-1 text-[10px]"></nav>
       </article>
     </section>
 
-    <!-- DIRECTIVES LIST & FORM -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <article class="lg:col-span-2 glass-panel bg-white dark:bg-navy-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-navy-800">
-          <div>
-            <h2 class="text-lg font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-satellite text-amber-500"></i> Active Rectorate Directives</h2>
-          </div>
-          <span id="directiveCountBadge" class="self-start sm:self-auto bg-navy-900 dark:bg-amber-500 text-gold-500 dark:text-navy-950 text-xs font-black px-3 py-1 rounded-full"><%= tasks.length %> Directives</span>
+    <!-- 3. TASKS & FORM ROW -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+      
+      <!-- TASKS LIST -->
+      <article class="lg:col-span-2 glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-navy-800">
+          <h2 class="text-sm font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-satellite text-amber-500"></i> Active University Directives</h2>
+          <span class="bg-navy-900 dark:bg-amber-500 text-gold-500 dark:text-navy-950 text-[10px] font-black px-2 py-0.5 rounded-full"><%= safeTasks.length %> Active</span>
         </div>
 
-        <div class="space-y-3">
-          <!-- Filter Tabs (Visual Only for now) -->
-          <nav class="flex flex-wrap gap-1.5 p-1 bg-slate-100 dark:bg-navy-800 rounded-xl text-xs font-bold">
-            <button class="tab-btn active px-3 py-1.5 rounded-lg bg-white dark:bg-navy-700 text-navy-900 dark:text-white shadow-sm transition-all">All Tasks</button>
-            <button class="tab-btn px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300">🔥 Urgent</button>
-            <button class="tab-btn px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300">⏳ Pending</button>
-          </nav>
-        </div>
-
-        <!-- REAL TASKS FROM DATABASE -->
-        <section id="directivesList" class="space-y-3">
-          <% if (tasks.length === 0) { %>
-            <div class="text-center py-10 border-2 border-dashed border-slate-200 dark:border-navy-800 rounded-xl">
-              <h3 class="font-extrabold text-navy-900 dark:text-slate-300 text-xs">No Directives Found</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">Issue a new directive to get started.</p>
-            </div>
+        <div class="space-y-2">
+          <% if (safeTasks.length === 0) { %>
+            <p class="text-center text-xs text-slate-400 py-4">No active tasks. Issue a directive on the right.</p>
           <% } %>
 
-          <% tasks.forEach(item => { %>
-            <article class="p-4 bg-slate-50/90 dark:bg-navy-800/60 border border-slate-200/80 dark:border-navy-700/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 group">
-              <div class="space-y-1.5 flex-1">
-                <div class="flex flex-wrap items-center gap-2 text-[10px]">
-                  <span class="font-bold px-2 py-0.5 rounded-full <%= item.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' %> flex items-center gap-1">
-                    <i class="fas <%= item.status === 'Completed' ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= item.status %>
-                  </span>
-                  <span class="font-bold px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-navy-700 text-navy-900 dark:text-slate-200">
-                    <i class="fas fa-building text-amber-500 mr-1"></i> <%= item.assigned_to_dept %>
-                  </span>
+          <% safeTasks.forEach(item => { %>
+            <div class="p-3 bg-slate-50/90 dark:bg-navy-800/60 border border-slate-200/80 dark:border-navy-700/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-2 group">
+              <div class="space-y-1 flex-1">
+                <div class="flex flex-wrap items-center gap-1.5 text-[9px]">
+                  <span class="font-bold px-1.5 py-0.5 rounded-full <%= item.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' %> flex items-center gap-1"><i class="fas <%= item.status === 'Completed' ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= item.status %></span>
+                  <span class="font-bold px-1.5 py-0.5 rounded-md bg-slate-200/70 dark:bg-navy-700 text-navy-900 dark:text-slate-200"><i class="fas fa-building text-amber-500"></i> <%= item.assigned_to_dept %></span>
                 </div>
-                <h3 class="font-extrabold text-navy-900 dark:text-white text-sm group-hover:text-amber-500 transition-colors"><%= item.title %></h3>
-                <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-2xl"><%= item.description %></p>
-                <div class="text-[10px] text-slate-400 flex items-center gap-4 pt-0.5">
-                  <span><i class="far fa-calendar-alt text-amber-500 mr-1"></i> Target: <strong><%= item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A' %></strong></span>
-                  <span><i class="fas fa-hashtag text-slate-400 mr-1"></i> DIR-<%= item.id %></span>
+                <h3 class="font-bold text-navy-900 dark:text-white text-xs group-hover:text-amber-500 transition-colors"><%= item.title %></h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-snug line-clamp-2"><%= item.description %></p>
+                <div class="text-[9px] text-slate-400 flex items-center gap-3 pt-0.5">
+                  <span><i class="far fa-calendar-alt text-amber-500"></i> Due: <strong><%= item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A' %></strong></span>
+                  <span><i class="fas fa-hashtag"></i> DIR-<%= item.id %></span>
                 </div>
               </div>
 
-              <!-- REAL COMPLETE BUTTON -->
-              <div class="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-navy-700">
-                <% if (item.status !== 'Completed') { %>
-                  <form action="/sis/rectorate/tasks/<%= item.id %>/complete" method="POST">
-                    <button type="submit" class="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-500/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
-                      <i class="fas fa-check"></i> Mark Done
-                    </button>
-                  </form>
-                <% } %>
-              </div>
-            </article>
+              <% if (item.status !== 'Completed') { %>
+                <form action="/sis/rectorate/tasks/<%= item.id %>/complete" method="POST">
+                  <button type="submit" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-500/30 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap"><i class="fas fa-check"></i> Mark Done</button>
+                </form>
+              <% } %>
+            </div>
           <% }) %>
-        </section>
+        </div>
       </article>
 
-      <!-- REAL FORM -->
-      <article id="directiveFormSection" class="glass-panel bg-white dark:bg-navy-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-4">
-        <div class="pb-3 border-b border-slate-100 dark:border-navy-800">
-          <h2 class="text-lg font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Dispatch Directive</h2>
+      <!-- ISSUE NEW DIRECTIVE FORM -->
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-3">
+        <div class="pb-2 border-b border-slate-100 dark:border-navy-800">
+          <h2 class="text-sm font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Dispatch Task</h2>
         </div>
 
-        <!-- REAL POST FORM -->
-        <form action="/sis/rectorate/tasks/create" method="POST" id="directiveForm" class="space-y-3.5">
+        <form action="/sis/rectorate/tasks/create" method="POST" class="space-y-2.5">
           <div>
-            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Directive Title *</label>
-            <input type="text" name="title" id="formTitle" required placeholder="e.g. Midterm Exam Schedule Clearance" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+            <label class="block text-[9px] font-extrabold uppercase tracking-wider text-slate-500 mb-0.5">Task Title *</label>
+            <input type="text" name="title" required placeholder="e.g. Midterm Exam Schedule" class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-lg text-xs font-semibold focus:outline-none focus:border-amber-500">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Assign Dept *</label>
-              <select name="assigned_to_dept" id="formDept" required class="w-full px-2.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+              <label class="block text-[9px] font-extrabold uppercase tracking-wider text-slate-500 mb-0.5">Assign To *</label>
+              <select name="assigned_to_dept" required class="w-full px-2 py-1.5 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-lg text-xs font-semibold focus:outline-none">
                 <option value="Registrar">Registrar</option>
                 <option value="Faculty">Faculty Deans</option>
                 <option value="Finance">Finance</option>
@@ -409,119 +320,76 @@
               </select>
             </div>
             <div>
-              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Deadline Date *</label>
-              <input type="date" name="deadline" id="formDeadline" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+              <label class="block text-[9px] font-extrabold uppercase tracking-wider text-slate-500 mb-0.5">Deadline *</label>
+              <input type="date" name="deadline" required class="w-full px-2 py-1.5 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-lg text-xs font-semibold focus:outline-none">
             </div>
           </div>
 
           <div>
-            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Instructions *</label>
-            <textarea name="description" id="formDescription" rows="3" required placeholder="Specify goals and expected outcome..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"></textarea>
+            <label class="block text-[9px] font-extrabold uppercase tracking-wider text-slate-500 mb-0.5">Instructions *</label>
+            <textarea name="description" rows="2" required placeholder="Expected outcome..." class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-lg text-xs font-semibold focus:outline-none resize-none"></textarea>
           </div>
 
-          <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 dark:from-amber-500 dark:to-amber-600 text-white dark:text-navy-950 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-            <i class="fas fa-paper-plane"></i> Dispatch Directive
-          </button>
+          <button type="submit" class="w-full py-2 bg-navy-900 dark:bg-amber-500 hover:bg-navy-800 dark:hover:bg-amber-600 text-white dark:text-navy-950 font-extrabold text-xs rounded-lg shadow transition-all"><i class="fas fa-paper-plane mr-1"></i> Dispatch</button>
         </form>
       </article>
     </section>
   </main>
 
-  <!-- MODAL -->
+  <!-- BROADCAST MODAL -->
   <aside id="broadcastModal" class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <article class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <article class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-navy-800 pb-3">
-        <h3 class="font-extrabold text-navy-900 dark:text-white text-sm flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Issue Campus Broadcast</h3>
-        <button onclick="closeModal('broadcastModal')" class="text-slate-400 hover:text-white text-base"><i class="fas fa-times"></i></button>
+        <h3 class="font-extrabold text-navy-900 dark:text-white text-sm flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Campus Broadcast</h3>
+        <button onclick="closeModal('broadcastModal')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
       </div>
-      <form onsubmit="sendBroadcast(event)" class="space-y-3">
+      <form action="/sis/rectorate/broadcast" method="POST" class="space-y-3">
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Announcement Title</label>
-          <input type="text" id="broadcastTitle" required placeholder="e.g. Library 24/7 Midterm Schedule" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none">
+          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Title</label>
+          <input type="text" name="title" required placeholder="e.g. Campus Closure Notice" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none">
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Audience</label>
-          <select id="broadcastChannel" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none">
-            <option value="All Campus">All Students, Faculty & Personnel</option>
-            <option value="Faculty">Faculty Deans & Instructors Only</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Broadcast Details</label>
-          <textarea id="broadcastContent" rows="3" required placeholder="Enter announcement content..." class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none resize-none"></textarea>
+          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Message</label>
+          <textarea name="message" rows="3" required placeholder="Announcement details..." class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none resize-none"></textarea>
         </div>
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-navy-800">
-          <button type="button" onclick="closeModal('broadcastModal')" class="px-3.5 py-1.5 bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl">Cancel</button>
+          <button type="button" onclick="closeModal('broadcastModal')" class="px-3 py-1.5 bg-slate-100 dark:bg-navy-800 font-bold text-xs rounded-xl">Cancel</button>
           <button type="submit" class="px-4 py-1.5 bg-amber-500 text-navy-950 font-extrabold text-xs rounded-xl hover:bg-amber-400 transition-all">Publish Broadcast</button>
         </div>
       </form>
     </article>
   </aside>
 
-  <aside id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></aside>
-
-  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. Splash Screen
     window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 700); }
-      }, 1200);
-      
-      // Set default deadline (7 days ahead)
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + 7);
-      document.getElementById('formDeadline').value = targetDate.toISOString().split('T')[0];
-
+      const deadlineInput = document.querySelector('input[name="deadline"]');
+      if (deadlineInput) {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 7);
+        deadlineInput.value = targetDate.toISOString().split('T')[0];
+      }
       renderActivityStream();
       initCharts();
       startLiveActivityFeed();
     });
 
-    // 2. Mobile Drawer
     function openSidebarDrawer() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobileBackdrop').classList.remove('hidden'); setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10); }
     function closeSidebarDrawer() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobileBackdrop').classList.add('opacity-0'); setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300); }
-
-    // 3. Dark Mode
     function toggleDarkMode() { document.documentElement.classList.toggle('dark'); setTimeout(initCharts, 200); }
 
-    // 4. Quick Dispatch (Fills form and scrolls to it)
-    function quickDispatchCIUTask(title, dept, priority, description) {
-      document.getElementById('formTitle').value = title;
-      document.getElementById('formDept').value = dept;
-      document.getElementById('formDescription').value = description;
-      document.getElementById('directiveFormSection').scrollIntoView({ behavior: 'smooth' });
-      showToast('Task template loaded. Click Dispatch to save.', 'info');
-    }
-
-    // 5. Modals & Broadcast
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function sendBroadcast(event) {
-      event.preventDefault();
-      const title = document.getElementById('broadcastTitle').value.trim();
-      closeModal('broadcastModal');
-      document.getElementById('broadcastTitle').value = '';
-      document.getElementById('broadcastContent').value = '';
-      showToast(`Broadcast "${title}" published successfully`, 'success');
-      addActivityLog('fa-bullhorn', 'text-rose-500', `Campus Notice: ${title}`);
-    }
 
-    // 6. Charts (Real Data)
     let workloadChartInstance = null;
     let trendChartInstance = null;
-    
-    // Pull real data from server
-    const realTasks = <%- JSON.stringify(tasks) %>;
+    const realTasks = <%- JSON.stringify(safeTasks) %>;
 
     function initCharts() {
       const isDark = document.documentElement.classList.contains('dark');
       const textColor = isDark ? '#94a3b8' : '#64748b';
       const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-      // Chart 1: Department Workload
-      const ctx1 = document.getElementById('deptWorkloadChart').getContext('2d');
+      const ctx1 = document.getElementById('deptChart').getContext('2d');
       if (workloadChartInstance) workloadChartInstance.destroy();
       
       const depts = ["Registrar", "Faculty", "Finance", "IT", "Student Affairs"];
@@ -531,12 +399,11 @@
         type: 'bar',
         data: {
           labels: depts,
-          datasets: [{ data: counts, backgroundColor: ['#f5a623', '#1e4d7b', '#10b981', '#6366f1', '#ec4899'], borderRadius: 6 }]
+          datasets: [{ data: counts, backgroundColor: ['#f5a623', '#1e4d7b', '#10b981', '#6366f1', '#ec4899'], borderRadius: 4 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 8 } }, grid: { display: false } }, y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } } } }
       });
 
-      // Chart 2: Resolution Trend (Simulated based on task completion)
       const ctx2 = document.getElementById('trendChart').getContext('2d');
       if (trendChartInstance) trendChartInstance.destroy();
       
@@ -544,13 +411,12 @@
         type: 'line',
         data: {
           labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{ data: [72, 75, 78, 81, 85, 87, <%= stats.completionRate %>], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', fill: true, tension: 0.35, pointRadius: 3.5 }]
+          datasets: [{ data: [72, 75, 78, 81, 85, 87, <%= safeStats.completionRate %>], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.35, pointRadius: 2 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 8 } }, grid: { display: false } }, y: { ticks: { color: textColor, font: { size: 8 } }, grid: { color: gridColor } } } }
       });
     }
 
-    // 7. Live Feed
     let activityLog = [
       { icon: "fa-check-circle", color: "text-emerald-500", text: "Registrar approved 85 graduation files.", time: "4m ago" },
       { icon: "fa-certificate", color: "text-amber-500", text: "YÖK accreditation audit draft uploaded.", time: "18m ago" }
@@ -560,14 +426,15 @@
 
     function renderActivityStream() {
       const container = document.getElementById('activityStream');
+      if (!container) return;
       container.innerHTML = '';
       activityLog.forEach(item => {
         container.innerHTML += `
-          <div class="flex items-start gap-2.5 p-2 bg-slate-50 dark:bg-navy-800/50 rounded-lg text-xs border border-slate-100 dark:border-navy-700/50">
-            <i class="fas ${item.icon} ${item.color} mt-0.5 text-xs"></i>
+          <div class="flex items-start gap-2 p-1.5 bg-slate-50 dark:bg-navy-800/50 rounded border border-slate-100 dark:border-navy-700/50">
+            <i class="fas ${item.icon} ${item.color} mt-0.5 text-[10px]"></i>
             <div class="flex-1">
-              <p class="font-bold text-navy-900 dark:text-slate-200 text-[11px] leading-tight">${item.text}</p>
-              <span class="text-[9px] text-slate-400 font-semibold">${item.time}</span>
+              <p class="font-bold text-navy-900 dark:text-slate-200 text-[10px] leading-tight">${item.text}</p>
+              <span class="text-[8px] text-slate-400 font-semibold">${item.time}</span>
             </div>
           </div>
         `;
@@ -576,12 +443,12 @@
 
     function addActivityLog(icon, color, text) {
       activityLog.unshift({ icon, color, text, time: "Just now" });
-      if (activityLog.length > 7) activityLog.pop();
+      if (activityLog.length > 5) activityLog.pop();
       renderActivityStream();
     }
 
     function startLiveActivityFeed() {
-      const ciuEvents = [
+      const events = [
         { icon: "fa-university", color: "text-sky-400", text: "Engineering Dean logged 35 lab waivers." },
         { icon: "fa-laptop-code", color: "text-emerald-400", text: "IT synced Haspolat Wi-Fi portal nodes." },
         { icon: "fa-coins", color: "text-amber-400", text: "Accounting finalized semester scholarship audit." },
@@ -590,34 +457,18 @@
 
       feedInterval = setInterval(() => {
         if (!isFeedPaused) {
-          const item = ciuEvents[Math.floor(Math.random() * ciuEvents.length)];
+          const item = events[Math.floor(Math.random() * events.length)];
           addActivityLog(item.icon, item.color, item.text);
         }
       }, 14000);
     }
 
-    function toggleActivityFeed() {
+    function toggleFeed() {
       isFeedPaused = !isFeedPaused;
-      const btn = document.getElementById('feedPauseBtn');
+      const btn = document.getElementById('feedBtn');
       if (isFeedPaused) { btn.innerHTML = `<i class="fas fa-play"></i> Resume`; btn.classList.add('text-amber-500'); }
       else { btn.innerHTML = `<i class="fas fa-pause"></i> Pause`; btn.classList.remove('text-amber-500'); }
     }
-
-    // 8. Toast Notifications
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      let icon = 'fa-check-circle text-emerald-400';
-      if (type === 'info') icon = 'fa-info-circle text-sky-400';
-      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 bg-navy-900 text-white rounded-xl shadow-2xl border border-navy-700 text-xs font-semibold transform transition-all duration-300 translate-y-3 opacity-0`;
-      toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span>${message}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.classList.remove('translate-y-3', 'opacity-0'), 50);
-      setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 300); }, 3200);
-    }
-
-    // 9. Scroll to Form
-    function scrollToDirectiveForm() { document.getElementById('directiveFormSection').scrollIntoView({ behavior: 'smooth' }); }
   </script>
 </body>
 </html>

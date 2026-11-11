@@ -1335,6 +1335,23 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
     });
   } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
 });
+
+
+// Rectorate: Send Global Broadcast
+app.post('/sis/rectorate/broadcast', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    const { title, message } = req.body;
+    await pool.query(`
+      INSERT INTO global_announcements (title, message) VALUES ($1, $2)
+    `, [title, message]);
+    
+    req.flash('success', 'Broadcast sent to the entire university.');
+    res.redirect('/sis/rectorate');
+  } catch (err) { res.status(500).send("Broadcast Error: " + err.message); }
+});
+
+
 // Assign a Task
 
 

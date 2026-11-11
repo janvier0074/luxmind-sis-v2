@@ -974,6 +974,42 @@ app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
   }
 });
 
+
+
+// ============================================
+// --- ADMIN: COURSE CATALOG ---
+// ============================================
+app.get('/sis/admin/courses', requireRole('admin'), async (req, res) => {
+  try {
+    // Fetch all courses and their prerequisites
+    const coursesRes = await pool.query(`
+      SELECT c.*, p.code as prereq_code 
+      FROM courses c
+      LEFT JOIN courses p ON p.id = c.prerequisite_id
+      ORDER BY c.semester_number ASC, c.code ASC
+    `);
+    res.render('admin-courses', { user: req.session.user, courses: coursesRes.rows });
+  } catch (err) { res.status(500).send("Course Catalog Error: " + err.message); }
+});
+
+app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
+  const { code, title, credits, semester_number, prerequisite_id, quota } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO courses (code, title, credits, semester_number, prerequisite_id, quota) 
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [code, title, Number(credits), Number(semester_number), prerequisite_id ? Number(prerequisite_id) : null, quota ? Number(quota) : 40]);
+    req.flash('success', 'Course added successfully.');
+    res.redirect('/sis/admin/courses');
+  } catch (err) {
+    req.flash('error', 'Error adding course: ' + err.message);
+    res.redirect('/sis/admin/courses');
+  }
+});
+
+
+
+
 app.get('/sis/admin/sections', requireRole('admin'), async (req, res) => {
   try {
     const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC, code ASC`);

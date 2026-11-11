@@ -24,16 +24,27 @@
       min-height: 100vh; display: flex; color: var(--navy);
     }
 
-    /* Sidebar */
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    /* Massive Sidebar (Teacher + Advisor) */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; scrollbar-width: thin; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
     .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.1rem; font-weight: 800; }
     .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
-    .sidebar-menu { list-style: none; padding: 0.5rem 0; }
-    .menu-link { display: flex; align-items: center; padding: 0.8rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
-    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--gold); }
-    .menu-link i { width: 22px; color: var(--gold); }
+    
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .submenu .submenu .menu-link { padding-left: 3.5rem; font-size: 0.7rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
 
     /* Main */
     .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); }
@@ -42,7 +53,7 @@
     .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); }
     .page-title p { color: #64748b; font-size: 0.9rem; }
 
-    /* Cards */
+    /* Stats */
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
     .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; }
     .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
@@ -51,15 +62,14 @@
     .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
     .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; }
 
+    /* Table */
     .table-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
     .table-toolbar { padding: 1.2rem 1.4rem; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
     .table-toolbar h2 { font-size: 1.05rem; font-weight: 800; }
-    
     .table-wrap { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
     th { background: #f8fafc; color: #64748b; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; padding: 1rem 1.4rem; text-align: left; border-bottom: 2px solid var(--frost); }
     td { padding: 1rem 1.4rem; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
-    
     .cgpa-badge { display: inline-block; padding: 0.3rem 0.7rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
     .cgpa-badge.excellent { background: #dcfce7; color: #15803d; }
     .cgpa-badge.warning { background: #fef3c7; color: #b45309; }
@@ -68,7 +78,6 @@
     /* Mobile */
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; }
-    
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
       .sidebar { transform: translateX(-100%); }
@@ -89,11 +98,69 @@
       <div class="brand-mark">A</div>
       <div class="brand-name">LuxMind SIS <span>Advisor Portal</span></div>
     </div>
+    
     <ul class="sidebar-menu">
-      <li><a href="/sis/advisor" class="menu-link active"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle"></i> Registration Approvals</a></li>
-      <li><a href="/sis/advisor/withdrawals" class="menu-link"><i class="fas fa-sign-out-alt"></i> Withdrawal Requests</a></li>
-      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      <li class="menu-item"><a href="/sis/advisor" class="menu-link active"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+
+      <!-- ADVISING (Primary) -->
+      <li class="menu-item open">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-user-friends main-icon"></i> Advising <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
+          <li class="menu-item"><a href="/sis/advisor/withdrawals" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Withdrawal Requests</a></li>
+        </ul>
+      </li>
+
+      <!-- MY COURSES (Teaching Role) -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-book-open main-icon"></i> My Courses <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-list main-icon"></i> Course List</a></li>
+          <li class="menu-item"><a href="/sis/faculty/class-roster" class="menu-link"><i class="fas fa-users main-icon"></i> Class Roster</a></li>
+          <li class="menu-item"><a href="/sis/faculty/course-materials" class="menu-link"><i class="fas fa-folder main-icon"></i> Content & Materials</a></li>
+          <li class="menu-item"><a href="/sis/faculty/course-weights" class="menu-link"><i class="fas fa-sliders main-icon"></i> Course Weights</a></li>
+          <li class="menu-item"><a href="/sis/faculty/evaluations" class="menu-link"><i class="fas fa-poll main-icon"></i> Course Evaluations</a></li>
+        </ul>
+      </li>
+
+      <!-- GRADING & EXAMS (Teaching Role) -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-pen main-icon"></i> Grading & Exams <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/grades" class="menu-link"><i class="fas fa-marker main-icon"></i> Gradebook Entry</a></li>
+          <li class="menu-item"><a href="/sis/faculty/publish-results" class="menu-link"><i class="fas fa-cloud-upload-alt main-icon"></i> Publish Results</a></li>
+          <li class="menu-item"><a href="/sis/faculty/exam-objections" class="menu-link"><i class="fas fa-exclamation-circle main-icon"></i> Exam Objections</a></li>
+          <li class="menu-item"><a href="/sis/faculty/makeup-exams" class="menu-link"><i class="fas fa-undo main-icon"></i> Makeup Exams</a></li>
+        </ul>
+      </li>
+
+      <!-- COMMUNICATION -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-comments main-icon"></i> Communication <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/announcements" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> Announcements</a></li>
+          <li class="menu-item"><a href="/sis/faculty/messages" class="menu-link"><i class="fas fa-envelope main-icon"></i> Messaging</a></li>
+        </ul>
+      </li>
+
+      <!-- SYSTEM -->
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-cog main-icon"></i> System <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="/sis/faculty/profile" class="menu-link"><i class="fas fa-user-cog main-icon"></i> My Profile</a></li>
+          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+        </ul>
+      </li>
     </ul>
   </aside>
 
@@ -102,7 +169,7 @@
       <div class="page-title-icon"><i class="fas fa-user-tie"></i></div>
       <div>
         <h1>Advisor Dashboard</h1>
-        <p>Monitor your advisees and manage their academic requests</p>
+        <p>Monitor your advisees and manage your teaching schedule</p>
       </div>
     </header>
 
@@ -119,7 +186,7 @@
 
     <section class="table-card">
       <div class="table-toolbar">
-        <h2>My Students</h2>
+        <h2>My Advisees</h2>
       </div>
       <div class="table-wrap">
         <table>
@@ -154,6 +221,13 @@
   </main>
 
   <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');

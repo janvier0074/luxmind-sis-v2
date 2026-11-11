@@ -472,7 +472,6 @@ app.get('/sis/advisor/advisees/:student_id', requireLogin, async (req, res) => {
 });
 
 
-
 app.get('/sis/advisor', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'advisor') return res.redirect('/login');
   try {
@@ -488,14 +487,22 @@ app.get('/sis/advisor', requireLogin, async (req, res) => {
       GROUP BY u.id, u.full_name, sp.admission_number, sp.current_semester
     `, [req.session.user.id]);
 
-    const pendingRegs = await pool.query(`
-      SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'
-    `);
+    const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
+    
+    // Fetch their teaching courses too
+    const coursesRes = await pool.query(`
+      SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, 
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count 
+      FROM course_sections s 
+      JOIN courses c ON c.id = s.course_id 
+      WHERE s.teacher_id = $1
+    `, [req.session.user.id]);
 
     res.render('advisor-dashboard', {
       user: req.session.user,
       advisees: adviseesRes.rows,
       pendingCount: pendingRegs.rows[0].count,
+      courses: coursesRes.rows,
       greeting: getGreeting()
     });
   } catch (err) { res.status(500).send("Advisor Dashboard Error: " + err.message); }

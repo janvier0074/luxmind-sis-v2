@@ -1363,6 +1363,66 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: HUMAN RESOURCES (WORKLOAD) ---
 // ============================================
+
+
+
+
+// ============================================
+// --- RECTORATE: REGISTRAR'S OFFICE OVERSIGHT ---
+// ============================================
+app.get('/sis/rectorate/registrar', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Document Requests Stats
+    const docStats = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending_docs,
+        COUNT(*) FILTER (WHERE status = 'ready' OR status = 'rejected') AS completed_docs
+      FROM document_requests
+    `);
+    
+    // 2. Registration Queue Stats
+    const regStats = await pool.query(`
+      SELECT COUNT(*) AS pending_regs 
+      FROM course_registrations 
+      WHERE status = 'pending_advisor'
+    `);
+
+    // 3. Withdrawal Queue Stats
+    const wdStats = await pool.query(`
+      SELECT COUNT(*) AS pending_wds 
+      FROM course_withdrawals 
+      WHERE status = 'pending'
+    `);
+
+    // 4. Recent Document Requests List
+    const recentDocs = await pool.query(`
+      SELECT dr.id, dr.document_type, dr.status, dr.requested_at, u.full_name AS student_name
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      ORDER BY dr.requested_at DESC
+      LIMIT 10
+    `);
+
+    const stats = {
+      pendingDocs: Number(docStats.rows[0].pending_docs),
+      completedDocs: Number(docStats.rows[0].completed_docs),
+      pendingRegs: Number(regStats.rows[0].pending_regs),
+      pendingWds: Number(wdStats.rows[0].pending_wds)
+    };
+
+    res.render('rectorate-registrar', {
+      user: req.session.user,
+      stats: stats,
+      recentDocs: recentDocs.rows
+    });
+  } catch (err) { res.status(500).send("Registrar Oversight Error: " + err.message); }
+});
+
+
+
+
+
 app.get('/sis/rectorate/hr', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Requests — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --amber: #f5a623; --frost: #d9e6f2; --ice: #f7fafd; --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); color: var(--navy); padding: 2rem; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header { background: var(--navy); color: #fff; padding: 2rem; border-radius: 1.5rem; margin-bottom: 2rem; }
+    .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .header p { color: #94a3b8; font-weight: 600; }
+    .card { background: #fff; padding: 2rem; border-radius: 1rem; border: 1px solid var(--frost); margin-bottom: 2rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b; }
+    input, select, textarea { width: 100%; padding: 0.8rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-weight: 600; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--amber); }
+    button { background: var(--navy); color: #fff; padding: 0.8rem 2rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--navy); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+    .request-card { background: #fff; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--frost); margin-bottom: 1rem; }
+    .request-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+    .request-title { font-weight: 800; font-size: 1rem; }
+    .request-meta { font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 0.3rem; }
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #b45309; }
+    .badge.approved { background: #dcfce7; color: #15803d; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+    .badge.high { background: #fee2e2; color: #991b1b; }
+    .badge.medium { background: #fef3c7; color: #b45309; }
+    .badge.low { background: #e0f2fe; color: #0284c7; }
+    .admin-response { background: #f0fdf4; border-left: 4px solid var(--success); padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.85rem; }
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 700; font-size: 0.85rem; }
+    .alert-success { background: #dcfce7; color: #15803d; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+    <div class="header">
+      <h1><i class="fas fa-paper-plane"></i> Faculty Requests</h1>
+      <p>Submit requests to the Central Administration.</p>
+    </div>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="alert alert-success"><i class="fas fa-check-circle mr-2"></i><%= flash.success[0] %></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash.error && flash.error.length) { %>
+      <div class="alert alert-error"><i class="fas fa-exclamation-circle mr-2"></i><%= flash.error[0] %></div>
+    <% } %>
+
+    <% if (myFaculty || user.faculty_id) { %>
+      <div class="card">
+        <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1.5rem;">Submit New Request</h2>
+        <form action="/sis/faculty/requests/new" method="POST">
+          <input type="hidden" name="faculty_id" value="<%= myFaculty ? myFaculty.id : user.faculty_id %>">
+
+          <% if (myFaculty) { %>
+            <div style="background: #f0fdf4; border-left: 4px solid var(--success); padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem; font-weight: 700; color: #15803d;">
+              <i class="fas fa-user-tie mr-1"></i> You are submitting as Dean of <strong><%= myFaculty.name %></strong>
+            </div>
+          <% } %>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Request Type</label>
+              <select name="request_type" required>
+                <option value="New Lecturer">Hire New Lecturer</option>
+                <option value="New Equipment">Request Equipment</option>
+                <option value="Budget Request">Budget Allocation</option>
+                <option value="Curriculum Change">Curriculum Change</option>
+                <option value="Facility Request">Facility Request</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Priority</label>
+              <select name="priority">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Request Title *</label>
+              <input type="text" name="title" required placeholder="e.g., Hire 2 new lecturers for Computer Engineering" maxlength="255">
+            </div>
+            <div class="form-group full">
+              <label>Description *</label>
+              <textarea name="description" rows="4" required placeholder="Explain the request in detail..." maxlength="2000"></textarea>
+            </div>
+          </div>
+          <button type="submit"><i class="fas fa-paper-plane"></i> Submit Request to Admin</button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="card" style="text-align: center; padding: 3rem;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--amber); margin-bottom: 1rem;"></i>
+        <h3 style="font-weight: 800; margin-bottom: 0.5rem;">No Faculty Assigned</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">You need to be assigned to a faculty before you can submit requests. Contact the Central Administration.</p>
+      </div>
+    <% } %>
+
+    <h2 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem;">My Past Requests</h2>
+
+    <% if (requests.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2rem; color: #64748b;">
+        <p>You haven't submitted any requests yet.</p>
+      </div>
+    <% } %>
+
+    <% requests.forEach(r => { %>
+      <div class="request-card">
+        <div class="request-header">
+          <div style="flex: 1;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+              <span class="badge <%= r.priority.toLowerCase() %>"><%= r.priority %></span>
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase;"><%= r.request_type %></span>
+            </div>
+            <div class="request-title"><%= r.title %></div>
+            <div class="request-meta">
+              <i class="fas fa-university mr-1"></i> <%= r.faculty_name %> · Submitted <%= new Date(r.submitted_at).toLocaleDateString() %>
+            </div>
+          </div>
+          <span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span>
+        </div>
+        <p style="font-size: 0.85rem; color: #475569; font-weight: 500; line-height: 1.6;"><%= r.description %></p>
+
+        <% if (r.admin_response) { %>
+          <div class="admin-response">
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #15803d; margin-bottom: 0.3rem;">
+              <i class="fas fa-reply mr-1"></i> Response from <%= r.reviewer_name || 'Administration' %>:
+            </div>
+            <div><%= r.admin_response %></div>
+          </div>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>

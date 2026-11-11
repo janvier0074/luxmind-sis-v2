@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Requests — Admin | LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f4f7f9] text-[#0a1e32] font-sans min-h-screen flex">
+
+  <aside class="w-72 bg-[#0a1e32] text-white flex flex-col justify-between h-screen sticky top-0 overflow-y-auto shrink-0">
+    <div class="p-6 border-b border-[#1e3a5f]">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#0f2a44] rounded-xl flex items-center justify-center font-black text-xl text-[#ffc857] border border-[#f5a623]/30">A</div>
+        <div>
+          <h2 class="font-extrabold text-base">LuxMind SIS</h2>
+          <p class="text-[10px] font-bold text-[#f5a623] uppercase tracking-widest">Registrar</p>
+        </div>
+      </div>
+    </div>
+    <nav class="px-3 py-4 flex-1 space-y-1">
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-home text-[#f5a623] text-sm"></i> Dashboard</a>
+      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-user-graduate text-[#f5a623] text-sm"></i> Students</a>
+      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-chalkboard-teacher text-[#f5a623] text-sm"></i> Teachers</a>
+      <a href="/sis/admin/faculties" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-university text-[#f5a623] text-sm"></i> Faculties</a>
+      <a href="/sis/admin/courses" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-book text-[#f5a623] text-sm"></i> Course Catalog</a>
+      <a href="/sis/admin/requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#f5a623] text-[#0a1e32] shadow-md"><i class="fas fa-paper-plane text-sm"></i> Faculty Requests</a>
+      <a href="/sis/admin/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-plane-departure text-[#f5a623] text-sm"></i> Leave Requests</a>
+    </nav>
+    <footer class="p-4 border-t border-[#1e3a5f] flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#f5a623] text-[#0a1e32] font-black flex items-center justify-center text-xs">AD</div>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate"><%= user.full_name %></h4>
+          <p class="text-[10px] text-slate-400 font-semibold">Registrar</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
+  </aside>
+
+  <main class="flex-1 p-8 overflow-y-auto">
+    <header class="mb-6 pb-4 border-b border-slate-200">
+      <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 uppercase tracking-widest">
+        <i class="fas fa-paper-plane"></i> Central Administration
+      </div>
+      <h1 class="text-3xl font-black mt-1">Faculty Requests</h1>
+      <p class="text-xs text-slate-500 mt-1">Review and process requests submitted by Deans and faculty.</p>
+    </header>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="bg-emerald-100 text-emerald-700 p-4 rounded-xl font-bold text-xs mb-4"><i class="fas fa-check-circle mr-2"></i><%= flash.success[0] %></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash.error && flash.error.length) { %>
+      <div class="bg-rose-100 text-rose-700 p-4 rounded-xl font-bold text-xs mb-4"><i class="fas fa-exclamation-circle mr-2"></i><%= flash.error[0] %></div>
+    <% } %>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-slate-500">Total</p>
+        <p class="text-3xl font-black mt-1"><%= stats.total %></p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-amber-600">Pending</p>
+        <p class="text-3xl font-black mt-1 text-amber-600"><%= stats.pending %></p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-emerald-600">Approved</p>
+        <p class="text-3xl font-black mt-1 text-emerald-600"><%= stats.approved %></p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-rose-600">Rejected</p>
+        <p class="text-3xl font-black mt-1 text-rose-600"><%= stats.rejected %></p>
+      </div>
+    </div>
+
+    <!-- Requests List -->
+    <% if (requests.length === 0) { %>
+      <div class="bg-white p-8 text-center rounded-2xl border-2 border-dashed border-slate-200">
+        <i class="fas fa-inbox text-3xl text-slate-300 mb-2 block"></i>
+        <p class="text-sm font-bold text-slate-500">No faculty requests submitted yet.</p>
+      </div>
+    <% } %>
+
+    <div class="space-y-4">
+      <% requests.forEach(r => { %>
+        <% 
+          let statusClass = 'bg-amber-100 text-amber-700';
+          if (r.status === 'Approved') statusClass = 'bg-emerald-100 text-emerald-700';
+          else if (r.status === 'Rejected') statusClass = 'bg-rose-100 text-rose-700';
+          
+          let priorityClass = 'bg-sky-100 text-sky-700';
+          if (r.priority === 'High') priorityClass = 'bg-rose-100 text-rose-700';
+          else if (r.priority === 'Medium') priorityClass = 'bg-amber-100 text-amber-700';
+        %>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <span class="px-2 py-0.5 <%= priorityClass %> rounded text-[10px] font-black uppercase"><%= r.priority %> Priority</span>
+                <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase"><%= r.request_type %></span>
+                <span class="px-2 py-0.5 bg-[#0a1e32] text-[#ffc857] rounded text-[10px] font-black"><%= r.faculty_code %></span>
+              </div>
+              <h3 class="font-extrabold text-lg"><%= r.title %></h3>
+              <p class="text-xs text-slate-500 font-semibold mt-1">
+                <i class="fas fa-user mr-1"></i> <%= r.submitter_name %> (<%= r.faculty_name %>) · <%= new Date(r.submitted_at).toLocaleDateString() %>
+              </p>
+            </div>
+            <span class="px-3 py-1 <%= statusClass %> rounded-full text-xs font-black uppercase"><%= r.status %></span>
+          </div>
+
+          <p class="text-sm text-slate-600 leading-relaxed mb-4"><%= r.description %></p>
+
+          <% if (r.status === 'Pending') { %>
+            <form action="/sis/admin/requests/<%= r.id %>/action" method="POST" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <label class="block text-[10px] font-extrabold uppercase text-slate-500">Admin Response (optional)</label>
+              <textarea name="admin_response" rows="2" placeholder="Add a note for the faculty..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-amber-500"></textarea>
+              
+              <div class="flex gap-2">
+                <button type="submit" name="action" value="approve" class="flex-1 py-2 bg-emerald-600 text-white font-extrabold text-xs rounded-lg hover:bg-emerald-700">
+                  <i class="fas fa-check mr-1"></i> Approve
+                </button>
+                <button type="submit" name="action" value="reject" class="flex-1 py-2 bg-rose-600 text-white font-extrabold text-xs rounded-lg hover:bg-rose-700">
+                  <i class="fas fa-times mr-1"></i> Reject
+                </button>
+              </div>
+            </form>
+          <% } else { %>
+            <% if (r.admin_response) { %>
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p class="text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                  <i class="fas fa-reply mr-1"></i> Your Response (<%= r.reviewer_name || 'Admin' %>):
+                </p>
+                <p class="text-sm text-slate-600"><%= r.admin_response %></p>
+                <p class="text-[10px] text-slate-400 mt-2">Reviewed <%= new Date(r.reviewed_at).toLocaleDateString() %></p>
+              </div>
+            <% } else { %>
+              <p class="text-xs text-slate-400 italic">Reviewed by <%= r.reviewer_name || 'Admin' %> on <%= new Date(r.reviewed_at).toLocaleDateString() %> (no response note)</p>
+            <% } %>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+</body>
+</html>

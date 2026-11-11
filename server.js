@@ -3399,6 +3399,143 @@ app.post('/sis/faculty/leave/request', requireRole('teacher', 'advisor'), async 
   } catch (err) { res.status(500).send("Leave Request Error: " + err.message); }
 });
 
+
+
+
+// ============================================
+// --- FACULTY REQUESTS WORKFLOW ---
+// ============================================
+
+// 1. Dean/Faculty: Submit request page
+app.get('/sis/faculty/requests', requireRole('teacher', 'advisor'), async (req, res) => {
+  try {
+    const requestsRes = await pool.query(`
+      SELECT fr.*, f.name AS faculty_name, u.full_name AS reviewer_name
+      FROM faculty_requests fr
+      JOIN faculties f ON f.id = fr.faculty_id
+      LEFT JOIN users u ON u.id = fr.reviewed_by
+      WHERE fr.submitted_by = $1
+      ORDER BY fr.submitted_at DESC
+    `, [req.session.user.id]);
+
+    const myFacultyRes = await pool.query(`
+      SELECT f.id, f.name FROM faculties f WHERE f.dean_id = $1 LIMIT 1
+    `, [req.session.user.id]);
+    const myFaculty = myFacultyRes.rows[0] || null;
+
+    res.render('faculty-requests', {
+      user: req.session.user,
+      requests: requestsRes.rows,
+      myFaculty
+    });
+  } catch (err) { res.status(500).send("Requests Error: " + err.message); }
+});
+
+// 2. Dean/Faculty: Submit new request
+app.post('/sis/faculty/requests/new', requireRole('teacher', 'advisor'), async (req, res) => {
+  const { request_type, title, description, priority, faculty_id } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO faculty_requests (faculty_id, submitted_by, request_type, title, description, priority)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [Number(faculty_id), req.session.user.id, request_type, title, description, priority || 'Medium']);
+
+    req.flash('success', 'Request submitted to Central Administration.');
+    res.redirect('/sis/faculty/requests');
+  } catch (err) { 
+    req.flash('error', 'Error: ' + err.message);
+    res.redirect('/sis/faculty/requests');
+  }
+});
+
+// 3. Admin: View all faculty requests
+app.get('/sis/admin/requests', requireRole('admin'), async (req, res) => {
+  try {
+    const requestsRes = await pool.query(`
+      SELECT fr.*, f.name AS faculty_name, f.code AS faculty_code,
+             u.full_name AS submitter_name,
+             r.full_name AS reviewer_name
+      FROM faculty_requests fr
+      JOIN faculties f ON f.id = fr.faculty_id
+      JOIN users u ON u.id = fr.submitted_by
+      LEFT JOIN users r ON r.id = fr.reviewed_by
+      ORDER BY 
+        CASE fr.status WHEN 'Pending' THEN 1 WHEN 'In Review' THEN 2 ELSE 3 END,
+        fr.submitted_at DESC
+    `);
+
+    const stats = {
+      total: requestsRes.rows.length,
+      pending: requestsRes.rows.filter(r => r.status === 'Pending').length,
+      approved: requestsRes.rows.filter(r => r.status === 'Approved').length,
+      rejected: requestsRes.rows.filter(r => r.status === 'Rejected').length
+    };
+
+    res.render('admin-requests', {
+      user: req.session.user,
+      requests: requestsRes.rows,
+      stats
+    });
+  } catch (err) { res.status(500).send("Admin Requests Error: " + err.message); }
+});
+
+// 4. Admin: Approve or Reject request
+app.post('/sis/admin/requests/:id/action', requireRole('admin'), async (req, res) => {
+  const { action, admin_response } = req.body;
+  const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
+  const requestId = req.params.id;
+
+  try {
+    await pool.query(`
+      UPDATE faculty_requests 
+      SET status = $1, admin_response = $2, reviewed_at = NOW(), reviewed_by = $3
+      WHERE id = $4
+    `, [newStatus, admin_response || null, req.session.user.id, requestId]);
+
+    // Get submitter info for notification
+    const reqInfoRes = await pool.query(`
+      SELECT u.id, u.email, u.full_name, fr.title FROM faculty_requests fr
+      JOIN users u ON u.id = fr.submitted_by WHERE fr.id = $1
+    `, [requestId]);
+
+    if (reqInfoRes.rows.length > 0) {
+      const sub = reqInfoRes.rows[0];
+
+      // In-app notification
+      await pool.query(`
+        INSERT INTO notifications (user_id, title, body, link) 
+        VALUES ($1, $2, $3, '/sis/faculty/requests')
+      `, [sub.id, `Request ${newStatus}`, `Your request "${sub.title}" was ${newStatus}.`]);
+
+      // Email
+      try {
+        await resend.emails.send({
+          from: 'LuxMind Admin <onboarding@resend.dev>',
+          to: sub.email,
+          subject: `Faculty Request ${newStatus}`,
+          html: `<div style="font-family: Arial; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                  <h2>LuxMind University</h2>
+                  <p>Dear <strong>${sub.full_name}</strong>,</p>
+                  <p>Your request "<strong>${sub.title}</strong>" has been <strong style="color:${newStatus === 'Approved' ? 'green' : 'red'};">${newStatus}</strong>.</p>
+                  ${admin_response ? `<p><strong>Response from Admin:</strong> ${admin_response}</p>` : ''}
+                  <a href="${process.env.APP_URL}/sis/faculty/requests">View in Portal</a>
+                </div>`
+        });
+      } catch (mailErr) { console.error('Email error:', mailErr); }
+    }
+
+    req.flash('success', `Request ${newStatus.toLowerCase()} successfully.`);
+    res.redirect('/sis/admin/requests');
+  } catch (err) { res.status(500).send("Action Error: " + err.message); }
+});
+
+
+
+
+
+
+
+
 app.get('/sis/admin/leave', requireRole('admin'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`

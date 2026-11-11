@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approvals Dashboard — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f4f7f9] text-[#0a1e32] font-sans min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="w-72 bg-[#0a1e32] text-white flex flex-col justify-between h-screen sticky top-0 overflow-y-auto shrink-0">
+    <div class="p-6 border-b border-[#1e3a5f]">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#0f2a44] rounded-xl flex items-center justify-center font-black text-xl text-[#ffc857] border border-[#f5a623]/30">A</div>
+        <div>
+          <h2 class="font-extrabold text-base">LuxMind SIS</h2>
+          <p class="text-[10px] font-bold text-[#f5a623] uppercase tracking-widest">Registrar</p>
+        </div>
+      </div>
+    </div>
+    <nav class="px-3 py-4 flex-1 space-y-1">
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-home text-[#f5a623] text-sm"></i> Dashboard</a>
+      <a href="/sis/admin/approvals" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#f5a623] text-[#0a1e32] shadow-md"><i class="fas fa-check-double text-sm"></i> Approvals</a>
+      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-user-graduate text-[#f5a623] text-sm"></i> Students</a>
+      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-chalkboard-teacher text-[#f5a623] text-sm"></i> Teachers</a>
+      <a href="/sis/admin/faculties" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-university text-[#f5a623] text-sm"></i> Faculties</a>
+      <a href="/sis/admin/courses" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-book text-[#f5a623] text-sm"></i> Course Catalog</a>
+      <a href="/sis/admin/requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-paper-plane text-[#f5a623] text-sm"></i> Faculty Requests</a>
+      <a href="/sis/admin/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-plane-departure text-[#f5a623] text-sm"></i> Leave Requests</a>
+    </nav>
+    <footer class="p-4 border-t border-[#1e3a5f] flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#f5a623] text-[#0a1e32] font-black flex items-center justify-center text-xs">AD</div>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate"><%= user.full_name %></h4>
+          <p class="text-[10px] text-slate-400 font-semibold">Registrar</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 p-8 overflow-y-auto">
+
+    <header class="mb-6 pb-4 border-b border-slate-200">
+      <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 uppercase tracking-widest">
+        <i class="fas fa-check-double"></i> Central Administration
+      </div>
+      <h1 class="text-3xl font-black mt-1">Approvals Dashboard</h1>
+      <p class="text-xs text-slate-500 mt-1">All pending requests across the university — one place.</p>
+    </header>
+
+    <!-- HERO TOTAL -->
+    <div class="bg-gradient-to-r from-[#0a1e32] to-[#1e4d7b] text-white p-8 rounded-2xl mb-6 shadow-xl relative overflow-hidden">
+      <div class="relative z-10">
+        <p class="text-xs font-bold text-[#ffc857] uppercase tracking-widest">Total Pending</p>
+        <h2 class="text-6xl font-black mt-2"><%= stats.totalPending %></h2>
+        <p class="text-sm text-slate-300 mt-2 font-semibold">items awaiting your review across <%= [stats.registrations, stats.documents, stats.leaves, stats.facultyRequests, stats.withdrawals, stats.objections, stats.makeupExams].filter(c => c > 0).length %> modules</p>
+      </div>
+      <i class="fas fa-check-double absolute right-8 top-1/2 -translate-y-1/2 text-[180px] text-white/5"></i>
+    </div>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="bg-emerald-100 text-emerald-700 p-4 rounded-xl font-bold text-xs mb-4"><i class="fas fa-check-circle mr-2"></i><%= flash.success[0] %></div>
+    <% } %>
+
+    <!-- MODULE CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      
+      <a href="/sis/admin/registrations" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-user-edit"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.registrations > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.registrations %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Student Registrations</h3>
+        <p class="text-xs text-slate-500 mt-1">Course registration awaiting advisor approval</p>
+      </a>
+
+      <a href="/sis/admin/documents" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.documents > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.documents %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Document Requests</h3>
+        <p class="text-xs text-slate-500 mt-1">Transcripts, certificates, and letters</p>
+      </a>
+
+      <a href="/sis/admin/leave" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-plane-departure"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.leaves > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.leaves %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Leave Requests</h3>
+        <p class="text-xs text-slate-500 mt-1">Faculty leave and absence requests</p>
+      </a>
+
+      <a href="/sis/admin/requests" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.facultyRequests > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.facultyRequests %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Faculty Requests</h3>
+        <p class="text-xs text-slate-500 mt-1">Dean requests (hiring, budget, equipment)</p>
+      </a>
+
+      <a href="/sis/advisor/withdrawals" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-sign-out-alt"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.withdrawals > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.withdrawals %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Course Withdrawals</h3>
+        <p class="text-xs text-slate-500 mt-1">Student drop-course requests</p>
+      </a>
+
+      <a href="/sis/faculty/exam-objections" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-exclamation-circle"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.objections > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.objections %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Exam Objections</h3>
+        <p class="text-xs text-slate-500 mt-1">Grade dispute requests from students</p>
+      </a>
+
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 class="font-extrabold text-sm"><i class="fas fa-clock text-amber-500 mr-2"></i>Pending Registrations</h2>
+          <a href="/sis/admin/registrations" class="text-[10px] font-extrabold text-amber-600 hover:underline">View all →</a>
+        </div>
+        <div class="p-4 space-y-2">
+          <% if (recentRegs.length === 0) { %>
+            <p class="text-center py-4 text-xs text-slate-400 font-semibold">No pending registrations ✅</p>
+          <% } %>
+          <% recentRegs.forEach(r => { %>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <div class="text-xs font-bold"><%= r.student_name %></div>
+                <div class="text-[10px] text-slate-500 font-semibold"><%= r.course_code %></div>
+              </div>
+              <div class="text-[10px] text-slate-400 font-bold"><%= new Date(r.requested_at).toLocaleDateString() %></div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 class="font-extrabold text-sm"><i class="fas fa-file-alt text-rose-500 mr-2"></i>Pending Documents</h2>
+          <a href="/sis/admin/documents" class="text-[10px] font-extrabold text-amber-600 hover:underline">View all →</a>
+        </div>
+        <div class="p-4 space-y-2">
+          <% if (recentDocs.length === 0) { %>
+            <p class="text-center py-4 text-xs text-slate-400 font-semibold">No pending documents ✅</p>
+          <% } %>
+          <% recentDocs.forEach(d => { %>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <div class="text-xs font-bold"><%= d.student_name %></div>
+                <div class="text-[10px] text-slate-500 font-semibold"><%= d.document_type %></div>
+              </div>
+              <div class="text-[10px] text-slate-400 font-bold"><%= new Date(d.requested_at).toLocaleDateString() %></div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 class="font-extrabold text-sm"><i class="fas fa-plane-departure text-amber-500 mr-2"></i>Pending Leaves</h2>
+          <a href="/sis/admin/leave" class="text-[10px] font-extrabold text-amber-600 hover:underline">View all →</a>
+        </div>
+        <div class="p-4 space-y-2">
+          <% if (recentLeave.length === 0) { %>
+            <p class="text-center py-4 text-xs text-slate-400 font-semibold">No pending leaves ✅</p>
+          <% } %>
+          <% recentLeave.forEach(l => { %>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <div class="text-xs font-bold"><%= l.teacher_name %></div>
+                <div class="text-[10px] text-slate-500 font-semibold"><%= l.leave_type %></div>
+              </div>
+              <div class="text-[10px] text-slate-400 font-bold"><%= new Date(l.created_at).toLocaleDateString() %></div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 class="font-extrabold text-sm"><i class="fas fa-paper-plane text-indigo-500 mr-2"></i>Pending Faculty Requests</h2>
+          <a href="/sis/admin/requests" class="text-[10px] font-extrabold text-amber-600 hover:underline">View all →</a>
+        </div>
+        <div class="p-4 space-y-2">
+          <% if (recentFacReq.length === 0) { %>
+            <p class="text-center py-4 text-xs text-slate-400 font-semibold">No pending faculty requests ✅</p>
+          <% } %>
+          <% recentFacReq.forEach(r => { %>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <div class="text-xs font-bold"><%= r.submitter_name %></div>
+                <div class="text-[10px] text-slate-500 font-semibold"><%= r.title %></div>
+              </div>
+              <div class="text-[10px] text-slate-400 font-bold"><%= new Date(r.submitted_at).toLocaleDateString() %></div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

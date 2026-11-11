@@ -3566,6 +3566,117 @@ app.post('/sis/faculty/requests/new', requireRole('teacher', 'advisor'), async (
 });
 
 // 3. Admin: View all faculty requests
+
+
+
+
+
+// ============================================
+// --- CENTRAL ADMIN: APPROVALS DASHBOARD ---
+// ============================================
+app.get('/sis/admin/approvals', requireRole('admin'), async (req, res) => {
+  try {
+    // 1. Pending student registrations
+    const regsRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM course_registrations WHERE status = 'pending_advisor'
+    `);
+    
+    // 2. Pending document requests
+    const docsRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM document_requests WHERE status = 'pending'
+    `);
+    
+    // 3. Pending leave requests
+    const leaveRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM leave_requests WHERE status = 'Pending'
+    `);
+    
+    // 4. Pending faculty requests
+    const facReqRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM faculty_requests WHERE status = 'Pending'
+    `);
+    
+    // 5. Pending withdrawals
+    const withdrawRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM course_withdrawals WHERE status = 'pending'
+    `);
+    
+    // 6. Pending exam objections
+    const objectionsRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM exam_objections WHERE status = 'pending'
+    `);
+    
+    // 7. Pending makeup exam requests
+    const makeupRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM makeup_exam_requests WHERE status = 'pending'
+    `);
+
+    const stats = {
+      registrations: parseInt(regsRes.rows[0].count) || 0,
+      documents: parseInt(docsRes.rows[0].count) || 0,
+      leaves: parseInt(leaveRes.rows[0].count) || 0,
+      facultyRequests: parseInt(facReqRes.rows[0].count) || 0,
+      withdrawals: parseInt(withdrawRes.rows[0].count) || 0,
+      objections: parseInt(objectionsRes.rows[0].count) || 0,
+      makeupExams: parseInt(makeupRes.rows[0].count) || 0
+    };
+    
+    stats.totalPending = stats.registrations + stats.documents + stats.leaves + 
+                         stats.facultyRequests + stats.withdrawals + 
+                         stats.objections + stats.makeupExams;
+
+    // 8. Recent activity (last 5 items across all)
+    const recentRegsRes = await pool.query(`
+      SELECT cr.id, u.full_name AS student_name, c.code AS course_code, cr.requested_at
+      FROM course_registrations cr
+      JOIN users u ON u.id = cr.student_id
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.status = 'pending_advisor'
+      ORDER BY cr.requested_at DESC LIMIT 5
+    `);
+
+    const recentDocsRes = await pool.query(`
+      SELECT dr.id, u.full_name AS student_name, dr.document_type, dr.requested_at
+      FROM document_requests dr
+      JOIN users u ON u.id = dr.student_id
+      WHERE dr.status = 'pending'
+      ORDER BY dr.requested_at DESC LIMIT 5
+    `);
+
+    const recentLeaveRes = await pool.query(`
+      SELECT lr.id, u.full_name AS teacher_name, lr.leave_type, lr.created_at
+      FROM leave_requests lr
+      JOIN users u ON u.id = lr.user_id
+      WHERE lr.status = 'Pending'
+      ORDER BY lr.created_at DESC LIMIT 5
+    `);
+
+    const recentFacReqRes = await pool.query(`
+      SELECT fr.id, u.full_name AS submitter_name, fr.title, fr.submitted_at
+      FROM faculty_requests fr
+      JOIN users u ON u.id = fr.submitted_by
+      WHERE fr.status = 'Pending'
+      ORDER BY fr.submitted_at DESC LIMIT 5
+    `);
+
+    res.render('admin-approvals', {
+      user: req.session.user,
+      stats,
+      recentRegs: recentRegsRes.rows,
+      recentDocs: recentDocsRes.rows,
+      recentLeave: recentLeaveRes.rows,
+      recentFacReq: recentFacReqRes.rows
+    });
+  } catch (err) {
+    res.status(500).send("Approvals Error: " + err.message);
+  }
+});
+
+
+
+
+
+
 app.get('/sis/admin/requests', requireRole('admin'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`

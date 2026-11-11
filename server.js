@@ -3131,6 +3131,50 @@ app.post('/sis/course/forum/thread/:thread_id/reply', requireRole('student', 'te
 
 
 
+// ============================================
+// --- FACULTY & ADMIN: LEAVE REQUESTS ---
+// ============================================
+
+app.get('/sis/faculty/leave', requireRole('teacher', 'advisor'), async (req, res) => {
+  try {
+    const requestsRes = await pool.query(`SELECT * FROM leave_requests WHERE user_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
+    res.render('faculty-leave', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) { res.status(500).send("Leave Error: " + err.message); }
+});
+
+app.post('/sis/faculty/leave/request', requireRole('teacher', 'advisor'), async (req, res) => {
+  const { leave_type, start_date, end_date, reason } = req.body;
+  try {
+    await pool.query(`INSERT INTO leave_requests (user_id, leave_type, start_date, end_date, reason) VALUES ($1, $2, $3, $4, $5)`, [req.session.user.id, leave_type, start_date, end_date, reason]);
+    req.flash('success', 'Leave request submitted successfully.');
+    res.redirect('/sis/faculty/leave');
+  } catch (err) { res.status(500).send("Leave Request Error: " + err.message); }
+});
+
+app.get('/sis/admin/leave', requireRole('admin'), async (req, res) => {
+  try {
+    const requestsRes = await pool.query(`
+      SELECT l.*, u.full_name, u.role FROM leave_requests l 
+      JOIN users u ON u.id = l.user_id 
+      ORDER BY l.created_at DESC
+    `);
+    res.render('admin-leave', { user: req.session.user, requests: requestsRes.rows });
+  } catch (err) { res.status(500).send("Admin Leave Error: " + err.message); }
+});
+
+app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) => {
+  const { action } = req.body;
+  try {
+    await pool.query(`UPDATE leave_requests SET status = $1, reviewed_at = NOW() WHERE id = $2`, [action === 'approve' ? 'Approved' : 'Rejected', req.params.id]);
+    req.flash('success', `Leave request ${action}d.`);
+    res.redirect('/sis/admin/leave');
+  } catch (err) { res.status(500).send("Leave Action Error: " + err.message); }
+});
+
+
+
+
+
 
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Leave — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --amber: #f5a623; --frost: #d9e6f2; --ice: #f7fafd; --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); color: var(--navy); padding: 2rem; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header { background: var(--navy); color: #fff; padding: 2rem; border-radius: 1.5rem; margin-bottom: 2rem; }
+    .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .header p { color: #94a3b8; font-weight: 600; }
+    .card { background: #fff; border-radius: 1rem; border: 1px solid var(--frost); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8fafc; text-align: left; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #64748b; border-bottom: 2px solid var(--frost); }
+    td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; }
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #b45309; }
+    .badge.approved { background: #dcfce7; color: #15803d; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+    .btn { padding: 0.4rem 0.8rem; border-radius: 6px; border: none; font-weight: 800; font-size: 0.75rem; cursor: pointer; color: #fff; margin-right: 0.3rem; }
+    .btn-approve { background: var(--success); }
+    .btn-reject { background: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/sis/admin" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--navy); font-weight: 800; text-decoration: none; margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <div class="header">
+      <h1><i class="fas fa-plane-departure"></i> Leave Requests Management</h1>
+      <p>Approve or reject leave requests from faculty members.</p>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Faculty Name</th>
+            <th>Type</th>
+            <th>Dates</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (requests.length === 0) { %>
+            <tr><td colspan="6" style="text-align: center; color: #94a3b8;">No leave requests found.</td></tr>
+          <% } %>
+          <% requests.forEach(r => { %>
+            <tr>
+              <td><strong><%= r.full_name %></strong><br><span style="font-size: 0.7rem; color: #64748b; text-transform: uppercase;"><%= r.role %></span></td>
+              <td><%= r.leave_type %></td>
+              <td><%= new Date(r.start_date).toLocaleDateString() %> - <%= new Date(r.end_date).toLocaleDateString() %></td>
+              <td style="max-width: 200px;"><%= r.reason %></td>
+              <td><span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span></td>
+              <td>
+                <% if (r.status === 'Pending') { %>
+                  <form action="/sis/admin/leave/<%= r.id %>/action" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn btn-approve"><i class="fas fa-check"></i> Approve</button>
+                  </form>
+                  <form action="/sis/admin/leave/<%= r.id %>/action" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn btn-reject"><i class="fas fa-times"></i> Reject</button>
+                  </form>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-size: 0.75rem;">Reviewed</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

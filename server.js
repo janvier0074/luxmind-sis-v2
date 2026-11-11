@@ -1009,15 +1009,35 @@ app.get('/sis/admin/teachers', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-app.get('/sis/admin/teachers/new', requireRole('admin'), (req, res) => {
-  res.render('admin-teacher-new', { user: req.session.user });
+
+
+
+
+
+
+app.get('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
+  try {
+    const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
+    const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
+    res.render('admin-teacher-new', { 
+      user: req.session.user,
+      faculties: facultiesRes.rows,
+      departments: departmentsRes.rows
+    });
+  } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
 app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
-  const { full_name, username, email } = req.body;
+  const { full_name, username, email, faculty_id, department_id } = req.body;
   const defaultPassword = 'Teacher2026!';
   try {
-    await pool.query(`INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'teacher')`, [full_name, username, email || username + '@luxmind.edu', defaultPassword]);
+    await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role, faculty_id, department_id) 
+       VALUES ($1, $2, $3, $4, 'teacher', $5, $6)`, 
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword,
+       faculty_id ? Number(faculty_id) : null,
+       department_id ? Number(department_id) : null]
+    );
     req.flash('success', `Teacher ${full_name} created! Password: ${defaultPassword}`);
     res.redirect('/sis/admin/teachers');
   } catch (err) {
@@ -1025,7 +1045,6 @@ app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
     res.redirect('/sis/admin/teachers/new');
   }
 });
-
 
 
 // ============================================

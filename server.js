@@ -1344,6 +1344,55 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: FINANCIAL DIRECTORATE ---
 // ============================================
+
+
+
+// ============================================
+// --- RECTORATE: SENATE APPROVALS ---
+// ============================================
+app.get('/sis/rectorate/senate', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    const requestsRes = await pool.query(`SELECT * FROM senate_requests ORDER BY created_at DESC`);
+    const requests = requestsRes.rows;
+    
+    const stats = {
+      total: requests.length,
+      pending: requests.filter(r => r.status === 'Pending').length,
+      approved: requests.filter(r => r.status === 'Approved').length,
+      rejected: requests.filter(r => r.status === 'Rejected').length
+    };
+
+    res.render('rectorate-senate', {
+      user: req.session.user,
+      requests: requests,
+      stats: stats
+    });
+  } catch (err) { res.status(500).send("Senate Error: " + err.message); }
+});
+
+app.post('/sis/rectorate/senate/:id/approve', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    await pool.query(`UPDATE senate_requests SET status = 'Approved', reviewed_at = NOW() WHERE id = $1`, [req.params.id]);
+    req.flash('success', 'Request approved by the Senate.');
+    res.redirect('/sis/rectorate/senate');
+  } catch (err) { res.status(500).send("Approve Error: " + err.message); }
+});
+
+app.post('/sis/rectorate/senate/:id/reject', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    await pool.query(`UPDATE senate_requests SET status = 'Rejected', reviewed_at = NOW() WHERE id = $1`, [req.params.id]);
+    req.flash('error', 'Request rejected by the Senate.');
+    res.redirect('/sis/rectorate/senate');
+  } catch (err) { res.status(500).send("Reject Error: " + err.message); }
+});
+
+
+
+
+
 app.get('/sis/rectorate/finance', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

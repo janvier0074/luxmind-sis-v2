@@ -423,6 +423,22 @@
 
   <main class="main-content">
 
+
+
+    <% if (typeof targetedMessages !== 'undefined' && targetedMessages.length > 0) { %>
+      <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <% targetedMessages.forEach(msg => { %>
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem 1.2rem; border-radius: 0 12px 12px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h4 style="font-weight: 800; color: #78350f; font-size: 0.95rem;"><i class="fas fa-bullhorn" style="margin-right: 0.5rem;"></i><%= msg.title %></h4>
+              <span style="font-size: 0.7rem; font-weight: 800; color: #b45309; text-transform: uppercase;"><%= new Date(msg.created_at).toLocaleDateString() %></span>
+            </div>
+            <p style="font-size: 0.85rem; color: #92400e; margin-top: 0.4rem; font-weight: 600;"><%= msg.message %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
     <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
 
     <% if (typeof unseenDocs !== 'undefined' && unseenDocs > 0) { %>

@@ -115,7 +115,7 @@
         <p class="text-xs text-slate-500 mt-1">Dean requests (hiring, budget, equipment)</p>
       </a>
 
-      <a href="/sis/advisor/withdrawals" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+      <a href="/sis/admin/withdrawals" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
         <div class="flex justify-between items-start mb-3">
           <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center text-xl">
             <i class="fas fa-sign-out-alt"></i>
@@ -126,7 +126,7 @@
         <p class="text-xs text-slate-500 mt-1">Student drop-course requests</p>
       </a>
 
-      <a href="/sis/faculty/exam-objections" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+      <a href="/sis/admin/exam-objections" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
         <div class="flex justify-between items-start mb-3">
           <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
             <i class="fas fa-exclamation-circle"></i>
@@ -135,6 +135,17 @@
         </div>
         <h3 class="font-extrabold text-sm">Exam Objections</h3>
         <p class="text-xs text-slate-500 mt-1">Grade dispute requests from students</p>
+      </a>
+
+      <a href="/sis/admin/makeup-exams" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+        <div class="flex justify-between items-start mb-3">
+          <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fas fa-redo"></i>
+          </div>
+          <span class="text-3xl font-black <%= stats.makeupExams > 0 ? 'text-amber-600' : 'text-slate-300' %>"><%= stats.makeupExams %></span>
+        </div>
+        <h3 class="font-extrabold text-sm">Makeup Exams</h3>
+        <p class="text-xs text-slate-500 mt-1">Missed-exam retake requests</p>
       </a>
 
     </div>
@@ -229,6 +240,15 @@
     </div>
 
   </main>
+
+  <script>
+    // Force reload if this page was restored from browser back/forward cache
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+  </script>
 
 </body>
 </html>

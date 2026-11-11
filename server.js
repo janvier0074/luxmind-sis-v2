@@ -1339,6 +1339,84 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 
 
 // Rectorate: Graduation Pipeline
+
+
+// ============================================
+// --- RECTORATE: FINANCIAL DIRECTORATE ---
+// ============================================
+app.get('/sis/rectorate/finance', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Get overall totals
+    const totalsRes = await pool.query(`
+      WITH StudentBilling AS (
+        SELECT 
+          u.id AS student_id,
+          COALESCE(fs.amount, 0) AS amount_billed,
+          COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = u.id), 0) AS amount_paid
+        FROM users u
+        JOIN student_profiles sp ON sp.user_id = u.id
+        LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+        WHERE u.role = 'student'
+      )
+      SELECT 
+        SUM(amount_billed) AS total_billed,
+        SUM(amount_paid) AS total_paid,
+        SUM(amount_billed) - SUM(amount_paid) AS total_outstanding
+      FROM StudentBilling
+    `);
+
+    const totals = totalsRes.rows[0] || { total_billed: 0, total_paid: 0, total_outstanding: 0 };
+    
+    const billed = Number(totals.total_billed);
+    const paid = Number(totals.total_paid);
+    const outstanding = Number(totals.total_outstanding);
+    const collectionRate = billed > 0 ? Math.round((paid / billed) * 100) : 0;
+
+    // 2. Get breakdown by Faculty (class_level)
+    const facultiesRes = await pool.query(`
+      WITH StudentBilling AS (
+        SELECT 
+          u.id AS student_id,
+          sp.class_level,
+          COALESCE(fs.amount, 0) AS amount_billed,
+          COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = u.id), 0) AS amount_paid
+        FROM users u
+        JOIN student_profiles sp ON sp.user_id = u.id
+        LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+        WHERE u.role = 'student'
+      )
+      SELECT 
+        class_level AS faculty,
+        COUNT(student_id) AS student_count,
+        SUM(amount_billed) AS total_billed,
+        SUM(amount_paid) AS total_paid,
+        SUM(amount_billed) - SUM(amount_paid) AS outstanding
+      FROM StudentBilling
+      GROUP BY class_level
+      ORDER BY class_level
+    `);
+
+    // Format the numbers for the frontend
+    const faculties = facultiesRes.rows.map(f => ({
+      faculty: f.faculty || 'General',
+      student_count: Number(f.student_count),
+      total_billed: Number(f.total_billed),
+      total_paid: Number(f.total_paid),
+      outstanding: Number(f.outstanding),
+      collection_rate: Number(f.total_billed) > 0 ? Math.round((Number(f.total_paid) / Number(f.total_billed)) * 100) : 0
+    }));
+
+    res.render('rectorate-finance', {
+      user: req.session.user,
+      stats: { billed, paid, outstanding, collectionRate },
+      faculties: faculties
+    });
+  } catch (err) { res.status(500).send("Finance Directorate Error: " + err.message); }
+});
+
+
+
 app.get('/sis/rectorate/graduation', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {
@@ -1381,7 +1459,6 @@ app.get('/sis/rectorate/graduation', requireLogin, async (req, res) => {
     });
   } catch (err) { res.status(500).send("Graduation Pipeline Error: " + err.message); }
 });
-
 
 
 

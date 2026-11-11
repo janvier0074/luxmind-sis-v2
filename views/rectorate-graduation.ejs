@@ -1,152 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Graduation Pipeline — LuxMind SIS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- ⚠️ SAFETY CHECK: Prevents server crash if data is missing -->
+  <% 
+    const safeStats = typeof stats !== 'undefined' ? stats : { total: 0, onTrack: 0, delayed: 0, atRisk: 0 }; 
+    const safeStudents = typeof students !== 'undefined' ? students : []; 
+  %>
+
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#040d18', 900: '#0a1e32', 800: '#0f2a44', 700: '#153658', 600: '#1e4d7b', 500: '#2d6a9f' },
+            amber: { 500: '#f5a623', 400: '#ffb73d' },
+            gold: { 500: '#ffc857', 400: '#ffd57e' },
+            ice: { 50: '#f8fafc', 100: '#f4f7f9', 200: '#e6edf3' }
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
-      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
-      --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
-    }
-    html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
-    body {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      background: var(--ice); min-height: 100vh; display: flex; color: var(--navy);
-    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(10, 30, 50, 0.05); }
+    .dark ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+    ::-webkit-scrollbar-thumb { background: #1e4d7b; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f5a623; }
 
-    /* Sidebar */
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; }
-    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+    .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .dark .glass-panel { background: rgba(15, 42, 68, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(255, 255, 255, 0.08); }
     
-    .sidebar-menu { list-style: none; padding: 0.5rem 0; }
-    .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border-left: 3px solid transparent; }
-    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--gold); }
-    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; }
-    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s; }
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); }
-    .submenu.open { display: block; }
-    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; }
-    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
-
-    /* Main */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); display: flex; flex-direction: column; gap: 1.5rem; }
-    .page-title { display: flex; align-items: center; gap: 1rem; }
-    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--navy); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
-    .page-title h1 { font-size: 1.7rem; font-weight: 800; }
-    .page-title p { color: #64748b; font-size: 0.9rem; }
-
-    /* Stats */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
-    .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
-    .stat-icon.blue { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.green { background: #dcfce7; color: #16a34a; }
-    .stat-icon.gold { background: #fef3c7; color: #d97706; }
-    .stat-icon.red { background: #fee2e2; color: #b91c1c; }
-    .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
-    .stat-info p { font-size: 1.5rem; font-weight: 800; }
-
-    /* Table */
-    .table-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
-    .table-wrap { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    th { background: #f8fafc; color: #64748b; font-size: 0.7rem; text-transform: uppercase; padding: 1rem 1.4rem; text-align: left; }
-    td { padding: 1rem 1.4rem; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; font-weight: 600; }
-    .badge { padding: 0.3rem 0.7rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; }
-    .badge.ontrack { background: #dcfce7; color: #15803d; }
-    .badge.delayed { background: #fef3c7; color: #b45309; }
-    .badge.atrisk { background: #fee2e2; color: #991b1b; }
-
-    /* Mobile */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; }
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-    }
+    @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+    .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
   </style>
 </head>
-<body>
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+<body class="bg-ice-100 dark:bg-navy-950 text-navy-900 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300 antialiased overflow-x-hidden">
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">R</div>
-      <div class="brand-name">LuxMind SIS <span>Rectorate Portal</span></div>
+  <!-- MOBILE HEADER -->
+  <header class="md:hidden sticky top-0 z-40 bg-navy-900 text-white px-4 py-3 flex items-center justify-between border-b border-navy-800 shadow-md">
+    <div class="flex items-center gap-3">
+      <figure class="w-9 h-9 bg-navy-800 rounded-lg flex items-center justify-center font-black text-gold-500 border border-amber-500/30">R</figure>
+      <div>
+        <h1 class="font-extrabold text-sm leading-tight">Rectorate Portal</h1>
+        <p class="text-[10px] text-amber-400 font-semibold tracking-wider uppercase">LuxMind SIS</p>
+      </div>
     </div>
-    <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/rectorate" class="menu-link"><i class="fas fa-chart-pie main-icon"></i> Command Center</a></li>
-      <li class="menu-item">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-tasks main-icon"></i> SMARTASK Coordination <i class="fas fa-chevron-right arrow"></i>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-lg bg-navy-800 text-amber-400 flex items-center justify-center text-sm"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i></button>
+      <button onclick="openSidebarDrawer()" class="w-9 h-9 rounded-lg bg-amber-500 text-navy-950 flex items-center justify-center text-lg font-bold"><i class="fas fa-bars"></i></button>
+    </div>
+  </header>
+
+  <button id="mobileBackdrop" onclick="closeSidebarDrawer()" class="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-sm hidden md:hidden opacity-0 transition-opacity duration-300"></button>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed md:sticky top-0 inset-y-0 left-0 z-50 w-72 bg-navy-900 text-white flex flex-col justify-between border-r border-navy-800 shadow-2xl md:shadow-none transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out h-screen overflow-y-auto">
+    
+    <div class="p-6 border-b border-navy-800/80 shrink-0">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <figure class="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center font-black text-xl text-gold-500 shadow-md border border-amber-500/30">R</figure>
+          <div>
+            <h2 class="font-extrabold text-base tracking-tight leading-tight text-white">LuxMind SIS</h2>
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mt-0.5">Rectorate Access</p>
+          </div>
+        </div>
+        <button onclick="closeSidebarDrawer()" class="md:hidden text-slate-400 hover:text-white p-1 text-lg"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="mt-4 px-3 py-1.5 bg-navy-800/80 rounded-lg border border-navy-700/60 flex items-center justify-between text-[11px]">
+        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> Haspolat Campus</span>
+        <span class="text-amber-400 font-bold">CYPRUS</span>
+      </div>
+    </div>
+
+    <!-- MASSIVE SIDEBAR NAVIGATION -->
+    <nav class="px-3 py-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-navy-700 scrollbar-track-transparent">
+      
+      <div class="mb-4">
+        <a href="/sis/rectorate" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+          <i class="fas fa-satellite-dish text-sm text-amber-500"></i> Command Center
         </a>
-        <ul class="submenu">
-          <li class="menu-item"><a href="/sis/rectorate" class="menu-link">Active Directives</a></li>
-        </ul>
-      </li>
-      <li class="menu-item open">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-university main-icon"></i> Academic Affairs <i class="fas fa-chevron-right arrow"></i>
+      </div>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-comments text-amber-500"></i> Communication</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Campus Broadcasts</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Message Deans</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Message Registrar</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Global Announcements</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Official Press Releases</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2" open>
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-graduation-cap text-amber-500"></i> Academic Affairs</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/rectorate/graduation" class="block py-1.5 text-amber-400 font-bold hover:text-white">Graduation Pipeline</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Curriculum & Senate</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Teaching Quality (YÖK)</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Exam Objections Audit</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Grade Distribution</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-users text-amber-500"></i> Student Affairs</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Registration Oversight</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Withdrawal Appeals</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Student Demographics</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Disciplinary Logs</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Scholarship Recipients</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-chalkboard-teacher text-amber-500"></i> Human Resources</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Faculty Workload</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Advisor Ratios</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Staff Recruitment</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Leave Requests</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-wallet text-amber-500"></i> Financial Affairs</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Tuition Collections</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Outstanding Balances</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Payroll & Budget</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Financial Audits</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-building text-amber-500"></i> Admin Directorates</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Registrar's Office</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">International Office</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Campus Directorate</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Computer Center (IT)</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Library Directorate</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Student Services</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-tasks text-amber-500"></i> SMARTASK Workflow</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Task Creation</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Assign to Dept</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Progress Monitoring</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Verification</a>
+        </div>
+      </details>
+
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-gavel text-amber-500"></i> Governance</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Board of Directors</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Senate Meetings</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Deans Coordination</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Heads of Depts</a>
+        </div>
+      </details>
+
+      <div class="border-t border-navy-800 pt-2 mb-8">
+        <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+          <i class="fas fa-shield-alt text-amber-500"></i> System Audit Log
         </a>
-        <ul class="submenu open">
-          <li class="menu-item"><a href="#" class="menu-link">Senate Approvals</a></li>
-          <li class="menu-item"><a href="/sis/rectorate/graduation" class="menu-link active">Graduation Pipeline</a></li>
-          <li class="menu-item"><a href="#" class="menu-link">Faculty Performance</a></li>
-        </ul>
-      </li>
-      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
-    </ul>
+      </div>
+
+    </nav>
+
+    <footer class="p-4 border-t border-navy-800 bg-navy-950/60 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <figure class="w-9 h-9 rounded-full bg-amber-500 text-navy-950 font-black flex items-center justify-center text-xs shadow-inner">RC</figure>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate">Rectorate Office</h4>
+          <p class="text-[10px] text-slate-400 font-semibold truncate">Executive Council</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition-colors" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
   </aside>
 
-  <main class="main-content">
-    <header class="page-title">
-      <div class="page-title-icon"><i class="fas fa-user-graduate"></i></div>
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-6">
+    
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-navy-800">
       <div>
-        <h1>Graduation Pipeline</h1>
-        <p>Monitor cohorts and ensure students are on track to graduate</p>
+        <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-widest"><i class="fas fa-graduation-cap"></i> Academic Affairs</div>
+        <h1 class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Graduation Pipeline</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Monitor cohorts and ensure students are on track to graduate.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" class="flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm"><i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i></button>
       </div>
     </header>
 
-    <section class="stats-grid">
-      <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><h3>Total Cohort</h3><p><%= stats.total %></p></div></div>
-      <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><h3>On Track</h3><p><%= stats.onTrack %></p></div></div>
-      <div class="stat-card"><div class="stat-icon gold"><i class="fas fa-hourglass-half"></i></div><div class="stat-info"><h3>Delayed</h3><p><%= stats.delayed %></p></div></div>
-      <div class="stat-card"><div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-info"><h3>At Risk</h3><p><%= stats.atRisk %></p></div></div>
+    <!-- STATS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-users"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Total Cohort</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.total %></div>
+      </article>
+
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-check-circle"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">On Track</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.onTrack %></div>
+      </article>
+
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-hourglass-half"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Delayed</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.delayed %></div>
+      </article>
+
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-exclamation-triangle"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">At Risk</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= safeStats.atRisk %></div>
+      </article>
     </section>
 
-    <section class="table-card">
-      <div class="table-wrap">
-        <table>
+    <!-- DATA TABLE -->
+    <section class="glass-panel bg-white dark:bg-navy-900/80 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm overflow-hidden flex flex-col">
+      
+      <div class="p-5 border-b border-slate-100 dark:border-navy-800 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-amber-500"></i> Student Pipeline</h2>
+        <div class="relative w-full sm:w-64">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" oninput="filterTable()" placeholder="Search by name or ID..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[800px]">
           <thead>
-            <tr><th>Student Name</th><th>ID</th><th>Semester</th><th>Earned Credits</th><th>CGPA</th><th>Status</th></tr>
+            <tr class="bg-slate-50 dark:bg-navy-950/50">
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">Student Name</th>
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">ID</th>
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">Semester</th>
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">Earned Credits</th>
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">CGPA</th>
+              <th class="px-5 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-navy-800">Status</th>
+            </tr>
           </thead>
-          <tbody>
-            <% students.forEach(st => { %>
-              <tr>
-                <td><strong><%= st.full_name %></strong></td>
-                <td><%= st.admission_number || '—' %></td>
-                <td>Semester <%= st.current_semester %></td>
-                <td><%= st.earned_credits %> / 120</td>
-                <td><%= st.cgpa.toFixed(2) %> / 4.00</td>
-                <td>
-                  <% if (st.status === 'On Track') { %><span class="badge ontrack">On Track</span>
-                  <% } else if (st.status === 'Delayed') { %><span class="badge delayed">Delayed</span>
-                  <% } else { %><span class="badge atrisk">At Risk</span><% } %>
+          <tbody id="tableBody">
+            <% if (safeStudents.length === 0) { %>
+              <tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs">No students found.</td></tr>
+            <% } %>
+            
+            <% safeStudents.forEach(st => { %>
+              <tr class="border-b border-slate-100 dark:border-navy-800/50 hover:bg-slate-50 dark:hover:bg-navy-800/20 transition-colors" data-search="<%= (st.full_name + ' ' + (st.admission_number || '')).toLowerCase() %>">
+                <td class="px-5 py-4 text-xs font-bold text-navy-900 dark:text-white"><%= st.full_name %></td>
+                <td class="px-5 py-4 text-xs font-semibold text-slate-500"><%= st.admission_number || '—' %></td>
+                <td class="px-5 py-4 text-xs font-semibold text-slate-500">Semester <%= st.current_semester %></td>
+                <td class="px-5 py-4 text-xs font-semibold text-slate-500"><%= st.earned_credits %> / 120</td>
+                <td class="px-5 py-4 text-xs font-bold text-navy-900 dark:text-white"><%= st.cgpa.toFixed(2) %> / 4.00</td>
+                <td class="px-5 py-4">
+                  <% if (st.status === 'On Track') { %>
+                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">On Track</span>
+                  <% } else if (st.status === 'Delayed') { %>
+                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">Delayed</span>
+                  <% } else { %>
+                    <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">At Risk</span>
+                  <% } %>
                 </td>
               </tr>
             <% }) %>
@@ -154,10 +322,25 @@
         </table>
       </div>
     </section>
+
   </main>
+
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    function toggle(event, element) { event.preventDefault(); const p = element.parentElement; p.classList.toggle('open'); const s = p.querySelector('.submenu'); if(s) s.classList.toggle('open'); }
-    function toggleMobileMenu() { const sb = document.getElementById('sidebar'); const ov = document.getElementById('sidebarOverlay'); if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); } }
+    // 1. Mobile Drawer
+    function openSidebarDrawer() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobileBackdrop').classList.remove('hidden'); setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10); }
+    function closeSidebarDrawer() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobileBackdrop').classList.add('opacity-0'); setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300); }
+
+    // 2. Dark Mode
+    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+
+    // 3. Live Search Table Filter
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('#tableBody tr[data-search]').forEach(row => {
+        row.style.display = row.dataset.search.includes(query) ? '' : 'none';
+      });
+    }
   </script>
 </body>
 </html>

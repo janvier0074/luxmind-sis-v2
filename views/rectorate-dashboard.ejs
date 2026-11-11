@@ -7,6 +7,7 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -15,7 +16,8 @@
         extend: {
           colors: {
             navy: { 950: '#040d18', 900: '#0a1e32', 800: '#0f2a44', 700: '#153658', 600: '#1e4d7b', 500: '#2d6a9f' },
-            amber: { 500: '#f5a623', 400: '#ffb73d' }, gold: { 500: '#ffc857', 400: '#ffd57e' },
+            amber: { 500: '#f5a623', 400: '#ffb73d' },
+            gold: { 500: '#ffc857', 400: '#ffd57e' },
             ice: { 50: '#f8fafc', 100: '#f4f7f9', 200: '#e6edf3' }
           },
           fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] }
@@ -24,35 +26,42 @@
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(10, 30, 50, 0.05); }
+    .dark ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
     ::-webkit-scrollbar-thumb { background: #1e4d7b; border-radius: 99px; }
-    .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); }
-    .dark .glass-panel { background: rgba(15, 42, 68, 0.88); border-color: rgba(255, 255, 255, 0.08); }
-    @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
-    .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
+    ::-webkit-scrollbar-thumb:hover { background: #f5a623; }
+
+    .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .dark .glass-panel { background: rgba(15, 42, 68, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(255, 255, 255, 0.08); }
+
     @keyframes pulseGlow { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(245, 166, 35, 0); } }
     .pulse-glow { animation: pulseGlow 2.5s infinite ease-in-out; }
+    @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+    .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
   </style>
 </head>
 <body class="bg-ice-100 dark:bg-navy-950 text-navy-900 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300 antialiased overflow-x-hidden">
 
   <!-- SPLASH SCREEN -->
-  <aside id="splashScreen" class="fixed inset-0 z-[9999] bg-gradient-to-br from-white via-ice-100 to-slate-200 dark:from-navy-950 dark:via-navy-900 dark:to-navy-800 flex flex-col items-center justify-center transition-opacity duration-700">
+  <aside id="splashScreen" class="fixed inset-0 z-[9999] bg-gradient-to-br from-white via-ice-100 to-slate-200 dark:from-navy-950 dark:via-navy-900 dark:to-navy-800 flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-auto">
     <figure class="w-20 h-20 bg-navy-900 dark:bg-navy-800 text-gold-500 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-2xl pulse-glow border border-amber-500/30">
       <i class="fas fa-university"></i>
     </figure>
-    <h1 class="text-3xl md:text-4xl font-black text-navy-900 dark:text-white tracking-tight mb-2 text-center">Rectorate Portal</h1>
-    <p class="text-xs font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase text-center">LuxMind SIS</p>
+    <h1 class="text-3xl md:text-4xl font-black text-navy-900 dark:text-white tracking-tight mb-2 text-center">Rectorate Command Center</h1>
+    <p class="text-xs font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase text-center">LuxMind SIS — University Governance</p>
+    <p class="mt-8 text-xs text-slate-400 flex items-center gap-2"><i class="fas fa-circle-notch fa-spin text-amber-500"></i> Synchronizing executive systems...</p>
   </aside>
 
   <!-- MOBILE HEADER -->
   <header class="md:hidden sticky top-0 z-40 bg-navy-900 text-white px-4 py-3 flex items-center justify-between border-b border-navy-800 shadow-md">
     <div class="flex items-center gap-3">
-      <figure class="w-9 h-9 bg-navy-800 rounded-lg flex items-center justify-center font-black text-gold-500 border border-amber-500/30">L</figure>
+      <figure class="w-9 h-9 bg-navy-800 rounded-lg flex items-center justify-center font-black text-gold-500 border border-amber-500/30">R</figure>
       <div>
-        <h1 class="font-extrabold text-sm leading-tight">LuxMind SIS</h1>
-        <p class="text-[10px] text-amber-400 font-semibold tracking-wider uppercase">Rectorate</p>
+        <h1 class="font-extrabold text-sm leading-tight">Rectorate Portal</h1>
+        <p class="text-[10px] text-amber-400 font-semibold tracking-wider uppercase">LuxMind SIS</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -65,7 +74,6 @@
 
   <!-- SIDEBAR -->
   <aside id="sidebar" class="fixed md:sticky top-0 inset-y-0 left-0 z-50 w-72 bg-navy-900 text-white flex flex-col justify-between border-r border-navy-800 shadow-2xl md:shadow-none transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out h-screen overflow-y-auto">
-    
     <div class="p-6 border-b border-navy-800/80">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -78,37 +86,34 @@
         <button onclick="closeSidebarDrawer()" class="md:hidden text-slate-400 hover:text-white p-1 text-lg"><i class="fas fa-times"></i></button>
       </div>
       <div class="mt-4 px-3 py-1.5 bg-navy-800/80 rounded-lg border border-navy-700/60 flex items-center justify-between text-[11px]">
-        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> System Status</span>
-        <span class="text-amber-400 font-bold">ONLINE</span>
+        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> Haspolat Campus</span>
+        <span class="text-amber-400 font-bold">CYPRUS</span>
       </div>
     </div>
 
-    <nav class="px-4 py-4 space-y-1 flex-1">
+    <nav class="px-4 py-4 space-y-1">
       <p class="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Main Governance</p>
-      
-      <a href="/sis/rectorate" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all">
-        <i class="fas fa-satellite-dish text-sm"></i> Command Center
-      </a>
-      
-      <a href="/sis/rectorate/graduation" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-graduation-cap text-amber-500 text-sm"></i> Graduation Pipeline
-      </a>
-
-      <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-building text-amber-500 text-sm"></i> Admin Affairs
-      </a>
+      <a href="/sis/rectorate" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all"><i class="fas fa-satellite-dish text-sm"></i> Command Center</a>
+      <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all"><i class="fas fa-tasks text-amber-500 text-sm"></i> SMARTASK Workflow</a>
+      <a href="/sis/rectorate/graduation" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all"><i class="fas fa-graduation-cap text-amber-500 text-sm"></i> Graduation Pipeline</a>
+      <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all"><i class="fas fa-building text-amber-500 text-sm"></i> Admin Affairs</a>
+      <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all"><i class="fas fa-chart-line text-amber-500 text-sm"></i> Reports & KPIs</a>
     </nav>
 
-    <!-- Quick Dispatch Templates -->
+    <!-- QUICK TASKS (These now actually fill the form, but don't submit yet) -->
     <section class="px-4 py-3 border-t border-navy-800/80">
-      <p class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 mb-2 px-1">Quick Task Templates</p>
+      <p class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 mb-2 px-1">Quick Task Ideas</p>
       <nav class="space-y-1.5 text-[11px]">
-        <button onclick="quickDispatch('Audit Registration Process', 'Registrar', 'High', 'Streamline online clearance for international applicants.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
-          <span class="truncate"><i class="fas fa-user-check text-amber-400 mr-2"></i> Registration Audit</span>
+        <button onclick="quickDispatchCIUTask('Haspolat Campus Green Energy Initiative', 'IT', 'High', 'Deploy solar micro-grid monitoring for engineering labs.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
+          <span class="truncate"><i class="fas fa-leaf text-emerald-400 mr-2"></i> Campus Green Energy</span>
           <i class="fas fa-plus text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
         </button>
-        <button onclick="quickDispatch('YÖK Accreditation Review', 'Faculty', 'High', 'Finalize course outcome logs for upcoming international audits.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
-          <span class="truncate"><i class="fas fa-certificate text-gold-500 mr-2"></i> Accreditation Sync</span>
+        <button onclick="quickDispatchCIUTask('YÖK / YÖDAK Accreditation Review', 'Faculty', 'High', 'Finalize course outcome logs for upcoming international audits.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
+          <span class="truncate"><i class="fas fa-certificate text-gold-500 mr-2"></i> YÖK Accreditation Sync</span>
+          <i class="fas fa-plus text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+        </button>
+        <button onclick="quickDispatchCIUTask('Semester Registration Audit & Fee Waivers', 'Registrar', 'High', 'Streamline online clearance for international applicants.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
+          <span class="truncate"><i class="fas fa-user-check text-amber-400 mr-2"></i> Registration Oversight</span>
           <i class="fas fa-plus text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
         </button>
       </nav>
@@ -119,216 +124,389 @@
         <figure class="w-9 h-9 rounded-full bg-amber-500 text-navy-950 font-black flex items-center justify-center text-xs shadow-inner">RC</figure>
         <div class="truncate">
           <h4 class="text-xs font-extrabold text-white truncate">Rectorate Office</h4>
-          <p class="text-[10px] text-slate-400 font-semibold truncate">LuxMind SIS</p>
+          <p class="text-[10px] text-slate-400 font-semibold truncate">Executive Council</p>
         </div>
       </div>
       <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition-colors" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </footer>
   </aside>
 
-  <!-- MAIN DASHBOARD -->
-  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-6">
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-8">
     
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-navy-800">
       <div>
         <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-widest"><i class="fas fa-landmark"></i> University Governance</div>
-        <h1 class="text-2xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Executive Command Center</h1>
+        <h1 class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Executive Command Center</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Coordinating strategic directives, inter-departmental operations, and academic performance.</p>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="toggleDarkMode()" class="hidden md:flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm">
-          <i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i>
-        </button>
-        <button onclick="scrollToForm()" class="px-4 py-2 bg-navy-900 dark:bg-amber-500 text-white dark:text-navy-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
-          <i class="fas fa-plus"></i> New Directive
-        </button>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="toggleDarkMode()" class="hidden md:flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm"><i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i></button>
+        <button onclick="openModal('broadcastModal')" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"><i class="fas fa-bullhorn"></i> Campus Broadcast</button>
+        <button onclick="scrollToDirectiveForm()" class="px-4 py-2 bg-navy-900 dark:bg-amber-500 text-white dark:text-navy-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all"><i class="fas fa-plus"></i> New Directive</button>
       </div>
     </header>
 
-    <!-- BENTO STATS -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Completion Rate</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white" id="statCompletionRate"><%= stats.completionRate %>%</div>
-        <div class="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full mt-3 overflow-hidden">
-          <div class="bg-emerald-500 h-full rounded-full" style="width: <%= stats.completionRate %>%"></div>
+    <!-- STATS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-chart-pie"></i></figure>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Live Data</span>
         </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Directive Completion</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight" id="statCompletionRate"><%= stats.completionRate %>%</div>
+        <div class="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full mt-3 overflow-hidden"><div class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: <%= stats.completionRate %>%"></div></div>
       </article>
 
-      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Pending Directives</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.pendingTasks %></div>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-clock"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Pending Directives</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight" id="statPendingCount"><%= stats.pendingTasks %></div>
       </article>
 
-      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Total Students</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.students %></div>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-user-graduate"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Enrolled Students</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.students %></div>
       </article>
 
-      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Academic Staff</h3>
-        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.teachers %></div>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm hover:shadow-md transition-all">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg font-bold"><i class="fas fa-chalkboard-teacher"></i></figure>
+        </div>
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">Faculty & Staff</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.teachers %></div>
       </article>
     </section>
 
-    <!-- CHARTS & TASKS -->
+    <!-- CHARTS & LIVE FEED -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 lg:col-span-2 flex flex-col">
-        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-3"><i class="fas fa-chart-bar text-amber-500 mr-2"></i> Departmental Workload</h2>
-        <div class="flex-1 min-h-[250px] relative">
-          <canvas id="deptWorkloadChart"></canvas>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-amber-500"></i> Department Directives</h2>
         </div>
+        <div class="flex-1 min-h-[190px] relative"><canvas id="deptWorkloadChart"></canvas></div>
       </article>
 
-      <article id="formSection" class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-3"><i class="fas fa-bullhorn text-amber-500 mr-2"></i> Dispatch Directive</h2>
-        <form action="/sis/rectorate/tasks/create" method="POST" class="space-y-3">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-line-chart text-emerald-500"></i> Resolution Velocity</h2>
+        </div>
+        <div class="flex-1 min-h-[190px] relative"><canvas id="trendChart"></canvas></div>
+      </article>
+
+      <!-- LIVE FEED (SIMULATED) -->
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-extrabold text-sm text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-rss text-rose-500 live-beacon"></i> Campus Live Feed</h2>
+          <button onclick="toggleActivityFeed()" id="feedPauseBtn" class="text-[10px] font-bold text-slate-400 hover:text-amber-500 transition-colors"><i class="fas fa-pause"></i> Pause</button>
+        </div>
+        <nav id="activityStream" class="space-y-2.5 overflow-y-auto max-h-[200px] pr-1"></nav>
+      </article>
+    </section>
+
+    <!-- DIRECTIVES LIST & FORM -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <article class="lg:col-span-2 glass-panel bg-white dark:bg-navy-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-navy-800">
           <div>
-            <input type="text" name="title" required placeholder="Directive Title" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <h2 class="text-lg font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-satellite text-amber-500"></i> Active Rectorate Directives</h2>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <select name="assigned_to_dept" required class="w-full px-2 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none">
-              <option value="Registrar">Registrar</option>
-              <option value="Faculty">Faculty</option>
-              <option value="Finance">Finance</option>
-              <option value="IT">IT</option>
-            </select>
-            <input type="date" name="deadline" required class="w-full px-2 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none">
-          </div>
+          <span id="directiveCountBadge" class="self-start sm:self-auto bg-navy-900 dark:bg-amber-500 text-gold-500 dark:text-navy-950 text-xs font-black px-3 py-1 rounded-full"><%= tasks.length %> Directives</span>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Filter Tabs (Visual Only for now) -->
+          <nav class="flex flex-wrap gap-1.5 p-1 bg-slate-100 dark:bg-navy-800 rounded-xl text-xs font-bold">
+            <button class="tab-btn active px-3 py-1.5 rounded-lg bg-white dark:bg-navy-700 text-navy-900 dark:text-white shadow-sm transition-all">All Tasks</button>
+            <button class="tab-btn px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300">🔥 Urgent</button>
+            <button class="tab-btn px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300">⏳ Pending</button>
+          </nav>
+        </div>
+
+        <!-- REAL TASKS FROM DATABASE -->
+        <section id="directivesList" class="space-y-3">
+          <% if (tasks.length === 0) { %>
+            <div class="text-center py-10 border-2 border-dashed border-slate-200 dark:border-navy-800 rounded-xl">
+              <h3 class="font-extrabold text-navy-900 dark:text-slate-300 text-xs">No Directives Found</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Issue a new directive to get started.</p>
+            </div>
+          <% } %>
+
+          <% tasks.forEach(item => { %>
+            <article class="p-4 bg-slate-50/90 dark:bg-navy-800/60 border border-slate-200/80 dark:border-navy-700/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 group">
+              <div class="space-y-1.5 flex-1">
+                <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                  <span class="font-bold px-2 py-0.5 rounded-full <%= item.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' %> flex items-center gap-1">
+                    <i class="fas <%= item.status === 'Completed' ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= item.status %>
+                  </span>
+                  <span class="font-bold px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-navy-700 text-navy-900 dark:text-slate-200">
+                    <i class="fas fa-building text-amber-500 mr-1"></i> <%= item.assigned_to_dept %>
+                  </span>
+                </div>
+                <h3 class="font-extrabold text-navy-900 dark:text-white text-sm group-hover:text-amber-500 transition-colors"><%= item.title %></h3>
+                <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-2xl"><%= item.description %></p>
+                <div class="text-[10px] text-slate-400 flex items-center gap-4 pt-0.5">
+                  <span><i class="far fa-calendar-alt text-amber-500 mr-1"></i> Target: <strong><%= item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A' %></strong></span>
+                  <span><i class="fas fa-hashtag text-slate-400 mr-1"></i> DIR-<%= item.id %></span>
+                </div>
+              </div>
+
+              <!-- REAL COMPLETE BUTTON -->
+              <div class="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-navy-700">
+                <% if (item.status !== 'Completed') { %>
+                  <form action="/sis/rectorate/tasks/<%= item.id %>/complete" method="POST">
+                    <button type="submit" class="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-500/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                      <i class="fas fa-check"></i> Mark Done
+                    </button>
+                  </form>
+                <% } %>
+              </div>
+            </article>
+          <% }) %>
+        </section>
+      </article>
+
+      <!-- REAL FORM -->
+      <article id="directiveFormSection" class="glass-panel bg-white dark:bg-navy-900/80 p-6 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm space-y-4">
+        <div class="pb-3 border-b border-slate-100 dark:border-navy-800">
+          <h2 class="text-lg font-extrabold text-navy-900 dark:text-white flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Dispatch Directive</h2>
+        </div>
+
+        <!-- REAL POST FORM -->
+        <form action="/sis/rectorate/tasks/create" method="POST" id="directiveForm" class="space-y-3.5">
           <div>
-            <textarea name="description" required rows="2" placeholder="Expected outcome..." class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none resize-none"></textarea>
+            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Directive Title *</label>
+            <input type="text" name="title" id="formTitle" required placeholder="e.g. Midterm Exam Schedule Clearance" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
           </div>
-          <button type="submit" class="w-full py-2 bg-navy-900 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow-md transition-all">
-            <i class="fas fa-paper-plane mr-1"></i> Send to Database
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Assign Dept *</label>
+              <select name="assigned_to_dept" id="formDept" required class="w-full px-2.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+                <option value="Registrar">Registrar</option>
+                <option value="Faculty">Faculty Deans</option>
+                <option value="Finance">Finance</option>
+                <option value="IT">IT Center</option>
+                <option value="Student Affairs">Student Affairs</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Deadline Date *</label>
+              <input type="date" name="deadline" id="formDeadline" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Instructions *</label>
+            <textarea name="description" id="formDescription" rows="3" required placeholder="Specify goals and expected outcome..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 dark:from-amber-500 dark:to-amber-600 text-white dark:text-navy-950 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-paper-plane"></i> Dispatch Directive
           </button>
         </form>
       </article>
     </section>
-
-    <!-- ACTIVE DIRECTIVES LIST -->
-    <section class="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
-      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-navy-800">
-        <h2 class="text-lg font-extrabold text-navy-900 dark:text-white"><i class="fas fa-satellite text-amber-500 mr-2"></i> Active Directives</h2>
-        <span class="bg-navy-900 dark:bg-amber-500 text-gold-500 dark:text-navy-950 text-xs font-black px-3 py-1 rounded-full"><%= tasks.length %> Tasks</span>
-      </div>
-
-      <div class="space-y-3" id="directivesList">
-        <% if (tasks.length === 0) { %>
-          <p class="text-center text-xs text-slate-500 py-6">No active tasks in the database. Issue a directive above.</p>
-        <% } %>
-
-        <% tasks.forEach(t => { %>
-          <div class="p-4 bg-slate-50 dark:bg-navy-800/60 border border-slate-200 dark:border-navy-700 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <div>
-              <div class="flex gap-2 mb-1">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-navy-700 text-navy-900 dark:text-slate-200">
-                  <i class="fas fa-building text-amber-500 mr-1"></i> <%= t.assigned_to_dept %>
-                </span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full <%= t.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' %>">
-                  <i class="fas <%= t.status === 'Completed' ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= t.status %>
-                </span>
-              </div>
-              <h3 class="font-extrabold text-navy-900 dark:text-white text-sm"><%= t.title %></h3>
-              <p class="text-xs text-slate-500 dark:text-slate-300 mt-1"><%= t.description %></p>
-              <span class="text-[10px] text-slate-400 mt-2 block"><i class="far fa-calendar-alt mr-1"></i> Due: <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'N/A' %></span>
-            </div>
-            
-            <% if (t.status !== 'Completed') { %>
-              <!-- POST Form to mark done -->
-              <form action="/sis/rectorate/tasks/<%= t.id %>/complete" method="POST">
-                <button type="submit" class="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
-                  <i class="fas fa-check mr-1"></i> Mark Done
-                </button>
-              </form>
-            <% } %>
-          </div>
-        <% }) %>
-      </div>
-    </section>
-
   </main>
 
+  <!-- MODAL -->
+  <aside id="broadcastModal" class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <article class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-navy-800 pb-3">
+        <h3 class="font-extrabold text-navy-900 dark:text-white text-sm flex items-center gap-2"><i class="fas fa-bullhorn text-amber-500"></i> Issue Campus Broadcast</h3>
+        <button onclick="closeModal('broadcastModal')" class="text-slate-400 hover:text-white text-base"><i class="fas fa-times"></i></button>
+      </div>
+      <form onsubmit="sendBroadcast(event)" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Announcement Title</label>
+          <input type="text" id="broadcastTitle" required placeholder="e.g. Library 24/7 Midterm Schedule" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Audience</label>
+          <select id="broadcastChannel" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none">
+            <option value="All Campus">All Students, Faculty & Personnel</option>
+            <option value="Faculty">Faculty Deans & Instructors Only</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Broadcast Details</label>
+          <textarea id="broadcastContent" rows="3" required placeholder="Enter announcement content..." class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold text-navy-900 dark:text-white focus:outline-none resize-none"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-navy-800">
+          <button type="button" onclick="closeModal('broadcastModal')" class="px-3.5 py-1.5 bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-amber-500 text-navy-950 font-extrabold text-xs rounded-xl hover:bg-amber-400 transition-all">Publish Broadcast</button>
+        </div>
+      </form>
+    </article>
+  </aside>
+
+  <aside id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></aside>
+
+  <!-- JAVASCRIPT LOGIC -->
   <script>
     // 1. Splash Screen
-    setTimeout(() => {
-      const splash = document.getElementById('splashScreen');
-      if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 700); }
-    }, 1200);
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 700); }
+      }, 1200);
+      
+      // Set default deadline (7 days ahead)
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + 7);
+      document.getElementById('formDeadline').value = targetDate.toISOString().split('T')[0];
 
-    // 2. Dark Mode
-    function toggleDarkMode() {
-      document.documentElement.classList.toggle('dark');
-      initChart(); // Re-render chart colors
+      renderActivityStream();
+      initCharts();
+      startLiveActivityFeed();
+    });
+
+    // 2. Mobile Drawer
+    function openSidebarDrawer() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobileBackdrop').classList.remove('hidden'); setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10); }
+    function closeSidebarDrawer() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobileBackdrop').classList.add('opacity-0'); setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300); }
+
+    // 3. Dark Mode
+    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); setTimeout(initCharts, 200); }
+
+    // 4. Quick Dispatch (Fills form and scrolls to it)
+    function quickDispatchCIUTask(title, dept, priority, description) {
+      document.getElementById('formTitle').value = title;
+      document.getElementById('formDept').value = dept;
+      document.getElementById('formDescription').value = description;
+      document.getElementById('directiveFormSection').scrollIntoView({ behavior: 'smooth' });
+      showToast('Task template loaded. Click Dispatch to save.', 'info');
     }
 
-    // 3. Mobile Drawer
-    function openSidebarDrawer() {
-      document.getElementById('sidebar').classList.remove('-translate-x-full');
-      document.getElementById('mobileBackdrop').classList.remove('hidden');
-      setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10);
-    }
-    function closeSidebarDrawer() {
-      document.getElementById('sidebar').classList.add('-translate-x-full');
-      document.getElementById('mobileBackdrop').classList.add('opacity-0');
-      setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300);
-    }
-
-    // 4. Scroll to Form
-    function scrollToForm() {
-      document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
+    // 5. Modals & Broadcast
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function sendBroadcast(event) {
+      event.preventDefault();
+      const title = document.getElementById('broadcastTitle').value.trim();
+      closeModal('broadcastModal');
+      document.getElementById('broadcastTitle').value = '';
+      document.getElementById('broadcastContent').value = '';
+      showToast(`Broadcast "${title}" published successfully`, 'success');
+      addActivityLog('fa-bullhorn', 'text-rose-500', `Campus Notice: ${title}`);
     }
 
-    // 5. Quick Dispatch (Fills the form and scrolls to it)
-    function quickDispatch(title, dept, priority, desc) {
-      document.querySelector('input[name="title"]').value = title;
-      document.querySelector('select[name="assigned_to_dept"]').value = dept;
-      document.querySelector('textarea[name="description"]').value = desc;
-      scrollToForm();
-    }
+    // 6. Charts (Real Data)
+    let workloadChartInstance = null;
+    let trendChartInstance = null;
+    
+    // Pull real data from server
+    const realTasks = <%- JSON.stringify(tasks) %>;
 
-    // 6. Chart.js (Injects real DB data)
-    function initChart() {
+    function initCharts() {
       const isDark = document.documentElement.classList.contains('dark');
       const textColor = isDark ? '#94a3b8' : '#64748b';
       const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-      const ctx = document.getElementById('deptWorkloadChart').getContext('2d');
+      // Chart 1: Department Workload
+      const ctx1 = document.getElementById('deptWorkloadChart').getContext('2d');
+      if (workloadChartInstance) workloadChartInstance.destroy();
       
-      // Pull real counts from EJS into the chart
       const depts = ["Registrar", "Faculty", "Finance", "IT", "Student Affairs"];
-      const counts = [
-        <%= tasks.filter(t => t.assigned_to_dept === 'Registrar').length %>,
-        <%= tasks.filter(t => t.assigned_to_dept === 'Faculty').length %>,
-        <%= tasks.filter(t => t.assigned_to_dept === 'Finance').length %>,
-        <%= tasks.filter(t => t.assigned_to_dept === 'IT').length %>,
-        <%= tasks.filter(t => t.assigned_to_dept === 'Student Affairs').length %>
-      ];
+      const counts = depts.map(dept => realTasks.filter(d => d.assigned_to_dept === dept).length);
 
-      // Destroy old chart if exists (for dark mode toggle)
-      if (window.myChart) window.myChart.destroy();
-
-      window.myChart = new Chart(ctx, {
+      workloadChartInstance = new Chart(ctx1, {
         type: 'bar',
         data: {
           labels: depts,
-          datasets: [{
-            data: counts,
-            backgroundColor: ['#f5a623', '#1e4d7b', '#10b981', '#6366f1', '#ec4899'],
-            borderRadius: 6
-          }]
+          datasets: [{ data: counts, backgroundColor: ['#f5a623', '#1e4d7b', '#10b981', '#6366f1', '#ec4899'], borderRadius: 6 }]
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: textColor, font: { size: 10, family: 'Plus Jakarta Sans' } }, grid: { display: false } },
-            y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
-          }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } } } }
+      });
+
+      // Chart 2: Resolution Trend (Simulated based on task completion)
+      const ctx2 = document.getElementById('trendChart').getContext('2d');
+      if (trendChartInstance) trendChartInstance.destroy();
+      
+      trendChartInstance = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{ data: [72, 75, 78, 81, 85, 87, <%= stats.completionRate %>], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', fill: true, tension: 0.35, pointRadius: 3.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } } }
       });
     }
 
-    document.addEventListener('DOMContentLoaded', initChart);
+    // 7. Live Feed
+    let activityLog = [
+      { icon: "fa-check-circle", color: "text-emerald-500", text: "Registrar approved 85 graduation files.", time: "4m ago" },
+      { icon: "fa-certificate", color: "text-amber-500", text: "YÖK accreditation audit draft uploaded.", time: "18m ago" }
+    ];
+    let feedInterval = null;
+    let isFeedPaused = false;
+
+    function renderActivityStream() {
+      const container = document.getElementById('activityStream');
+      container.innerHTML = '';
+      activityLog.forEach(item => {
+        container.innerHTML += `
+          <div class="flex items-start gap-2.5 p-2 bg-slate-50 dark:bg-navy-800/50 rounded-lg text-xs border border-slate-100 dark:border-navy-700/50">
+            <i class="fas ${item.icon} ${item.color} mt-0.5 text-xs"></i>
+            <div class="flex-1">
+              <p class="font-bold text-navy-900 dark:text-slate-200 text-[11px] leading-tight">${item.text}</p>
+              <span class="text-[9px] text-slate-400 font-semibold">${item.time}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function addActivityLog(icon, color, text) {
+      activityLog.unshift({ icon, color, text, time: "Just now" });
+      if (activityLog.length > 7) activityLog.pop();
+      renderActivityStream();
+    }
+
+    function startLiveActivityFeed() {
+      const ciuEvents = [
+        { icon: "fa-university", color: "text-sky-400", text: "Engineering Dean logged 35 lab waivers." },
+        { icon: "fa-laptop-code", color: "text-emerald-400", text: "IT synced Haspolat Wi-Fi portal nodes." },
+        { icon: "fa-coins", color: "text-amber-400", text: "Accounting finalized semester scholarship audit." },
+        { icon: "fa-user-graduate", color: "text-indigo-400", text: "Registrar issued 40 degree transcripts." }
+      ];
+
+      feedInterval = setInterval(() => {
+        if (!isFeedPaused) {
+          const item = ciuEvents[Math.floor(Math.random() * ciuEvents.length)];
+          addActivityLog(item.icon, item.color, item.text);
+        }
+      }, 14000);
+    }
+
+    function toggleActivityFeed() {
+      isFeedPaused = !isFeedPaused;
+      const btn = document.getElementById('feedPauseBtn');
+      if (isFeedPaused) { btn.innerHTML = `<i class="fas fa-play"></i> Resume`; btn.classList.add('text-amber-500'); }
+      else { btn.innerHTML = `<i class="fas fa-pause"></i> Pause`; btn.classList.remove('text-amber-500'); }
+    }
+
+    // 8. Toast Notifications
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      let icon = 'fa-check-circle text-emerald-400';
+      if (type === 'info') icon = 'fa-info-circle text-sky-400';
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 bg-navy-900 text-white rounded-xl shadow-2xl border border-navy-700 text-xs font-semibold transform transition-all duration-300 translate-y-3 opacity-0`;
+      toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-3', 'opacity-0'), 50);
+      setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 300); }, 3200);
+    }
+
+    // 9. Scroll to Form
+    function scrollToDirectiveForm() { document.getElementById('directiveFormSection').scrollIntoView({ behavior: 'smooth' }); }
   </script>
 </body>
 </html>

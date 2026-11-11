@@ -1370,6 +1370,72 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: REGISTRAR'S OFFICE OVERSIGHT ---
 // ============================================
+
+
+// ============================================
+// --- RECTORATE: INSTITUTIONAL KPIs (EVALUATION) ---
+// ============================================
+app.get('/sis/rectorate/kpis', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Evaluate Performance by Department
+    const deptKpiRes = await pool.query(`
+      SELECT 
+        assigned_to_dept AS department,
+        COUNT(*) AS total_tasks,
+        COUNT(*) FILTER (WHERE status = 'Completed') AS completed_tasks,
+        COUNT(*) FILTER (WHERE status != 'Completed') AS pending_tasks,
+        COUNT(*) FILTER (WHERE status != 'Completed' AND deadline < CURRENT_DATE) AS overdue_tasks
+      FROM rectorate_tasks
+      GROUP BY assigned_to_dept
+      ORDER BY total_tasks DESC
+    `);
+
+    const departments = deptKpiRes.rows.map(d => {
+      const total = Number(d.total_tasks);
+      const completed = Number(d.completed_tasks);
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return {
+        department: d.department,
+        total_tasks: total,
+        completed_tasks: completed,
+        pending_tasks: Number(d.pending_tasks),
+        overdue_tasks: Number(d.overdue_tasks),
+        completion_rate: rate
+      };
+    });
+
+    // 2. Overall University KPIs
+    const overallRes = await pool.query(`
+      SELECT 
+        COUNT(*) AS total_all,
+        COUNT(*) FILTER (WHERE status = 'Completed') AS total_completed,
+        COUNT(*) FILTER (WHERE status != 'Completed' AND deadline < CURRENT_DATE) AS total_overdue
+      FROM rectorate_tasks
+    `);
+
+    const overall = overallRes.rows[0];
+    const totalAll = Number(overall.total_all);
+    const totalCompleted = Number(overall.total_completed);
+    
+    const stats = {
+      overallRate: totalAll > 0 ? Math.round((totalCompleted / totalAll) * 100) : 0,
+      totalOverdue: Number(overall.total_overdue),
+      activeDepartments: departments.length,
+      pendingTasks: totalAll - totalCompleted
+    };
+
+    res.render('rectorate-kpis', {
+      user: req.session.user,
+      stats: stats,
+      departments: departments
+    });
+  } catch (err) { res.status(500).send("KPI Evaluation Error: " + err.message); }
+});
+
+
+
+
 app.get('/sis/rectorate/registrar', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

@@ -95,10 +95,10 @@
     .submit-action:hover { background: var(--deep); transform: translateY(-2px); }
     .submit-action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
   
-    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
+    /* --- MOBILE FIXES --- */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
 
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
@@ -111,6 +111,7 @@
         grid-template-columns: 1fr !important; 
         gap: 1rem !important; 
       }
+      .semesters-container { grid-template-columns: 1fr; }
       .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
     }
 
@@ -150,7 +151,6 @@
 
       <% } else { %>
 
-
       <% if (pending.length > 0) { %>
         <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; font-weight: 800; border: 1px solid #fcd34d;">
           <i class="fas fa-clock"></i> Your registration is pending Advisor approval.
@@ -178,7 +178,11 @@
                   const cartItem = cart.find(c => c.course_id === course.id);
                   const pendingItem = pending.find(p => p.course_id === course.id);
                   const isSemAllowed = sem1 <= (currentSem + 1);
+                  
+                  // ADVANCED LOGIC FROM SERVER
                   const isQuotaFull = course.enrolled_count >= course.quota;
+                  const isEligible = course.isEligible !== undefined ? course.isEligible : !isQuotaFull; 
+                  const reason = course.reason || (isQuotaFull ? 'Quota Full' : 'Restricted');
 
                   let tileClass = 'tile-available';
                   let statusText = '+ Add to Cart';
@@ -187,7 +191,7 @@
 
                   if (pendingItem) { tileClass = 'tile-selected'; statusText = '✓ Pending Approval'; statusClass = 'status-selected'; clickable = false; }
                   else if (cartItem) { tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; }
-                  else if (isQuotaFull) { statusText = 'Quota Full'; statusClass = 'status-restricted'; }
+                  else if (!isEligible) { statusText = '🔒 ' + reason; statusClass = 'status-restricted'; }
                   else if (!isSemAllowed) { statusText = '🔒 Registration Restricted'; statusClass = 'status-restricted'; }
                 %>
                   
@@ -199,8 +203,8 @@
                     <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
                       <input type="hidden" name="course_id" value="<%= course.id %>">
                       <button type="submit" class="course-tile <%= tileClass %>" 
-                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); showSemesterWarning(<%= sem1 %>, <%= currentSem %>);"
-                        <% } else if (isQuotaFull) { %> onclick="event.preventDefault(); showQuotaWarning('<%= course.title %>');"
+                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); alert('Registration is restricted for this semester.');"
+                        <% } else if (!isEligible) { %> onclick="event.preventDefault(); alert('<%= reason %>');"
                         <% } %>>
                   <% } else { %>
                     <div class="course-tile <%= tileClass %>">
@@ -239,7 +243,11 @@
                   const cartItem = cart.find(c => c.course_id === course.id);
                   const pendingItem = pending.find(p => p.course_id === course.id);
                   const isSemAllowed = sem2 <= (currentSem + 1);
+                  
+                  // ADVANCED LOGIC FROM SERVER
                   const isQuotaFull = course.enrolled_count >= course.quota;
+                  const isEligible = course.isEligible !== undefined ? course.isEligible : !isQuotaFull; 
+                  const reason = course.reason || (isQuotaFull ? 'Quota Full' : 'Restricted');
 
                   let tileClass = 'tile-available';
                   let statusText = '+ Add to Cart';
@@ -248,7 +256,7 @@
 
                   if (pendingItem) { tileClass = 'tile-selected'; statusText = '✓ Pending Approval'; statusClass = 'status-selected'; clickable = false; }
                   else if (cartItem) { tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; }
-                  else if (isQuotaFull) { statusText = 'Quota Full'; statusClass = 'status-restricted'; }
+                  else if (!isEligible) { statusText = '🔒 ' + reason; statusClass = 'status-restricted'; }
                   else if (!isSemAllowed) { statusText = '🔒 Registration Restricted'; statusClass = 'status-restricted'; }
                 %>
                   
@@ -260,8 +268,8 @@
                     <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
                       <input type="hidden" name="course_id" value="<%= course.id %>">
                       <button type="submit" class="course-tile <%= tileClass %>" 
-                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); showSemesterWarning(<%= sem2 %>, <%= currentSem %>);"
-                        <% } else if (isQuotaFull) { %> onclick="event.preventDefault(); showQuotaWarning('<%= course.title %>');"
+                        <% if (!isSemAllowed) { %> onclick="event.preventDefault(); alert('Registration is restricted for this semester.');"
+                        <% } else if (!isEligible) { %> onclick="event.preventDefault(); alert('<%= reason %>');"
                         <% } %>>
                   <% } else { %>
                     <div class="course-tile <%= tileClass %>">
@@ -312,7 +320,6 @@
         </div>
       </div>
       <% } %> <!-- END ELSE -->
-    </main>
     </main>
   </div>
 

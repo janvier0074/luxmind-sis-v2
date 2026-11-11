@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGPA Simulator — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%), radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%), var(--ice);
+      min-height: 100vh; display: flex; color: var(--navy);
+    }
+
+    /* Sidebar (Student) */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* Main */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); }
+    
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-title { display: flex; align-items: center; gap: 1rem; }
+    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4); }
+    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
+
+    /* Simulator Grid */
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+
+    .card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
+    .card-head { padding: 1.2rem 1.5rem; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 0.8rem; }
+    .card-head i { color: var(--amber); font-size: 1.1rem; }
+    .card-head h2 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    
+    /* Current Stats */
+    .current-stats { display: flex; flex-direction: column; align-items: center; padding: 3rem 2rem; text-align: center; }
+    .cgpa-circle { width: 160px; height: 160px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 15px 30px -10px rgba(10,30,50,0.4); border: 4px solid var(--gold); }
+    .cgpa-circle .score { font-size: 3rem; font-weight: 800; line-height: 1; }
+    .cgpa-circle .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; color: var(--gold); }
+    .stats-text { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+    .stats-text strong { color: var(--navy); }
+
+    /* Course List Form */
+    .course-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .course-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border: 1px solid var(--frost); border-radius: 12px; }
+    .course-info h4 { font-size: 0.85rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
+    .course-info p { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    
+    .grade-select { padding: 0.6rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 800; color: var(--navy); background: #fff; outline: none; cursor: pointer; transition: var(--transition); }
+    .grade-select:focus { border-color: var(--amber); }
+
+    /* Projected Panel */
+    .projected-panel { margin-top: 1.5rem; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #86efac; border-radius: 1.25rem; padding: 2rem; text-align: center; transition: var(--transition); }
+    .projected-panel .title { font-size: 0.8rem; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .projected-panel .score { font-size: 3.5rem; font-weight: 800; color: #166534; line-height: 1; }
+    .projected-panel .diff { font-size: 0.9rem; font-weight: 700; margin-top: 0.5rem; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+    
+    @media (max-width: 1024px) { .sim-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      .page-title h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
+          <li class="menu-item"><a href="/sis/my/cgpa-simulator" class="menu-link active"><i class="fas fa-calculator main-icon"></i> CGPA Simulator</a></li>
+        </ul>
+      </li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/my" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+    <header class="page-header">
+      <div class="page-title">
+        <div class="page-title-icon"><i class="fas fa-calculator"></i></div>
+        <div>
+          <h1>CGPA Simulator</h1>
+          <p>Predict how your current semester grades will affect your final CGPA.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="sim-grid">
+      
+      <!-- LEFT: Current Status -->
+      <article class="card">
+        <div class="card-head">
+          <i class="fas fa-history"></i>
+          <h2>Current Academic Status</h2>
+        </div>
+        <div class="current-stats">
+          <div class="cgpa-circle">
+            <div class="score"><%= currentCGPA %></div>
+            <div class="label">Current CGPA</div>
+          </div>
+          <p class="stats-text">Based on <strong><%= currentCredits %></strong> total credits earned.</p>
+        </div>
+      </article>
+
+      <!-- RIGHT: Simulator Form -->
+      <article class="card">
+        <div class="card-head">
+          <i class="fas fa-magic"></i>
+          <h2>Simulate Semester Grades</h2>
+        </div>
+        
+        <div class="course-list">
+          <% if (activeCourses.length === 0) { %>
+            <p style="text-align: center; color: #94a3b8; padding: 2rem;">You are not enrolled in any courses this semester.</p>
+          <% } %>
+
+          <% activeCourses.forEach(course => { %>
+            <div class="course-item">
+              <div class="course-info">
+                <h4><%= course.code %> - <%= course.title %></h4>
+                <p><%= course.credits %> Credits</p>
+              </div>
+              <select class="grade-select" id="grade_<%= course.id %>" data-credits="<%= course.credits %>" onchange="calculateCGPA()">
+                <option value="4.0">A / A+</option>
+                <option value="3.7">A-</option>
+                <option value="3.3">B+</option>
+                <option value="3.0">B</option>
+                <option value="2.7">B-</option>
+                <option value="2.3">C+</option>
+                <option value="2.0">C</option>
+                <option value="1.7">C-</option>
+                <option value="1.3">D+</option>
+                <option value="1.0">D</option>
+                <option value="0.7">D-</option>
+                <option value="0.0">F</option>
+              </select>
+            </div>
+          <% }) %>
+        </div>
+
+        <% if (activeCourses.length > 0) { %>
+          <div style="padding: 0 1.5rem 1.5rem;">
+            <div class="projected-panel" id="projectedPanel">
+              <div class="title">Projected CGPA</div>
+              <div class="score" id="projectedScore"><%= currentCGPA %></div>
+              <div class="diff" id="projectedDiff"></div>
+            </div>
+          </div>
+        <% } %>
+      </article>
+
+    </div>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+    }
+
+    // LIVE CGPA CALCULATION
+    function calculateCGPA() {
+      const selects = document.querySelectorAll('.grade-select');
+      if (selects.length === 0) return;
+
+      let newPoints = 0;
+      let newCredits = 0;
+
+      selects.forEach(select => {
+        const credits = Number(select.dataset.credits);
+        const gpa = Number(select.value);
+        newPoints += (gpa * credits);
+        newCredits += credits;
+      });
+
+      // Get current base data from EJS
+      const currentPoints = <%= currentPoints %>;
+      const currentCredits = <%= currentCredits %>;
+
+      const totalPoints = currentPoints + newPoints;
+      const totalCredits = currentCredits + newCredits;
+      
+      const projectedCGPA = totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+      const currentCGPA = <%= currentCGPA %>;
+
+      const scoreEl = document.getElementById('projectedScore');
+      const diffEl = document.getElementById('projectedDiff');
+      const panel = document.getElementById('projectedPanel');
+
+      scoreEl.innerText = projectedCGPA.toFixed(2);
+      
+      const diff = projectedCGPA - currentCGPA;
+      
+      if (diff > 0) {
+        diffEl.innerHTML = `<span style="color: #15803d;"><i class="fas fa-arrow-up"></i> +${diff.toFixed(2)} increase</span>`;
+        panel.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
+        panel.style.borderColor = '#86efac';
+      } else if (diff < 0) {
+        diffEl.innerHTML = `<span style="color: #b91c1c;"><i class="fas fa-arrow-down"></i> ${diff.toFixed(2)} decrease</span>`;
+        panel.style.background = 'linear-gradient(135deg, #fef2f2, #fee2e2)';
+        panel.style.borderColor = '#fca5a5';
+      } else {
+        diffEl.innerHTML = `<span style="color: #64748b;">No change</span>`;
+        panel.style.background = 'linear-gradient(135deg, #f8fafc, #f1f5f9)';
+        panel.style.borderColor = '#cbd5e1';
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', calculateCGPA);
+  </script>
+</body>
+</html>

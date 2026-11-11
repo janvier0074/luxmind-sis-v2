@@ -249,6 +249,52 @@ app.get('/sis/my/attendance', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Attendance Error: " + err.message); }
 });
 
+
+
+// ============================================
+// --- STUDENT: CGPA SIMULATOR ---
+// ============================================
+app.get('/sis/my/cgpa-simulator', requireRole('student'), async (req, res) => {
+  try {
+    // 1. Get past published grades to calculate CURRENT CGPA
+    const pastGradesRes = await pool.query(`
+      SELECT c.credits, g.gpa_points 
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1 AND g.is_published = true
+    `, [req.session.user.id]);
+
+    let currentCredits = 0;
+    let currentPoints = 0;
+    pastGradesRes.rows.forEach(row => {
+      currentCredits += Number(row.credits);
+      currentPoints += (Number(row.gpa_points) * Number(row.credits));
+    });
+    const currentCGPA = currentCredits > 0 ? (currentPoints / currentCredits).toFixed(2) : '0.00';
+
+    // 2. Get currently enrolled courses for the simulator
+    const activeCoursesRes = await pool.query(`
+      SELECT c.id, c.code, c.title, c.credits 
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      WHERE e.user_id = $1
+      ORDER BY c.code ASC
+    `, [req.session.user.id]);
+
+    res.render('student-cgpa-simulator', {
+      user: req.session.user,
+      currentCGPA,
+      currentCredits,
+      currentPoints,
+      activeCourses: activeCoursesRes.rows
+    });
+  } catch (err) { res.status(500).send("CGPA Simulator Error: " + err.message); }
+});
+
+
+
+
 app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
   try {
     const gradesRes = await pool.query(` SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.semester_number ASC `, [req.session.user.id]);

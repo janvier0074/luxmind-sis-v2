@@ -713,6 +713,14 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
     }
 
     req.flash('success', 'Registration approved and student notified via email.');
+
+
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'REG_APPROVED', 'Approved course registration for student ID ${studentId}')
+    `, [req.session.user.id]);
+
+
     res.redirect('/sis/advisor/approvals');
   } catch (err) { res.status(500).send("Error approving: " + err.message); }
 });
@@ -1105,6 +1113,14 @@ app.post('/sis/admin/documents/:id/status', requireRole('admin'), async (req, re
         });
       } catch (mailErr) { console.error('Resend API Error:', mailErr); }
     }
+
+
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'DOC_${status.toUpperCase()}', 'Updated document request ID ${requestId} to ${status}')
+    `, [req.session.user.id]);
+
+
     req.flash('success', 'Request status updated and email sent.');
     res.redirect('/sis/admin/documents');
   } catch (err) { res.status(500).send("Error: " + err.message); }
@@ -1393,6 +1409,13 @@ app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advi
       }));
     }
 
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'GRADE_PUBLISH', 'Published grades for section ID ${sectionId}')
+    `, [req.session.user.id]);
+
+
+
     req.flash('success', 'All grades for this section have been published, and students have been notified via email.');
     res.redirect('/sis/faculty/publish-results');
   } catch (err) { res.status(500).send("Publish Error: " + err.message); }
@@ -1551,6 +1574,13 @@ app.post('/sis/faculty/course-weights/:section_id', requireRole('teacher', 'advi
       INSERT INTO weight_audit_log (section_id, changed_by, old_midterm, old_final, new_midterm, new_final, reason)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [sectionId, req.session.user.id, section.midterm_weight, section.final_weight, midtermWeight, finalWeight, req.body.reason || null]);
+
+
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'WEIGHT_CHANGE', 'Changed weights for section ID ${sectionId} to ${midtermWeight}% / ${finalWeight}%')
+    `, [req.session.user.id]);
+
 
     req.flash('success', `Weights updated to Midterm ${midtermWeight}% / Final ${finalWeight}%.`);
     res.redirect('/sis/faculty/course-weights/' + sectionId);
@@ -3166,6 +3196,14 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
   const { action } = req.body;
   try {
     await pool.query(`UPDATE leave_requests SET status = $1, reviewed_at = NOW() WHERE id = $2`, [action === 'approve' ? 'Approved' : 'Rejected', req.params.id]);
+
+
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'LEAVE_${action.toUpperCase()}', 'Reviewed leave request ID ${req.params.id}')
+    `, [req.session.user.id]);
+
+
     req.flash('success', `Leave request ${action}d.`);
     res.redirect('/sis/admin/leave');
   } catch (err) { res.status(500).send("Leave Action Error: " + err.message); }

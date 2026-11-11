@@ -3213,6 +3213,115 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
 
 
 
+// ============================================
+// --- STUDENT: DOWNLOAD PDF TRANSCRIPT ---
+// ============================================
+const PDFDocument = require('pdfkit');
+
+app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
+  try {
+    // 1. Fetch Student Data
+    const profileRes = await pool.query(`
+      SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester 
+      FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1
+    `, [req.session.user.id]);
+    const profile = profileRes.rows[0];
+
+    // 2. Fetch Grades
+    const gradesRes = await pool.query(`
+      SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1 AND g.is_published = true
+      ORDER BY c.semester_number ASC
+    `, [req.session.user.id]);
+    const grades = gradesRes.rows;
+
+    // 3. Calculate CGPA
+    let totalCredits = 0;
+    let totalPoints = 0;
+    grades.forEach(g => {
+      totalCredits += Number(g.credits);
+      totalPoints += (Number(g.gpa_points) * Number(g.credits));
+    });
+    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+
+    // 4. Generate PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Transcript_${profile.admission_number || profile.username}.pdf"`);
+    doc.pipe(res);
+
+    // --- HEADER ---
+    doc.fontSize(22).font('Helvetica-Bold').text('LuxMind University', { align: 'center' });
+    doc.fontSize(14).font('Helvetica').text('Official Transcript', { align: 'center' });
+    doc.moveDown();
+    doc.lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown();
+
+    // --- STUDENT INFO ---
+    doc.fontSize(11).font('Helvetica-Bold').text('Student Information', { underline: true });
+    doc.font('Helvetica').fontSize(10);
+    doc.text(`Name: ${profile.full_name}`);
+    doc.text(`ID: ${profile.admission_number || profile.username}`);
+    doc.text(`Program: ${profile.class_level}`);
+    doc.text(`Current Semester: ${profile.current_semester}`);
+    doc.moveDown();
+
+    // --- TABLE HEADER ---
+    doc.fontSize(11).font('Helvetica-Bold').text('Academic Record', { underline: true });
+    doc.moveDown(0.5);
+    
+    const tableTop = doc.y;
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text('Code', 50, tableTop);
+    doc.text('Course Title', 120, tableTop);
+    doc.text('Credits', 350, tableTop);
+    doc.text('Letter', 410, tableTop);
+    doc.text('GPA', 470, tableTop);
+    
+    doc.lineWidth(0.5).moveTo(50, doc.y + 5).lineTo(550, doc.y + 5).stroke();
+    doc.moveDown(0.5);
+
+    // --- TABLE ROWS ---
+    doc.font('Helvetica').fontSize(9);
+    let currentY = doc.y;
+
+    grades.forEach(g => {
+      if (currentY > 700) { // Page break if too long
+        doc.addPage();
+        currentY = 50;
+      }
+      doc.text(g.code, 50, currentY);
+      doc.text(g.title, 120, currentY, { width: 220 });
+      doc.text(g.credits.toString(), 350, currentY);
+      doc.text(g.letter_grade || 'N/A', 410, currentY);
+      doc.text(Number(g.gpa_points).toFixed(1), 470, currentY);
+      currentY += 20;
+    });
+
+    doc.lineWidth(0.5).moveTo(50, currentY).lineTo(550, currentY).stroke();
+    currentY += 10;
+
+    // --- FOOTER TOTALS ---
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text(`Total Credits: ${totalCredits}`, 50, currentY);
+    doc.text(`Cumulative GPA: ${cgpa} / 4.00`, 350, currentY);
+
+    doc.moveDown(2);
+    doc.fontSize(8).font('Helvetica').fillColor('#64748b');
+    doc.text('This document is generated electronically and does not require a signature.', { align: 'center' });
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, { align: 'center' });
+
+    doc.end();
+  } catch (err) { res.status(500).send("PDF Generation Error: " + err.message); }
+});
+
+
+
+
 
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================

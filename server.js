@@ -1350,6 +1350,68 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: SENATE APPROVALS ---
 // ============================================
+
+
+
+
+// ============================================
+// --- RECTORATE: STUDENT AFFAIRS OVERSIGHT ---
+// ============================================
+app.get('/sis/rectorate/student-affairs', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Demographics
+    const demoRes = await pool.query(`
+      SELECT 
+        COUNT(*) AS total_students,
+        COUNT(*) FILTER (WHERE sp.is_international = true) AS international_students,
+        COUNT(*) FILTER (WHERE sp.is_international = false OR sp.is_international IS NULL) AS local_students
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student'
+    `);
+    const demographics = demoRes.rows[0];
+
+    // 2. Withdrawals (Oversight)
+    const withdrawalsRes = await pool.query(`
+      SELECT COUNT(*) AS total 
+      FROM course_withdrawals 
+      WHERE status = 'approved'
+    `);
+    const withdrawals = withdrawalsRes.rows[0].total;
+
+    // 3. Faculty Breakdown
+    const facultyRes = await pool.query(`
+      SELECT 
+        sp.class_level AS faculty,
+        COUNT(*) AS total_students,
+        COUNT(*) FILTER (WHERE sp.is_international = true) AS international_count,
+        COUNT(*) FILTER (WHERE sp.is_international = false OR sp.is_international IS NULL) AS local_count
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student'
+      GROUP BY sp.class_level
+      ORDER BY total_students DESC
+    `);
+
+    const stats = {
+      total: Number(demographics.total_students),
+      international: Number(demographics.international_students),
+      local: Number(demographics.local_students),
+      withdrawals: Number(withdrawals)
+    };
+
+    // Calculate percentages
+    stats.intlPercent = stats.total > 0 ? Math.round((stats.international / stats.total) * 100) : 0;
+    stats.localPercent = stats.total > 0 ? Math.round((stats.local / stats.total) * 100) : 0;
+
+    res.render('rectorate-student-affairs', {
+      user: req.session.user,
+      stats: stats,
+      faculties: facultyRes.rows
+    });
+  } catch (err) { res.status(500).send("Student Affairs Error: " + err.message); }
+});
 app.get('/sis/rectorate/senate', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

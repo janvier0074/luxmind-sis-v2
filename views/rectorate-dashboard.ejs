@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rectorate Portal — LuxMind SIS</title>
+  <title>Rectorate Command Center — LuxMind SIS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,67 +22,83 @@
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
       background: radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%), radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%), var(--ice);
       min-height: 100vh; display: flex; color: var(--navy);
-      -webkit-font-smoothing: antialiased;
     }
 
-    /* Sidebar */
+    /* --- MASSIVE SIDEBAR --- */
     .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
     .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
     .brand-name { font-size: 1.1rem; font-weight: 800; }
     .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
-    .sidebar-menu { list-style: none; padding: 0.5rem 0; }
-    .menu-link { display: flex; align-items: center; padding: 0.8rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
-    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--gold); }
-    .menu-link i { width: 22px; color: var(--gold); }
+    
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
 
-    /* Main */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); }
-    .page-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    /* --- MAIN CONTENT (NO NESTED DIVS) --- */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); display: flex; flex-direction: column; gap: 1.5rem; }
+    
+    .page-title { display: flex; align-items: center; gap: 1rem; }
     .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; }
     .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); }
     .page-title p { color: #64748b; font-size: 0.9rem; }
 
-    /* Grids */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 1.5rem; }
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
     .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; }
     .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
     .stat-icon.blue { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.green { background: #dcfce7; color: #16a34a; }
     .stat-icon.gold { background: #fef3c7; color: #d97706; }
+    .stat-icon.green { background: #dcfce7; color: #16a34a; }
     .stat-icon.red { background: #fee2e2; color: #b91c1c; }
     .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
     .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; }
 
-    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
-    .card-head { padding: 1.2rem 1.4rem; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 0.8rem; }
-    .card-head i { color: var(--amber); font-size: 1.1rem; }
-    .card-head h2 { font-size: 1.05rem; font-weight: 800; }
-    .card-body { padding: 1.4rem; }
+    /* Layout Grid */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; }
 
-    /* Financial Bar */
-    .fin-bar { display: flex; height: 24px; border-radius: 100px; overflow: hidden; margin-bottom: 0.8rem; }
-    .fin-paid { background: var(--success); }
-    .fin-out { background: var(--danger); }
-    .fin-labels { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; }
-    .fin-labels span:first-child { color: var(--success); }
-    .fin-labels span:last-child { color: var(--danger); }
+    /* SMARTASK Board */
+    .card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; width: 100%; }
+    .card-head { padding: 1.2rem 1.4rem; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
+    .card-head h2 { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
+    .card-head h2 i { color: var(--amber); }
+    
+    .task-list { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+    .task-item { padding: 1rem; border: 1px solid var(--frost); border-radius: 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .task-info h4 { font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
+    .task-info p { font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem; }
+    .task-meta { display: flex; gap: 0.5rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .tag { padding: 0.2rem 0.5rem; border-radius: 100px; }
+    .tag.dept { background: #e0f2fe; color: #0284c7; }
+    .tag.date { background: #f1f5f9; color: #475569; }
+    
+    .btn-complete { background: #dcfce7; color: #15803d; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .btn-complete:hover { background: #16a34a; color: #fff; }
 
-    /* Workload Table */
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding-bottom: 0.8rem; font-size: 0.7rem; color: #64748b; text-transform: uppercase; border-bottom: 2px solid var(--frost); }
-    td { padding: 0.9rem 0; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; font-weight: 600; }
-    tr:last-child td { border-bottom: none; }
-    .badge { background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; color: var(--blue); }
+    /* Create Task Form */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 0.3rem; text-transform: uppercase; }
+    .form-control { width: 100%; padding: 0.75rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; }
+    .form-control:focus { border-color: var(--amber); }
+    .btn-primary { width: 100%; padding: 0.8rem; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+    .btn-primary:hover { background: var(--deep); }
 
     /* Mobile */
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; }
     
-    @media (max-width: 1024px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .split-grid { grid-template-columns: 1fr; }
+    @media (max-width: 1200px) {
+      .content-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
       .mobile-menu-btn { display: flex; }
@@ -90,7 +106,7 @@
       .sidebar.active { transform: translateX(0); }
       .sidebar-overlay.active { display: block; }
       .main-content { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; padding: 1.5rem !important; padding-top: 5rem !important; }
-      .stats-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -105,20 +121,39 @@
       <div class="brand-name">LuxMind SIS <span>Rectorate Portal</span></div>
     </div>
     <ul class="sidebar-menu">
-      <li><a href="/sis/rectorate" class="menu-link active"><i class="fas fa-chart-pie"></i> Executive Summary</a></li>
-      <li><a href="#" class="menu-link"><i class="fas fa-file-invoice"></i> Financial Reports</a></li>
-      <li><a href="#" class="menu-link"><i class="fas fa-users"></i> Staff Workload</a></li>
-      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      <li class="menu-item"><a href="/sis/rectorate" class="menu-link active"><i class="fas fa-chart-pie main-icon"></i> Command Center</a></li>
+      
+      <li class="menu-item open">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-tasks main-icon"></i> SMARTASK Coordination <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/rectorate" class="menu-link active">Active Directives</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Completed Tasks</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item">
+        <a href="#" class="menu-link" onclick="toggle(event, this)">
+          <i class="fas fa-university main-icon"></i> Academic Affairs <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu">
+          <li class="menu-item"><a href="#" class="menu-link">Senate Approvals</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Graduation Pipeline</a></li>
+          <li class="menu-item"><a href="#" class="menu-link">Faculty Performance</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
     </ul>
   </aside>
 
   <main class="main-content">
-    
     <header class="page-title">
       <div class="page-title-icon"><i class="fas fa-university"></i></div>
       <div>
-        <h1>Executive Summary</h1>
-        <p>Live institutional health and academic overview</p>
+        <h1>Command Center</h1>
+        <p>Coordinate the university through active task management</p>
       </div>
     </header>
 
@@ -130,83 +165,98 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon gold"><i class="fas fa-chalkboard-teacher"></i></div>
-        <div class="stat-info"><h3>Academic Staff</h3><p><%= stats.teachers %></p></div>
+        <div class="stat-info"><h3>Staff</h3><p><%= stats.teachers %></p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-book"></i></div>
-        <div class="stat-info"><h3>Active Courses</h3><p><%= stats.courses %></p></div>
+        <div class="stat-icon red"><i class="fas fa-clock"></i></div>
+        <div class="stat-info"><h3>Pending Tasks</h3><p><%= stats.pendingTasks %></p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon red"><i class="fas fa-triangle-exclamation"></i></div>
-        <div class="stat-info"><h3>At-Risk Students</h3><p><%= stats.atRisk %></p></div>
+        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><h3>Completion Rate</h3><p><%= stats.completionRate %>%</p></div>
       </div>
     </section>
 
-    <!-- Split Grid: Financial & Workload -->
-    <section class="split-grid">
+    <section class="content-grid">
       
-      <!-- Financial Pulse -->
-      <div class="card">
-        <div class="card-head">
-          <i class="fas fa-wallet"></i>
-          <h2>Financial Pulse (USD)</h2>
-        </div>
-        <div class="card-body">
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem;">University-wide tuition collection status.</p>
+      <!-- SMARTASK List -->
+      <article class="card">
+        <header class="card-head">
+          <h2><i class="fas fa-list-check"></i> Active University Directives</h2>
+        </header>
+        <div class="task-list">
+          <% if (tasks.length === 0) { %>
+            <p style="text-align: center; color: #94a3b8; padding: 2rem;">No active tasks. Use the form to issue a directive.</p>
+          <% } %>
           
-          <div style="margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--navy);">Total Billed: $<%= Number(stats.billed).toLocaleString() %></span>
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--navy);">Collected: $<%= Number(stats.paid).toLocaleString() %></span>
+          <% tasks.forEach(t => { %>
+            <div class="task-item">
+              <div class="task-info">
+                <h4><%= t.title %></h4>
+                <p><%= t.description %></p>
+                <div class="task-meta">
+                  <span class="tag dept"><%= t.assigned_to_dept %></span>
+                  <span class="tag date"><i class="far fa-calendar-alt"></i> Due: <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'No deadline' %></span>
+                  <span class="tag <%= t.status === 'Completed' ? 'dept' : '' %>" style="<%= t.status === 'Completed' ? 'background:#dcfce7; color:#15803d;' : 'background:#fef3c7; color:#b45309;' %>">
+                    <%= t.status %>
+                  </span>
+                </div>
+              </div>
+              <% if (t.status !== 'Completed') { %>
+                <form action="/sis/rectorate/tasks/<%= t.id %>/complete" method="POST">
+                  <button type="submit" class="btn-complete"><i class="fas fa-check"></i> Mark Done</button>
+                </form>
+              <% } %>
             </div>
-            <% 
-              const total = Number(stats.billed) || 1; 
-              const paidPct = Math.round((Number(stats.paid) / total) * 100);
-            %>
-            <div class="fin-bar">
-              <div class="fin-paid" style="width: <%= paidPct %>%;"></div>
-              <div class="fin-out" style="width: <%= 100 - paidPct %>%;"></div>
-            </div>
-            <div class="fin-labels">
-              <span><%= paidPct %>% Collected</span>
-              <span>$<%= Number(stats.outstanding).toLocaleString() %> Outstanding</span>
-            </div>
-          </div>
+          <% }) %>
         </div>
-      </div>
+      </article>
 
-      <!-- Faculty Workload -->
-      <div class="card">
-        <div class="card-head">
-          <i class="fas fa-users-cog"></i>
-          <h2>Top Faculty Workload</h2>
+      <!-- Issue Directive Form -->
+      <article class="card">
+        <header class="card-head">
+          <h2><i class="fas fa-bullhorn"></i> Issue New Directive</h2>
+        </header>
+        <div style="padding: 1.4rem;">
+          <form action="/sis/rectorate/tasks/create" method="POST">
+            <div class="form-group">
+              <label>Task Title</label>
+              <input type="text" name="title" class="form-control" required placeholder="e.g., Speed up registration">
+            </div>
+            <div class="form-group">
+              <label>Assign To Department</label>
+              <select name="assigned_to_dept" class="form-control" required>
+                <option value="Registrar">Registrar's Office</option>
+                <option value="Faculty">Faculty / Deans</option>
+                <option value="Finance">Accounting Directorate</option>
+                <option value="IT">Computer Center</option>
+                <option value="Student Affairs">Student Services</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="3" required placeholder="Explain the expected outcome..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Deadline</label>
+              <input type="date" name="deadline" class="form-control" required>
+            </div>
+            <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Assign Task</button>
+          </form>
         </div>
-        <div class="card-body">
-          <table>
-            <thead>
-              <tr>
-                <th>Teacher Name</th>
-                <th>Sections</th>
-                <th>Students</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% workload.forEach(w => { %>
-                <tr>
-                  <td><strong><%= w.full_name %></strong></td>
-                  <td><span class="badge"><%= w.section_count %></span></td>
-                  <td><span class="badge"><%= w.student_count %></span></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </article>
 
     </section>
   </main>
 
   <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');

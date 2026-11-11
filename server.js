@@ -1307,59 +1307,73 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
 
 
 // ============================================
-// --- RECTORATE: EXECUTIVE DASHBOARD ---
+// --- RECTORATE: EXECUTIVE COMMAND CENTER ---
 // ============================================
+
 app.get('/sis/rectorate', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {
-    // 1. Basic Counts
+    // 1. Basic University Stats
     const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);
     const teachersCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'teacher'`);
-    const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
-    const activeRegs = await pool.query(`SELECT COUNT(*) FROM enrollments`);
 
-    // 2. Financial Pulse
+    // 2. SMARTASK Metrics
+    const tasksRes = await pool.query(`SELECT * FROM rectorate_tasks ORDER BY created_at DESC`);
+    const pendingTasks = tasksRes.rows.filter(t => t.status === 'Pending').length;
+    const completedTasks = tasksRes.rows.filter(t => t.status === 'Completed').length;
+    const completionRate = tasksRes.rows.length > 0 ? Math.round((completedTasks / tasksRes.rows.length) * 100) : 0;
+
+    // 3. Financial Pulse
     const totalBilled = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM fee_structure`);
     const totalPaid = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM payments`);
     const outstanding = Number(totalBilled.rows[0].total) - Number(totalPaid.rows[0].total);
-
-    // 3. Academic Risk (Students with CGPA < 2.0)
-    const atRisk = await pool.query(`
-      SELECT COUNT(DISTINCT u.id) 
-      FROM users u
-      JOIN enrollments e ON e.user_id = u.id
-      JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id
-      WHERE u.role = 'student' AND g.gpa_points < 2.0 AND g.is_published = true
-    `);
-
-    // 4. Faculty Workload (Top 5 busiest teachers)
-    const workload = await pool.query(`
-      SELECT u.full_name, COUNT(s.id) AS section_count, 
-             (SELECT COUNT(*) FROM enrollments e JOIN course_sections s2 ON s2.id = e.section_id WHERE s2.teacher_id = u.id) AS student_count
-      FROM users u
-      JOIN course_sections s ON s.teacher_id = u.id
-      WHERE u.role = 'teacher'
-      GROUP BY u.id, u.full_name
-      ORDER BY section_count DESC
-      LIMIT 5
-    `);
 
     res.render('rectorate-dashboard', {
       user: req.session.user,
       stats: {
         students: studentsCount.rows[0].count,
         teachers: teachersCount.rows[0].count,
-        courses: coursesCount.rows[0].count,
-        enrollments: activeRegs.rows[0].count,
+        pendingTasks,
+        completedTasks,
+        completionRate,
         billed: totalBilled.rows[0].total,
         paid: totalPaid.rows[0].total,
-        outstanding: outstanding,
-        atRisk: atRisk.rows[0].count
+        outstanding: outstanding
       },
-      workload: workload.rows,
+      tasks: tasksRes.rows,
       greeting: getGreeting()
     });
   } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
+});
+
+// Assign a Task
+app.post('/sis/rectorate/tasks/create', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  const { title, description, assigned_to_dept, deadline } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO rectorate_tasks (title, description, assigned_to_dept, assigned_by, deadline)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [title, description, assigned_to_dept, req.session.user.id, deadline]);
+    
+    req.flash('success', 'Directive issued successfully.');
+    res.redirect('/sis/rectorate');
+  } catch (err) { res.status(500).send("Task Create Error: " + err.message); }
+});
+
+// Complete a Task
+app.post('/sis/rectorate/tasks/:id/complete', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    await pool.query(`
+      UPDATE rectorate_tasks 
+      SET status = 'Completed', completed_at = NOW() 
+      WHERE id = $1
+    `, [req.params.id]);
+    
+    req.flash('success', 'Task marked as completed.');
+    res.redirect('/sis/rectorate');
+  } catch (err) { res.status(500).send("Task Complete Error: " + err.message); }
 });
 
 

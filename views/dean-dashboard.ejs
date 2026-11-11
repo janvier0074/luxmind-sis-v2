@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dean Portal — <%= faculty.name %> | LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+    }
+    body { background: var(--ice); color: var(--navy); min-height: 100vh; display: flex; }
+
+    /* SIDEBAR */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* MAIN */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    /* HERO */
+    .dean-hero { background: linear-gradient(135deg, var(--navy), var(--deep)); color: #fff; padding: 2rem; border-radius: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 20px 40px -15px rgba(10,30,50,0.4); position: relative; overflow: hidden; }
+    .dean-hero::before { content: ''; position: absolute; top: -50%; right: -20%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,200,87,0.15), transparent 70%); }
+    .dean-hero-code { font-size: 0.75rem; font-weight: 800; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; position: relative; }
+    .dean-hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.8rem; position: relative; }
+    .dean-hero p { color: #cbd5e1; font-weight: 500; position: relative; }
+    .dean-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,200,87,0.15); color: var(--gold); padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; border: 1px solid rgba(255,200,87,0.3); margin-top: 0.8rem; position: relative; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: #fff; padding: 1.2rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); text-align: center; }
+    .stat-card p:first-child { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
+    .stat-card p:last-child { font-size: 2rem; font-weight: 800; color: var(--navy); margin-top: 0.3rem; }
+
+    /* CARDS */
+    .card { background: #fff; border-radius: 1.25rem; border: 1px solid var(--frost); box-shadow: var(--shadow-soft); overflow: hidden; margin-bottom: 1.5rem; }
+    .card-head { padding: 1.2rem 1.5rem; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
+    .card-head h2 { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
+    .card-head h2 i { color: var(--amber); }
+    .card-body { padding: 1.5rem; }
+
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    /* DEPARTMENT ROWS */
+    .dept-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border: 1px solid var(--frost); border-radius: 12px; margin-bottom: 0.8rem; }
+    .dept-info h3 { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .dept-info p { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .dept-head-form select { padding: 0.4rem 0.6rem; border: 2px solid var(--frost); border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: #fff; }
+    .dept-head-form button { background: var(--amber); color: var(--navy); border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 800; font-size: 0.7rem; cursor: pointer; margin-left: 0.3rem; }
+    .dept-badge { display: inline-block; padding: 0.2rem 0.6rem; background: #e0f2fe; color: #0284c7; border-radius: 100px; font-size: 0.65rem; font-weight: 800; margin-right: 0.3rem; }
+
+    /* REQUESTS */
+    .request-row { padding: 1rem; background: #f8fafc; border: 1px solid var(--frost); border-radius: 12px; margin-bottom: 0.8rem; }
+    .request-row h3 { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.3rem; }
+    .request-meta { font-size: 0.7rem; color: #64748b; font-weight: 600; margin-bottom: 0.5rem; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #b45309; }
+    .badge.approved { background: #dcfce7; color: #15803d; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+    .admin-response { background: #f0fdf4; border-left: 3px solid var(--success); padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; font-size: 0.75rem; color: #15803d; font-weight: 600; }
+
+    /* FORM */
+    .form-group { margin-bottom: 0.8rem; }
+    .form-group label { display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.6rem 0.8rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--amber); }
+    .btn-submit { width: 100%; padding: 0.8rem; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+    .btn-submit:hover { background: var(--deep); }
+
+    /* ACTIVITY */
+    .activity-row { display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid #eef2f7; font-size: 0.8rem; }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-name { font-weight: 700; }
+    .activity-meta { font-size: 0.7rem; color: #64748b; font-weight: 600; }
+    .grade-pill { padding: 0.2rem 0.6rem; background: #dcfce7; color: #15803d; border-radius: 100px; font-size: 0.7rem; font-weight: 800; }
+
+    /* STAFF */
+    .staff-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid #eef2f7; }
+    .staff-row:last-child { border-bottom: none; }
+    .staff-name { font-weight: 700; font-size: 0.85rem; }
+    .staff-dept { font-size: 0.7rem; color: #64748b; font-weight: 600; }
+    .staff-role { padding: 0.2rem 0.6rem; background: #e0f2fe; color: #0284c7; border-radius: 100px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.85rem; font-weight: 600; }
+
+    /* ALERTS */
+    .alert { padding: 0.9rem 1.2rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem; font-weight: 700; }
+    .alert-success { background: #dcfce7; color: #15803d; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">D</div>
+      <div class="brand-name">LuxMind SIS <span>Dean Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/dean" class="menu-link active"><i class="fas fa-crown main-icon"></i> Dean Dashboard</a></li>
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-chalkboard-teacher main-icon"></i> My Teaching</a></li>
+      <li class="menu-item"><a href="/sis/faculty/requests" class="menu-link"><i class="fas fa-paper-plane main-icon"></i> Faculty Requests</a></li>
+      <li class="menu-item"><a href="/sis/faculty/leave" class="menu-link"><i class="fas fa-plane-departure main-icon"></i> My Leave</a></li>
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- HERO -->
+    <div class="dean-hero">
+      <div class="dean-hero-code"><%= faculty.code %> · Faculty Leadership</div>
+      <h1><%= faculty.name %></h1>
+      <p>Welcome, <%= user.full_name %>. You are the Dean of this faculty.</p>
+      <span class="dean-badge"><i class="fas fa-crown"></i> DEAN ACCESS</span>
+    </div>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="alert alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash.error && flash.error.length) { %>
+      <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= flash.error[0] %></div>
+    <% } %>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card"><p>Departments</p><p><%= stats.dept_count %></p></div>
+      <div class="stat-card"><p>Students</p><p><%= stats.student_count %></p></div>
+      <div class="stat-card"><p>Staff</p><p><%= stats.staff_count %></p></div>
+      <div class="stat-card"><p>Courses</p><p><%= stats.course_count %></p></div>
+      <div class="stat-card"><p>Sections</p><p><%= stats.section_count %></p></div>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- DEPARTMENTS -->
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="fas fa-building"></i> Departments</h2>
+          <span style="font-size: 0.7rem; font-weight: 800; color: #64748b;"><%= departments.length %> total</span>
+        </div>
+        <div class="card-body">
+          <% if (departments.length === 0) { %>
+            <p class="empty">No departments assigned to this faculty yet.</p>
+          <% } %>
+          <% departments.forEach(d => { %>
+            <div class="dept-row">
+              <div class="dept-info">
+                <h3><%= d.name %></h3>
+                <p>
+                  <span class="dept-badge"><%= d.student_count %> students</span>
+                  <span class="dept-badge"><%= d.staff_count %> staff</span>
+                  Head: <strong><%= d.head_name || 'Not Assigned' %></strong>
+                </p>
+              </div>
+              <form action="/sis/admin/faculties/<%= faculty.id %>/departments/<%= d.id %>/assign-head" method="POST" class="dept-head-form">
+                <select name="head_id">
+                  <option value="">— No Head —</option>
+                  <% teachers.forEach(t => { %>
+                    <option value="<%= t.id %>" <%= d.head_id === t.id ? 'selected' : '' %>><%= t.full_name %></option>
+                  <% }) %>
+                </select>
+                <button type="submit" title="Assign Head">✓</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- FACULTY REQUESTS -->
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="fas fa-paper-plane"></i> My Requests to Admin</h2>
+          <a href="/sis/faculty/requests" style="font-size: 0.7rem; font-weight: 800; color: var(--blue);">+ New</a>
+        </div>
+        <div class="card-body">
+          <% if (requests.length === 0) { %>
+            <p class="empty">You haven't submitted any requests yet.</p>
+          <% } %>
+          <% requests.slice(0, 5).forEach(r => { %>
+            <div class="request-row">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.3rem;">
+                <h3><%= r.title %></h3>
+                <span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span>
+              </div>
+              <div class="request-meta"><%= r.request_type %> · <%= new Date(r.submitted_at).toLocaleDateString() %></div>
+              <% if (r.admin_response) { %>
+                <div class="admin-response"><strong>Admin:</strong> <%= r.admin_response %></div>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RECENT ACTIVITY & STAFF -->
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="fas fa-history"></i> Recent Faculty Activity</h2>
+        </div>
+        <div class="card-body">
+          <% if (activity.length === 0) { %>
+            <p class="empty">No recent grades published in this faculty.</p>
+          <% } %>
+          <% activity.forEach(a => { %>
+            <div class="activity-row">
+              <div>
+                <div class="activity-name"><%= a.student_name %></div>
+                <div class="activity-meta"><%= a.code %> · <%= a.title %></div>
+              </div>
+              <span class="grade-pill"><%= a.letter_grade %></span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2><i class="fas fa-users"></i> Faculty Staff</h2>
+          <span style="font-size: 0.7rem; font-weight: 800; color: #64748b;"><%= staff.length %> members</span>
+        </div>
+        <div class="card-body">
+          <% if (staff.length === 0) { %>
+            <p class="empty">No staff assigned to this faculty yet.</p>
+          <% } %>
+          <% staff.forEach(s => { %>
+            <div class="staff-row">
+              <div>
+                <div class="staff-name"><%= s.full_name %></div>
+                <div class="staff-dept"><%= s.department_name || 'No Department' %></div>
+              </div>
+              <span class="staff-role"><%= s.role %></span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

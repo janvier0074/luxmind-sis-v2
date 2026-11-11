@@ -71,6 +71,17 @@ app.use(async (req, res, next) => {
       res.locals.unseenDocs = parseInt(r.rows[0].count) || 0;
     } catch (e) { res.locals.unseenDocs = 0; }
   }
+
+
+
+  res.locals.unreadNotifications = 0;
+  if (req.session.user) {
+    try {
+      const notifRes = await pool.query(`SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false`, [req.session.user.id]);
+      res.locals.unreadNotifications = parseInt(notifRes.rows[0].count) || 0;
+    } catch (e) { res.locals.unreadNotifications = 0; }
+  }
+
   next();
 });
 
@@ -3203,10 +3214,44 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
     await pool.query(`UPDATE leave_requests SET status = $1, reviewed_at = NOW() WHERE id = $2`, [action === 'approve' ? 'Approved' : 'Rejected', req.params.id]);
 
 
-    await pool.query(`
-      INSERT INTO audit_logs (user_id, action, details) 
-      VALUES ($1, 'LEAVE_${action.toUpperCase()}', 'Reviewed leave request ID ${req.params.id}')
-    `, [req.session.user.id]);
+       const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
+    
+    // 1. Update Leave Request
+    await pool.query(`UPDATE leave_requests SET status = $1, reviewed_at = NOW() WHERE id = $2`, [newStatus, req.params.id]);
+
+    // 2. Get Teacher Info for Email & Notification
+    const teacherRes = await pool.query(`
+      SELECT u.id, u.email, u.full_name FROM leave_requests l 
+      JOIN users u ON u.id = l.user_id WHERE l.id = $1
+    `, [req.params.id]);
+
+    if (teacherRes.rows.length > 0) {
+      const teacher = teacherRes.rows[0];
+
+      // 3. Create In-App Notification
+      await pool.query(`
+        INSERT INTO notifications (user_id, message, link) 
+        VALUES ($1, $2, '/sis/faculty/leave')
+      `, [teacher.id, `Your leave request was ${newStatus}.`]);
+
+      // 4. Send Email via Resend
+      try {
+        await resend.emails.send({
+          from: 'LuxMind HR <onboarding@resend.dev>',
+          to: teacher.email,
+          subject: `Leave Request ${newStatus}`,
+          html: `<div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
+                  <h2 style="color: #0a1e32;">LuxMind University</h2>
+                  <p>Dear <strong>${teacher.full_name}</strong>,</p>
+                  <p>Your leave request has been <strong style="color:${newStatus === 'Approved' ? 'green' : 'red'};">${newStatus}</strong>.</p>
+                  <p>Log in to view more details.</p>
+                  <a href="${process.env.APP_URL}/sis/faculty/leave" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">Go to Portal</a>
+                </div>`
+        });
+      } catch (mailErr) { console.error('Resend API Error:', mailErr); }
+    }
+
+    req.flash('success', `Leave request ${action}d and teacher notified.`);
 
 
     req.flash('success', `Leave request ${action}d.`);

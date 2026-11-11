@@ -459,7 +459,13 @@
         </a>
         <ul class="submenu">
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-door-open main-icon"></i> Room Reservation</a></li>
-          <li class="menu-item"><a href="/sis/faculty/leave" class="menu-link"><i class="fas fa-plane-departure main-icon"></i> Leave Request</a></li>
+         <a href="/sis/faculty/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+  <i class="fas fa-plane-departure text-amber-500 text-sm"></i> 
+  <span>Leave Request</span>
+  <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
+    <span style="margin-left: auto; background: #ef4444; color: white; border-radius: 100px; padding: 0.1rem 0.5rem; font-size: 0.65rem; font-weight: 800;"><%= unreadNotifications %></span>
+  <% } %>
+</a>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-headset main-icon"></i> IT Support</a></li>
           <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-book-reader main-icon"></i> Library/Journals</a></li>
         </ul>
@@ -515,6 +521,17 @@
             <option value="rn" <%= (typeof locale !== 'undefined' && locale === 'rn') ? 'selected' : '' %>>Ikirundi</option>
           </select>
         </div>
+
+
+<div style="position: relative; margin-right: 1rem;">
+  <a href="/sis/faculty/leave" style="color: #64748b; font-size: 1.2rem; text-decoration: none;">
+    <i class="fas fa-bell"></i>
+  </a>
+  <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
+    <span style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800;"><%= unreadNotifications %></span>
+  <% } %>
+</div>
+
         <div class="user-pill">
           <i class="fas fa-chalkboard-teacher"></i>
           Faculty Member

@@ -518,17 +518,43 @@ app.get('/sis/advisor/approvals', requireRole('advisor'), async (req, res) => {
 app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, res) => {
   const studentId = Number(req.body.student_id);
   try {
+    // 1. Get courses to approve
     const courses = await pool.query(`SELECT course_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+    
     for (const c of courses.rows) {
       const sec = await pool.query(`SELECT id FROM course_sections WHERE course_id = $1 LIMIT 1`, [c.course_id]);
       const sectionId = sec.rows.length > 0 ? sec.rows[0].id : null;
       await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, sectionId]);
     }
+    
+    // 2. Update status
     await pool.query(`UPDATE course_registrations SET status = 'approved' WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
+
+    // 3. Fetch student info to email them
+    const studentRes = await pool.query(`SELECT email, full_name FROM users WHERE id = $1`, [studentId]);
+    
+    if (studentRes.rows.length > 0) {
+      const student = studentRes.rows[0];
+      try {
+        await resend.emails.send({
+          from: 'LuxMind Registrar <onboarding@resend.dev>',
+          to: student.email,
+          subject: `Registration Approved - LuxMind SIS`,
+          html: `<div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
+                  <h2 style="color: #0a1e32;">LuxMind University</h2>
+                  <p>Dear <strong>${student.full_name}</strong>,</p>
+                  <p>Your course registration has been <strong style="color: green;">APPROVED</strong> by your advisor.</p>
+                  <p>You can now view your active timetable in the Student Portal.</p>
+                  <a href="${process.env.APP_URL}/sis/my/timetable" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">View Timetable</a>
+                 </div>`
+        });
+      } catch (mailErr) { console.error('Resend API Error:', mailErr); }
+    }
+
+    req.flash('success', 'Registration approved and student notified via email.');
     res.redirect('/sis/advisor/approvals');
   } catch (err) { res.status(500).send("Error approving: " + err.message); }
 });
-
 // ============================================
 // --- FACULTY ROUTES ---
 // ============================================
@@ -1070,13 +1096,45 @@ app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advi
     const secRes = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
     if (secRes.rows.length === 0) return res.redirect('/sis/faculty/publish-results');
 
+    // 1. Publish the grades
     await pool.query(`
       UPDATE grades 
       SET is_published = true, published_at = NOW() 
       WHERE section_id = $1 AND is_published = false
     `, [sectionId]);
 
-    req.flash('success', 'All grades for this section have been published.');
+    // 2. Fetch students in this section to email them
+    const studentsRes = await pool.query(`
+      SELECT u.email, u.full_name, c.code, c.title 
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      JOIN course_sections s ON s.id = e.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE e.section_id = $1
+    `, [sectionId]);
+
+    // 3. Send emails in the background (don't block the redirect)
+    if (studentsRes.rows.length > 0) {
+      const course = studentsRes.rows[0];
+      
+      // Use Promise.all to send emails concurrently
+      Promise.all(studentsRes.rows.map(student => {
+        return resend.emails.send({
+          from: 'LuxMind Registrar <onboarding@resend.dev>', // Use your verified domain in production
+          to: student.email,
+          subject: `Grades Published for ${course.code}`,
+          html: `<div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
+                  <h2 style="color: #0a1e32;">LuxMind University</h2>
+                  <p>Dear <strong>${student.full_name}</strong>,</p>
+                  <p>Your grades for <strong>${course.code} - ${course.title}</strong> have now been published.</p>
+                  <p>Please log in to your Student Portal to view your results.</p>
+                  <a href="${process.env.APP_URL}/sis/my/exam-results" style="display: inline-block; padding: 12px 24px; background: #0a1e32; color: #fff; text-decoration: none; border-radius: 6px; margin-top: 15px;">View Grades</a>
+                 </div>`
+        }).catch(err => console.error(`Failed to email ${student.email}:`, err));
+      }));
+    }
+
+    req.flash('success', 'All grades for this section have been published, and students have been notified via email.');
     res.redirect('/sis/faculty/publish-results');
   } catch (err) { res.status(500).send("Publish Error: " + err.message); }
 });

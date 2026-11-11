@@ -76,34 +76,102 @@
       </div>
     </div>
 
-    <nav class="px-3 py-4 flex-1 overflow-y-auto space-y-1">
-      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all">
-        <i class="fas fa-home text-sm"></i> Dashboard
-      </a>
-      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-user-graduate text-amber-500 text-sm"></i> Students
-      </a>
-      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-chalkboard-teacher text-amber-500 text-sm"></i> Teachers
-      </a>
-      <a href="/sis/admin/sections" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-layer-group text-amber-500 text-sm"></i> Sections
-
-
-      <a href="/sis/admin/courses" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-book text-amber-500 text-sm"></i> Course Catalog
+       <nav class="px-3 py-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-navy-700 scrollbar-track-transparent">
+      
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all mb-4">
+        <i class="fas fa-satellite-dish text-sm"></i> Command Center
       </a>
 
-      </a>
-      <a href="/sis/admin/finance" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-wallet text-amber-500 text-sm"></i> Finance
-      </a>
-      <a href="/sis/admin/documents" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-file-alt text-amber-500 text-sm"></i> Documents
-      </a>
-      <a href="/sis/admin/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
-        <i class="fas fa-plane-departure text-amber-500 text-sm"></i> Leave Requests
-      </a>
+      <!-- 1. USER MANAGEMENT -->
+      <details class="group border-t border-navy-800 pt-2" open>
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-users text-amber-500"></i> User Management</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/admin/students" class="block py-1.5 text-slate-400 hover:text-white">All Students</a>
+          <a href="/sis/admin/students/new" class="block py-1.5 text-slate-400 hover:text-white">Add New Student</a>
+          <a href="/sis/admin/teachers" class="block py-1.5 text-slate-400 hover:text-white">All Teachers</a>
+          <a href="/sis/admin/teachers/new" class="block py-1.5 text-slate-400 hover:text-white">Add New Teacher</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Manage Advisors</a>
+        </div>
+      </details>
+
+      <!-- 2. ACADEMIC MANAGEMENT -->
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-university text-amber-500"></i> Academic Management</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/admin/courses" class="block py-1.5 text-slate-400 hover:text-white">Course Catalog</a>
+          <a href="/sis/admin/sections" class="block py-1.5 text-slate-400 hover:text-white">Sections & Groups</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Curriculum Setup</a>
+          <a href="/sis/admin/exams" class="block py-1.5 text-slate-400 hover:text-white">Exam Schedule</a>
+        </div>
+      </details>
+
+      <!-- 3. REGISTRATION & ADVISING -->
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-clipboard-check text-amber-500"></i> Registration Control</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/admin/registrations" class="block py-1.5 text-slate-400 hover:text-white">All Registrations</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Advisor Assignments</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Withdrawal Requests</a>
+        </div>
+      </details>
+
+      <!-- 4. GRADING OVERSIGHT -->
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-pen text-amber-500"></i> Grading & Exams</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">View All Grades</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Exam Objections</a>
+          <a href="#" class="block py-1.5 text-slate-400 hover:text-white">Makeup Exams</a>
+        </div>
+      </details>
+
+      <!-- 5. FINANCE & DOCUMENTS -->
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-wallet text-amber-500"></i> Finance & Admin</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/admin/finance" class="block py-1.5 text-slate-400 hover:text-white">Fee Structure & Payments</a>
+          <a href="/sis/admin/documents" class="block py-1.5 text-slate-400 hover:text-white">Document Requests</a>
+          <a href="/sis/admin/leave" class="block py-1.5 text-slate-400 hover:text-white">Leave Requests</a>
+        </div>
+      </details>
+
+      <!-- 6. COMMUNICATION -->
+      <details class="group border-t border-navy-800 pt-2">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-comments text-amber-500"></i> Communication</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/sis/admin/announcements" class="block py-1.5 text-slate-400 hover:text-white">Global Announcements</a>
+        </div>
+      </details>
+
+      <!-- 7. SYSTEM -->
+      <details class="group border-t border-navy-800 pt-2 mb-8">
+        <summary class="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider text-white hover:bg-navy-800 cursor-pointer list-none">
+          <div class="flex items-center gap-2"><i class="fas fa-cog text-amber-500"></i> System</div>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="pl-4 pr-1 py-1 space-y-1 text-[11px]">
+          <a href="/logout" class="block py-1.5 text-rose-400 font-bold hover:text-white">Logout</a>
+        </div>
+      </details>
+
     </nav>
 
     <footer class="p-4 border-t border-navy-800 bg-navy-950/60 flex items-center justify-between shrink-0">

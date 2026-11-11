@@ -2995,6 +2995,107 @@ app.get('/sis/faculty/advisees', requireRole('teacher', 'advisor'), async (req, 
 
 
 // ============================================
+
+
+
+// ============================================
+// --- COURSE DISCUSSION FORUMS ---
+// ============================================
+
+// 1. View Forum
+app.get('/sis/course/:section_id/forum', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
+  const sectionId = req.params.section_id;
+  try {
+    let hasAccess = false;
+    if (req.session.user.role === 'teacher' || req.session.user.role === 'advisor') {
+      const check = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
+      if (check.rows.length > 0) hasAccess = true;
+    } else {
+      const check = await pool.query(`SELECT id FROM enrollments WHERE section_id = $1 AND user_id = $2`, [sectionId, req.session.user.id]);
+      if (check.rows.length > 0) hasAccess = true;
+    }
+
+    if (!hasAccess) return res.status(403).render('403');
+
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.id = $1
+    `, [sectionId]);
+
+    const threadsRes = await pool.query(`
+      SELECT t.*, u.full_name as author_name, u.role as author_role,
+             (SELECT COUNT(*) FROM forum_replies r WHERE r.thread_id = t.id) as reply_count
+      FROM forum_threads t
+      JOIN users u ON u.id = t.user_id
+      WHERE t.section_id = $1
+      ORDER BY t.created_at DESC
+    `, [sectionId]);
+
+    res.render('forum', {
+      user: req.session.user,
+      section: sectionRes.rows[0],
+      threads: threadsRes.rows
+    });
+  } catch (err) { res.status(500).send("Forum Error: " + err.message); }
+});
+
+// 2. Create Thread
+app.post('/sis/course/:section_id/forum/new', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
+  const sectionId = req.params.section_id;
+  const { title } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO forum_threads (section_id, user_id, title) VALUES ($1, $2, $3)
+    `, [sectionId, req.session.user.id, title]);
+    res.redirect(`/sis/course/${sectionId}/forum`);
+  } catch (err) { res.status(500).send("Error creating thread: " + err.message); }
+});
+
+// 3. View Single Thread & Replies
+app.get('/sis/course/forum/thread/:thread_id', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
+  const threadId = req.params.thread_id;
+  try {
+    const threadRes = await pool.query(`
+      SELECT t.*, u.full_name as author_name, u.role as author_role, s.id as section_id, c.code, c.title
+      FROM forum_threads t
+      JOIN users u ON u.id = t.user_id
+      JOIN course_sections s ON s.id = t.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE t.id = $1
+    `, [threadId]);
+
+    if (threadRes.rows.length === 0) return res.redirect('/sis/my');
+
+    const repliesRes = await pool.query(`
+      SELECT r.*, u.full_name as author_name, u.role as author_role
+      FROM forum_replies r
+      JOIN users u ON u.id = r.user_id
+      WHERE r.thread_id = $1
+      ORDER BY r.created_at ASC
+    `, [threadId]);
+
+    res.render('forum-thread', {
+      user: req.session.user,
+      thread: threadRes.rows[0],
+      replies: repliesRes.rows
+    });
+  } catch (err) { res.status(500).send("Thread Error: " + err.message); }
+});
+
+// 4. Post Reply
+app.post('/sis/course/forum/thread/:thread_id/reply', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
+  const threadId = req.params.thread_id;
+  const { message } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO forum_replies (thread_id, user_id, message) VALUES ($1, $2, $3)
+    `, [threadId, req.session.user.id, message]);
+    res.redirect(`/sis/course/forum/thread/${threadId}`);
+  } catch (err) { res.status(500).send("Error posting reply: " + err.message); }
+});
+
+
+
+
 // --- PLACEHOLDER (MUST BE LAST) ---
 // ============================================
 app.get('/sis/my/:page', requireRole('student'), (req, res) => {

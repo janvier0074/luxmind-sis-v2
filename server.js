@@ -180,6 +180,13 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
     
+
+    const targetedRes = await pool.query(`
+      SELECT * FROM targeted_announcements 
+      WHERE target_role IN ('student', 'all') 
+      ORDER BY created_at DESC LIMIT 5
+    `);
+
     res.render('dashboard', { 
       user: req.session.user, 
       profile: profile, 
@@ -187,6 +194,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       greeting: getGreeting(),
       announcementCount: parseInt(newAnnCount.rows[0].count) || 0,
       globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
+      targetedMessages: targetedRes.rows
     });
   } catch (err) {
     res.status(500).send("Dashboard Error: " + err.message);
@@ -321,28 +329,135 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
+    // 1. Get courses, their sections, and current capacity
     const coursesRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota,
-             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count
-      FROM courses c ORDER BY c.semester_number ASC
+             s.id as section_id, s.day_of_week, s.start_time, s.end_time,
+             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
+              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count
+      FROM courses c 
+      LEFT JOIN course_sections s ON s.course_id = c.id
+      ORDER BY c.semester_number ASC
     `);
+
+    // 2. Get student's passed courses (for prerequisites)
+    const passedRes = await pool.query(`
+      SELECT c.id FROM grades g 
+      JOIN course_sections s ON s.id = g.section_id 
+      JOIN courses c ON c.id = s.course_id 
+      WHERE g.student_id = $1 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
+    `, [req.session.user.id]);
+    const passedCourseIds = passedRes.rows.map(r => r.id);
+
+    // 3. Get student's current cart and enrolled schedule (for conflicts)
+    const enrolledRes = await pool.query(`
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
+      FROM enrollments e JOIN courses c ON c.id = e.course_id LEFT JOIN course_sections s ON s.id = e.section_id WHERE e.user_id = $1
+      UNION
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
+      FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.id = c.id WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+    `, [req.session.user.id]);
+
     const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
     const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
 
-    res.render('registration', { user: req.session.user, courses: coursesRes.rows, cart: cartRes.rows, pending: pendingRes.rows, hasRegistered: hasRegistered });
+    // 4. Calculate eligibility for each course
+    const processedCourses = coursesRes.rows.map(course => {
+      let isEligible = true;
+      let reason = '';
+
+      // Check Quota
+      if (course.enrolled_count >= course.quota) {
+        isEligible = false;
+        reason = 'Section Full';
+      }
+
+      // Check Prerequisite
+      if (course.prerequisite_id && !passedCourseIds.includes(course.prerequisite_id)) {
+        isEligible = false;
+        reason = 'Missing Prerequisite';
+      }
+
+      // Check Schedule Conflict
+      if (course.day_of_week && course.start_time) {
+        const conflict = enrolledRes.rows.find(e => 
+          e.id !== course.id && 
+          e.day_of_week === course.day_of_week && 
+          e.start_time === course.start_time
+        );
+        if (conflict) {
+          isEligible = false;
+          reason = 'Schedule Conflict';
+        }
+      }
+
+      return { ...course, isEligible, reason };
+    });
+
+    res.render('registration', { user: req.session.user, courses: processedCourses, cart: cartRes.rows, pending: pendingRes.rows, hasRegistered });
   } catch (err) { res.status(500).send("Registration Error: " + err.message); }
 });
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
   try {
+    // 1. Fetch course rules
+    const courseRes = await pool.query(`
+      SELECT c.*, COALESCE(c.quota, 40) as quota, s.day_of_week, s.start_time, s.end_time,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
+             (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor') as enrolled_count
+      FROM courses c LEFT JOIN course_sections s ON s.course_id = c.id WHERE c.id = $1 LIMIT 1
+    `, [courseId]);
+    
+    if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
+    const course = courseRes.rows[0];
+
+    // 2. Check Quota
+    if (course.enrolled_count >= course.quota) {
+      req.flash('error', 'Cannot add course: Section is full.');
+      return res.redirect('/sis/my/registration');
+    }
+
+    // 3. Check Prerequisite
+    if (course.prerequisite_id) {
+      const passedCheck = await pool.query(`
+        SELECT g.id FROM grades g JOIN course_sections s ON s.id = g.section_id
+        WHERE g.student_id = $1 AND s.course_id = $2 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
+      `, [req.session.user.id, course.prerequisite_id]);
+      
+      if (passedCheck.rows.length === 0) {
+        req.flash('error', 'Cannot add course: Missing prerequisite.');
+        return res.redirect('/sis/my/registration');
+      }
+    }
+
+    // 4. Check Schedule Conflict
+    if (course.day_of_week && course.start_time) {
+      const conflictCheck = await pool.query(`
+        SELECT e.id FROM enrollments e JOIN course_sections s ON s.id = e.section_id
+        WHERE e.user_id = $1 AND s.day_of_week = $2 AND s.start_time = $3
+        UNION
+        SELECT cr.id FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id
+        WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor') AND s.day_of_week = $2 AND s.start_time = $3
+      `, [req.session.user.id, course.day_of_week, course.start_time]);
+
+      if (conflictCheck.rows.length > 0) {
+        req.flash('error', 'Cannot add course: Schedule conflict with another course.');
+        return res.redirect('/sis/my/registration');
+      }
+    }
+
+    // 5. Add to cart
     const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
     if (existing.rows.length === 0) {
       await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
+      req.flash('success', 'Course added to cart.');
     }
+    
     res.redirect('/sis/my/registration');
   } catch (err) { res.status(500).send("Error adding: " + err.message); }
 });
+
 
 app.post('/sis/my/registration/remove', requireRole('student'), async (req, res) => {
   try {
@@ -610,11 +725,24 @@ app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
     const coursesRes = await pool.query(`SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
-    res.render('faculty-dashboard', { 
+    
+
+    const targetedRes = await pool.query(`
+      SELECT * FROM targeted_announcements 
+      WHERE target_role IN ('teacher', 'advisor', 'all') 
+      ORDER BY created_at DESC LIMIT 5
+    `);
+
+
+
+
+
+res.render('faculty-dashboard', { 
       user: req.session.user, 
       greeting: getGreeting(), 
       courses: coursesRes.rows,
       globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
+      targetedMessages: targetedRes.rows
     });
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
@@ -773,6 +901,11 @@ app.get('/sis/admin', requireRole('admin'), async (req, res) => {
     const totalPaid = Number(finRes.rows[0].total_paid) || 0;
     const totalOutstanding = totalBilled - totalPaid;
 
+        const targetedRes = await pool.query(`
+      SELECT * FROM targeted_announcements 
+      WHERE sender_id = $1 ORDER BY created_at DESC LIMIT 5
+    `, [req.session.user.id]);
+
     res.render('admin-dashboard', { 
       user: req.session.user, 
       greeting: getGreeting(), 
@@ -780,15 +913,9 @@ app.get('/sis/admin', requireRole('admin'), async (req, res) => {
         students: studentsCount.rows[0].count, 
         teachers: teachersCount.rows[0].count, 
         courses: coursesCount.rows[0].count, 
-        pendingRegs: pendingRegs.rows[0].count,
-        pendingDocs: pendingDocs.rows[0].count
+        pending: pendingRegs.rows[0].count 
       },
-      chartData: {
-        facultyLabels,
-        facultyData,
-        totalPaid,
-        totalOutstanding
-      }
+      targetedMessages: targetedRes.rows
     });
   } catch (err) { res.status(500).send("Admin Error: " + err.message); }
 });
@@ -1758,6 +1885,24 @@ app.post('/sis/my/messages/reply', requireRole('student'), async (req, res) => {
 // ============================================
 
 // 1. Admin View & Create
+
+app.post('/sis/announcements/send-targeted', requireRole('rectorate', 'admin'), async (req, res) => {
+  const { target_role, title, message, redirect_to } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO targeted_announcements (sender_id, target_role, title, message)
+      VALUES ($1, $2, $3, $4)
+    `, [req.session.user.id, target_role, title, message]);
+
+    req.flash('success', 'Targeted announcement sent successfully.');
+    res.redirect(redirect_to || '/sis/rectorate');
+  } catch (err) { res.status(500).send("Targeted Announcement Error: " + err.message); }
+});
+
+
+
+
+
 app.get('/sis/admin/announcements', requireRole('admin'), async (req, res) => {
   try {
     const annRes = await pool.query(`SELECT * FROM global_announcements ORDER BY created_at DESC`);

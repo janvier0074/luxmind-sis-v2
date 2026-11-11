@@ -951,21 +951,49 @@ app.get('/sis/admin/students', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+
+
+
+
+
+
+
+
 app.get('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
   try {
-    const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor'`);
-    res.render('admin-student-new', { user: req.session.user, advisors: advisorsRes.rows });
+    const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor' ORDER BY full_name`);
+    const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
+    const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
+    res.render('admin-student-new', { 
+      user: req.session.user, 
+      advisors: advisorsRes.rows,
+      faculties: facultiesRes.rows,
+      departments: departmentsRes.rows
+    });
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
 app.post('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
-  const { full_name, username, email, class_level, advisor_id, admission_number, is_international, high_school_gpa } = req.body;
+  const { full_name, username, email, class_level, advisor_id, admission_number, is_international, high_school_gpa, faculty_id, department_id } = req.body;
   const defaultPassword = 'Student2026!';
   const generatedId = admission_number || 'LUX-' + Math.floor(100000 + Math.random() * 900000);
   try {
-    const userRes = await pool.query(`INSERT INTO users (full_name, username, email, password, role) VALUES ($1, $2, $3, $4, 'student') RETURNING id`, [full_name, username, email || username + '@luxmind.edu', defaultPassword]);
+    const userRes = await pool.query(
+      `INSERT INTO users (full_name, username, email, password, role, faculty_id, department_id) 
+       VALUES ($1, $2, $3, $4, 'student', $5, $6) RETURNING id`, 
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword, 
+       faculty_id ? Number(faculty_id) : null, 
+       department_id ? Number(department_id) : null]
+    );
     const userId = userRes.rows[0].id;
-    await pool.query(`INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id, is_international, high_school_gpa) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [userId, generatedId, class_level || 'Computer Engineering', 1, advisor_id ? Number(advisor_id) : null, is_international === 'true', high_school_gpa ? Number(high_school_gpa) : null]);
+    await pool.query(
+      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id, is_international, high_school_gpa) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
+      [userId, generatedId, class_level || 'Computer Engineering', 1, 
+       advisor_id ? Number(advisor_id) : null, 
+       is_international === 'true', 
+       high_school_gpa ? Number(high_school_gpa) : null]
+    );
     req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
     res.redirect('/sis/admin/students');
   } catch (err) {
@@ -1030,6 +1058,126 @@ app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
     res.redirect('/sis/admin/courses');
   }
 });
+
+
+
+// ============================================
+// --- CENTRAL ADMIN: FACULTY & ACADEMIC UNITS ---
+// ============================================
+
+app.get('/sis/admin/faculties', requireRole('admin'), async (req, res) => {
+  try {
+    const facultiesRes = await pool.query(`
+      SELECT f.*, u.full_name AS dean_name,
+        (SELECT COUNT(*) FROM departments d WHERE d.faculty_id = f.id) AS dept_count,
+        (SELECT COUNT(*) FROM courses c WHERE c.faculty_id = f.id) AS course_count,
+        (SELECT COUNT(*) FROM users usr WHERE usr.faculty_id = f.id AND usr.role IN ('teacher','advisor')) AS staff_count,
+        (SELECT COUNT(*) FROM users usr WHERE usr.faculty_id = f.id AND usr.role = 'student') AS student_count
+      FROM faculties f
+      LEFT JOIN users u ON u.id = f.dean_id
+      ORDER BY f.name
+    `);
+    const deansRes = await pool.query(`SELECT id, full_name FROM users WHERE role IN ('teacher', 'advisor') ORDER BY full_name`);
+    
+    res.render('admin-faculties', {
+      user: req.session.user,
+      faculties: facultiesRes.rows,
+      deans: deansRes.rows
+    });
+  } catch (err) { res.status(500).send("Faculty Error: " + err.message); }
+});
+
+app.post('/sis/admin/faculties/new', requireRole('admin'), async (req, res) => {
+  const { name, code, dean_id, description } = req.body;
+  try {
+    await pool.query(`INSERT INTO faculties (name, code, dean_id, description) VALUES ($1, $2, $3, $4)`, 
+      [name, code.toUpperCase(), dean_id ? Number(dean_id) : null, description || null]);
+    req.flash('success', `Faculty "${name}" created successfully.`);
+    res.redirect('/sis/admin/faculties');
+  } catch (err) { 
+    req.flash('error', 'Error: ' + err.message);
+    res.redirect('/sis/admin/faculties'); 
+  }
+});
+
+app.get('/sis/admin/faculties/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const facultyRes = await pool.query(`
+      SELECT f.*, u.full_name AS dean_name FROM faculties f
+      LEFT JOIN users u ON u.id = f.dean_id WHERE f.id = $1
+    `, [req.params.id]);
+    if (facultyRes.rows.length === 0) return res.redirect('/sis/admin/faculties');
+    
+    const departmentsRes = await pool.query(`
+      SELECT d.*, u.full_name AS head_name,
+        (SELECT COUNT(*) FROM users usr WHERE usr.department_id = d.id AND usr.role = 'student') AS student_count
+      FROM departments d
+      LEFT JOIN users u ON u.id = d.head_id
+      WHERE d.faculty_id = $1 ORDER BY d.name
+    `, [req.params.id]);
+    
+    const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role IN ('teacher', 'advisor') ORDER BY full_name`);
+    
+    res.render('admin-faculty-detail', {
+      user: req.session.user,
+      faculty: facultyRes.rows[0],
+      departments: departmentsRes.rows,
+      teachers: teachersRes.rows
+    });
+  } catch (err) { res.status(500).send("Faculty Detail Error: " + err.message); }
+});
+
+app.post('/sis/admin/faculties/:id/assign-dean', requireRole('admin'), async (req, res) => {
+  const { dean_id } = req.body;
+  try {
+    await pool.query(`UPDATE faculties SET dean_id = $1 WHERE id = $2`, 
+      [dean_id ? Number(dean_id) : null, req.params.id]);
+    req.flash('success', 'Dean assigned successfully.');
+    res.redirect(`/sis/admin/faculties/${req.params.id}`);
+  } catch (err) { 
+    req.flash('error', 'Error: ' + err.message);
+    res.redirect(`/sis/admin/faculties/${req.params.id}`);
+  }
+});
+
+app.post('/sis/admin/faculties/:id/departments/new', requireRole('admin'), async (req, res) => {
+  const { name, code, head_id } = req.body;
+  try {
+    await pool.query(`INSERT INTO departments (faculty_id, name, code, head_id) VALUES ($1, $2, $3, $4)`,
+      [req.params.id, name, code || null, head_id ? Number(head_id) : null]);
+    req.flash('success', `Department "${name}" created successfully.`);
+    res.redirect(`/sis/admin/faculties/${req.params.id}`);
+  } catch (err) { 
+    req.flash('error', 'Error: ' + err.message);
+    res.redirect(`/sis/admin/faculties/${req.params.id}`);
+  }
+});
+
+app.post('/sis/admin/faculties/:facultyId/departments/:deptId/assign-head', requireRole('admin'), async (req, res) => {
+  const { head_id } = req.body;
+  try {
+    await pool.query(`UPDATE departments SET head_id = $1 WHERE id = $2`, 
+      [head_id ? Number(head_id) : null, req.params.deptId]);
+    req.flash('success', 'Department head assigned successfully.');
+    res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
+  } catch (err) { 
+    req.flash('error', 'Error: ' + err.message);
+    res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
+  }
+});
+
+app.post('/sis/admin/faculties/:id/toggle', requireRole('admin'), async (req, res) => {
+  try {
+    await pool.query(`UPDATE faculties SET is_active = NOT is_active WHERE id = $1`, [req.params.id]);
+    req.flash('success', 'Faculty status updated.');
+    res.redirect('/sis/admin/faculties');
+  } catch (err) { res.status(500).send("Toggle Error: " + err.message); }
+});
+
+
+
+
+
 
 
 

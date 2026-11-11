@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Management — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f4f7f9] text-[#0a1e32] font-sans min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="w-72 bg-[#0a1e32] text-white flex flex-col justify-between h-screen sticky top-0 overflow-y-auto shrink-0">
+    <div class="p-6 border-b border-[#1e3a5f]">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#0f2a44] rounded-xl flex items-center justify-center font-black text-xl text-[#ffc857] border border-[#f5a623]/30">A</div>
+        <div>
+          <h2 class="font-extrabold text-base">LuxMind SIS</h2>
+          <p class="text-[10px] font-bold text-[#f5a623] uppercase tracking-widest">Registrar</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="px-3 py-4 flex-1 space-y-1">
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-home text-[#f5a623] text-sm"></i> Dashboard</a>
+      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-user-graduate text-[#f5a623] text-sm"></i> Students</a>
+      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-chalkboard-teacher text-[#f5a623] text-sm"></i> Teachers</a>
+      <a href="/sis/admin/faculties" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#f5a623] text-[#0a1e32] shadow-md"><i class="fas fa-university text-sm"></i> Faculties</a>
+      <a href="/sis/admin/courses" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-book text-[#f5a623] text-sm"></i> Course Catalog</a>
+      <a href="/sis/admin/sections" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-layer-group text-[#f5a623] text-sm"></i> Sections</a>
+      <a href="/sis/admin/finance" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-wallet text-[#f5a623] text-sm"></i> Finance</a>
+      <a href="/sis/admin/documents" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-file-alt text-[#f5a623] text-sm"></i> Documents</a>
+      <a href="/sis/admin/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-plane-departure text-[#f5a623] text-sm"></i> Leave Requests</a>
+    </nav>
+
+    <footer class="p-4 border-t border-[#1e3a5f] flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#f5a623] text-[#0a1e32] font-black flex items-center justify-center text-xs">AD</div>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate"><%= user.full_name %></h4>
+          <p class="text-[10px] text-slate-400 font-semibold">Registrar</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
+  </aside>
+
+  <main class="flex-1 p-8 overflow-y-auto">
+    
+    <header class="mb-6 pb-4 border-b border-slate-200">
+      <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 uppercase tracking-widest">
+        <i class="fas fa-university"></i> Central Administration
+      </div>
+      <h1 class="text-3xl font-black mt-1">Faculty & Academic Units</h1>
+      <p class="text-xs text-slate-500 mt-1">Manage faculties, appoint deans, and organize departments.</p>
+    </header>
+
+    <% if (typeof flash !== 'undefined' && flash.success && flash.success.length) { %>
+      <div class="bg-emerald-100 text-emerald-700 p-4 rounded-xl font-bold text-xs mb-4"><i class="fas fa-check-circle mr-2"></i><%= flash.success[0] %></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash.error && flash.error.length) { %>
+      <div class="bg-rose-100 text-rose-700 p-4 rounded-xl font-bold text-xs mb-4"><i class="fas fa-exclamation-circle mr-2"></i><%= flash.error[0] %></div>
+    <% } %>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-slate-500">Total Faculties</p>
+        <p class="text-3xl font-black mt-1"><%= faculties.length %></p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-slate-500">Total Departments</p>
+        <p class="text-3xl font-black mt-1"><%= faculties.reduce((sum, f) => sum + Number(f.dept_count), 0) %></p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200">
+        <p class="text-[10px] font-extrabold uppercase text-slate-500">Total Students</p>
+        <p class="text-3xl font-black mt-1"><%= faculties.reduce((sum, f) => sum + Number(f.student_count), 0) %></p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <div class="bg-white p-6 rounded-2xl border border-slate-200">
+        <h2 class="font-extrabold text-sm mb-4"><i class="fas fa-plus-circle text-amber-500 mr-2"></i>Create New Faculty</h2>
+        <form action="/sis/admin/faculties/new" method="POST" class="space-y-3">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Faculty Name *</label>
+            <input type="text" name="name" required placeholder="e.g., Faculty of Science" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Short Code *</label>
+            <input type="text" name="code" required placeholder="e.g., SCI" maxlength="10" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Appoint Dean (Optional)</label>
+            <select name="dean_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+              <option value="">-- No Dean Yet --</option>
+              <% deans.forEach(d => { %>
+                <option value="<%= d.id %>"><%= d.full_name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Description</label>
+            <textarea name="description" rows="2" placeholder="Brief description..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold"></textarea>
+          </div>
+          <button type="submit" class="w-full py-2 bg-[#0a1e32] text-white font-extrabold text-xs rounded-lg hover:bg-[#0f2a44]"><i class="fas fa-save mr-1"></i> Create Faculty</button>
+        </form>
+      </div>
+
+      <div class="lg:col-span-2 space-y-3">
+        <% if (faculties.length === 0) { %>
+          <div class="bg-white p-8 text-center rounded-2xl border-2 border-dashed border-slate-200">
+            <i class="fas fa-university text-3xl text-slate-300 mb-2 block"></i>
+            <p class="text-sm font-bold text-slate-500">No faculties created yet.</p>
+          </div>
+        <% } %>
+
+        <% faculties.forEach(f => { %>
+          <a href="/sis/admin/faculties/<%= f.id %>" class="block bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-500 hover:shadow-lg transition-all group">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="px-2 py-0.5 bg-[#0a1e32] text-[#ffc857] rounded text-[10px] font-black"><%= f.code %></span>
+                  <% if (f.is_active) { %>
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black">ACTIVE</span>
+                  <% } else { %>
+                    <span class="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-black">INACTIVE</span>
+                  <% } %>
+                </div>
+                <h3 class="font-extrabold text-base group-hover:text-amber-600"><%= f.name %></h3>
+                <p class="text-xs text-slate-500 mt-1"><%= f.description || 'No description' %></p>
+                <div class="flex items-center gap-4 mt-3 text-[11px] font-bold text-slate-600">
+                  <span><i class="fas fa-user-tie text-amber-500 mr-1"></i>Dean: <%= f.dean_name || 'Not Assigned' %></span>
+                </div>
+              </div>
+              <i class="fas fa-arrow-right text-slate-300 group-hover:text-amber-500 text-lg"></i>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-slate-100">
+              <div class="text-center"><p class="text-lg font-black"><%= f.dept_count %></p><p class="text-[9px] font-bold uppercase text-slate-500">Departments</p></div>
+              <div class="text-center"><p class="text-lg font-black"><%= f.course_count %></p><p class="text-[9px] font-bold uppercase text-slate-500">Courses</p></div>
+              <div class="text-center"><p class="text-lg font-black"><%= f.staff_count %></p><p class="text-[9px] font-bold uppercase text-slate-500">Staff</p></div>
+              <div class="text-center"><p class="text-lg font-black"><%= f.student_count %></p><p class="text-[9px] font-bold uppercase text-slate-500">Students</p></div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

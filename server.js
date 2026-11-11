@@ -1392,6 +1392,86 @@ app.post('/sis/rectorate/broadcast', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: INSTITUTIONAL KPIs (EVALUATION) ---
 // ============================================
+
+
+// ============================================
+// --- RECTORATE: ACADEMIC QUALITY (GRADES) ---
+// ============================================
+app.get('/sis/rectorate/academic-quality', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Overall University Stats
+    const overallRes = await pool.query(`
+      SELECT 
+        COUNT(*) AS total_grades,
+        COALESCE(ROUND(AVG(gpa_points), 2), 0) AS avg_gpa,
+        COUNT(*) FILTER (WHERE letter_grade IN ('A+', 'A', 'A-')) AS a_count,
+        COUNT(*) FILTER (WHERE letter_grade = 'F') AS f_count
+      FROM grades
+      WHERE is_published = true
+    `);
+    const overall = overallRes.rows[0];
+    const totalGrades = Number(overall.total_grades);
+    const aCount = Number(overall.a_count);
+    const fCount = Number(overall.f_count);
+    
+    const stats = {
+      totalGrades,
+      avgGpa: Number(overall.avg_gpa),
+      aPercent: totalGrades > 0 ? Math.round((aCount / totalGrades) * 100) : 0,
+      fPercent: totalGrades > 0 ? Math.round((fCount / totalGrades) * 100) : 0
+    };
+
+    // 2. Grade Distribution (for the chart)
+    const distRes = await pool.query(`
+      SELECT letter_grade, COUNT(*) AS count
+      FROM grades
+      WHERE is_published = true AND letter_grade IS NOT NULL
+      GROUP BY letter_grade
+    `);
+    const distribution = distRes.rows.map(r => ({ grade: r.letter_grade, count: Number(r.count) }));
+
+    // 3. Course-Level Performance Audit
+    const coursesRes = await pool.query(`
+      SELECT 
+        c.code, c.title, u.full_name AS teacher_name,
+        COUNT(g.id) AS total_graded,
+        ROUND(AVG(g.gpa_points), 2) AS avg_gpa,
+        COUNT(*) FILTER (WHERE g.letter_grade IN ('A+', 'A', 'A-')) AS a_count,
+        COUNT(*) FILTER (WHERE g.letter_grade = 'F') AS f_count
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      JOIN users u ON u.id = s.teacher_id
+      WHERE g.is_published = true
+      GROUP BY c.id, c.code, c.title, u.full_name
+      ORDER BY avg_gpa ASC
+    `);
+
+    const courses = coursesRes.rows.map(c => {
+      const total = Number(c.total_graded);
+      const a = Number(c.a_count);
+      const f = Number(c.f_count);
+      return {
+        ...c,
+        total_graded: total,
+        avg_gpa: Number(c.avg_gpa),
+        a_percent: total > 0 ? Math.round((a / total) * 100) : 0,
+        f_percent: total > 0 ? Math.round((f / total) * 100) : 0
+      };
+    });
+
+    res.render('rectorate-academic-quality', {
+      user: req.session.user,
+      stats: stats,
+      distribution: distribution,
+      courses: courses
+    });
+  } catch (err) { res.status(500).send("Academic Quality Error: " + err.message); }
+});
+
+
+
 app.get('/sis/rectorate/kpis', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

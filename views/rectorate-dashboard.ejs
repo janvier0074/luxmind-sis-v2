@@ -1,340 +1,334 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rectorate Command Center — LuxMind SIS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#040d18', 900: '#0a1e32', 800: '#0f2a44', 700: '#153658', 600: '#1e4d7b', 500: '#2d6a9f' },
+            amber: { 500: '#f5a623', 400: '#ffb73d' }, gold: { 500: '#ffc857', 400: '#ffd57e' },
+            ice: { 50: '#f8fafc', 100: '#f4f7f9', 200: '#e6edf3' }
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
-      --gold: #ffc857; --frost: #d9e6f2; --ice: #f4f7f9;
-      --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-soft: 0 8px 30px -6px rgba(10,30,50,0.08);
-      --shadow-hover: 0 16px 40px -12px rgba(10,30,50,0.15);
-      --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-    }
-    
-    html, body { overflow-x: hidden; max-width: 100vw; width: 100%; background: var(--ice); }
-    body {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      color: var(--navy); min-height: 100vh; display: flex; flex-direction: column;
-      background-image: radial-gradient(circle at 100% 0%, rgba(255, 200, 87, 0.1), transparent 40%),
-                        radial-gradient(circle at 0% 100%, rgba(30, 77, 123, 0.05), transparent 40%);
-    }
-
-    /* --- 1. THE WELCOME SPLASH SCREEN --- */
-    .splash-screen {
-      position: fixed; inset: 0; z-index: 9999;
-      background: linear-gradient(135deg, #ffffff, #f4f7f9);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: opacity 0.8s ease, visibility 0.8s ease;
-    }
-    .splash-screen.hidden { opacity: 0; visibility: hidden; }
-    
-    .splash-icon {
-      width: 80px; height: 80px; background: var(--navy); color: var(--gold);
-      border-radius: 20px; display: flex; align-items: center; justify-content: center;
-      font-size: 2.5rem; margin-bottom: 2rem;
-      box-shadow: 0 20px 40px -10px rgba(10, 30, 50, 0.3);
-      animation: pulse 2s infinite;
-    }
-    .splash-screen h1 {
-      font-size: 2.5rem; font-weight: 800; color: var(--navy); letter-spacing: -1px;
-      opacity: 0; animation: slideUp 0.8s ease forwards 0.3s;
-    }
-    .splash-screen p {
-      font-size: 1rem; color: #64748b; font-weight: 600; margin-top: 0.5rem;
-      letter-spacing: 2px; text-transform: uppercase;
-      opacity: 0; animation: slideUp 0.8s ease forwards 0.6s;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.4); }
-      70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(245, 166, 35, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* --- 2. TOP NAVIGATION (NO SIDEBAR) --- */
-    .top-nav { 
-      background: rgba(255, 255, 255, 0.8); 
-      backdrop-filter: blur(20px);
-      padding: 0 3rem; height: 80px;
-      display: flex; justify-content: space-between; align-items: center; 
-      position: sticky; top: 0; z-index: 1000; 
-      border-bottom: 1px solid rgba(10, 30, 50, 0.05);
-    }
-    .nav-brand { display: flex; align-items: center; gap: 1rem; }
-    .nav-brand .mark { width: 40px; height: 40px; background: var(--navy); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.4rem; color: var(--gold); }
-    .nav-brand .name { font-size: 1.2rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
-    .nav-brand .name span { display: block; font-size: 0.6rem; color: var(--amber); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
-    
-    .nav-links { display: flex; gap: 1rem; height: 100%; }
-    .nav-link { 
-      color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: 700; 
-      padding: 0 1rem; display: flex; align-items: center; gap: 0.5rem;
-      border-bottom: 3px solid transparent; transition: var(--transition);
-    }
-    .nav-link:hover, .nav-link.active { color: var(--navy); border-bottom-color: var(--amber); }
-    .nav-link i { font-size: 1rem; color: var(--amber); }
-
-    .nav-user { display: flex; align-items: center; gap: 1.5rem; }
-    .user-badge { background: var(--navy); color: #fff; padding: 0.6rem 1.2rem; border-radius: 100px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
-    .user-badge i { color: var(--gold); }
-    .btn-logout { color: var(--danger); font-size: 1.2rem; text-decoration: none; transition: 0.2s; }
-    .btn-logout:hover { transform: scale(1.1); }
-
-    /* Mobile Nav */
-    .mobile-nav-btn { display: none; background: none; border: none; color: var(--navy); font-size: 1.5rem; cursor: pointer; }
-    .mobile-dropdown { display: none; background: #fff; padding: 1rem; flex-direction: column; gap: 0.5rem; border-bottom: 1px solid var(--frost); }
-    .mobile-dropdown a { color: var(--navy); text-decoration: none; padding: 1rem; font-weight: 700; border-radius: 8px; background: #f8fafc; }
-
-    /* --- 3. BENTO GRID MAIN CONTENT --- */
-    .main-content { padding: 3rem; max-width: 1700px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 2rem; }
-    
-    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; }
-    .page-header h1 { font-size: 2.2rem; font-weight: 800; color: var(--navy); letter-spacing: -1px; }
-    .page-header p { color: #64748b; font-size: 1rem; margin-top: 0.3rem; font-weight: 500; }
-
-    /* Bento Grid System */
-    .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
-    
-    /* Cards */
-    .bento-card { 
-      background: #fff; border-radius: 1.5rem; box-shadow: var(--shadow-soft); 
-      border: 1px solid rgba(255,255,255,0.5); padding: 2rem; display: flex; flex-direction: column; 
-      transition: var(--transition); position: relative; overflow: hidden;
-    }
-    .bento-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
-    
-    /* Stat Bento Cards */
-    .stat-card { grid-column: span 1; }
-    .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem; }
-    .stat-icon.blue { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.gold { background: #fef3c7; color: #d97706; }
-    .stat-icon.red { background: #fee2e2; color: #b91c1c; }
-    .stat-icon.green { background: #dcfce7; color: #16a34a; }
-    .stat-card h3 { font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; margin-bottom: 0.5rem; }
-    .stat-card .value { font-size: 3rem; font-weight: 800; color: var(--navy); line-height: 1; }
-    
-    /* Large Panels */
-    .panel-left { grid-column: span 2; grid-row: span 2; }
-    .panel-right { grid-column: span 2; grid-row: span 1; }
-    
-    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--frost); }
-    .panel-header h2 { font-size: 1.3rem; font-weight: 800; color: var(--navy); display: flex; align-items: center; gap: 0.8rem; }
-    .panel-header h2 i { color: var(--amber); }
-    .badge-count { background: var(--navy); color: var(--gold); padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
-
-    /* Task List */
-    .task-list { display: flex; flex-direction: column; gap: 1rem; }
-    .task-item { background: #f8fafc; border: 1px solid var(--frost); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; transition: 0.2s; }
-    .task-item:hover { background: #fff; border-color: var(--amber); }
-    .task-info h4 { font-size: 1.05rem; font-weight: 800; color: var(--navy); margin-bottom: 0.5rem; }
-    .task-info p { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; line-height: 1.5; }
-    .tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .tag { font-size: 0.65rem; font-weight: 800; padding: 0.3rem 0.8rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .tag.dept { background: #e0f2fe; color: #0284c7; }
-    .tag.date { background: #f1f5f9; color: #64748b; }
-    .tag.status { background: #fef3c7; color: #d97706; }
-    
-    .btn-mark-done { background: #fff; border: 2px solid var(--success); color: var(--success); padding: 0.6rem 1.2rem; border-radius: 100px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 0.5rem; }
-    .btn-mark-done:hover { background: var(--success); color: #fff; }
-
-    /* Form */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-group label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-control { padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy); background: #f8fafc; outline: none; transition: 0.2s; }
-    .form-control:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 4px rgba(245,166,35,0.1); }
-    .btn-submit { background: linear-gradient(135deg, var(--navy), var(--deep)); color: #fff; padding: 1.2rem; border: none; border-radius: 10px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; width: 100%; display: flex; justify-content: center; gap: 0.8rem; box-shadow: 0 10px 20px -5px rgba(10,30,50,0.3); }
-    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -5px rgba(10,30,50,0.4); }
-
-    /* Mobile */
-    @media (max-width: 1200px) {
-      .bento-grid { grid-template-columns: 1fr 1fr; }
-      .panel-left, .panel-right { grid-column: span 2; }
-    }
-    @media (max-width: 768px) {
-      .nav-links, .nav-user { display: none; }
-      .mobile-nav-btn { display: block; }
-      .top-nav { padding: 0 1.5rem; }
-      .main-content { padding: 1.5rem; }
-      .page-header h1 { font-size: 1.8rem; }
-      .bento-grid { grid-template-columns: 1fr; }
-      .panel-left, .panel-right { grid-column: span 1; }
-      .form-grid { grid-template-columns: 1fr; }
-      .task-item { flex-direction: column; align-items: flex-start; }
-    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #1e4d7b; border-radius: 99px; }
+    .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); }
+    .dark .glass-panel { background: rgba(15, 42, 68, 0.88); border-color: rgba(255, 255, 255, 0.08); }
+    @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+    .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
+    @keyframes pulseGlow { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(245, 166, 35, 0); } }
+    .pulse-glow { animation: pulseGlow 2.5s infinite ease-in-out; }
   </style>
 </head>
-<body>
+<body class="bg-ice-100 dark:bg-navy-950 text-navy-900 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300 antialiased overflow-x-hidden">
 
-  <!-- 1. THE WELCOME SPLASH SCREEN -->
-  <div class="splash-screen" id="splashScreen">
-    <div class="splash-icon"><i class="fas fa-university"></i></div>
-    <h1>Welcome to the Rectorate Portal</h1>
-    <p>Executive Command Center</p>
-  </div>
+  <!-- SPLASH SCREEN -->
+  <aside id="splashScreen" class="fixed inset-0 z-[9999] bg-gradient-to-br from-white via-ice-100 to-slate-200 dark:from-navy-950 dark:via-navy-900 dark:to-navy-800 flex flex-col items-center justify-center transition-opacity duration-700">
+    <figure class="w-20 h-20 bg-navy-900 dark:bg-navy-800 text-gold-500 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-2xl pulse-glow border border-amber-500/30">
+      <i class="fas fa-university"></i>
+    </figure>
+    <h1 class="text-3xl md:text-4xl font-black text-navy-900 dark:text-white tracking-tight mb-2 text-center">Rectorate Portal</h1>
+    <p class="text-xs font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase text-center">LuxMind SIS</p>
+  </aside>
 
-  <!-- 2. TOP NAVIGATION BAR -->
-  <nav class="top-nav">
-    <div class="nav-brand">
-      <div class="mark">R</div>
-      <div class="name">Rectorate <span>LuxMind SIS</span></div>
-    </div>
-
-    <div class="nav-links">
-      <a href="/sis/rectorate" class="nav-link active"><i class="fas fa-satellite-dish"></i> Command Center</a>
-      <a href="#" class="nav-link"><i class="fas fa-tasks"></i> SMARTASK</a>
-      <a href="/sis/rectorate/graduation" class="nav-link"><i class="fas fa-graduation-cap"></i> Academics</a>
-      <a href="#" class="nav-link"><i class="fas fa-building"></i> Admin Affairs</a>
-      <a href="#" class="nav-link"><i class="fas fa-chart-line"></i> Reports</a>
-    </div>
-
-    <div class="nav-user">
-      <div class="user-badge"><i class="fas fa-user-shield"></i> Rectorate Access</div>
-      <a href="/logout" class="btn-logout" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
-    </div>
-
-    <button class="mobile-nav-btn" onclick="toggleMobileNav()"><i class="fas fa-bars"></i></button>
-  </nav>
-
-  <!-- Mobile Menu Dropdown -->
-  <div class="mobile-dropdown" id="mobileDropdown">
-    <a href="/sis/rectorate" class="active"><i class="fas fa-satellite-dish"></i> Command Center</a>
-    <a href="#"><i class="fas fa-tasks"></i> SMARTASK</a>
-    <a href="/sis/rectorate/graduation"><i class="fas fa-graduation-cap"></i> Academics</a>
-    <a href="#"><i class="fas fa-building"></i> Admin Affairs</a>
-    <a href="/logout" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a>
-  </div>
-
-  <!-- 3. MAIN BENTO GRID -->
-  <main class="main-content">
-    
-    <header class="page-header">
+  <!-- MOBILE HEADER -->
+  <header class="md:hidden sticky top-0 z-40 bg-navy-900 text-white px-4 py-3 flex items-center justify-between border-b border-navy-800 shadow-md">
+    <div class="flex items-center gap-3">
+      <figure class="w-9 h-9 bg-navy-800 rounded-lg flex items-center justify-center font-black text-gold-500 border border-amber-500/30">L</figure>
       <div>
-        <h1>Command Center</h1>
-        <p>Coordinating university operations and strategic directives.</p>
+        <h1 class="font-extrabold text-sm leading-tight">LuxMind SIS</h1>
+        <p class="text-[10px] text-amber-400 font-semibold tracking-wider uppercase">Rectorate</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-lg bg-navy-800 text-amber-400 flex items-center justify-center text-sm"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i></button>
+      <button onclick="openSidebarDrawer()" class="w-9 h-9 rounded-lg bg-amber-500 text-navy-950 flex items-center justify-center text-lg font-bold"><i class="fas fa-bars"></i></button>
+    </div>
+  </header>
+
+  <button id="mobileBackdrop" onclick="closeSidebarDrawer()" class="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-sm hidden md:hidden opacity-0 transition-opacity duration-300"></button>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed md:sticky top-0 inset-y-0 left-0 z-50 w-72 bg-navy-900 text-white flex flex-col justify-between border-r border-navy-800 shadow-2xl md:shadow-none transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out h-screen overflow-y-auto">
+    
+    <div class="p-6 border-b border-navy-800/80">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <figure class="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center font-black text-xl text-gold-500 shadow-md border border-amber-500/30">R</figure>
+          <div>
+            <h2 class="font-extrabold text-base tracking-tight leading-tight text-white">LuxMind SIS</h2>
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mt-0.5">Rectorate Access</p>
+          </div>
+        </div>
+        <button onclick="closeSidebarDrawer()" class="md:hidden text-slate-400 hover:text-white p-1 text-lg"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="mt-4 px-3 py-1.5 bg-navy-800/80 rounded-lg border border-navy-700/60 flex items-center justify-between text-[11px]">
+        <span class="text-slate-300 font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 live-beacon"></span> System Status</span>
+        <span class="text-amber-400 font-bold">ONLINE</span>
+      </div>
+    </div>
+
+    <nav class="px-4 py-4 space-y-1 flex-1">
+      <p class="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Main Governance</p>
+      
+      <a href="/sis/rectorate" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all">
+        <i class="fas fa-satellite-dish text-sm"></i> Command Center
+      </a>
+      
+      <a href="/sis/rectorate/graduation" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-graduation-cap text-amber-500 text-sm"></i> Graduation Pipeline
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-building text-amber-500 text-sm"></i> Admin Affairs
+      </a>
+    </nav>
+
+    <!-- Quick Dispatch Templates -->
+    <section class="px-4 py-3 border-t border-navy-800/80">
+      <p class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 mb-2 px-1">Quick Task Templates</p>
+      <nav class="space-y-1.5 text-[11px]">
+        <button onclick="quickDispatch('Audit Registration Process', 'Registrar', 'High', 'Streamline online clearance for international applicants.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
+          <span class="truncate"><i class="fas fa-user-check text-amber-400 mr-2"></i> Registration Audit</span>
+          <i class="fas fa-plus text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+        </button>
+        <button onclick="quickDispatch('YÖK Accreditation Review', 'Faculty', 'High', 'Finalize course outcome logs for upcoming international audits.')" class="w-full text-left px-3 py-2 bg-navy-800/60 hover:bg-navy-800 rounded-lg text-slate-300 hover:text-white transition-all flex items-center justify-between group border border-navy-700/50">
+          <span class="truncate"><i class="fas fa-certificate text-gold-500 mr-2"></i> Accreditation Sync</span>
+          <i class="fas fa-plus text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+        </button>
+      </nav>
+    </section>
+
+    <footer class="p-4 border-t border-navy-800 bg-navy-950/60 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <figure class="w-9 h-9 rounded-full bg-amber-500 text-navy-950 font-black flex items-center justify-center text-xs shadow-inner">RC</figure>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate">Rectorate Office</h4>
+          <p class="text-[10px] text-slate-400 font-semibold truncate">LuxMind SIS</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition-colors" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
+  </aside>
+
+  <!-- MAIN DASHBOARD -->
+  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-6">
+    
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-navy-800">
+      <div>
+        <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-widest"><i class="fas fa-landmark"></i> University Governance</div>
+        <h1 class="text-2xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Executive Command Center</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" class="hidden md:flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm">
+          <i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i>
+        </button>
+        <button onclick="scrollToForm()" class="px-4 py-2 bg-navy-900 dark:bg-amber-500 text-white dark:text-navy-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
+          <i class="fas fa-plus"></i> New Directive
+        </button>
       </div>
     </header>
 
-    <!-- Bento Grid Layout -->
-    <section class="bento-grid">
+    <!-- BENTO STATS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Completion Rate</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white" id="statCompletionRate"><%= stats.completionRate %>%</div>
+        <div class="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full mt-3 overflow-hidden">
+          <div class="bg-emerald-500 h-full rounded-full" style="width: <%= stats.completionRate %>%"></div>
+        </div>
+      </article>
+
+      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Pending Directives</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.pendingTasks %></div>
+      </article>
+
+      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Total Students</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.students %></div>
+      </article>
+
+      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+        <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Academic Staff</h3>
+        <div class="text-3xl font-extrabold text-navy-900 dark:text-white"><%= stats.teachers %></div>
+      </article>
+    </section>
+
+    <!-- CHARTS & TASKS -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- 4 Stat Cards -->
-      <article class="bento-card stat-card">
-        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-        <h3>Completion Rate</h3>
-        <div class="value"><%= stats.completionRate %>%</div>
-      </article>
-      <article class="bento-card stat-card">
-        <div class="stat-icon red"><i class="fas fa-clock"></i></div>
-        <h3>Pending Tasks</h3>
-        <div class="value"><%= stats.pendingTasks %></div>
-      </article>
-      <article class="bento-card stat-card">
-        <div class="stat-icon blue"><i class="fas fa-user-graduate"></i></div>
-        <h3>Total Students</h3>
-        <div class="value"><%= stats.students %></div>
-      </article>
-      <article class="bento-card stat-card">
-        <div class="stat-icon gold"><i class="fas fa-chalkboard-teacher"></i></div>
-        <h3>Staff Members</h3>
-        <div class="value"><%= stats.teachers %></div>
-      </article>
-
-      <!-- Active Tasks Panel -->
-      <article class="bento-card panel-left">
-        <div class="panel-header">
-          <h2><i class="fas fa-satellite"></i> Active Directives</h2>
-          <span class="badge-count"><%= tasks.length %> Active</span>
-        </div>
-        <div class="task-list">
-          <% if (tasks.length === 0) { %>
-            <p style="text-align: center; color: #94a3b8; padding: 2rem;">No active tasks. Issue a directive on the right.</p>
-          <% } %>
-          <% tasks.forEach(t => { %>
-            <div class="task-item">
-              <div class="task-info">
-                <h4><%= t.title %></h4>
-                <p><%= t.description %></p>
-                <div class="tags">
-                  <span class="tag dept"><i class="fas fa-building"></i> <%= t.assigned_to_dept %></span>
-                  <span class="tag date"><i class="far fa-calendar-alt"></i> <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'N/A' %></span>
-                  <span class="tag status <%= t.status.toLowerCase() %>"><%= t.status %></span>
-                </div>
-              </div>
-              <% if (t.status !== 'Completed') { %>
-                <form action="/sis/rectorate/tasks/<%= t.id %>/complete" method="POST">
-                  <button type="submit" class="btn-mark-done"><i class="fas fa-check"></i> Done</button>
-                </form>
-              <% } %>
-            </div>
-          <% }) %>
+      <article class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 lg:col-span-2 flex flex-col">
+        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-3"><i class="fas fa-chart-bar text-amber-500 mr-2"></i> Departmental Workload</h2>
+        <div class="flex-1 min-h-[250px] relative">
+          <canvas id="deptWorkloadChart"></canvas>
         </div>
       </article>
 
-      <!-- Issue Directive Form Panel -->
-      <article class="bento-card panel-right">
-        <div class="panel-header">
-          <h2><i class="fas fa-bullhorn"></i> Issue Directive</h2>
-        </div>
-        <form action="/sis/rectorate/tasks/create" method="POST">
-          <div class="form-grid">
-            <div class="form-group full">
-              <label>Directive Title</label>
-              <input type="text" name="title" class="form-control" required placeholder="e.g., Speed up student registration">
-            </div>
-            <div class="form-group">
-              <label>Assign To Department</label>
-              <select name="assigned_to_dept" class="form-control" required>
-                <option value="Registrar">Registrar's Office</option>
-                <option value="Faculty">Faculty / Deans</option>
-                <option value="Finance">Accounting</option>
-                <option value="IT">Computer Center</option>
-                <option value="Student Affairs">Student Services</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Deadline</label>
-              <input type="date" name="deadline" class="form-control" required>
-            </div>
-            <div class="form-group full">
-              <label>Expected Outcome</label>
-              <textarea name="description" class="form-control" rows="2" required placeholder="Explain what needs to be done..."></textarea>
-            </div>
+      <article id="formSection" class="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-3"><i class="fas fa-bullhorn text-amber-500 mr-2"></i> Dispatch Directive</h2>
+        <form action="/sis/rectorate/tasks/create" method="POST" class="space-y-3">
+          <div>
+            <input type="text" name="title" required placeholder="Directive Title" class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500">
           </div>
-          <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Dispatch Task</button>
+          <div class="grid grid-cols-2 gap-2">
+            <select name="assigned_to_dept" required class="w-full px-2 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none">
+              <option value="Registrar">Registrar</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Finance">Finance</option>
+              <option value="IT">IT</option>
+            </select>
+            <input type="date" name="deadline" required class="w-full px-2 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none">
+          </div>
+          <div>
+            <textarea name="description" required rows="2" placeholder="Expected outcome..." class="w-full px-3 py-2 bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-semibold focus:outline-none resize-none"></textarea>
+          </div>
+          <button type="submit" class="w-full py-2 bg-navy-900 hover:bg-navy-800 text-white font-extrabold text-xs rounded-xl shadow-md transition-all">
+            <i class="fas fa-paper-plane mr-1"></i> Send to Database
+          </button>
         </form>
       </article>
-
     </section>
+
+    <!-- ACTIVE DIRECTIVES LIST -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-navy-800 shadow-sm">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-navy-800">
+        <h2 class="text-lg font-extrabold text-navy-900 dark:text-white"><i class="fas fa-satellite text-amber-500 mr-2"></i> Active Directives</h2>
+        <span class="bg-navy-900 dark:bg-amber-500 text-gold-500 dark:text-navy-950 text-xs font-black px-3 py-1 rounded-full"><%= tasks.length %> Tasks</span>
+      </div>
+
+      <div class="space-y-3" id="directivesList">
+        <% if (tasks.length === 0) { %>
+          <p class="text-center text-xs text-slate-500 py-6">No active tasks in the database. Issue a directive above.</p>
+        <% } %>
+
+        <% tasks.forEach(t => { %>
+          <div class="p-4 bg-slate-50 dark:bg-navy-800/60 border border-slate-200 dark:border-navy-700 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div>
+              <div class="flex gap-2 mb-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-navy-700 text-navy-900 dark:text-slate-200">
+                  <i class="fas fa-building text-amber-500 mr-1"></i> <%= t.assigned_to_dept %>
+                </span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full <%= t.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' %>">
+                  <i class="fas <%= t.status === 'Completed' ? 'fa-check-circle' : 'fa-clock' %>"></i> <%= t.status %>
+                </span>
+              </div>
+              <h3 class="font-extrabold text-navy-900 dark:text-white text-sm"><%= t.title %></h3>
+              <p class="text-xs text-slate-500 dark:text-slate-300 mt-1"><%= t.description %></p>
+              <span class="text-[10px] text-slate-400 mt-2 block"><i class="far fa-calendar-alt mr-1"></i> Due: <%= t.deadline ? new Date(t.deadline).toLocaleDateString() : 'N/A' %></span>
+            </div>
+            
+            <% if (t.status !== 'Completed') { %>
+              <!-- POST Form to mark done -->
+              <form action="/sis/rectorate/tasks/<%= t.id %>/complete" method="POST">
+                <button type="submit" class="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
+                  <i class="fas fa-check mr-1"></i> Mark Done
+                </button>
+              </form>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
   </main>
 
   <script>
-    // 1. Splash Screen Logic (Fades out after 1.5 seconds)
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-          splash.classList.add('hidden');
-        }
-      }, 1500); // 1.5 seconds
-    });
+    // 1. Splash Screen
+    setTimeout(() => {
+      const splash = document.getElementById('splashScreen');
+      if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 700); }
+    }, 1200);
 
-    // 2. Mobile Nav Logic
-    function toggleMobileNav() {
-      const menu = document.getElementById('mobileDropdown');
-      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+    // 2. Dark Mode
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      initChart(); // Re-render chart colors
     }
+
+    // 3. Mobile Drawer
+    function openSidebarDrawer() {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('mobileBackdrop').classList.remove('hidden');
+      setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10);
+    }
+    function closeSidebarDrawer() {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('mobileBackdrop').classList.add('opacity-0');
+      setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300);
+    }
+
+    // 4. Scroll to Form
+    function scrollToForm() {
+      document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 5. Quick Dispatch (Fills the form and scrolls to it)
+    function quickDispatch(title, dept, priority, desc) {
+      document.querySelector('input[name="title"]').value = title;
+      document.querySelector('select[name="assigned_to_dept"]').value = dept;
+      document.querySelector('textarea[name="description"]').value = desc;
+      scrollToForm();
+    }
+
+    // 6. Chart.js (Injects real DB data)
+    function initChart() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+
+      const ctx = document.getElementById('deptWorkloadChart').getContext('2d');
+      
+      // Pull real counts from EJS into the chart
+      const depts = ["Registrar", "Faculty", "Finance", "IT", "Student Affairs"];
+      const counts = [
+        <%= tasks.filter(t => t.assigned_to_dept === 'Registrar').length %>,
+        <%= tasks.filter(t => t.assigned_to_dept === 'Faculty').length %>,
+        <%= tasks.filter(t => t.assigned_to_dept === 'Finance').length %>,
+        <%= tasks.filter(t => t.assigned_to_dept === 'IT').length %>,
+        <%= tasks.filter(t => t.assigned_to_dept === 'Student Affairs').length %>
+      ];
+
+      // Destroy old chart if exists (for dark mode toggle)
+      if (window.myChart) window.myChart.destroy();
+
+      window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: depts,
+          datasets: [{
+            data: counts,
+            backgroundColor: ['#f5a623', '#1e4d7b', '#10b981', '#6366f1', '#ec4899'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 10, family: 'Plus Jakarta Sans' } }, grid: { display: false } },
+            y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initChart);
   </script>
 </body>
 </html>

@@ -1313,20 +1313,14 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
 app.get('/sis/rectorate', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {
-    // 1. Basic University Stats
     const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);
     const teachersCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'teacher'`);
-
-    // 2. SMARTASK Metrics
     const tasksRes = await pool.query(`SELECT * FROM rectorate_tasks ORDER BY created_at DESC`);
-    const pendingTasks = tasksRes.rows.filter(t => t.status === 'Pending').length;
-    const completedTasks = tasksRes.rows.filter(t => t.status === 'Completed').length;
-    const completionRate = tasksRes.rows.length > 0 ? Math.round((completedTasks / tasksRes.rows.length) * 100) : 0;
-
-    // 3. Financial Pulse
-    const totalBilled = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM fee_structure`);
-    const totalPaid = await pool.query(`SELECT COALESCE(SUM(amount), 0) AS total FROM payments`);
-    const outstanding = Number(totalBilled.rows[0].total) - Number(totalPaid.rows[0].total);
+    
+    const tasks = tasksRes.rows;
+    const pendingTasks = tasks.filter(t => t.status === 'Pending').length;
+    const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+    const completionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
     res.render('rectorate-dashboard', {
       user: req.session.user,
@@ -1335,17 +1329,12 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
         teachers: teachersCount.rows[0].count,
         pendingTasks,
         completedTasks,
-        completionRate,
-        billed: totalBilled.rows[0].total,
-        paid: totalPaid.rows[0].total,
-        outstanding: outstanding
+        completionRate
       },
-      tasks: tasksRes.rows,
-      greeting: getGreeting()
+      tasks: tasks
     });
   } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
 });
-
 // Assign a Task
 
 

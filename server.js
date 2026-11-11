@@ -2135,6 +2135,46 @@ app.get('/sis/faculty/evaluations', requireRole('teacher', 'advisor'), async (re
 // ============================================
 // --- RECTORATE: EXECUTIVE COMMAND CENTER ---
 // ============================================
+
+
+// ============================================
+// --- SYSTEM AUDIT LOG (Rectorate & Admin) ---
+// ============================================
+app.get('/sis/rectorate/audit', requireRole('rectorate', 'admin'), async (req, res) => {
+  try {
+    const logsRes = await pool.query(`
+      SELECT a.*, u.full_name as user_name, u.role as user_role
+      FROM audit_logs a
+      LEFT JOIN users u ON u.id = a.user_id
+      ORDER BY a.created_at DESC
+      LIMIT 100
+    `);
+
+    const logs = logsRes.rows;
+
+    // Map icons and colors based on action type
+    const formattedLogs = logs.map(log => {
+      let icon = 'fa-info-circle';
+      let color = 'text-sky-500';
+      let bg = 'bg-sky-500/10';
+
+      if (log.action.includes('GRADE')) { icon = 'fa-pen'; color = 'text-amber-500'; bg = 'bg-amber-500/10'; }
+      if (log.action.includes('LOCK')) { icon = 'fa-lock'; color = 'text-rose-500'; bg = 'bg-rose-500/10'; }
+      if (log.action.includes('APPROVED')) { icon = 'fa-check-circle'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10'; }
+      if (log.action.includes('REJECTED')) { icon = 'fa-times-circle'; color = 'text-rose-500'; bg = 'bg-rose-500/10'; }
+
+      return { ...log, icon, color, bg };
+    });
+
+    res.render('rectorate-audit', {
+      user: req.session.user,
+      logs: formattedLogs
+    });
+  } catch (err) { res.status(500).send("Audit Log Error: " + err.message); }
+});
+
+
+
 app.get('/sis/rectorate', requireRole('rectorate'), async (req, res) => {
   try {
     const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);

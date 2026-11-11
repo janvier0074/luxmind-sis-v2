@@ -1388,12 +1388,61 @@ app.post('/sis/admin/sections/:course_id/new', requireRole('admin'), async (req,
   }
 });
 
+// ============================================
+// --- CENTRAL ADMIN: STUDENT REGISTRATIONS ---
+// ============================================
 app.get('/sis/admin/registrations', requireRole('admin'), async (req, res) => {
   try {
-    const registrationsRes = await pool.query(`SELECT cr.id, cr.status, cr.requested_at, u.full_name as student_name, u.username, c.code as course_code, c.title as course_title FROM course_registrations cr JOIN users u ON u.id = cr.student_id JOIN courses c ON c.id = cr.course_id ORDER BY cr.requested_at DESC`);
-    res.render('admin-registrations', { user: req.session.user, registrations: registrationsRes.rows });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
+    const result = await pool.query(`
+      SELECT 
+        cr.id AS reg_id,
+        cr.requested_at,
+        cr.status,
+        u.full_name AS student_name,
+        u.username,
+        c.code AS course_code,
+        c.title AS course_title
+      FROM course_registrations cr
+      JOIN users u ON u.id = cr.student_id
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.status = 'pending_advisor'
+      ORDER BY cr.requested_at DESC
+    `);
+
+    res.render('admin-registrations', {
+      user: req.session.user,
+      registrations: result.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Registrations Error: " + err.message);
+  }
 });
+
+// --- POST: Process Registration (Approve / Reject) ---
+app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req, res) => {
+  try {
+    const regId = req.params.id;
+    const action = req.body.action;
+    const newStatus = action === 'approve' ? 'approved' : 'rejected';
+
+    await pool.query(`
+      UPDATE course_registrations
+      SET status = $1
+      WHERE id = $2
+    `, [newStatus, regId]);
+
+    if (req.flash) req.flash('success', `Registration ${newStatus} successfully.`);
+    res.redirect('/sis/admin/registrations');
+  } catch (err) {
+    res.status(500).send("Action Error: " + err.message);
+  }
+});
+
+
+
+
+
 
 app.get('/sis/admin/finance', requireRole('admin'), async (req, res) => {
   try {

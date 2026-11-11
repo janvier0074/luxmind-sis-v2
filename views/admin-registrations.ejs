@@ -35,7 +35,7 @@
     .badge.approved { background: #dcfce7; color: #16a34a; }
     .badge.draft { background: #e2e8f0; color: #475569; }
   
-    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
+    /* --- MOBILE FIXES --- */
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
     .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
@@ -47,13 +47,8 @@
       .sidebar-overlay.active { display: block; }
       .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
       .btn-back { display: inline-flex; }
-      .layout, .finance-layout, .attendance-grid, .tile-grid, .course-grid, .stats-grid, .semester-grid, .weekly-grid, .data-table { 
-        grid-template-columns: 1fr !important; 
-        gap: 1rem !important; 
-      }
       .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
     }
-
   </style>
 </head>
 <body>
@@ -91,18 +86,29 @@
             <th>Course</th>
             <th>Date Requested</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if (registrations.length === 0) { %>
-            <tr><td colspan="4" style="text-align: center; padding: 2rem;">No registrations found.</td></tr>
+            <tr><td colspan="5" style="text-align: center; padding: 2rem;">No registrations found.</td></tr>
           <% } %>
           <% registrations.forEach(reg => { %>
             <tr>
-              <td><strong><%= reg.student_name %></strong> <br><small style="color: var(--blue);"><%= reg.username %></small></td>
+              <td><strong><%= reg.student_name %></strong> <br><small style="color: var(--blue);"><%= reg.username || '' %></small></td>
               <td><strong><%= reg.course_code %></strong> - <%= reg.course_title %></td>
               <td><%= new Date(reg.requested_at).toLocaleDateString() %></td>
               <td><span class="badge <%= reg.status %>"><%= reg.status.replace('_', ' ') %></span></td>
+              <td>
+                <% if (reg.status === 'pending_advisor') { %>
+                  <form action="/sis/admin/registrations/<%= reg.reg_id %>/action" method="POST" style="display: inline-flex; gap: 0.5rem;">
+                    <button type="submit" name="action" value="approve" style="background: #16a34a; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">Approve</button>
+                    <button type="submit" name="action" value="reject" style="background: #dc2626; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem;">Reject</button>
+                  </form>
+                <% } else { %>
+                  <span style="color: #64748b; font-size: 0.75rem; font-style: italic;">Processed</span>
+                <% } %>
+              </td>
             </tr>
           <% }) %>
         </tbody>
@@ -111,25 +117,6 @@
   </main>
 
   <script>
-    // 1. Toggle menu function
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) {
-        submenu.classList.toggle('open');
-        // Save the state to browser memory
-        const text = element.innerText.trim().split('\n')[0]; 
-        if (parent.classList.contains('open')) {
-          localStorage.setItem('menu_' + text, 'open');
-        } else {
-          localStorage.removeItem('menu_' + text);
-        }
-      }
-    }
-
-    // 2. Mobile toggle function
     function toggleMobileMenu() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');
@@ -138,19 +125,6 @@
         ov.classList.toggle('active');
       }
     }
-
-    // 3. Restore open menus on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu-link').forEach(link => {
-        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
-          const text = link.innerText.trim().split('\n')[0];
-          if (localStorage.getItem('menu_' + text) === 'open') {
-            link.parentElement.classList.add('open');
-            link.nextElementSibling.classList.add('open');
-          }
-        }
-      });
-    });
   </script>
 
 </body>

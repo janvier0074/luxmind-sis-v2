@@ -1052,16 +1052,51 @@ app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
 // ============================================
 app.get('/sis/admin/courses', requireRole('admin'), async (req, res) => {
   try {
-    // Fetch all courses and their prerequisites
     const coursesRes = await pool.query(`
-      SELECT c.*, p.code as prereq_code 
+      SELECT c.*, f.name AS faculty_name, d.name AS department_name,
+             p.code AS prereq_code 
       FROM courses c
+      LEFT JOIN faculties f ON f.id = c.faculty_id
+      LEFT JOIN departments d ON d.id = c.department_id
       LEFT JOIN courses p ON p.id = c.prerequisite_id
       ORDER BY c.semester_number ASC, c.code ASC
     `);
-    res.render('admin-courses', { user: req.session.user, courses: coursesRes.rows });
+    const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
+    const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
+    res.render('admin-courses', { 
+      user: req.session.user, 
+      courses: coursesRes.rows,
+      faculties: facultiesRes.rows,
+      departments: departmentsRes.rows
+    });
   } catch (err) { res.status(500).send("Course Catalog Error: " + err.message); }
 });
+
+app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
+  const { code, title, credits, semester_number, prerequisite_id, quota, faculty_id, department_id } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO courses (code, title, credits, semester_number, prerequisite_id, quota, faculty_id, department_id) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      code, 
+      title, 
+      Number(credits), 
+      Number(semester_number), 
+      prerequisite_id ? Number(prerequisite_id) : null, 
+      quota ? Number(quota) : 40,
+      faculty_id ? Number(faculty_id) : null,
+      department_id ? Number(department_id) : null
+    ]);
+    req.flash('success', `Course ${code} created successfully.`);
+    res.redirect('/sis/admin/courses');
+  } catch (err) {
+    req.flash('error', 'Error creating course: ' + err.message);
+    res.redirect('/sis/admin/courses');
+  }
+});
+
+
 
 app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
   const { code, title, credits, semester_number, prerequisite_id, quota } = req.body;

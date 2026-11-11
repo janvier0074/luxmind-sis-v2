@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Withdrawals — LuxMind SIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f4f7f9] text-[#0a1e32] font-sans min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="w-72 bg-[#0a1e32] text-white flex flex-col justify-between h-screen sticky top-0 overflow-y-auto shrink-0">
+    <div class="p-6 border-b border-[#1e3a5f]">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-[#0f2a44] rounded-xl flex items-center justify-center font-black text-xl text-[#ffc857] border border-[#f5a623]/30">A</div>
+        <div>
+          <h2 class="font-extrabold text-base">LuxMind SIS</h2>
+          <p class="text-[10px] font-bold text-[#f5a623] uppercase tracking-widest">Registrar</p>
+        </div>
+      </div>
+    </div>
+    <nav class="px-3 py-4 flex-1 space-y-1">
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-home text-[#f5a623] text-sm"></i> Dashboard</a>
+      <a href="/sis/admin/approvals" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-check-double text-[#f5a623] text-sm"></i> Approvals</a>
+      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-user-graduate text-[#f5a623] text-sm"></i> Students</a>
+      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-chalkboard-teacher text-[#f5a623] text-sm"></i> Teachers</a>
+      <a href="/sis/admin/faculties" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-university text-[#f5a623] text-sm"></i> Faculties</a>
+      <a href="/sis/admin/courses" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-book text-[#f5a623] text-sm"></i> Course Catalog</a>
+      <a href="/sis/admin/withdrawals" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#f5a623] text-[#0a1e32] shadow-md"><i class="fas fa-sign-out-alt text-sm"></i> Withdrawals</a>
+      <a href="/sis/admin/requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-paper-plane text-[#f5a623] text-sm"></i> Faculty Requests</a>
+      <a href="/sis/admin/leave" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-[#0f2a44] hover:text-white"><i class="fas fa-plane-departure text-[#f5a623] text-sm"></i> Leave Requests</a>
+    </nav>
+    <footer class="p-4 border-t border-[#1e3a5f] flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#f5a623] text-[#0a1e32] font-black flex items-center justify-center text-xs">AD</div>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate"><%= user.full_name %></h4>
+          <p class="text-[10px] text-slate-400 font-semibold">Registrar</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 p-8 overflow-y-auto">
+    <header class="mb-6 pb-4 border-b border-slate-200">
+      <div class="flex items-center gap-2 text-[11px] font-extrabold text-orange-600 uppercase tracking-widest">
+        <i class="fas fa-sign-out-alt"></i> Central Administration
+      </div>
+      <h1 class="text-3xl font-black mt-1">Course Withdrawals</h1>
+      <p class="text-xs text-slate-500 mt-1">Review and process student drop-course requests.</p>
+    </header>
+
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50">
+              <th class="px-6 py-4 text-[10px] font-extrabold uppercase text-slate-500 border-b border-slate-200">Student</th>
+              <th class="px-6 py-4 text-[10px] font-extrabold uppercase text-slate-500 border-b border-slate-200">Course</th>
+              <th class="px-6 py-4 text-[10px] font-extrabold uppercase text-slate-500 border-b border-slate-200">Reason</th>
+              <th class="px-6 py-4 text-[10px] font-extrabold uppercase text-slate-500 border-b border-slate-200 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (withdrawals.length === 0) { %>
+              <tr>
+                <td colspan="4" class="text-center py-8 text-slate-400 font-semibold text-xs">
+                  <i class="fas fa-check-circle text-2xl text-emerald-400 mb-2 block"></i>
+                  No pending withdrawals found.
+                </td>
+              </tr>
+            <% } %>
+            
+            <% withdrawals.forEach(w => { %>
+              <tr class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="px-6 py-4">
+                  <div class="text-xs font-bold text-slate-800"><%= w.student_name %></div>
+                  <div class="text-[10px] text-slate-500 font-semibold"><%= w.username || '' %></div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-xs font-bold text-amber-600"><%= w.course_code %></div>
+                  <div class="text-[10px] text-slate-500 font-semibold"><%= w.course_title %></div>
+                </td>
+                <td class="px-6 py-4 text-xs font-semibold text-slate-600 max-w-xs truncate">
+                  <%= w.reason || 'No reason provided' %>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-2">
+                    <button class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition-colors shadow-sm">
+                      <i class="fas fa-check mr-1"></i> Approve
+                    </button>
+                    <button class="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold hover:bg-rose-700 transition-colors shadow-sm">
+                      <i class="fas fa-times mr-1"></i> Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

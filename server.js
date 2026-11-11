@@ -1419,6 +1419,39 @@ app.get('/sis/admin/registrations', requireRole('admin'), async (req, res) => {
   }
 });
 
+
+
+
+// ============================================
+// --- CENTRAL ADMIN: COURSE WITHDRAWALS ---
+// ============================================
+app.get('/sis/admin/withdrawals', requireRole('admin'), async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        w.id AS withdrawal_id,
+        w.reason,
+        w.requested_at,
+        u.full_name AS student_name,
+        u.username,
+        c.code AS course_code,
+        c.title AS course_title
+      FROM course_withdrawals w
+      JOIN users u ON u.id = w.student_id
+      JOIN courses c ON c.id = w.course_id
+      WHERE w.status = 'pending'
+      ORDER BY w.requested_at DESC
+    `);
+
+    res.render('admin-withdrawals', {
+      user: req.session.user,
+      withdrawals: result.rows
+    });
+  } catch (err) {
+    res.status(500).send("Withdrawals Error: " + err.message);
+  }
+});
+
 // --- POST: Process Registration (Approve / Reject) ---
 app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req, res) => {
   try {

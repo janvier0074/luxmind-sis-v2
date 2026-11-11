@@ -1347,6 +1347,56 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 });
 
 // Assign a Task
+
+
+// Rectorate: Graduation Pipeline
+app.get('/sis/rectorate/graduation', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    const studentsRes = await pool.query(`
+      SELECT 
+        u.id, u.full_name, sp.admission_number, sp.current_semester, sp.class_level,
+        COALESCE(SUM(CASE WHEN g.letter_grade NOT IN ('F', 'N/A') THEN c.credits ELSE 0 END), 0) AS earned_credits,
+        COALESCE(ROUND(SUM(g.gpa_points * c.credits) / NULLIF(SUM(c.credits), 0), 2), 0.00) AS cgpa
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN enrollments e ON e.user_id = u.id
+      LEFT JOIN courses c ON c.id = e.course_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id AND g.is_published = true
+      WHERE u.role = 'student'
+      GROUP BY u.id, u.full_name, sp.admission_number, sp.current_semester, sp.class_level
+    `);
+
+    const students = studentsRes.rows.map(st => {
+      const earned = Number(st.earned_credits);
+      const gpa = Number(st.cgpa);
+      let status = 'On Track';
+      
+      if (st.current_semester >= 8 && earned < 90) status = 'Delayed';
+      if (gpa < 2.0) status = 'At Risk';
+      
+      return { ...st, earned_credits: earned, cgpa: gpa, status };
+    });
+
+    const stats = {
+      total: students.length,
+      onTrack: students.filter(s => s.status === 'On Track').length,
+      delayed: students.filter(s => s.status === 'Delayed').length,
+      atRisk: students.filter(s => s.status === 'At Risk').length
+    };
+
+    res.render('rectorate-graduation', {
+      user: req.session.user,
+      students: students,
+      stats: stats
+    });
+  } catch (err) { res.status(500).send("Graduation Pipeline Error: " + err.message); }
+});
+
+
+
+
+
 app.post('/sis/rectorate/tasks/create', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   const { title, description, assigned_to_dept, deadline } = req.body;

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Advisees — LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
+      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
+      --success: #1f8a5f; --danger: #b33e2e;
+      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
+      --shadow-hover: 0 16px 32px -12px rgba(10,30,50,0.22);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    
+    html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%), radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%), var(--ice);
+      min-height: 100vh; display: flex; color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Sidebar (Standard) */
+    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
+    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
+    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
+    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
+    .menu-item { cursor: pointer; }
+    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
+    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
+    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
+    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
+    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
+    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
+    .submenu.open { display: block; border-left-color: var(--amber); }
+    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
+    .menu-item.open > .menu-link { color: #fff; }
+
+    /* Main Content */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); width: fit-content; }
+    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+
+    .page-title { display: flex; align-items: center; gap: 1rem; }
+    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4); }
+    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+    .stat-card { background: #fff; padding: 1.2rem 1.4rem; border-radius: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1rem; transition: var(--transition); }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--gold); }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .stat-icon.total { background: #e0f2fe; color: #0284c7; }
+    .stat-icon.good { background: #dcfce7; color: #16a34a; }
+    .stat-icon.risk { background: #fee2e2; color: #b91c1c; }
+    .stat-info h3 { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.1rem; }
+
+    /* Table Area */
+    .table-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; width: 100%; }
+    .table-toolbar { padding: 1.2rem 1.4rem; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.6rem 1rem; border-radius: 100px; border: 1px solid var(--frost); width: 300px; }
+    .search-box input { border: none; background: transparent; outline: none; width: 100%; font-family: inherit; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
+    .search-box i { color: var(--amber); }
+
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th { background: #f8fafc; color: #64748b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 800; padding: 1rem 1.4rem; text-align: left; border-bottom: 2px solid var(--frost); }
+    td { padding: 1rem 1.4rem; border-bottom: 1px solid #eef2f7; font-size: 0.85rem; font-weight: 600; color: var(--navy); vertical-align: middle; }
+    tr:hover td { background: #fbfdff; }
+
+    .student-cell { display: flex; align-items: center; gap: 0.8rem; }
+    .avatar { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--navy), var(--blue)); color: var(--gold); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; }
+    .student-info strong { display: block; font-size: 0.85rem; font-weight: 800; color: var(--navy); }
+    .student-info span { font-size: 0.72rem; color: #94a3b8; }
+
+    .cgpa-badge { display: inline-block; padding: 0.3rem 0.7rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; }
+    .cgpa-badge.excellent { background: #dcfce7; color: #15803d; }
+    .cgpa-badge.good { background: #e0f2fe; color: #0284c7; }
+    .cgpa-badge.warning { background: #fef3c7; color: #b45309; }
+    .cgpa-badge.danger { background: #fee2e2; color: #991b1b; }
+
+    .btn-view { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; background: #f1f5f9; color: var(--blue); border-radius: 100px; text-decoration: none; font-size: 0.75rem; font-weight: 800; transition: var(--transition); }
+    .btn-view:hover { background: var(--amber); color: #fff; }
+
+    /* Mobile */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; padding: 1.5rem !important; padding-top: 5rem !important; }
+      .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+      .search-box { width: 100%; }
+      .page-title h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Faculty Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="menu-item"><a href="/sis/faculty" class="menu-link"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
+      <li class="menu-item"><a href="/sis/faculty/courses" class="menu-link"><i class="fas fa-book-open main-icon"></i> <%= lang.my_courses || 'My Courses' %></a></li>
+      
+      <li class="menu-item open">
+        <a href="#" class="menu-link active" onclick="toggle(event, this)">
+          <i class="fas fa-user-friends main-icon"></i> Advising <i class="fas fa-chevron-right arrow"></i>
+        </a>
+        <ul class="submenu open">
+          <li class="menu-item"><a href="/sis/advisor/approvals" class="menu-link"><i class="fas fa-check-circle main-icon"></i> Registration Approvals</a></li>
+          <li class="menu-item"><a href="/sis/faculty/advisees" class="menu-link active"><i class="fas fa-users main-icon"></i> My Advisees</a></li>
+        </ul>
+      </li>
+
+      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/faculty" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+    <header class="page-title">
+      <div class="page-title-icon"><i class="fas fa-users-viewfinder"></i></div>
+      <div>
+        <h1>My Advisees</h1>
+        <p>Monitor your assigned students' academic progress</p>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-info"><h3>Total Advisees</h3><p><%= stats.total %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon good"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><h3>Good Standing</h3><p><%= stats.goodStanding %></p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon risk"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="stat-info"><h3>At Risk</h3><p><%= stats.atRisk %></p></div>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-toolbar">
+        <h2 style="font-size: 1.05rem; font-weight: 800;">Student List</h2>
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="searchInput" placeholder="Search by name or ID..." oninput="filterTable()">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Semester</th>
+              <th>CGPA</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="adviseesBody">
+            <% if (advisees.length === 0) { %>
+              <tr><td colspan="4" style="text-align: center; padding: 3rem; color: #94a3b8;"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>No students assigned to you yet.</td></tr>
+            <% } %>
+
+            <% advisees.forEach(st => { %>
+              <% 
+                const initials = (st.full_name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const gpa = Number(st.cgpa);
+                let badgeClass = 'danger';
+                if (gpa >= 3.5) badgeClass = 'excellent';
+                else if (gpa >= 2.5) badgeClass = 'good';
+                else if (gpa >= 2.0) badgeClass = 'warning';
+              %>
+              <tr data-search="<%= (st.full_name + ' ' + (st.admission_number || '')).toLowerCase() %>">
+                <td>
+                  <div class="student-cell">
+                    <div class="avatar"><%= initials %></div>
+                    <div class="student-info">
+                      <strong><%= st.full_name %></strong>
+                      <span><%= st.admission_number || 'No ID' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td>Semester <%= st.current_semester || 1 %></td>
+                <td><span class="cgpa-badge <%= badgeClass %>"><%= gpa.toFixed(2) %> / 4.00</span></td>
+                <td><a href="#" class="btn-view"><i class="fas fa-eye"></i> View</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function toggle(event, element) {
+      event.preventDefault();
+      const parent = element.parentElement;
+      parent.classList.toggle('open');
+      const submenu = parent.querySelector('.submenu');
+      if (submenu) submenu.classList.toggle('open');
+    }
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
+    }
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('#adviseesBody tr[data-search]').forEach(row => {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1255,6 +1255,54 @@ app.post('/sis/faculty/course-weights/:section_id', requireLogin, async (req, re
 // ============================================
 // --- FACULTY: PROFILE & PASSWORD ---
 // ============================================
+
+
+// ============================================
+// --- FACULTY: MY ADVISEES ---
+// ============================================
+app.get('/sis/faculty/advisees', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
+  try {
+    const adviseesRes = await pool.query(`
+      SELECT 
+        u.id AS user_id,
+        u.full_name,
+        u.email,
+        sp.admission_number,
+        sp.class_level,
+        sp.current_semester,
+        COALESCE(
+          ROUND(SUM(g.gpa_points * c.credits) / NULLIF(SUM(c.credits), 0), 2),
+          0.00
+        ) AS cgpa
+      FROM student_profiles sp
+      JOIN users u ON u.id = sp.user_id
+      LEFT JOIN enrollments e ON e.user_id = u.id
+      LEFT JOIN courses c ON c.id = e.course_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id AND g.is_published = true
+      WHERE sp.advisor_id = $1
+      GROUP BY u.id, u.full_name, u.email, sp.admission_number, sp.class_level, sp.current_semester
+      ORDER BY u.full_name ASC
+    `, [req.session.user.id]);
+
+    const advisees = adviseesRes.rows;
+    const stats = {
+      total: advisees.length,
+      goodStanding: advisees.filter(a => Number(a.cgpa) >= 2.0).length,
+      atRisk: advisees.filter(a => Number(a.cgpa) < 2.0 && Number(a.cgpa) > 0).length
+    };
+
+    res.render('faculty-advisees', {
+      user: req.session.user,
+      advisees,
+      stats,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Advisees Error: " + err.message); }
+});
+
+
+
 app.get('/sis/faculty/profile', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'teacher' && req.session.user.role !== 'advisor') return res.redirect('/login');
   try {

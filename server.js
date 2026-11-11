@@ -193,7 +193,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       stats: stats, 
       greeting: getGreeting(),
       announcementCount: parseInt(newAnnCount.rows[0].count) || 0,
-      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
+      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0,
       targetedMessages: targetedRes.rows
     });
   } catch (err) {
@@ -741,7 +741,7 @@ res.render('faculty-dashboard', {
       user: req.session.user, 
       greeting: getGreeting(), 
       courses: coursesRes.rows,
-      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0
+      globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0,
       targetedMessages: targetedRes.rows
     });
   } catch (err) { res.status(500).send("Error: " + err.message); }

@@ -1357,6 +1357,56 @@ app.get('/sis/rectorate', requireLogin, async (req, res) => {
 // ============================================
 // --- RECTORATE: STUDENT AFFAIRS OVERSIGHT ---
 // ============================================
+
+
+
+// ============================================
+// --- RECTORATE: HUMAN RESOURCES (WORKLOAD) ---
+// ============================================
+app.get('/sis/rectorate/hr', requireLogin, async (req, res) => {
+  if (req.session.user.role !== 'rectorate') return res.redirect('/login');
+  try {
+    // 1. Get overall HR stats
+    const staffCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role IN ('teacher', 'advisor')`);
+    
+    // 2. Get detailed workload per staff member
+    const workloadRes = await pool.query(`
+      SELECT 
+        u.id, 
+        u.full_name, 
+        u.role,
+        (SELECT COUNT(*) FROM course_sections s WHERE s.teacher_id = u.id) AS sections_count,
+        (SELECT COUNT(*) FROM enrollments e JOIN course_sections s2 ON s2.id = e.section_id WHERE s2.teacher_id = u.id) AS students_count,
+        (SELECT COUNT(*) FROM student_profiles sp WHERE sp.advisor_id = u.id) AS advisees_count
+      FROM users u
+      WHERE u.role IN ('teacher', 'advisor')
+      ORDER BY sections_count DESC, advisees_count DESC
+    `);
+
+    const staff = workloadRes.rows.map(s => ({
+      ...s,
+      sections_count: Number(s.sections_count),
+      students_count: Number(s.students_count),
+      advisees_count: Number(s.advisees_count)
+    }));
+
+    const stats = {
+      totalStaff: Number(staffCount.rows[0].count),
+      totalSections: staff.reduce((sum, s) => sum + s.sections_count, 0),
+      totalAdvisees: staff.reduce((sum, s) => sum + s.advisees_count, 0),
+      avgLoad: staff.length > 0 ? Math.round(staff.reduce((sum, s) => sum + s.students_count, 0) / staff.length) : 0
+    };
+
+    res.render('rectorate-hr', {
+      user: req.session.user,
+      staff: staff,
+      stats: stats
+    });
+  } catch (err) { res.status(500).send("HR Directorate Error: " + err.message); }
+});
+
+
+
 app.get('/sis/rectorate/student-affairs', requireLogin, async (req, res) => {
   if (req.session.user.role !== 'rectorate') return res.redirect('/login');
   try {

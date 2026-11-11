@@ -689,11 +689,61 @@ app.post('/sis/faculty/grades/:section_id', requireRole('teacher', 'advisor'), a
 // ============================================
 app.get('/sis/admin', requireRole('admin'), async (req, res) => {
   try {
+    // 1. Basic Stats
     const studentsCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'student'`);
     const teachersCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'teacher'`);
     const coursesCount = await pool.query(`SELECT COUNT(*) FROM courses`);
     const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
-    res.render('admin-dashboard', { user: req.session.user, greeting: getGreeting(), stats: { students: studentsCount.rows[0].count, teachers: teachersCount.rows[0].count, courses: coursesCount.rows[0].count, pending: pendingRegs.rows[0].count } });
+    const pendingDocs = await pool.query(`SELECT COUNT(*) FROM document_requests WHERE status = 'pending'`);
+
+    // 2. Chart Data: Students by Faculty
+    const facultyRes = await pool.query(`
+      SELECT sp.class_level AS faculty, COUNT(*) AS count
+      FROM users u
+      JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student'
+      GROUP BY sp.class_level
+      ORDER BY count DESC
+    `);
+    const facultyLabels = facultyRes.rows.map(r => r.faculty || 'General');
+    const facultyData = facultyRes.rows.map(r => Number(r.count));
+
+    // 3. Chart Data: Financials (Billed vs Paid)
+    const finRes = await pool.query(`
+      WITH StudentBilling AS (
+        SELECT 
+          u.id,
+          COALESCE(fs.amount, 0) AS amount_billed,
+          COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = u.id), 0) AS amount_paid
+        FROM users u
+        JOIN student_profiles sp ON sp.user_id = u.id
+        LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+        WHERE u.role = 'student'
+      )
+      SELECT SUM(amount_billed) AS total_billed, SUM(amount_paid) AS total_paid FROM StudentBilling
+    `);
+    
+    const totalBilled = Number(finRes.rows[0].total_billed) || 0;
+    const totalPaid = Number(finRes.rows[0].total_paid) || 0;
+    const totalOutstanding = totalBilled - totalPaid;
+
+    res.render('admin-dashboard', { 
+      user: req.session.user, 
+      greeting: getGreeting(), 
+      stats: { 
+        students: studentsCount.rows[0].count, 
+        teachers: teachersCount.rows[0].count, 
+        courses: coursesCount.rows[0].count, 
+        pendingRegs: pendingRegs.rows[0].count,
+        pendingDocs: pendingDocs.rows[0].count
+      },
+      chartData: {
+        facultyLabels,
+        facultyData,
+        totalPaid,
+        totalOutstanding
+      }
+    });
   } catch (err) { res.status(500).send("Admin Error: " + err.message); }
 });
 

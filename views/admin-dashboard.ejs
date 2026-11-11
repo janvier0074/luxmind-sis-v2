@@ -1,302 +1,247 @@
 <!DOCTYPE html>
-<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LuxMind SIS - Admin Portal</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>Registrar Command Center — LuxMind SIS</title>
   
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
-      --gold: #ffc857; --mist: #eef4fa; --frost: #d9e6f2; --ice: #f7fafd;
-      --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
-    }
-    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--ice); min-height: 100vh; display: flex; color: var(--navy); }
-
-    /* --- SIDEBAR --- */
-    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 100; }
-    .sidebar::-webkit-scrollbar { width: 5px; }
-    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
-    
-    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: var(--navy); z-index: 10; }
-    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
-    .brand-name { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
-    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
-    
-    .sidebar-menu { list-style: none; padding: 1rem 0; }
-    .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
-    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .menu-link i.main-icon { width: 25px; color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
-    .menu-link .arrow { margin-left: auto; font-size: 0.65rem; transition: transform 0.3s; }
-    .menu-link.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: var(--gold); }
-    
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.15); }
-    .submenu.open { display: block; }
-    .submenu .menu-link { padding-left: 3.5rem; font-size: 0.8rem; }
-    .submenu .submenu .menu-link { padding-left: 4.5rem; font-size: 0.75rem; }
-    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
-
-    /* --- MAIN CONTENT --- */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); }
-    
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
-    .greeting h1 { font-size: 1.8rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
-    .greeting p { color: #64748b; font-weight: 500; font-size: 0.95rem; margin-top: 0.3rem; }
-    .user-pill { background: #fff; padding: 0.5rem 1rem; border-radius: 100px; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); font-weight: 700; font-size: 0.9rem; }
-    .user-pill i { color: var(--amber); }
-
-    /* Language Switcher */
-    .lang-switcher {
-      display: flex; align-items: center; gap: 0.5rem;
-      background: #fff; padding: 0.5rem 1rem; border-radius: 100px;
-      box-shadow: var(--shadow-soft); border: 1px solid var(--frost);
-    }
-    .lang-switcher i { color: var(--amber); font-size: 0.9rem; }
-    .lang-switcher select {
-      border: none; background: transparent; font-family: inherit;
-      font-weight: 700; font-size: 0.85rem; color: var(--navy);
-      cursor: pointer; outline: none;
-    }
-
-    /* Dashboard Cards */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
-    .stat-card { background: #fff; padding: 1.5rem; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); display: flex; align-items: center; gap: 1.2rem; }
-    .stat-icon { width: 55px; height: 55px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .stat-icon.students { background: #e0f2fe; color: #0284c7; }
-    .stat-icon.teachers { background: #dcfce7; color: #16a34a; }
-    .stat-icon.courses { background: #fef3c7; color: #d97706; }
-    .stat-icon.pending { background: #fee2e2; color: #b91c1c; }
-    .stat-info h3 { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-    .stat-info p { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-top: 0.2rem; }
-
-    .welcome-banner { background: linear-gradient(135deg, var(--navy), var(--blue)); color: #fff; padding: 2.5rem; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border-bottom: 4px solid var(--amber); }
-    .welcome-banner h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .welcome-banner p { font-size: 1rem; color: #cbd5e1; font-weight: 500; }
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-    /* --- MOBILE FIXES (AUTO-INJECTED) --- */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy, #0a1e32); color: var(--gold, #ffc857); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(10,30,50,0.12); align-items: center; justify-content: center; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue, #1e4d7b); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
-
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
-      .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0 !important; width: 100% !important; padding: 1.5rem !important; padding-top: 5rem !important; }
-      .btn-back { display: inline-flex; }
-      .layout, .finance-layout, .attendance-grid, .tile-grid, .course-grid, .stats-grid, .semester-grid, .weekly-grid, .data-table { 
-        grid-template-columns: 1fr !important; 
-        gap: 1rem !important; 
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#040d18', 900: '#0a1e32', 800: '#0f2a44', 700: '#153658', 600: '#1e4d7b', 500: '#2d6a9f' },
+            amber: { 500: '#f5a623', 400: '#ffb73d' },
+            gold: { 500: '#ffc857', 400: '#ffd57e' },
+            ice: { 50: '#f8fafc', 100: '#f4f7f9', 200: '#e6edf3' }
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] }
+        }
       }
-      .table-container, .table-wrapper { display: block; overflow-x: auto; white-space: nowrap; }
     }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <style>
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(10, 30, 50, 0.05); }
+    .dark ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+    ::-webkit-scrollbar-thumb { background: #1e4d7b; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f5a623; }
+
+    .glass-panel { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .dark .glass-panel { background: rgba(15, 42, 68, 0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(255, 255, 255, 0.08); }
+    
+    @keyframes liveBeacon { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+    .live-beacon { animation: liveBeacon 1.6s infinite ease-in-out; }
   </style>
 </head>
-<body>
+<body class="bg-ice-100 dark:bg-navy-950 text-navy-900 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300 antialiased overflow-x-hidden">
 
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+  <!-- MOBILE HEADER -->
+  <header class="md:hidden sticky top-0 z-40 bg-navy-900 text-white px-4 py-3 flex items-center justify-between border-b border-navy-800 shadow-md">
+    <div class="flex items-center gap-3">
+      <figure class="w-9 h-9 bg-navy-800 rounded-lg flex items-center justify-center font-black text-gold-500 border border-amber-500/30">A</figure>
+      <div>
+        <h1 class="font-extrabold text-sm leading-tight">Admin Portal</h1>
+        <p class="text-[10px] text-amber-400 font-semibold tracking-wider uppercase">LuxMind SIS</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-lg bg-navy-800 text-amber-400 flex items-center justify-center text-sm"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i></button>
+      <button onclick="openSidebarDrawer()" class="w-9 h-9 rounded-lg bg-amber-500 text-navy-950 flex items-center justify-center text-lg font-bold"><i class="fas fa-bars"></i></button>
+    </div>
+  </header>
 
+  <button id="mobileBackdrop" onclick="closeSidebarDrawer()" class="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-sm hidden md:hidden opacity-0 transition-opacity duration-300"></button>
 
-  <!-- ADMIN SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">L</div>
-      <div class="brand-name">LuxMind SIS <span>Admin Portal</span></div>
+  <!-- SIDEBAR (Admin) -->
+  <aside id="sidebar" class="fixed md:sticky top-0 inset-y-0 left-0 z-50 w-72 bg-navy-900 text-white flex flex-col justify-between border-r border-navy-800 shadow-2xl md:shadow-none transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out h-screen overflow-y-auto">
+    
+    <div class="p-6 border-b border-navy-800/80 shrink-0">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <figure class="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center font-black text-xl text-gold-500 shadow-md border border-amber-500/30">A</figure>
+          <div>
+            <h2 class="font-extrabold text-base tracking-tight leading-tight text-white">LuxMind SIS</h2>
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mt-0.5">Registrar</p>
+          </div>
+        </div>
+        <button onclick="closeSidebarDrawer()" class="md:hidden text-slate-400 hover:text-white p-1 text-lg"><i class="fas fa-times"></i></button>
+      </div>
     </div>
 
-    <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/admin" class="menu-link active"><i class="fas fa-home main-icon"></i> <%= lang.dashboard || 'Dashboard' %></a></li>
-      
-      <!-- USER MANAGEMENT -->
-      <li class="menu-item open">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-users main-icon"></i> User Management <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu open">
-          <li class="menu-item"><a href="/sis/admin/students" class="menu-link"><i class="fas fa-user-graduate main-icon"></i> Students</a></li>
-          <li class="menu-item"><a href="/sis/admin/teachers" class="menu-link"><i class="fas fa-chalkboard-teacher main-icon"></i> Teachers</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-tie main-icon"></i> Advisors</a></li>
-        </ul>
-      </li>
+    <nav class="px-3 py-4 flex-1 overflow-y-auto space-y-1">
+      <a href="/sis/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-navy-950 shadow-md transition-all">
+        <i class="fas fa-home text-sm"></i> Dashboard
+      </a>
+      <a href="/sis/admin/students" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-user-graduate text-amber-500 text-sm"></i> Students
+      </a>
+      <a href="/sis/admin/teachers" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-chalkboard-teacher text-amber-500 text-sm"></i> Teachers
+      </a>
+      <a href="/sis/admin/sections" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-layer-group text-amber-500 text-sm"></i> Sections
+      </a>
+      <a href="/sis/admin/finance" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-wallet text-amber-500 text-sm"></i> Finance
+      </a>
+      <a href="/sis/admin/documents" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-navy-800 hover:text-white transition-all">
+        <i class="fas fa-file-alt text-amber-500 text-sm"></i> Documents
+      </a>
+    </nav>
 
-      <!-- ACADEMIC MANAGEMENT -->
-      <li class="menu-item">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-university main-icon"></i> Academic Management <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-book main-icon"></i> Course Catalog</a></li>
-         <li class="menu-item"><a href="/sis/admin/sections" class="menu-link"><i class="fas fa-layer-group main-icon"></i> Sections & Groups</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-list main-icon"></i> Curriculum Setup</a></li>
-        </ul>
-      </li>
-
-      <!-- REGISTRATION CONTROL -->
-      <li class="menu-item">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-clipboard-check main-icon"></i> Registration Control <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-calendar-alt main-icon"></i> Active Semester</a></li>
-          <li class="menu-item"><a href="/sis/admin/registrations" class="menu-link"><i class="fas fa-tasks main-icon"></i> All Registrations</a></li>
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-user-friends main-icon"></i> Advisor Assignments</a></li>
-        </ul>
-      </li>
-
-      <!-- FINANCE -->
-      <li class="menu-item">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-wallet main-icon"></i> Finance <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-file-invoice-dollar main-icon"></i> Fee Structure</a></li>
-         <li class="menu-item"><a href="/sis/admin/finance" class="menu-link"><i class="fas fa-credit-card main-icon"></i> Payments & Balances</a></li>
-        </ul>
-      </li>
-  
-      <!-- DOCUMENT REQUESTS -->
-      <li class="menu-item">
-        <a href="/sis/admin/documents" class="menu-link">
-          <i class="fas fa-file-alt main-icon"></i> Document Requests
-        </a>
-      </li>
-
-
-
-      <!-- SYSTEM SETTINGS -->
-      <li class="menu-item">
-        <a href="#" class="menu-link" onclick="toggle(event, this)">
-          <i class="fas fa-cog main-icon"></i> System Settings <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu">
-          <li class="menu-item"><a href="#" class="menu-link"><i class="fas fa-bullhorn main-icon"></i> <%= lang.announcements || 'Announcements' %></a></li>
-          <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> <%= lang.logout || 'Logout' %></a></li>
-        </ul>
-      </li>
-    </ul>
+    <footer class="p-4 border-t border-navy-800 bg-navy-950/60 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <figure class="w-9 h-9 rounded-full bg-amber-500 text-navy-950 font-black flex items-center justify-center text-xs shadow-inner">AD</figure>
+        <div class="truncate">
+          <h4 class="text-xs font-extrabold text-white truncate"><%= user.full_name || 'Admin' %></h4>
+          <p class="text-[10px] text-slate-400 font-semibold truncate">Registrar Office</p>
+        </div>
+      </div>
+      <a href="/logout" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition-colors" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </footer>
   </aside>
 
   <!-- MAIN CONTENT -->
-  <main class="main-content">
-
-    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
-
+  <main class="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full space-y-6">
     
-    <div class="top-bar">
-      <div class="greeting">
-        <h1><%= greeting %>, Registrar 👋</h1>
-        <p>University overview and control center.</p>
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-navy-800">
+      <div>
+        <div class="flex items-center gap-2 text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-widest"><i class="fas fa-building"></i> University Registrar</div>
+        <h1 class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white tracking-tight mt-0.5">Command Center</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Manage students, staff, and university operations.</p>
       </div>
-      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-        <div class="lang-switcher">
-          <i class="fas fa-globe"></i>
-          <select onchange="window.location.href='/set-language/' + this.value">
-            <option value="en" <%= (typeof locale !== 'undefined' && locale === 'en') ? 'selected' : '' %>>English</option>
-            <option value="fr" <%= (typeof locale !== 'undefined' && locale === 'fr') ? 'selected' : '' %>>Français</option>
-            <option value="sw" <%= (typeof locale !== 'undefined' && locale === 'sw') ? 'selected' : '' %>>Kiswahili</option>
-            <option value="rn" <%= (typeof locale !== 'undefined' && locale === 'rn') ? 'selected' : '' %>>Ikirundi</option>
-          </select>
-        </div>
-        <div class="user-pill">
-          <i class="fas fa-user-shield"></i>
-          <%= user.full_name || user.username %>
-        </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" class="flex w-10 h-10 rounded-xl bg-white dark:bg-navy-800 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-navy-700 items-center justify-center hover:bg-slate-50 transition-all shadow-sm"><i class="fas fa-moon text-sm dark:hidden"></i><i class="fas fa-sun text-sm hidden dark:block"></i></button>
       </div>
-    </div>
+    </header>
 
     <!-- STATS ROW -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon students"><i class="fas fa-user-graduate"></i></div>
-        <div class="stat-info">
-          <h3>Total Students</h3>
-          <p><%= stats.students %></p>
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-user-graduate"></i></figure>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon teachers"><i class="fas fa-chalkboard-teacher"></i></div>
-        <div class="stat-info">
-          <h3>Total Teachers</h3>
-          <p><%= stats.teachers %></p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon courses"><i class="fas fa-book"></i></div>
-        <div class="stat-info">
-          <h3>Total Courses</h3>
-          <p><%= stats.courses %></p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
-        <div class="stat-info">
-          <h3>Pending Regs</h3>
-          <p><%= stats.pending %></p>
-        </div>
-      </div>
-    </div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Total Students</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.students %></div>
+      </article>
 
-    <!-- WELCOME BANNER -->
-    <div class="welcome-banner">
-      <h2>Welcome to the Registrar Portal</h2>
-      <p>From here, you can register new students, create course sections, assign advisors, and control the overall operations of LuxMind University.</p>
-    </div>
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-chalkboard-teacher"></i></figure>
+        </div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Total Teachers</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.teachers %></div>
+      </article>
+
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-clock"></i></figure>
+        </div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Pending Regs</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.pendingRegs %></div>
+      </article>
+
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm">
+        <div class="flex justify-between items-start mb-3">
+          <figure class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center text-lg font-bold"><i class="fas fa-file-alt"></i></figure>
+        </div>
+        <h3 class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Pending Docs</h3>
+        <div class="text-2xl font-extrabold text-navy-900 dark:text-white tracking-tight"><%= stats.pendingDocs %></div>
+      </article>
+    </section>
+
+    <!-- CHARTS ROW -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Enrollment Chart -->
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-amber-500"></i> Students by Faculty</h2>
+        <div class="flex-1 min-h-[250px] relative">
+          <canvas id="facultyChart"></canvas>
+        </div>
+      </article>
+
+      <!-- Financial Chart -->
+      <article class="glass-panel bg-white dark:bg-navy-900/80 p-5 rounded-2xl border border-slate-200/80 dark:border-navy-800 shadow-sm flex flex-col">
+        <h2 class="font-extrabold text-sm text-navy-900 dark:text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-pie text-emerald-500"></i> Financial Status</h2>
+        <div class="flex-1 min-h-[250px] relative flex justify-center">
+          <canvas id="financeChart"></canvas>
+        </div>
+      </article>
+    </section>
 
   </main>
 
-  
   <script>
-    // 1. Toggle menu function
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) {
-        submenu.classList.toggle('open');
-        // Save the state to browser memory
-        const text = element.innerText.trim().split('\n')[0]; 
-        if (parent.classList.contains('open')) {
-          localStorage.setItem('menu_' + text, 'open');
-        } else {
-          localStorage.removeItem('menu_' + text);
-        }
-      }
-    }
+    function openSidebarDrawer() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobileBackdrop').classList.remove('hidden'); setTimeout(() => document.getElementById('mobileBackdrop').classList.remove('opacity-0'), 10); }
+    function closeSidebarDrawer() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobileBackdrop').classList.add('opacity-0'); setTimeout(() => document.getElementById('mobileBackdrop').classList.add('hidden'), 300); }
+    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); setTimeout(initCharts, 200); }
 
-    // 2. Mobile toggle function
-    function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) {
-        sb.classList.toggle('active');
-        ov.classList.toggle('active');
-      }
-    }
+    let facultyChartInstance = null;
+    let financeChartInstance = null;
 
-    // 3. Restore open menus on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu-link').forEach(link => {
-        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
-          const text = link.innerText.trim().split('\n')[0];
-          if (localStorage.getItem('menu_' + text) === 'open') {
-            link.parentElement.classList.add('open');
-            link.nextElementSibling.classList.add('open');
+    function initCharts() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+
+      // 1. Faculty Chart
+      const ctx1 = document.getElementById('facultyChart').getContext('2d');
+      if (facultyChartInstance) facultyChartInstance.destroy();
+      
+      facultyChartInstance = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: <%- JSON.stringify(chartData.facultyLabels) %>,
+          datasets: [{
+            label: 'Students',
+            data: <%- JSON.stringify(chartData.facultyData) %>,
+            backgroundColor: '#f5a623',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
           }
         }
       });
-    });
-  </script>
 
+      // 2. Finance Chart
+      const ctx2 = document.getElementById('financeChart').getContext('2d');
+      if (financeChartInstance) financeChartInstance.destroy();
+      
+      financeChartInstance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Collected', 'Outstanding'],
+          datasets: [{
+            data: [<%= chartData.totalPaid %>, <%= chartData.totalOutstanding %>],
+            backgroundColor: ['#10b981', '#ef4444'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '75%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: textColor, font: { size: 11, weight: 'bold' } } }
+          }
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', initCharts);
+  </script>
 </body>
 </html>

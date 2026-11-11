@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forum - <%= section.code %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --amber: #f5a623; --frost: #d9e6f2; --ice: #f7fafd; }
+    body { background: var(--ice); color: var(--navy); padding: 2rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { background: var(--navy); color: #fff; padding: 2rem; border-radius: 1.5rem; margin-bottom: 2rem; box-shadow: 0 10px 30px -10px rgba(10,30,50,0.3); }
+    .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .header p { color: #94a3b8; font-weight: 600; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--navy); font-weight: 800; text-decoration: none; margin-bottom: 1rem; font-size: 0.9rem; }
+    .create-thread { background: #fff; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--frost); margin-bottom: 2rem; display: flex; gap: 1rem; }
+    .create-thread input { flex: 1; padding: 0.8rem 1rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-weight: 600; outline: none; }
+    .create-thread input:focus { border-color: var(--amber); }
+    .create-thread button { background: var(--amber); color: var(--navy); border: none; padding: 0 1.5rem; border-radius: 8px; font-weight: 800; cursor: pointer; }
+    .thread-list { display: flex; flex-direction: column; gap: 1rem; }
+    .thread-card { background: #fff; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--frost); text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .thread-card:hover { border-color: var(--amber); transform: translateY(-2px); box-shadow: 0 8px 20px -6px rgba(10,30,50,0.1); }
+    .thread-info h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .thread-meta { font-size: 0.75rem; font-weight: 700; color: #64748b; }
+    .thread-meta span { color: var(--amber); }
+    .reply-badge { background: #e0f2fe; color: #0284c7; padding: 0.4rem 1rem; border-radius: 100px; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .create-thread { flex-direction: column; }
+      .create-thread button { padding: 0.8rem; }
+      .thread-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    <div class="header">
+      <h1><%= section.code %> - <%= section.title %> (<%= section.group_name %>)</h1>
+      <p><i class="fas fa-comments"></i> Course Discussion Forum</p>
+    </div>
+    <form action="/sis/course/<%= section.id %>/forum/new" method="POST" class="create-thread">
+      <input type="text" name="title" required placeholder="Start a new discussion topic..." minlength="5">
+      <button type="submit"><i class="fas fa-paper-plane"></i> Post</button>
+    </form>
+    <div class="thread-list">
+      <% if (threads.length === 0) { %>
+        <p style="text-align: center; color: #94a3b8; font-weight: 600; padding: 2rem;">No discussions yet. Be the first to start one!</p>
+      <% } %>
+      <% threads.forEach(t => { %>
+        <a href="/sis/course/forum/thread/<%= t.id %>" class="thread-card">
+          <div class="thread-info">
+            <h3><%= t.title %></h3>
+            <div class="thread-meta">Posted by <span><%= t.author_name %></span> (<%= t.author_role %>) on <%= new Date(t.created_at).toLocaleDateString() %></div>
+          </div>
+          <div class="reply-badge"><i class="fas fa-reply"></i> <%= t.reply_count %></div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>

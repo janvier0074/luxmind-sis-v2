@@ -98,6 +98,12 @@
       <% } %>
 
       <% sections.forEach(sec => { %>
+
+
+
+<a href="/sis/course/<%= sec.section_id %>/forum" style="display: inline-block; margin-bottom: 0.5rem; background: #f5a623; color: #0a1e32; padding: 0.4rem 1rem; border-radius: 100px; font-weight: 800; text-decoration: none; font-size: 0.75rem;">
+  <i class="fas fa-comments"></i> Discussion Forum
+</a>
         <a href="/sis/my/materials/<%= sec.section_id %>" class="course-card">
           <div class="card-header">
             <span class="course-code"><%= sec.code %></span>

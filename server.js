@@ -123,7 +123,7 @@ app.post('/login', async (req, res) => {
           req.session.user.dean_faculty = deanFaculty;
         }
       } catch (e) { /* table may not exist yet, ignore */ }
-      
+            if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');

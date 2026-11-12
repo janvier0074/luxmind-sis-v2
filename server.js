@@ -3816,44 +3816,52 @@ app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
   }
 });
 
+// Student Submits a Request (Task-Based Routing)
 app.post('/sis/my/guidance/request', requireRole('student'), upload.single('attachment'), async (req, res) => {
   const { request_type, description } = req.body;
   
-  // Convert the uploaded file to a Base64 Data URL
   let attachmentUrl = null;
   if (req.file) {
     const b64 = req.file.buffer.toString('base64');
     attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
   }
   
-  // 🏛️ CIU TRIAGE ROUTING LOGIC
-  let assignedDept = 'General Administration';
-  
+  // 🏛️ CIU TASK-BASED ROUTING ENGINE
+  let assignedDept = 'International Office';
+  let assignedTeam = 'General Admin';
+
   if (request_type.includes('Debt') || request_type.includes('receipt')) {
     assignedDept = 'Finance Office';
+    assignedTeam = 'Finance Team';
   } else if (request_type.includes('Meal') || request_type.includes('Dormitory')) {
     assignedDept = 'Dormitory Directorate';
-  } else if (request_type.includes('Visa') || request_type.includes('Residence')) {
+    assignedTeam = 'Dormitory Team';
+  } else if (request_type.includes('Visa') || request_type.includes('Residence') || request_type.includes('Health Insurance') || request_type.includes('Embassy')) {
     assignedDept = 'International Office';
-  } else if (request_type.includes('Psychological') || request_type.includes('Pastoral')) {
-    assignedDept = 'Counseling Center (PCGC)';
-  } else if (request_type.includes('Academic')) {
-    assignedDept = 'Student Affairs / Advisor';
+    assignedTeam = 'Visa & Immigration Team';
+  } else if (request_type.includes('Airport') || request_type.includes('Orientation') || request_type.includes('SIM') || request_type.includes('ID Card')) {
+    assignedDept = 'International Office';
+    assignedTeam = 'Orientation & Student Life Team';
+  } else if (request_type.includes('Application') || request_type.includes('Acceptance') || request_type.includes('Scholarship') || request_type.includes('Transfer')) {
+    assignedDept = 'International Office';
+    assignedTeam = 'Admissions & Recruitment Team';
+  } else if (request_type.includes('Erasmus') || request_type.includes('Exchange')) {
+    assignedDept = 'International Office';
+    assignedTeam = 'Academic & Exchange Team';
   }
 
   try {
     await pool.query(`
-      INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, status)
-      VALUES ($1, $2, $3, $4, $5, 'Pending')
-    `, [req.session.user.id, request_type, description, attachmentUrl, assignedDept]);
+      INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, assigned_team, status)
+      VALUES ($1, $2, $3, $4, $5, $6, 'Pending')
+    `, [req.session.user.id, request_type, description, attachmentUrl, assignedDept, assignedTeam]);
 
-    req.flash('success', `Request successfully routed to the ${assignedDept}.`);
+    req.flash('success', `Request successfully routed to the ${assignedTeam}.`);
     res.redirect('/sis/my/guidance');
   } catch (err) {
     res.status(500).send("Submission Error: " + err.message);
   }
 });
-
 
 // ============================================
 // --- CENTRAL ADMIN: APPROVALS DASHBOARD ---
@@ -4250,43 +4258,75 @@ app.use((err, req, res, next) => {
 // ============================================
 // --- INTERNATIONAL OFFICE PORTAL ---
 // ============================================
+// International Office Dashboard (Role & Team Based)
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   try {
     const userId = req.session.user.id;
 
-    // 1. Get Shared Pool (Unassigned)
-    const sharedRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-      FROM guidance_requests gr
-      JOIN users u ON u.id = gr.student_id
-      WHERE gr.assigned_department = 'International Office' AND gr.assigned_to IS NULL AND gr.status = 'Pending'
-      ORDER BY gr.created_at DESC
-    `);
+    // 1. Get Staff Member's Role and Team
+    const staffRes = await pool.query(`SELECT intl_team, intl_role FROM users WHERE id = $1`, [userId]);
+    const staff = staffRes.rows[0] || { intl_team: 'General Admin', intl_role: 'officer' };
+    
+    let sharedTickets = [];
+    let myTickets = [];
 
-    // 2. Get My Tickets (Assigned to me)
-    const myRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-      FROM guidance_requests gr
-      JOIN users u ON u.id = gr.student_id
-      WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
-      ORDER BY gr.created_at DESC
-    `, [userId]);
+    // 2. DIRECTOR: Sees everything across all teams
+    if (staff.intl_role === 'director') {
+      const allRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `);
+      // Treat all tickets as "Shared Pool" for the director to manage
+      sharedTickets = allRes.rows;
+    } 
+    // 3. MANAGER: Sees all tickets in their specific team
+    else if (staff.intl_role === 'manager') {
+      const teamRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_team = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.intl_team]);
+      
+      // Managers see all team tickets. We split them into "My Tickets" if assigned to them, otherwise Shared
+      myTickets = teamRes.rows.filter(r => r.assigned_to === userId);
+      sharedTickets = teamRes.rows.filter(r => r.assigned_to !== userId);
+    } 
+    // 4. OFFICER: Sees only their assigned tickets AND unassigned tickets in their team
+    else {
+      const sharedRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.intl_team]);
 
-    // 3. Stats
-    const stats = {
-      shared: sharedRes.rows.length,
-      mine: myRes.rows.length
-    };
+      const myRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [userId]);
 
-    // 4. Get Staff Team Name from DB
-    const teamRes = await pool.query(`SELECT intl_team FROM users WHERE id = $1`, [userId]);
+      sharedTickets = sharedRes.rows;
+      myTickets = myRes.rows;
+    }
+
+    const stats = { shared: sharedTickets.length, mine: myTickets.length };
 
     res.render('intl-dashboard', {
       user: req.session.user,
-      sharedTickets: sharedRes.rows,
-      myTickets: myRes.rows,
+      teamName: staff.intl_team,
+      intlRole: staff.intl_role,
+      sharedTickets,
+      myTickets,
       stats,
-      teamName: teamRes.rows[0] ? teamRes.rows[0].intl_team : 'General Officer',
       flash: req.flash ? req.flash() : {}
     });
   } catch (err) {
@@ -4323,6 +4363,21 @@ app.get('/sis/intl/search', requireRole('intl_officer'), async (req, res) => {
     });
   } catch (err) {
     res.status(500).send("Search Error: " + err.message);
+  }
+});
+
+
+
+
+// Manager/Director: Assign a Ticket to an Officer
+app.post('/sis/intl/assign/:id', requireRole('intl_officer'), async (req, res) => {
+  const { officer_id } = req.body;
+  try {
+    await pool.query(`UPDATE guidance_requests SET assigned_to = $1 WHERE id = $2`, [officer_id, req.params.id]);
+    req.flash('success', 'Ticket successfully assigned to the officer.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Assign Error: " + err.message);
   }
 });
 

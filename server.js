@@ -4253,27 +4253,75 @@ app.use((err, req, res, next) => {
 // ============================================
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   try {
-    const requestsRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number, a.full_name as assigned_name
-      FROM guidance_requests gr
-      JOIN users u ON u.id = gr.student_id
-      LEFT JOIN users a ON a.id = gr.assigned_to
-      WHERE gr.assigned_department = 'International Office'
-        AND (gr.assigned_to = $1 OR gr.assigned_to IS NULL)
-      ORDER BY gr.created_at DESC
-    `, [req.session.user.id]);
+    const userId = req.session.user.id;
+
+    // 1. Get Staff Member's Role and Team (with safe defaults)
+    const staffRes = await pool.query(`SELECT intl_team, intl_role FROM users WHERE id = $1`, [userId]);
+    const staff = staffRes.rows[0] || { intl_team: 'General Admin', intl_role: 'officer' };
+    
+    let sharedTickets = [];
+    let myTickets = [];
+
+    // 2. DIRECTOR: Sees everything
+    if (staff.intl_role === 'director') {
+      const allRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_department = 'International Office' AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `);
+      sharedTickets = allRes.rows;
+    } 
+    // 3. MANAGER: Sees all tickets in their team
+    else if (staff.intl_role === 'manager') {
+      const teamRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_team = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.intl_team]);
+      
+      myTickets = teamRes.rows.filter(r => r.assigned_to === userId);
+      sharedTickets = teamRes.rows.filter(r => r.assigned_to !== userId);
+    } 
+    // 4. OFFICER: Sees only their team pool
+    else {
+      const sharedRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.intl_team]);
+
+      const myRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [userId]);
+
+      sharedTickets = sharedRes.rows;
+      myTickets = myRes.rows;
+    }
+
+    const stats = { shared: sharedTickets.length, mine: myTickets.length };
 
     res.render('intl-dashboard', {
       user: req.session.user,
-      requests: requestsRes.rows,
+      teamName: staff.intl_team,
+      intlRole: staff.intl_role,
+      sharedTickets,
+      myTickets,
+      stats,
       flash: req.flash ? req.flash() : {}
-    });  } catch (err) {
-    res.status(500).send("<div style='padding: 20px; font-family: monospace; color: red; background: #fff;'>" +
-      "<h2>Detailed Error:</h2>" +
-      "<p>" + err.message + "</p>" +
-      "<h3>Stack Trace:</h3>" +
-      "<pre>" + err.stack + "</pre>" +
-      "</div>");
+    });
+  } catch (err) {
+    // This will print the exact error on the screen instead of crashing silently
+    res.status(500).send("<pre style='color:red; font-size:20px; padding:20px;'>ERROR: " + err.message + "</pre>");
   }
 });
 

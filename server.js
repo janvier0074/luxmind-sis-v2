@@ -374,7 +374,7 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       req.session.returnTo = '/sis/my/registration';
       return res.redirect('/sis/my/finance');
     }
-    }
+    
 
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;

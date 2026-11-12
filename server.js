@@ -483,9 +483,20 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
     const course = courseRes.rows[0];
 
-    // 3. Check Quota
+       // 2. Check Quota (CIU Waitlist Logic)
     if (course.enrolled_count >= course.quota) {
-      req.flash('error', 'Cannot add course: Section is full.');
+      const onWaitlist = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2 AND status = 'waitlisted'`, [req.session.user.id, courseId]);
+      
+      if (onWaitlist.rows.length > 0) {
+        req.flash('error', 'You are already on the waitlist for this course.');
+        return res.redirect('/sis/my/registration');
+      }
+
+      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'waitlisted')`, [req.session.user.id, courseId]);
+      
+      const waitPos = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE course_id = $1 AND status = 'waitlisted'`, [courseId]);
+      
+      req.flash('success', `Section is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].count}`);
       return res.redirect('/sis/my/registration');
     }
 

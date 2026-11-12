@@ -366,12 +366,14 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       WHERE sp.user_id = $1
     `, [req.session.user.id]);
 
-    if (feeRes.rows.length > 0) {
-      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
-      if (debt > 0) {
-        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must pay your tuition before you can register for classes.`);
-        return res.redirect('/sis/my/finance'); // Send them straight to the Finance page to pay!
-      }
+       const instRes = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+    const hasApprovedInstallment = instRes.rows.length > 0;
+
+    if (debt > 0 && !hasApprovedInstallment) {
+      req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+      req.session.returnTo = '/sis/my/registration';
+      return res.redirect('/sis/my/finance');
+    }
     }
 
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
@@ -463,11 +465,13 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
 
     if (feeRes.rows.length > 0) {
       const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
-      if (debt > 0) {
-       req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must pay your tuition before you can register for classes.`);
-          req.session.returnTo = '/sis/my/registration';
-          return res.redirect('/sis/my/finance');
-      }
+         const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+    const hasApprovedInstallment2 = instRes2.rows.length > 0;
+
+    if (debt > 0 && !hasApprovedInstallment2) {
+      req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+      return res.redirect('/sis/my/registration');
+    }
     }
 
     // ==========================================
@@ -596,25 +600,77 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const profileRes = await pool.query(`SELECT u.full_name, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
+    // 1. CIU Scholarship Engine (50%, 75%, 90%, 100%)
     let scholarshipPercentage = 0;
     let scholarshipName = 'None';
 
-    if (student.is_international) { scholarshipPercentage = 50; scholarshipName = 'International Undergraduate Scholarship'; }
-    if (student.high_school_gpa && student.high_school_gpa >= 3.5) { scholarshipPercentage = 100; scholarshipName = 'High Honor Merit Scholarship'; }
+    if (student.is_international) { scholarshipPercentage = 50; scholarshipName = 'International Scholarship'; }
+    if (student.high_school_gpa >= 3.0 && student.high_school_gpa < 3.5) { scholarshipPercentage = 75; scholarshipName = 'Honor Scholarship'; }
+    if (student.high_school_gpa >= 3.5 && student.high_school_gpa < 3.8) { scholarshipPercentage = 90; scholarshipName = 'High Honor Scholarship'; }
+    if (student.high_school_gpa >= 3.8) { scholarshipPercentage = 100; scholarshipName = 'Full Merit Scholarship'; }
 
-    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2`, [student.class_level, student.current_semester]);
-    
+    // 2. Fetch Current Semester Fee
+    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
     const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
     const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
     const netTuition = baseTuition - scholarshipAmount;
 
+    // 3. Fetch Next Semester Fee (Approaching Debt)
+    const nextSem = Number(student.current_semester) + 1;
+    const nextFeeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, nextSem]);
+    const nextBaseTuition = nextFeeRes.rows.length > 0 ? Number(nextFeeRes.rows[0].amount) : 0;
+    const nextNetTuition = nextBaseTuition - ((nextBaseTuition * scholarshipPercentage) / 100);
+
+    // 4. Fetch Payments and Installments
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaid = Number(paidRes.rows[0].total);
-    const debt = netTuition - totalPaid;
 
-    res.render('student-finance', { user: req.session.user, student: student, baseTuition: baseTuition, scholarshipName: scholarshipName, scholarshipPercentage: scholarshipPercentage, scholarshipAmount: scholarshipAmount, netTuition: netTuition, totalPaid: totalPaid, debt: debt });
+    const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
+    const installments = instRes.rows;
+    const hasApprovedInstallment = installments.some(i => i.status === 'approved');
+
+    // 5. CIU Debt Math
+    const currentDebt = netTuition - totalPaid;
+    const approachingDebt = currentDebt > 0 ? 0 : nextNetTuition;
+    const totalDebt = currentDebt + approachingDebt;
+
+    res.render('student-finance', { 
+      user: req.session.user, 
+      student, 
+      baseTuition, 
+      scholarshipName, 
+      scholarshipPercentage, 
+      scholarshipAmount, 
+      netTuition, 
+      totalPaid, 
+      currentDebt: currentDebt > 0 ? currentDebt : 0,
+      approachingDebt,
+      totalDebt,
+      installments,
+      hasApprovedInstallment
+    });
   } catch (err) { res.status(500).send("Finance Error: " + err.message); }
 });
+
+// --- POST: Request an Installment Plan ---
+app.post('/sis/my/finance/installment/request', requireRole('student'), async (req, res) => {
+  const { total_amount, installments_count } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO installment_requests (student_id, total_amount, installments_count, status)
+      VALUES ($1, $2, $3, 'pending')
+    `, [req.session.user.id, Number(total_amount), Number(installments_count)]);
+
+    req.flash('success', 'Installment request submitted! Awaiting Admin approval.');
+    res.redirect('/sis/my/finance');
+  } catch (err) {
+    res.status(500).send("Installment Error: " + err.message);
+  }
+});
+
+
+
+
 
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
   try {

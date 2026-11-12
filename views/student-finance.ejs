@@ -22,60 +22,64 @@
     .menu-link i { width: 25px; color: var(--gold); }
 
     .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
-    .top-bar { margin-bottom: 2rem; }
+    .top-bar { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;}
     .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
     .top-bar p { color: #64748b; font-size: 0.95rem; }
 
-    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    /* Debt Stats */
+    .debt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .debt-card { background: #fff; padding: 1.5rem; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); text-align: center; }
+    .debt-card h3 { font-size: 0.8rem; text-transform: uppercase; color: #64748b; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .debt-card .amount { font-size: 1.8rem; font-weight: 800; }
+    .debt-card.current .amount { color: var(--danger); }
+    .debt-card.approaching .amount { color: var(--amber); }
+    .debt-card.total .amount { color: var(--navy); }
 
-    /* Invoice Layout */
+    /* Layout */
     .finance-layout { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start; }
     
-    .invoice-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
-    .invoice-header { background: var(--navy); color: #fff; padding: 2rem; border-bottom: 4px solid var(--amber); }
-    .invoice-header h2 { font-size: 1.5rem; font-weight: 800; }
-    .invoice-header p { color: #cbd5e1; font-size: 0.9rem; margin-top: 0.3rem; }
-    
+    .invoice-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; margin-bottom: 1.5rem;}
+    .invoice-header { background: var(--navy); color: #fff; padding: 1.5rem 2rem; border-bottom: 4px solid var(--amber); display: flex; justify-content: space-between; align-items: center;}
+    .invoice-header h2 { font-size: 1.3rem; font-weight: 800; }
     .invoice-body { padding: 2rem; }
-    .invoice-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px dashed var(--frost); font-size: 1rem; font-weight: 600; flex-wrap: wrap; gap: 0.5rem; }
-    .invoice-row.total { border-bottom: none; font-size: 1.2rem; font-weight: 800; color: var(--navy); padding-top: 1.5rem; }
+    .invoice-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px dashed var(--frost); font-size: 0.95rem; font-weight: 600; }
+    .invoice-row.total { border-bottom: none; font-size: 1.1rem; font-weight: 800; color: var(--navy); padding-top: 1rem; }
     
-    .scholarship-tag { background: #dcfce7; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; margin-left: 0.5rem; display: inline-block; margin-top: 0.3rem; }
-
-    /* Payment Sidebar */
     .payment-card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2rem; text-align: center; }
-    .payment-card h3 { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; }
-    .debt-amount { font-size: 2.5rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem; }
-    
-    .form-group { margin-bottom: 1rem; text-align: left; }
-    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; font-size: 1rem; }
+    .form-control { width: 100%; padding: 1rem; border: 1px solid var(--frost); border-radius: 10px; font-family: inherit; background: var(--ice); outline: none; font-size: 1rem; margin-bottom: 1rem;}
     .btn-pay { background: var(--navy); color: #fff; padding: 1rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.2s; }
-    .btn-pay:hover { background: var(--blue); transform: translateY(-2px); }
+    
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .alert-info { background: #e0f2fe; color: #0284c7; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; border: 1px solid #bae6fd; }
 
-    /* --- MOBILE FIXES --- */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    /* Installments */
+    .installment-section { background: #fff; padding: 2rem; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); margin-top: 2rem;}
+    .installment-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .installment-table th, .installment-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--frost); font-size: 0.85rem; }
+    
+    .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; cursor: pointer; border: none; font-size: 0.9rem;}
+    .btn-print { background: var(--gold); color: var(--navy); }
+    .btn-request { background: var(--blue); color: #fff; width: 100%; margin-top: 1rem;}
 
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
+    /* Print Media Query */
+    @media print {
+      .sidebar, .top-bar, .btn-print, .payment-card, .installment-section, .debt-grid, .alert-success, .alert-info { display: none !important; }
+      .main-content { margin-left: 0; padding: 0; width: 100%; }
+      .invoice-card { box-shadow: none; border: 1px solid #000; border-radius: 0; }
+      .invoice-header { border-bottom: 2px solid #000; background: #fff; color: #000; }
+    }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+      .debt-grid { grid-template-columns: 1fr; }
+      .finance-layout { grid-template-columns: 1fr; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
       .sidebar { transform: translateX(-100%); width: 280px; }
       .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      
-      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
-      .btn-back { display: inline-flex; }
-      
-      .finance-layout { grid-template-columns: 1fr !important; gap: 1rem !important; }
-      .invoice-body { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
-
-  <!-- Mobile Hamburger Button & Overlay -->
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
@@ -94,127 +98,151 @@
   </aside>
 
   <main class="main-content">
-    <!-- Back Button -->
-    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
-
+    
     <div class="top-bar">
-      <h1>My Finance</h1>
-      <p>View your tuition, scholarships, and make payments.</p>
+      <div>
+        <h1>Finance & Accounting</h1>
+        <p>Manage your tuition, scholarships, and installments.</p>
+      </div>
+      <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print Invoice</button>
     </div>
 
     <% if (flash.success && flash.success.length > 0) { %>
       <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
     <% } %>
 
+    <!-- CIU TEMPORARY REGISTRATION BANNER -->
+    <% if (hasApprovedInstallment && currentDebt > 0) { %>
+      <div class="alert-info">
+        <i class="fas fa-info-circle text-lg"></i> 
+        <span>You have an <strong>Approved Installment Plan</strong>. You are cleared for <strong>Temporary Registration</strong> for this semester.</span>
+      </div>
+    <% } %>
+
+    <!-- DEBT OVERVIEW CARDS -->
+    <div class="debt-grid">
+      <div class="debt-card current">
+        <h3>Current Debt</h3>
+        <div class="amount">$<%= Number(currentDebt).toFixed(2) %></div>
+      </div>
+      <div class="debt-card approaching">
+        <h3>Approaching Debt (Next Sem)</h3>
+        <div class="amount">$<%= Number(approachingDebt).toFixed(2) %></div>
+      </div>
+      <div class="debt-card total">
+        <h3>Total Liability</h3>
+        <div class="amount">$<%= Number(totalDebt).toFixed(2) %></div>
+      </div>
+    </div>
+
     <div class="finance-layout">
       
-      <!-- Left: Official Invoice -->
-      <div class="invoice-card">
-        <div class="invoice-header">
-          <h2>Tuition Invoice</h2>
-          <p><%= student.class_level %> · Semester <%= student.current_semester %></p>
+      <!-- INVOICE -->
+      <div>
+        <div class="invoice-card">
+          <div class="invoice-header">
+            <div>
+              <h2>Semester <%= student.current_semester %> Tuition Invoice</h2>
+              <p><%= student.full_name %> · <%= student.class_level %></p>
+            </div>
+          </div>
+          
+          <div class="invoice-body">
+            <div class="invoice-row">
+              <span>Base Tuition</span>
+              <span>$<%= Number(baseTuition).toFixed(2) %></span>
+            </div>
+            <div class="invoice-row" style="color: var(--success);">
+              <span>Scholarship (<%= scholarshipName %> - <%= scholarshipPercentage %>%)</span>
+              <span>- $<%= Number(scholarshipAmount).toFixed(2) %></span>
+            </div>
+            <div class="invoice-row" style="background: var(--ice); padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-bottom: none;">
+              <span style="font-weight: 800;">Net Tuition (After Scholarship)</span>
+              <span style="font-weight: 800;">$<%= Number(netTuition).toFixed(2) %></span>
+            </div>
+            <div class="invoice-row">
+              <span>Total Paid</span>
+              <span style="color: var(--success);">- $<%= Number(totalPaid).toFixed(2) %></span>
+            </div>
+            <div class="invoice-row total">
+              <span>Remaining Balance Due</span>
+              <span style="color: <%= currentDebt > 0 ? 'var(--danger)' : 'var(--success)' %>;">$<%= Number(currentDebt).toFixed(2) %></span>
+            </div>
+          </div>
         </div>
-        
-        <div class="invoice-body">
-          <div class="invoice-row">
-            <span>Base Tuition</span>
-            <span>$<%= baseTuition.toFixed(2) %></span>
-          </div>
-          
-          <div class="invoice-row" style="color: var(--success);">
-            <span>
-              Scholarship 
-              <% if (scholarshipPercentage > 0) { %>
-                <span class="scholarship-tag"><%= scholarshipName %> (<%= scholarshipPercentage %>%)</span>
-              <% } %>
-            </span>
-            <span>- $<%= scholarshipAmount.toFixed(2) %></span>
-          </div>
 
-          <div class="invoice-row" style="background: var(--ice); padding-left: 1rem; padding-right: 1rem; border-radius: 8px; margin: 1rem 0;">
-            <span>Net Tuition (After Scholarship)</span>
-            <span>$<%= netTuition.toFixed(2) %></span>
-          </div>
+        <!-- INSTALLMENT SECTION -->
+        <div class="installment-section">
+          <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;"><i class="fas fa-handshake" style="color: var(--blue);"></i> Installment Plans</h3>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Can't pay the full amount? Request an installment plan to unlock Temporary Registration.</p>
           
-          <div class="invoice-row">
-            <span>Amount Paid</span>
-            <span style="color: var(--success);">- $<%= totalPaid.toFixed(2) %></span>
-          </div>
-          
-          <div class="invoice-row total">
-            <span>Remaining Debt</span>
-            <span style="color: <%= debt > 0 ? 'var(--danger)' : 'var(--success)' %>;">$<%= debt.toFixed(2) %></span>
-          </div>
+          <% if (installments.length > 0) { %>
+            <table class="installment-table">
+              <thead>
+                <tr>
+                  <th>Requested Amount</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% installments.forEach(inst => { %>
+                  <tr>
+                    <td><strong>$<%= Number(inst.total_amount).toFixed(2) %></strong></td>
+                    <td><%= inst.installments_count %> Months</td>
+                    <td>
+                      <% if (inst.status === 'approved') { %>
+                        <span style="color: var(--success); font-weight: 800;"><i class="fas fa-check-circle"></i> Approved</span>
+                      <% } else if (inst.status === 'rejected') { %>
+                        <span style="color: var(--danger); font-weight: 800;"><i class="fas fa-times-circle"></i> Rejected</span>
+                      <% } else { %>
+                        <span style="color: var(--amber); font-weight: 800;"><i class="fas fa-clock"></i> Pending Review</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(inst.created_at).toLocaleDateString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <p style="font-size: 0.9rem; color: #94a3b8; font-style: italic;">No installment plans requested yet.</p>
+          <% } %>
+
+          <% if (currentDebt > 0 && !hasApprovedInstallment) { %>
+            <form method="POST" action="/sis/my/finance/installment/request" style="margin-top: 1.5rem; background: var(--ice); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--frost);">
+              <input type="hidden" name="total_amount" value="<%= currentDebt %>">
+              <label style="font-size: 0.8rem; font-weight: 800; display: block; margin-bottom: 0.5rem;">Select Installment Plan for $<%= Number(currentDebt).toFixed(2) %></label>
+              <select name="installments_count" class="form-control" required>
+                <option value="2">2 Months (50% / 50%)</option>
+                <option value="3">3 Months (33% each)</option>
+                <option value="4">4 Months (25% each)</option>
+              </select>
+              <button type="submit" class="btn btn-request">Submit Installment Request</button>
+            </form>
+          <% } %>
         </div>
       </div>
 
-      <!-- Right: Payment Action -->
+      <!-- PAY NOW CARD -->
       <div class="payment-card">
-        <h3>Make a Payment</h3>
+        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem;">Quick Payment</h3>
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Current Balance Due</p>
-        <div class="debt-amount">$<%= debt.toFixed(2) %></div>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem;">$<%= Number(currentDebt).toFixed(2) %></div>
         
-        <% if (debt > 0) { %>
+        <% if (currentDebt > 0) { %>
           <form method="POST" action="/sis/my/finance/pay">
-            <div class="form-group">
-              <label style="font-size: 0.8rem; font-weight: 800; margin-bottom: 0.5rem; display: block;">Amount to Pay ($)</label>
-              <input type="number" name="amount" class="form-control" value="<%= debt %>" max="<%= debt %>" min="1" required>
-            </div>
+            <input type="number" name="amount" class="form-control" value="<%= currentDebt %>" max="<%= currentDebt %>" min="1" required>
             <button type="submit" class="btn-pay"><i class="fas fa-credit-card"></i> Pay Now</button>
           </form>
         <% } else { %>
           <div style="background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; font-weight: 700;">
-            <i class="fas fa-check-circle"></i> Your account is fully paid.
+            <i class="fas fa-check-circle"></i> Account Fully Paid
           </div>
         <% } %>
       </div>
       
     </div>
   </main>
-
-  
-  <script>
-    // 1. Toggle menu function
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) {
-        submenu.classList.toggle('open');
-        // Save the state to browser memory
-        const text = element.innerText.trim().split('\n')[0]; 
-        if (parent.classList.contains('open')) {
-          localStorage.setItem('menu_' + text, 'open');
-        } else {
-          localStorage.removeItem('menu_' + text);
-        }
-      }
-    }
-
-    // 2. Mobile toggle function
-    function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) {
-        sb.classList.toggle('active');
-        ov.classList.toggle('active');
-      }
-    }
-
-    // 3. Restore open menus on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu-link').forEach(link => {
-        if (link.nextElementSibling && link.nextElementSibling.classList.contains('submenu')) {
-          const text = link.innerText.trim().split('\n')[0];
-          if (localStorage.getItem('menu_' + text) === 'open') {
-            link.parentElement.classList.add('open');
-            link.nextElementSibling.classList.add('open');
-          }
-        }
-      });
-    });
-  </script>
-
 </body>
 </html>

@@ -353,6 +353,27 @@ app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
 // ============================================
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
+
+
+
+
+           // 1. CHECK FOR FINANCIAL HOLD (CIU LOGIC)
+    const feeRes = await pool.query(`
+      SELECT COALESCE(fs.amount, 0) AS amount_billed,
+             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
+      FROM student_profiles sp
+      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+      WHERE sp.user_id = $1
+    `, [req.session.user.id]);
+
+    if (feeRes.rows.length > 0) {
+      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
+      if (debt > 0) {
+        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must pay your tuition before you can register for classes.`);
+        return res.redirect('/sis/my/finance'); // Send them straight to the Finance page to pay!
+      }
+    }
+
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 

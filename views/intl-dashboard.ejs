@@ -3,241 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Intl Office - Staff Workspace</title>
+  <title>International Office - Administrative Portal</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ENTERPRISE ADMIN THEME (Light/Teal) */
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
     :root { 
-      --bg-main: #f8fafc; 
-      --bg-card: #ffffff; 
-      --border: #e2e8f0; 
-      --text-main: #0f172a; 
-      --text-muted: #64748b; 
-      --primary: #0ea5e9; /* Sky Blue for Admin */
-      --primary-hover: #0284c7;
-      --success: #10b981; 
-      --warning: #f59e0b; 
-      --danger: #ef4444;
+      --sidebar-bg: #1e293b; /* Midnight Slate */
+      --sidebar-hover: #334155;
+      --bg-main: #f1f5f9; 
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-blue: #3b82f6;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     }
-    body { background: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
-
-    /* TOP NAVIGATION BAR */
-    .top-nav { background: var(--bg-card); height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; position: sticky; top: 0; z-index: 1000; }
-    .logo-area { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.1rem; color: var(--text-main); }
-    .logo-icon { background: var(--primary); color: #fff; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
-    .user-profile { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; font-weight: 600; }
-    .avatar { width: 36px; height: 36px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
-
-    /* LAYOUT */
-    .workspace { display: flex; flex: 1; }
+    body { background: var(--bg-main); display: flex; min-height: 100vh; color: var(--text-main); }
     
     /* SIDEBAR */
-    .sidebar { width: 260px; background: var(--bg-card); border-right: 1px solid var(--border); padding: 1.5rem 0; display: flex; flex-direction: column; }
-    .nav-section { margin-bottom: 1.5rem; }
-    .nav-title { padding: 0 1.5rem; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-    .menu-link { display: flex; align-items: center; padding: 0.6rem 1.5rem; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
-    .menu-link:hover { background: #f1f5f9; color: var(--text-main); }
-    .menu-link.active { color: var(--primary); background: #f0f9ff; border-left-color: var(--primary); }
-    .menu-link i { width: 24px; font-size: 1rem; }
+    .sidebar { width: 280px; background: var(--sidebar-bg); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; z-index: 1000; transition: transform 0.3s ease; overflow-y: auto; }
+    .sidebar-brand { padding: 2rem 1.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .brand-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 0.5rem; }
+    .brand-subtitle { font-size: 0.7rem; color: var(--accent-amber); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; margin-top: 0.3rem; }
+    
+    .nav-section { padding: 1.5rem 0 0.5rem; }
+    .nav-label { padding: 0 1.5rem; font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .menu-link { display: flex; align-items: center; padding: 0.8rem 1.5rem; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 4px solid transparent; }
+    .menu-link:hover { background: var(--sidebar-hover); color: #fff; }
+    .menu-link.active { background: rgba(255,255,255,0.05); color: #fff; border-left-color: var(--accent-amber); }
+    .menu-link i { width: 24px; font-size: 1rem; color: #94a3b8; transition: 0.2s; }
+    .menu-link:hover i, .menu-link.active i { color: var(--accent-amber); }
 
     /* MAIN CONTENT */
-    .main-content { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
-    .page-header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-    .page-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
     
+    .top-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; }
+    .top-header h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+    .top-header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+
     /* STATS ROW */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
-    .stat-card { background: var(--bg-card); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .stat-card h3 { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .val { font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem; color: var(--text-main); }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
+    .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.5rem; }
+    .stat-icon { width: 56px; height: 56px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .stat-icon.blue { background: #eff6ff; color: var(--accent-blue); }
+    .stat-icon.amber { background: #fffbeb; color: var(--accent-amber); }
+    .stat-icon.green { background: #ecfdf5; color: var(--accent-green); }
+    .stat-info h3 { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-info .value { font-size: 2rem; font-weight: 800; color: var(--text-main); line-height: 1.2; }
 
-    /* TICKET LISTS */
-    .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); }
-    .ticket-board { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 2rem; overflow: hidden; }
-    .ticket-row { padding: 1.25rem; border-bottom: 1px solid var(--border); display: flex; gap: 1.5rem; }
-    .ticket-row:last-child { border-bottom: none; }
+    /* TICKETS LAYOUT */
+    .section-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
     
-    /* LEFT SIDE: TICKET INFO */
-    .ticket-info { flex: 1; }
-    .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-    .ticket-id { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
-    .badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
-    .badge.pending { background: #fef3c7; color: #b45309; }
-    .badge.unassigned { background: #e2e8f0; color: #475569; }
-    .student-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
-    .student-meta a { color: var(--primary); text-decoration: none; font-weight: 600; }
-    .message-box { background: #f8fafc; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border); color: var(--text-main); }
+    .ticket-list { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2.5rem; }
+    .ticket-card { background: var(--card-bg); border-radius: 1rem; border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; overflow: hidden; transition: transform 0.2s; }
+    .ticket-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
 
-    /* RIGHT SIDE: ACTIONS */
-    .ticket-actions { width: 300px; border-left: 1px solid var(--border); padding-left: 1.5rem; display: flex; flex-direction: column; justify-content: center; }
-    .form-control { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.85rem; margin-bottom: 0.5rem; outline: none; }
-    .form-control:focus { border-color: var(--primary); }
-    .btn { padding: 0.6rem 1rem; border-radius: 6px; border: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; width: 100%; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { opacity: 0.9; }
-    .btn-claim { background: var(--text-main); color: #fff; }
-    .btn-claim:hover { background: #334155; }
+    .ticket-body { flex: 1; padding: 1.5rem; border-right: 1px solid var(--border); }
+    .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+    .ticket-title { font-size: 1.1rem; font-weight: 800; color: var(--text-main); }
+    .badge { padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge.pending { background: #fef3c7; color: #b45309; }
+    .badge.unassigned { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    
+    .student-meta { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    .student-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; background: #eff6ff; padding: 0.2rem 0.6rem; border-radius: 6px; transition: 0.2s; }
+    .student-link:hover { background: #dbeafe; }
+    
+    .message-preview { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border); font-size: 0.9rem; color: #334155; font-weight: 500; line-height: 1.5; }
+
+    .ticket-sidebar { width: 320px; padding: 1.5rem; background: #f8fafc; display: flex; flex-direction: column; justify-content: center; }
+    
+    .form-group { margin-bottom: 0.75rem; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-family: inherit; font-size: 0.85rem; outline: none; transition: border 0.2s; }
+    .form-control:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    
+    .btn { width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: none; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; }
+    .btn-resolve { background: var(--accent-green); color: #fff; }
+    .btn-resolve:hover { background: #059669; }
+    .btn-claim { background: var(--accent-blue); color: #fff; }
+    .btn-claim:hover { background: #2563eb; }
+
+    /* MOBILE */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--sidebar-bg); color: #fff; border: none; width: 45px; height: 45px; border-radius: 8px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .ticket-card { flex-direction: column; }
+      .ticket-body { border-right: none; border-bottom: 1px solid var(--border); }
+      .ticket-sidebar { width: 100%; }
+    }
 
     @media (max-width: 900px) {
-      .workspace { flex-direction: column; }
-      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); display: none; }
-      .sidebar.active { display: flex; }
-      .ticket-row { flex-direction: column; }
-      .ticket-actions { width: 100%; border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; }
-      .stats-row { grid-template-columns: 1fr; }
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- TOP NAVIGATION -->
-  <header class="top-nav">
-    <div class="logo-area">
-      <div class="logo-icon"><i class="fas fa-building"></i></div>
-      LuxMind Enterprise
-    </div>
-    <div class="user-profile">
-      <span><i class="fas fa-circle text-green-500" style="color: #10b981; font-size: 0.5rem;"></i> Online</span>
-      <div class="avatar"><i class="fas fa-user"></i></div>
-      <span><%= user.full_name %></span>
-      <a href="/logout" style="color: var(--danger); text-decoration: none; margin-left: 1rem;"><i class="fas fa-sign-out-alt"></i></a>
-    </div>
-  </header>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
-  <div class="workspace">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-title"><i class="fas fa-globe" style="color: var(--accent-amber);"></i> LuxMind Admin</div>
+      <div class="brand-subtitle"><%= teamName %></div>
+    </div>
     
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-      <div class="nav-section">
-        <div class="nav-title">Operations</div>
-        <a href="/sis/intl" class="menu-link active"><i class="fas fa-inbox"></i> Ticket Inbox</a>
-        <a href="/sis/intl/search" class="menu-link"><i class="fas fa-search"></i> Student Directory</a>
-      </div>
-      
-      <div class="nav-section">
-        <div class="nav-title">Immigration</div>
-        <a href="#" class="menu-link"><i class="fas fa-passport"></i> Visa Processing</a>
-        <a href="#" class="menu-link"><i class="fas fa-id-card"></i> Residence Permits</a>
-      </div>
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <a href="/sis/intl" class="menu-link active"><i class="fas fa-inbox"></i> Ticket Inbox</a>
+      <a href="/sis/intl/search" class="menu-link"><i class="fas fa-search"></i> Student Directory</a>
+    </div>
 
-      <div class="nav-section">
-        <div class="nav-title">Admissions</div>
-        <a href="#" class="menu-link"><i class="fas fa-user-plus"></i> Application Tracker</a>
-        <a href="#" class="menu-link"><i class="fas fa-plane-arrival"></i> Orientations</a>
-      </div>
-    </aside>
+    <div class="nav-section">
+      <div class="nav-label">Immigration</div>
+      <a href="#" class="menu-link"><i class="fas fa-passport"></i> Visa Tracking</a>
+      <a href="#" class="menu-link"><i class="fas fa-id-card"></i> Residence Permits</a>
+    </div>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-content">
-      
-      <div class="page-header">
-        <div>
-          <h1>Good day, <%= user.full_name.split(' ')[0] %></h1>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Department: <strong style="color: var(--primary);"><%= teamName %></strong></p>
+    <div class="nav-section">
+      <div class="nav-label">Admissions</div>
+      <a href="#" class="menu-link"><i class="fas fa-user-plus"></i> Application Tracker</a>
+      <a href="#" class="menu-link"><i class="fas fa-plane-arrival"></i> Orientations</a>
+    </div>
+
+    <div class="nav-section" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05);">
+      <a href="/logout" class="menu-link" style="color: #f87171;"><i class="fas fa-sign-out-alt" style="color: #f87171;"></i> Secure Logout</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    
+    <div class="top-header">
+      <div>
+        <h1>Workstation</h1>
+        <p>Welcome back, <strong><%= user.full_name %></strong>. You are managing the <strong><%= teamName %></strong>.</p>
+      </div>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div style="background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 0.75rem; margin-bottom: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-check-circle text-lg"></i> <%= flash.success[0] %>
+      </div>
+    <% } %>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-tasks"></i></div>
+        <div class="stat-info">
+          <h3>My Open Tickets</h3>
+          <div class="value"><%= stats.mine %></div>
         </div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><i class="fas fa-users"></i></div>
+        <div class="stat-info">
+          <h3>Shared Pool</h3>
+          <div class="value"><%= stats.shared %></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-stopwatch"></i></div>
+        <div class="stat-info">
+          <h3>Avg Response Time</h3>
+          <div class="value">1h 45m</div>
+        </div>
+      </div>
+    </div>
 
-      <% if (flash.success && flash.success.length > 0) { %>
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 600;">
-          <i class="fas fa-check-circle"></i> <%= flash.success[0] %>
+    <!-- MY TICKETS -->
+    <div class="section-header"><i class="fas fa-user-lock" style="color: var(--accent-blue);"></i> My Assigned Tickets</div>
+    <div class="ticket-list">
+      <% if (myTickets.length === 0) { %>
+        <div style="background: #fff; border: 1px solid var(--border); border-radius: 1rem; padding: 3rem; text-align: center; color: var(--text-muted); font-weight: 600;">
+          <i class="fas fa-check-circle" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+          You are all caught up! Claim a ticket from the Shared Pool below.
         </div>
       <% } %>
-
-      <!-- STATS -->
-      <div class="stats-row">
-        <div class="stat-card">
-          <h3>My Assigned Tickets</h3>
-          <div class="val"><%= stats.mine %></div>
-        </div>
-        <div class="stat-card">
-          <h3>Department Shared Pool</h3>
-          <div class="val"><%= stats.shared %></div>
-        </div>
-        <div class="stat-card">
-          <h3>Average Response Time</h3>
-          <div class="val" style="color: var(--success);">1h 45m</div>
-        </div>
-      </div>
-
-      <!-- MY TICKETS -->
-      <div class="section-title"><i class="fas fa-user-lock" style="color: var(--primary);"></i> My Assigned Tickets</div>
-      <div class="ticket-board">
-        <% if (myTickets.length === 0) { %>
-          <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">You have no assigned tickets. Claim one from the Shared Pool.</div>
-        <% } %>
-        
-        <% myTickets.forEach(r => { %>
-          <div class="ticket-row">
-            <div class="ticket-info">
-              <div class="ticket-header">
-                <span class="ticket-id">TICKET-<%= r.id %> · <%= r.request_type %></span>
-                <span class="badge pending">In Progress</span>
-              </div>
-              <div class="student-meta">
-                <i class="fas fa-user-circle"></i> <strong><%= r.student_name %></strong> (<%= r.student_number %>) | 
-                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank"><i class="fas fa-external-link-alt"></i> Open Student Dossier</a>
-              </div>
-              <div class="message-box">
-                <strong style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Student Message:</strong><br>
-                <%= r.description %>
-              </div>
-              <% if (r.student_attachment) { %>
-                <div style="margin-top: 0.5rem; font-size: 0.8rem;">
-                  <a href="<%= r.student_attachment %>" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none;"><i class="fas fa-paperclip"></i> View Attached File</a>
-                </div>
-              <% } %>
+      
+      <% myTickets.forEach(r => { %>
+        <div class="ticket-card">
+          <div class="ticket-body">
+            <div class="ticket-header">
+              <div class="ticket-title">TICKET-<%= r.id %> · <%= r.request_type %></div>
+              <span class="badge pending">In Progress</span>
             </div>
             
-            <div class="ticket-actions">
-              <form action="/sis/intl/resolve/<%= r.id %>" method="POST" enctype="multipart/form-data">
-                <textarea name="staff_reply" class="form-control" rows="2" placeholder="Write your resolution..." required></textarea>
-                <input type="file" name="staff_attachment" class="form-control" style="padding: 0.4rem; font-size: 0.75rem;">
-                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Resolve & Notify</button>
-              </form>
+            <div class="student-meta">
+              <span><i class="fas fa-user"></i> <%= r.student_name %> (<%= r.student_number %>)</span>
+              <span><i class="fas fa-calendar-alt"></i> <%= new Date(r.created_at).toLocaleDateString() %></span>
+              <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link"><i class="fas fa-external-link-alt"></i> View Student Dossier</a>
             </div>
-          </div>
-        <% }) %>
-      </div>
 
-      <!-- SHARED POOL -->
-      <div class="section-title"><i class="fas fa-globe" style="color: var(--warning);"></i> Shared Pool (Unassigned)</div>
-      <div class="ticket-board">
-        <% if (sharedTickets.length === 0) { %>
-          <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">The shared pool is currently empty.</div>
-        <% } %>
-        
-        <% sharedTickets.forEach(r => { %>
-          <div class="ticket-row">
-            <div class="ticket-info">
-              <div class="ticket-header">
-                <span class="ticket-id">TICKET-<%= r.id %> · <%= r.request_type %></span>
-                <span class="badge unassigned">Unassigned</span>
-              </div>
-              <div class="student-meta">
-                <i class="fas fa-user-circle"></i> <strong><%= r.student_name %></strong> (<%= r.student_number %>) | 
-                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank"><i class="fas fa-external-link-alt"></i> Open Student Dossier</a>
-              </div>
-              <div class="message-box">
-                <strong style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Student Message:</strong><br>
-                <%= r.description %>
-              </div>
+            <div class="message-preview">
+              <strong style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Student Message:</strong>
+              <%= r.description %>
             </div>
             
-            <div class="ticket-actions" style="justify-content: center;">
-              <form action="/sis/intl/claim/<%= r.id %>" method="POST">
-                <button type="submit" class="btn btn-claim"><i class="fas fa-hand-paper"></i> Claim Ticket</button>
-              </form>
+            <% if (r.student_attachment) { %>
+              <div style="margin-top: 1rem;">
+                <a href="<%= r.student_attachment %>" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--accent-blue); font-weight: 700; text-decoration: none; background: #eff6ff; padding: 0.4rem 0.8rem; border-radius: 6px;">
+                  <i class="fas fa-paperclip"></i> Download Student Attachment
+                </a>
+              </div>
+            <% } %>
+          </div>
+          
+          <div class="ticket-sidebar">
+            <form action="/sis/intl/resolve/<%= r.id %>" method="POST" enctype="multipart/form-data">
+              <div class="form-group">
+                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem; display: block;">Official Response</label>
+                <textarea name="staff_reply" class="form-control" rows="3" placeholder="Type your resolution here..." required></textarea>
+              </div>
+              <div class="form-group">
+                <input type="file" name="staff_attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="padding: 0.5rem; font-size: 0.75rem;">
+              </div>
+              <button type="submit" class="btn btn-resolve"><i class="fas fa-check-circle"></i> Resolve & Notify Student</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- SHARED POOL -->
+    <div class="section-header"><i class="fas fa-globe" style="color: var(--accent-amber);"></i> Department Shared Pool</div>
+    <div class="ticket-list">
+      <% if (sharedTickets.length === 0) { %>
+        <div style="background: #fff; border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">
+          The shared pool is empty.
+        </div>
+      <% } %>
+      
+      <% sharedTickets.forEach(r => { %>
+        <div class="ticket-card">
+          <div class="ticket-body">
+            <div class="ticket-header">
+              <div class="ticket-title">TICKET-<%= r.id %> · <%= r.request_type %></div>
+              <span class="badge unassigned">Unassigned</span>
+            </div>
+            
+            <div class="student-meta">
+              <span><i class="fas fa-user"></i> <%= r.student_name %> (<%= r.student_number %>)</span>
+              <span><i class="fas fa-calendar-alt"></i> <%= new Date(r.created_at).toLocaleDateString() %></span>
+              <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link"><i class="fas fa-external-link-alt"></i> View Student Dossier</a>
+            </div>
+
+            <div class="message-preview">
+              <strong style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Student Message:</strong>
+              <%= r.description %>
             </div>
           </div>
-        <% }) %>
-      </div>
+          
+          <div class="ticket-sidebar" style="align-items: center;">
+            <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 1rem; font-weight: 600;">This ticket is waiting to be claimed by an officer.</p>
+            <form action="/sis/intl/claim/<%= r.id %>" method="POST" style="width: 100%;">
+              <button type="submit" class="btn btn-claim"><i class="fas fa-hand-paper"></i> Claim Ticket</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
 
-    </main>
-  </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+  </script>
 
 </body>
 </html>

@@ -4331,11 +4331,16 @@ app.get('/sis/intl/search', requireRole('intl_officer'), async (req, res) => {
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
   const studentId = req.params.id;
   try {
+    // 0. Get Team Name for the Sidebar
+    const teamRes = await pool.query(`SELECT intl_team FROM users WHERE id = $1`, [req.session.user.id]);
+    const teamName = teamRes.rows[0] ? teamRes.rows[0].intl_team : 'General Officer';
+
     // 1. Get ALL Student Info (Personal, Academic, Profile Pic)
     const studentRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, u.email, u.profile_picture_url, u.phone,
+      SELECT u.id, u.full_name, u.username, u.email, u.profile_picture_url, 
              sp.admission_number, sp.class_level, sp.current_semester, sp.is_international, 
              sp.high_school_gpa, sp.date_of_birth, sp.gender, sp.home_address, sp.guardian_name, sp.guardian_phone,
+             sp.phone AS phone,
              adv.full_name as advisor_name
       FROM users u 
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
@@ -4371,6 +4376,7 @@ app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) =
 
     res.render('intl-student-profile', {
       user: req.session.user,
+      teamName, // <--- THIS WAS MISSING
       student,
       exams: examsRes.rows,
       installments: instRes.rows,

@@ -4275,7 +4275,7 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
       "</div>");
   }
 });
-});
+
 
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {

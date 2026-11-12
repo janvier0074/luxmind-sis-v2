@@ -3816,21 +3816,37 @@ app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
   }
 });
 
-app.post('/sis/my/guidance/request', requireRole('student'), async (req, res) => {
+app.post('/sis/my/guidance/request', requireRole('student'), upload.single('attachment'), async (req, res) => {
   const { request_type, description } = req.body;
+  const attachmentName = req.file ? req.file.originalname : null;
+  
+  // 🏛️ CIU TRIAGE ROUTING LOGIC
+  let assignedDept = 'General Administration';
+  
+  if (request_type.includes('Debt') || request_type.includes('receipt')) {
+    assignedDept = 'Finance Office';
+  } else if (request_type.includes('Meal') || request_type.includes('Dormitory')) {
+    assignedDept = 'Dormitory Directorate';
+  } else if (request_type.includes('Visa') || request_type.includes('Residence')) {
+    assignedDept = 'International Office';
+  } else if (request_type.includes('Psychological') || request_type.includes('Pastoral')) {
+    assignedDept = 'Counseling Center (PCGC)';
+  } else if (request_type.includes('Academic')) {
+    assignedDept = 'Student Affairs / Advisor';
+  }
+
   try {
     await pool.query(`
-      INSERT INTO guidance_requests (student_id, request_type, description, status)
-      VALUES ($1, $2, $3, 'Pending')
-    `, [req.session.user.id, request_type, description]);
+      INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, status)
+      VALUES ($1, $2, $3, $4, $5, 'Pending')
+    `, [req.session.user.id, request_type, description, attachmentName, assignedDept]);
 
-    req.flash('success', 'Guidance request submitted successfully.');
+    req.flash('success', `Request successfully routed to the ${assignedDept}.`);
     res.redirect('/sis/my/guidance');
   } catch (err) {
     res.status(500).send("Submission Error: " + err.message);
   }
 });
-
 
 
 // ============================================

@@ -4252,19 +4252,41 @@ app.use((err, req, res, next) => {
 // ============================================
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   try {
-    const requestsRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number, a.full_name as assigned_name
+    const userId = req.session.user.id;
+
+    // 1. Get Shared Pool (Unassigned)
+    const sharedRes = await pool.query(`
+      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
       FROM guidance_requests gr
       JOIN users u ON u.id = gr.student_id
-      LEFT JOIN users a ON a.id = gr.assigned_to
-      WHERE gr.assigned_department = 'International Office'
-        AND (gr.assigned_to = $1 OR gr.assigned_to IS NULL)
+      WHERE gr.assigned_department = 'International Office' AND gr.assigned_to IS NULL AND gr.status = 'Pending'
       ORDER BY gr.created_at DESC
-    `, [req.session.user.id]);
+    `);
+
+    // 2. Get My Tickets (Assigned to me)
+    const myRes = await pool.query(`
+      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+      FROM guidance_requests gr
+      JOIN users u ON u.id = gr.student_id
+      WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
+      ORDER BY gr.created_at DESC
+    `, [userId]);
+
+    // 3. Stats
+    const stats = {
+      shared: sharedRes.rows.length,
+      mine: myRes.rows.length
+    };
+
+    // 4. Get Staff Team Name from DB
+    const teamRes = await pool.query(`SELECT intl_team FROM users WHERE id = $1`, [userId]);
 
     res.render('intl-dashboard', {
       user: req.session.user,
-      requests: requestsRes.rows,
+      sharedTickets: sharedRes.rows,
+      myTickets: myRes.rows,
+      stats,
+      teamName: teamRes.rows[0] ? teamRes.rows[0].intl_team : 'General Officer',
       flash: req.flash ? req.flash() : {}
     });
   } catch (err) {

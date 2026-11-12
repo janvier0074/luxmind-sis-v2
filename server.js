@@ -597,7 +597,7 @@ app.get('/sis/my/documents/view/:id', requireRole('student'), async (req, res) =
 // ============================================
 app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
   try {
-    const profileRes = await pool.query(`SELECT u.full_name, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
+    const profileRes = await pool.query(`SELECT u.full_name, u.username, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
     // 1. CIU Scholarship Engine (50%, 75%, 90%, 100%)
@@ -625,6 +625,37 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaid = Number(paidRes.rows[0].total);
 
+    // FETCH TRANSACTIONS FOR THE CIU LEDGER TABLE
+    const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
+    
+    let transactions = paymentsRes.rows.map(p => ({
+      date: new Date(p.created_at).toLocaleDateString('en-GB').replace(/\//g, '.'),
+      type: 'Payment',
+      description: 'PAYMENT',
+      charges: null,
+      payments: Number(p.amount),
+      installment: '-',
+      term: '-',
+      created_at: new Date(p.created_at).toLocaleString('en-GB')
+    }));
+
+    // Mock an invoice row based on the fee structure
+    if (netTuition > 0) {
+      transactions.push({
+        date: new Date().toLocaleDateString('en-GB').replace(/\//g, '.'),
+        type: 'Invoice',
+        description: 'EDUCATION FEE, REGISTRATION FEE',
+        charges: netTuition,
+        payments: null,
+        installment: '1. Installment',
+        term: `2026-27 Fall (Term Based)`,
+        created_at: new Date().toLocaleString('en-GB')
+      });
+    }
+    
+    // Sort transactions by date descending
+    transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
@@ -647,7 +678,8 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       approachingDebt,
       totalDebt,
       installments,
-      hasApprovedInstallment
+      hasApprovedInstallment,
+      transactions // <--- THIS WAS MISSING
     });
   } catch (err) { res.status(500).send("Finance Error: " + err.message); }
 });

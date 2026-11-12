@@ -4272,6 +4272,44 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   }
 });
 
+// Staff Views a Specific Student's Profile (Bypasses Financial Holds)
+app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    // 1. Get Student Info
+    const studentRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, u.email, sp.class_level, sp.current_semester, sp.admission_number
+      FROM users u 
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.id = $1 AND u.role = 'student'
+    `, [studentId]);
+
+    if (studentRes.rows.length === 0) return res.redirect('/sis/intl');
+    const student = studentRes.rows[0];
+
+    // 2. Get Student's Exam Results (Even if they have debt!)
+    const examsRes = await pool.query(`
+      SELECT c.code, c.title, g.midterm_grade, g.final_grade, g.letter_grade 
+      FROM grades g 
+      JOIN course_sections s ON s.id = g.section_id 
+      JOIN courses c ON c.id = s.course_id 
+      WHERE g.student_id = $1 AND g.is_published = true
+    `, [studentId]);
+
+    // 3. Get Student's Installments
+    const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [studentId]);
+
+    res.render('intl-student-profile', {
+      user: req.session.user,
+      student,
+      exams: examsRes.rows,
+      installments: instRes.rows
+    });
+  } catch (err) {
+    res.status(500).send("Profile Error: " + err.message);
+  }
+});
+
 // Staff Claims a Ticket
 app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {
   try {

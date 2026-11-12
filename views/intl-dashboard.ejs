@@ -65,7 +65,8 @@
             <td style="width: 50%;">
               <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.3rem;">#<%= r.id %> - <%= r.request_type %></div>
               <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 0.8rem;">
-                Student: <strong><%= r.student_name %></strong> (<%= r.student_number %>) | <%= new Date(r.created_at).toLocaleDateString() %>
+              Student: <strong><%= r.student_name %></strong> (<%= r.student_number %>) 
+| <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" style="color: var(--blue); font-weight: 800; text-decoration: underline;"><i class="fas fa-external-link-alt"></i> View Student Profile</a> | <%= new Date(r.created_at).toLocaleDateString() %>
               </div>
               
               <div class="ticket-box">

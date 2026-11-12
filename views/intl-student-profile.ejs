@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile - Staff View</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); min-height: 100vh; color: var(--navy); padding: 2.5rem; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid var(--frost); padding-bottom: 1rem; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; }
+    .btn-back { background: var(--navy); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.85rem; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+    
+    .card { background: #fff; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 1.5rem; }
+    .card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy); border-bottom: 1px solid var(--frost); padding-bottom: 0.5rem; }
+
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 0.75rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; border-bottom: 1px solid var(--frost); }
+    .data-table td { padding: 0.75rem; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid var(--frost); }
+    
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .info-label { color: #64748b; font-weight: 600; }
+    .info-value { font-weight: 800; }
+
+    .action-btn { background: var(--success); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; font-size: 0.75rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1><i class="fas fa-user-graduate" style="color: var(--amber);"></i> Student Profile: <%= student.full_name %></h1>
+      <p style="color: #64748b; font-weight: 600;">Staff View (Overrides Financial Holds)</p>
+    </div>
+    <a href="/sis/intl" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Tickets</a>
+  </div>
+
+  <div class="grid">
+    
+    <!-- ACADEMIC INFO -->
+    <div class="card">
+      <h3><i class="fas fa-id-card"></i> Student Details</h3>
+      <div class="info-row"><span class="info-label">Student Number:</span> <span class="info-value"><%= student.admission_number || student.username %></span></div>
+      <div class="info-row"><span class="info-label">Program:</span> <span class="info-value"><%= student.class_level %></span></div>
+      <div class="info-row"><span class="info-label">Semester:</span> <span class="info-value"><%= student.current_semester %></span></div>
+      <div class="info-row"><span class="info-label">Email:</span> <span class="info-value"><%= student.email %></span></div>
+    </div>
+
+    <!-- FINANCIAL / INSTALLMENTS -->
+    <div class="card">
+      <h3><i class="fas fa-wallet"></i> Installment History</h3>
+      <% if (installments.length === 0) { %>
+        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">No installment requests found.</p>
+      <% } %>
+      <% installments.forEach(inst => { %>
+        <div style="background: var(--ice); padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--frost);">
+          <div class="info-row">
+            <span style="font-weight: 800;">$<%= Number(inst.total_amount).toFixed(2) %> - <%= inst.installments_count %> Months</span>
+            <span style="font-weight: 800; color: <%= inst.status === 'approved' ? 'var(--success)' : (inst.status === 'rejected' ? 'var(--danger)' : 'var(--amber)') %>;"><%= inst.status.toUpperCase() %></span>
+          </div>
+          <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Requested: <%= new Date(inst.created_at).toLocaleDateString() %></p>
+          
+          <% if (inst.status === 'pending') { %>
+            <form action="/sis/intl/installment/<%= inst.id %>/approve" method="POST">
+              <button type="submit" class="action-btn"><i class="fas fa-check"></i> Approve Installment</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+
+  </div>
+
+  <!-- EXAM RESULTS (Bypasses Debt Check) -->
+  <div class="card">
+    <h3><i class="fas fa-poll"></i> Exam Results (Staff Override)</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Midterm</th>
+          <th>Final</th>
+          <th>Letter Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (exams.length === 0) { %>
+          <tr><td colspan="5" style="text-align: center; color: #94a3b8; font-style: italic;">No published grades found.</td></tr>
+        <% } %>
+        <% exams.forEach(e => { %>
+          <tr>
+            <td><strong><%= e.code %></strong></td>
+            <td><%= e.title %></td>
+            <td><%= e.midterm_grade || '-' %></td>
+            <td><%= e.final_grade || '-' %></td>
+            <td style="color: var(--blue); font-weight: 800;"><%= e.letter_grade || 'N/A' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

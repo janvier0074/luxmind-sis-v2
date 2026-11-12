@@ -4266,9 +4266,15 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
       user: req.session.user,
       requests: requestsRes.rows,
       flash: req.flash ? req.flash() : {}
-    });} catch (err) {
-  res.status(500).send("<pre style='color:red; font-size:16px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
-}
+    });  } catch (err) {
+    res.status(500).send("<div style='padding: 20px; font-family: monospace; color: red; background: #fff;'>" +
+      "<h2>Detailed Error:</h2>" +
+      "<p>" + err.message + "</p>" +
+      "<h3>Stack Trace:</h3>" +
+      "<pre>" + err.stack + "</pre>" +
+      "</div>");
+  }
+});
 });
 
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)

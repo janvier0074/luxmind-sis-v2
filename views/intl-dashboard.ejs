@@ -27,7 +27,8 @@
     .ticket-box { background: var(--ice); padding: 1rem; border-radius: 8px; border: 1px solid var(--frost); margin-bottom: 0.5rem; }
     .reply-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
     .form-control { width: 100%; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: #fff; outline: none; font-size: 0.9rem; }
-    .btn-resolve { background: var(--success); color: #fff; padding: 0.7rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; }
+    .btn-resolve { background: var(--success); color: #fff; padding: 0.7rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .btn-resolve:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -80,17 +81,38 @@
             </td>
             
             <td style="width: 50%;">
-              <div style="margin-bottom: 0.5rem;">
+              <!-- STATUS AND ASSIGNMENT TAG -->
+              <div style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                 <span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span>
+                <% if (r.status === 'Pending') { %>
+                  <% if (r.assigned_name) { %>
+                    <span style="font-size: 0.75rem; font-weight: 800; color: var(--blue);"><i class="fas fa-user-check"></i> Assigned to: <%= r.assigned_name %></span>
+                  <% } else { %>
+                    <span style="font-size: 0.75rem; font-weight: 800; color: var(--amber);"><i class="fas fa-exclamation-triangle"></i> Unassigned</span>
+                  <% } %>
+                <% } %>
               </div>
 
               <% if (r.status === 'Pending') { %>
-                <form action="/sis/intl/resolve/<%= r.id %>" method="POST" enctype="multipart/form-data" class="reply-form">
-                  <textarea name="staff_reply" class="form-control" rows="3" placeholder="Type your official response to the student..." required></textarea>
-                  <input type="file" name="staff_attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="padding: 0.5rem;">
-                  <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Resolve & Notify Student</button>
-                </form>
+                
+                <% if (!r.assigned_name) { %>
+                  <!-- CLAIM BUTTON -->
+                  <form action="/sis/intl/claim/<%= r.id %>" method="POST">
+                    <button type="submit" class="btn-resolve" style="background: var(--amber); color: var(--navy); width: 100%; margin-bottom: 1rem;">
+                      <i class="fas fa-hand-paper"></i> Claim This Ticket
+                    </button>
+                  </form>
+                <% } else { %>
+                  <!-- RESOLVE FORM (Only shows if assigned) -->
+                  <form action="/sis/intl/resolve/<%= r.id %>" method="POST" enctype="multipart/form-data" class="reply-form">
+                    <textarea name="staff_reply" class="form-control" rows="3" placeholder="Type your official response to the student..." required></textarea>
+                    <input type="file" name="staff_attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="padding: 0.5rem;">
+                    <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Resolve & Notify Student</button>
+                  </form>
+                <% } %>
+
               <% } else { %>
+                <!-- COMPLETED VIEW -->
                 <div class="ticket-box" style="background: #f0fdf4; border-color: #bbf7d0;">
                   <strong style="font-size: 0.75rem; color: var(--success); text-transform: uppercase;">Your Reply:</strong>
                   <p style="margin-top: 0.3rem;"><%= r.staff_reply %></p>

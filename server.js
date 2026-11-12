@@ -3818,7 +3818,13 @@ app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
 
 app.post('/sis/my/guidance/request', requireRole('student'), upload.single('attachment'), async (req, res) => {
   const { request_type, description } = req.body;
-  const attachmentName = req.file ? req.file.originalname : null;
+  
+  // Convert the uploaded file to a Base64 Data URL
+  let attachmentUrl = null;
+  if (req.file) {
+    const b64 = req.file.buffer.toString('base64');
+    attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
+  }
   
   // 🏛️ CIU TRIAGE ROUTING LOGIC
   let assignedDept = 'General Administration';
@@ -3839,7 +3845,7 @@ app.post('/sis/my/guidance/request', requireRole('student'), upload.single('atta
     await pool.query(`
       INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, status)
       VALUES ($1, $2, $3, $4, $5, 'Pending')
-    `, [req.session.user.id, request_type, description, attachmentName, assignedDept]);
+    `, [req.session.user.id, request_type, description, attachmentUrl, assignedDept]);
 
     req.flash('success', `Request successfully routed to the ${assignedDept}.`);
     res.redirect('/sis/my/guidance');

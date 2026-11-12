@@ -428,11 +428,6 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
 
-
-
-
-
-
   try {
     // ==========================================
     // 1. CHECK FOR FINANCIAL HOLD
@@ -454,17 +449,8 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     }
 
     // ==========================================
-    // 2. Fetch course rules (this is your existing code)
+    // 2. FETCH COURSE RULES
     // ==========================================
-
-
-
-
-
-
-
-  try {
-    // 1. Fetch course rules
     const courseRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota, s.day_of_week, s.start_time, s.end_time,
              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
@@ -475,13 +461,13 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
     const course = courseRes.rows[0];
 
-    // 2. Check Quota
+    // 3. Check Quota
     if (course.enrolled_count >= course.quota) {
       req.flash('error', 'Cannot add course: Section is full.');
       return res.redirect('/sis/my/registration');
     }
 
-    // 3. Check Prerequisite
+    // 4. Check Prerequisite
     if (course.prerequisite_id) {
       const passedCheck = await pool.query(`
         SELECT g.id FROM grades g JOIN course_sections s ON s.id = g.section_id
@@ -494,7 +480,7 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
-    // 4. Check Schedule Conflict
+    // 5. Check Schedule Conflict
     if (course.day_of_week && course.start_time) {
       const conflictCheck = await pool.query(`
         SELECT e.id FROM enrollments e JOIN course_sections s ON s.id = e.section_id
@@ -510,7 +496,7 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
-    // 5. Add to cart
+    // 6. Add to cart
     const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
     if (existing.rows.length === 0) {
       await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
@@ -518,9 +504,10 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     }
     
     res.redirect('/sis/my/registration');
-  } catch (err) { res.status(500).send("Error adding: " + err.message); }
+  } catch (err) { 
+    res.status(500).send("Error adding: " + err.message); 
+  }
 });
-
 
 app.post('/sis/my/registration/remove', requireRole('student'), async (req, res) => {
   try {

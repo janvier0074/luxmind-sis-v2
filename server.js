@@ -4266,10 +4266,9 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
       user: req.session.user,
       requests: requestsRes.rows,
       flash: req.flash ? req.flash() : {}
-    });
-  } catch (err) {
-    res.status(500).send("Intl Office Error: " + err.message);
-  }
+    });} catch (err) {
+  res.status(500).send("<pre style='color:red; font-size:16px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
+}
 });
 
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)

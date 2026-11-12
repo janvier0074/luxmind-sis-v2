@@ -4294,6 +4294,38 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   }
 });
 
+
+
+
+
+// Staff: Student Directory Search
+app.get('/sis/intl/search', requireRole('intl_officer'), async (req, res) => {
+  try {
+    const searchQuery = req.query.q || '';
+    let students = [];
+
+    if (searchQuery) {
+      const result = await pool.query(`
+        SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level
+        FROM users u
+        LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE u.role = 'student' 
+          AND (u.full_name ILIKE $1 OR u.username ILIKE $1 OR sp.admission_number ILIKE $1)
+        LIMIT 20
+      `, [`%${searchQuery}%`]);
+      students = result.rows;
+    }
+
+    res.render('intl-search', {
+      user: req.session.user,
+      searchQuery,
+      students
+    });
+  } catch (err) {
+    res.status(500).send("Search Error: " + err.message);
+  }
+});
+
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {

@@ -73,14 +73,30 @@
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
-  <aside class="sidebar" id="sidebar">
+   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="brand-name">LuxMind SIS <span>International Office</span></div>
       <p style="font-size: 0.7rem; color: var(--gold); margin-top: 0.5rem; font-weight: 800;"><i class="fas fa-shield-alt"></i> <%= teamName %></p>
     </div>
-    <a href="/sis/intl" class="menu-link active"><i class="fas fa-inbox"></i> Ticket Inbox</a>
+    
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Ticketing</div>
+    <a href="/sis/intl" class="menu-link active"><i class="fas fa-inbox"></i> Dashboard & Inbox</a>
+    
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Student Management</div>
     <a href="/sis/intl/search" class="menu-link"><i class="fas fa-search"></i> Student Directory</a>
-    <a href="/logout" class="menu-link" style="margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <a href="#" class="menu-link" onclick="alert('Admissions module coming soon')"><i class="fas fa-user-plus"></i> Admissions Tracker</a>
+    <a href="#" class="menu-link" onclick="alert('Orientation module coming soon')"><i class="fas fa-plane-arrival"></i> Orientation & Welcome</a>
+
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Visa & Immigration</div>
+    <a href="#" class="menu-link" onclick="alert('Visa Queue coming soon')"><i class="fas fa-passport"></i> Visa Processing Queue</a>
+    <a href="#" class="menu-link" onclick="alert('Residency tracker coming soon')"><i class="fas fa-id-card"></i> Residence Permits</a>
+
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Global Programs</div>
+    <a href="#" class="menu-link" onclick="alert('Erasmus module coming soon')"><i class="fas fa-globe-europe"></i> Erasmus & Exchange</a>
+    <a href="#" class="menu-link" onclick="alert('Partnerships module coming soon')"><i class="fas fa-handshake"></i> University Partnerships</a>
+
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 1.5rem;">
+    <a href="/logout" class="menu-link" style="color: var(--danger);"><i class="fas fa-sign-out-alt" style="color: var(--danger);"></i> Secure Logout</a>
   </aside>
 
   <main class="main-content">

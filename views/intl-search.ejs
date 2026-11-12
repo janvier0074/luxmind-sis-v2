@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Directory - Intl Office</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    /* SIDEBAR (Massive CIU Structure) */
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; padding: 2rem 0; z-index: 1000; overflow-y: auto; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem; }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-top: 0.3rem; }
+    .menu-link { display: flex; align-items: center; padding: 0.8rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    /* MAIN */
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .header { margin-bottom: 2rem; border-bottom: 1px solid var(--frost); padding-bottom: 1rem; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; }
+    
+    .search-bar { display: flex; gap: 1rem; margin-bottom: 2rem; background: #fff; padding: 1rem; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); }
+    .search-bar input { flex: 1; padding: 0.8rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; outline: none; font-size: 0.9rem; }
+    .search-bar button { background: var(--navy); color: #fff; padding: 0 1.5rem; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
+
+    .table-container { background: #fff; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 700px; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; }
+    .btn-view { background: var(--blue); color: #fff; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 800; font-size: 0.75rem; }
+
+    /* MOBILE */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 280px; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">LuxMind SIS <span>International Office</span></div>
+    </div>
+    
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Ticketing</div>
+    <a href="/sis/intl" class="menu-link"><i class="fas fa-inbox"></i> Dashboard & Inbox</a>
+    
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Student Management</div>
+    <a href="/sis/intl/search" class="menu-link active"><i class="fas fa-search"></i> Student Directory</a>
+    <a href="#" class="menu-link"><i class="fas fa-user-plus"></i> Admissions Tracker</a>
+    <a href="#" class="menu-link"><i class="fas fa-plane-arrival"></i> Orientation & Welcome</a>
+
+    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Visa & Immigration</div>
+    <a href="#" class="menu-link"><i class="fas fa-passport"></i> Visa Processing</a>
+    <a href="#" class="menu-link"><i class="fas fa-id-card"></i> Residence Permits</a>
+
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 1.5rem;">
+    <a href="/logout" class="menu-link" style="color: var(--danger);"><i class="fas fa-sign-out-alt" style="color: var(--danger);"></i> Secure Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <div class="header">
+      <h1><i class="fas fa-search" style="color: var(--amber);"></i> Student Directory</h1>
+      <p style="color: #64748b; font-weight: 600;">Search by Name, Student Number, or Username.</p>
+    </div>
+
+    <form action="/sis/intl/search" method="GET" class="search-bar">
+      <input type="text" name="q" placeholder="Search student database..." value="<%= searchQuery %>" required>
+      <button type="submit"><i class="fas fa-search"></i> Search</button>
+    </form>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student Number</th>
+            <th>Full Name</th>
+            <th>Program</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (students.length === 0 && searchQuery) { %>
+            <tr><td colspan="4" style="text-align: center; color: #94a3b8; font-style: italic; padding: 2rem;">No students found matching "<%= searchQuery %>".</td></tr>
+          <% } else if (students.length === 0) { %>
+            <tr><td colspan="4" style="text-align: center; color: #94a3b8; font-style: italic; padding: 2rem;">Type a name or student number to search.</td></tr>
+          <% } %>
+          
+          <% students.forEach(s => { %>
+            <tr>
+              <td><strong><%= s.admission_number || s.username %></strong></td>
+              <td><%= s.full_name %></td>
+              <td><%= s.class_level || 'N/A' %></td>
+              <td><a href="/sis/intl/student/<%= s.id %>" class="btn-view"><i class="fas fa-eye"></i> View Dossier</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+  </script>
+
+</body>
+</html>

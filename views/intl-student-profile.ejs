@@ -3,109 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Profile - Staff View</title>
+  <title>Student Profile - Intl Office</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
     :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
-    body { background: var(--ice); min-height: 100vh; color: var(--navy); padding: 2.5rem; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
     
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid var(--frost); padding-bottom: 1rem; }
+    /* SIDEBAR */
+    .sidebar { width: 260px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; padding: 2rem 0; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem; }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .menu-link { display: flex; align-items: center; padding: 1rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: 0.2s; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left: 3px solid var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    /* MAIN */
+    .main-content { margin-left: 260px; padding: 2.5rem; flex: 1; width: calc(100% - 260px); transition: margin 0.3s ease; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--frost); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
     .header h1 { font-size: 1.8rem; font-weight: 800; }
-    .btn-back { background: var(--navy); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.85rem; }
-
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+    .btn-back { background: var(--navy); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem; }
     
-    .card { background: #fff; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 1.5rem; }
-    .card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy); border-bottom: 1px solid var(--frost); padding-bottom: 0.5rem; }
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
 
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 0.75rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; border-bottom: 1px solid var(--frost); }
-    .data-table td { padding: 0.75rem; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid var(--frost); }
+    /* LAYOUT GRIDS */
+    .profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; margin-bottom: 2rem; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
     
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .card { background: #fff; border-radius: 1rem; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 1.5rem; }
+    .card h3 { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy); border-bottom: 1px solid var(--frost); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;}
+    .card h3 i { color: var(--amber); }
+
+    /* PROFILE PICTURE CARD */
+    .profile-card { text-align: center; }
+    .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gold); margin: 0 auto 1rem; background: var(--ice); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--frost); }
+    .profile-card h2 { font-size: 1.3rem; font-weight: 800; }
+    .profile-card p { font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 1rem; }
+
+    /* DATA ROWS */
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.85rem; border-bottom: 1px dashed var(--frost); padding-bottom: 0.75rem; }
+    .info-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .info-label { color: #64748b; font-weight: 600; }
-    .info-value { font-weight: 800; }
+    .info-value { font-weight: 800; text-align: right; max-width: 60%; word-wrap: break-word; }
 
-    .action-btn { background: var(--success); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; font-size: 0.75rem; margin-top: 1rem; }
+    /* TABLES */
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { background: var(--ice); padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; border-bottom: 1px solid var(--frost); }
+    .data-table td { padding: 1rem; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid var(--frost); }
+    
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .badge.approved { background: #dcfce7; color: #16a34a; }
+    .badge.pending { background: #fef3c7; color: #d97706; }
+
+    .btn-approve { background: var(--success); color: #fff; padding: 0.5rem 1rem; border-radius: 6px; border: none; font-weight: 800; cursor: pointer; font-size: 0.75rem; transition: 0.2s; margin-top: 0.5rem; width: 100%;}
+    .btn-approve:hover { opacity: 0.8; }
+
+    /* MOBILE */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 1024px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 260px; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+      .header { flex-direction: column; align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div>
-      <h1><i class="fas fa-user-graduate" style="color: var(--amber);"></i> Student Profile: <%= student.full_name %></h1>
-      <p style="color: #64748b; font-weight: 600;">Staff View (Overrides Financial Holds)</p>
-    </div>
-    <a href="/sis/intl" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Tickets</a>
-  </div>
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
-  <div class="grid">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">LuxMind SIS <span>Intl Office Staff</span></div>
+    </div>
+    <a href="/sis/intl" class="menu-link"><i class="fas fa-inbox"></i> Ticket Inbox</a>
+    <a href="#" class="menu-link active"><i class="fas fa-user-graduate"></i> Student Profile</a>
+    <a href="/logout" class="menu-link" style="margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <main class="main-content">
     
-    <!-- ACADEMIC INFO -->
-    <div class="card">
-      <h3><i class="fas fa-id-card"></i> Student Details</h3>
-      <div class="info-row"><span class="info-label">Student Number:</span> <span class="info-value"><%= student.admission_number || student.username %></span></div>
-      <div class="info-row"><span class="info-label">Program:</span> <span class="info-value"><%= student.class_level %></span></div>
-      <div class="info-row"><span class="info-label">Semester:</span> <span class="info-value"><%= student.current_semester %></span></div>
-      <div class="info-row"><span class="info-label">Email:</span> <span class="info-value"><%= student.email %></span></div>
+    <% if (flash && flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="header">
+      <div>
+        <h1><i class="fas fa-user-circle" style="color: var(--amber);"></i> Student Dossier</h1>
+        <p style="color: #64748b; font-weight: 600;">Complete Profile (Staff Override Enabled)</p>
+      </div>
+      <a href="/sis/intl" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Tickets</a>
     </div>
 
-    <!-- FINANCIAL / INSTALLMENTS -->
-    <div class="card">
-      <h3><i class="fas fa-wallet"></i> Installment History</h3>
-      <% if (installments.length === 0) { %>
-        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">No installment requests found.</p>
-      <% } %>
-      <% installments.forEach(inst => { %>
-        <div style="background: var(--ice); padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--frost);">
-          <div class="info-row">
-            <span style="font-weight: 800;">$<%= Number(inst.total_amount).toFixed(2) %> - <%= inst.installments_count %> Months</span>
-            <span style="font-weight: 800; color: <%= inst.status === 'approved' ? 'var(--success)' : (inst.status === 'rejected' ? 'var(--danger)' : 'var(--amber)') %>;"><%= inst.status.toUpperCase() %></span>
-          </div>
-          <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Requested: <%= new Date(inst.created_at).toLocaleDateString() %></p>
-          
-          <% if (inst.status === 'pending') { %>
-            <form action="/sis/intl/installment/<%= inst.id %>/approve" method="POST">
-              <button type="submit" class="action-btn"><i class="fas fa-check"></i> Approve Installment</button>
-            </form>
+    <div class="profile-grid">
+      <!-- LEFT: PROFILE IMAGE & QUICK STATS -->
+      <div>
+        <div class="card profile-card">
+          <% if (student.profile_picture_url) { %>
+            <img src="<%= student.profile_picture_url %>" alt="Profile" class="profile-pic">
+          <% } else { %>
+            <div class="profile-pic"><i class="fas fa-user"></i></div>
           <% } %>
+          <h2><%= student.full_name %></h2>
+          <p><%= student.admission_number || student.username %></p>
+          
+          <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+            <span style="background: #e0f2fe; color: #0284c7; padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;"><%= student.is_international ? 'International' : 'Local' %></span>
+            <span style="background: #dcfce7; color: #16a34a; padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">Active</span>
+          </div>
         </div>
-      <% }) %>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3><i class="fas fa-wallet"></i> Current Financial Status</h3>
+          <div class="info-row"><span class="info-label">Base Tuition</span> <span class="info-value">$<%= Number(financials.baseTuition).toFixed(2) %></span></div>
+          <div class="info-row"><span class="info-label">Total Paid</span> <span class="info-value" style="color: var(--success);">-$<%= Number(financials.totalPaid).toFixed(2) %></span></div>
+          <div class="info-row" style="border-bottom: none;"><span class="info-label" style="font-weight: 800; color: var(--navy);">Current Debt</span> <span class="info-value" style="color: var(--danger); font-size: 1.1rem;">$<%= Number(financials.debt).toFixed(2) %></span></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: DETAILED INFO -->
+      <div>
+        <div class="info-grid">
+          <!-- PERSONAL -->
+          <div class="card">
+            <h3><i class="fas fa-id-card"></i> Personal Details</h3>
+            <div class="info-row"><span class="info-label">Email</span> <span class="info-value"><%= student.email || 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Phone</span> <span class="info-value"><%= student.phone || 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Date of Birth</span> <span class="info-value"><%= student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Gender</span> <span class="info-value"><%= student.gender || 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Address</span> <span class="info-value"><%= student.home_address || 'N/A' %></span></div>
+          </div>
+
+          <!-- ACADEMIC -->
+          <div class="card">
+            <h3><i class="fas fa-graduation-cap"></i> Academic Details</h3>
+            <div class="info-row"><span class="info-label">Program</span> <span class="info-value"><%= student.class_level %></span></div>
+            <div class="info-row"><span class="info-label">Semester</span> <span class="info-value"><%= student.current_semester %></span></div>
+            <div class="info-row"><span class="info-label">Academic Advisor</span> <span class="info-value"><%= student.advisor_name || 'Not Assigned' %></span></div>
+            <div class="info-row"><span class="info-label">High School GPA</span> <span class="info-value"><%= student.high_school_gpa || 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Guardian Name</span> <span class="info-value"><%= student.guardian_name || 'N/A' %></span></div>
+            <div class="info-row"><span class="info-label">Guardian Phone</span> <span class="info-value"><%= student.guardian_phone || 'N/A' %></span></div>
+          </div>
+        </div>
+
+        <!-- EXAMS -->
+        <div class="card">
+          <h3><i class="fas fa-poll"></i> Academic Record (Staff Override)</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course Title</th>
+                  <th>Credits</th>
+                  <th>Midterm</th>
+                  <th>Final</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (exams.length === 0) { %>
+                  <tr><td colspan="6" style="text-align: center; color: #94a3b8; font-style: italic; padding: 2rem;">No published grades found.</td></tr>
+                <% } %>
+                <% exams.forEach(e => { %>
+                  <tr>
+                    <td><strong><%= e.code %></strong></td>
+                    <td style="color: #64748b;"><%= e.title %></td>
+                    <td><%= e.credits %></td>
+                    <td><%= e.midterm_grade || '-' %></td>
+                    <td><%= e.final_grade || '-' %></td>
+                    <td style="color: var(--blue); font-weight: 800;"><%= e.letter_grade || 'N/A' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-  </div>
+    <!-- INSTALLMENTS (FULL WIDTH) -->
+    <div class="card">
+      <h3><i class="fas fa-handshake"></i> Installment Plans</h3>
+      
+      <% if (installments.length === 0) { %>
+        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">No installment requests found for this student.</p>
+      <% } %>
 
-  <!-- EXAM RESULTS (Bypasses Debt Check) -->
-  <div class="card">
-    <h3><i class="fas fa-poll"></i> Exam Results (Staff Override)</h3>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Course Code</th>
-          <th>Course Title</th>
-          <th>Midterm</th>
-          <th>Final</th>
-          <th>Letter Grade</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if (exams.length === 0) { %>
-          <tr><td colspan="5" style="text-align: center; color: #94a3b8; font-style: italic;">No published grades found.</td></tr>
-        <% } %>
-        <% exams.forEach(e => { %>
-          <tr>
-            <td><strong><%= e.code %></strong></td>
-            <td><%= e.title %></td>
-            <td><%= e.midterm_grade || '-' %></td>
-            <td><%= e.final_grade || '-' %></td>
-            <td style="color: var(--blue); font-weight: 800;"><%= e.letter_grade || 'N/A' %></td>
-          </tr>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+        <% installments.forEach(inst => { %>
+          <div style="background: var(--ice); padding: 1rem; border-radius: 8px; border: 1px solid var(--frost);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span style="font-weight: 800; font-size: 1.1rem;">$<%= Number(inst.total_amount).toFixed(2) %></span>
+              <span class="badge <%= inst.status %>"><%= inst.status %></span>
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Plan: <%= inst.installments_count %> Months</p>
+            <p style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.2rem; margin-bottom: 0.5rem;">Requested: <%= new Date(inst.created_at).toLocaleDateString() %></p>
+            
+            <% if (inst.status === 'pending') { %>
+              <form action="/sis/intl/installment/<%= inst.id %>/approve" method="POST">
+                <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve Plan</button>
+              </form>
+            <% } %>
+          </div>
         <% }) %>
-      </tbody>
-    </table>
-  </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+  </script>
 
 </body>
 </html>

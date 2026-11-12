@@ -4273,42 +4273,78 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
 });
 
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)
+// Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
   const studentId = req.params.id;
   try {
-    // 1. Get Student Info
+    // 1. Get ALL Student Info (Personal, Academic, Profile Pic)
     const studentRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, u.email, sp.class_level, sp.current_semester, sp.admission_number
+      SELECT u.id, u.full_name, u.username, u.email, u.profile_picture_url, u.phone,
+             sp.admission_number, sp.class_level, sp.current_semester, sp.is_international, 
+             sp.high_school_gpa, sp.date_of_birth, sp.gender, sp.home_address, sp.guardian_name, sp.guardian_phone,
+             adv.full_name as advisor_name
       FROM users u 
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN users adv ON adv.id = sp.advisor_id
       WHERE u.id = $1 AND u.role = 'student'
     `, [studentId]);
 
     if (studentRes.rows.length === 0) return res.redirect('/sis/intl');
     const student = studentRes.rows[0];
 
-    // 2. Get Student's Exam Results (Even if they have debt!)
+    // 2. Get Student's Exam Results
     const examsRes = await pool.query(`
-      SELECT c.code, c.title, g.midterm_grade, g.final_grade, g.letter_grade 
+      SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
       FROM grades g 
       JOIN course_sections s ON s.id = g.section_id 
       JOIN courses c ON c.id = s.course_id 
       WHERE g.student_id = $1 AND g.is_published = true
+      ORDER BY c.code ASC
     `, [studentId]);
 
     // 3. Get Student's Installments
-    const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [studentId]);
+    const instRes = await pool.query(`
+      SELECT * FROM installment_requests 
+      WHERE student_id = $1 ORDER BY created_at DESC
+    `, [studentId]);
+
+    // 4. Get Student's Financial Summary
+    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
+    const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
+    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [studentId]);
+    const totalPaid = Number(paidRes.rows[0].total);
+    const debt = baseTuition - totalPaid;
 
     res.render('intl-student-profile', {
       user: req.session.user,
       student,
       exams: examsRes.rows,
-      installments: instRes.rows
+      installments: instRes.rows,
+      financials: { baseTuition, totalPaid, debt }
     });
   } catch (err) {
     res.status(500).send("Profile Error: " + err.message);
   }
 });
+
+// Staff Approves an Installment
+app.post('/sis/intl/installment/:id/approve', requireRole('intl_officer'), async (req, res) => {
+  try {
+    await pool.query(`
+      UPDATE installment_requests 
+      SET status = 'approved' 
+      WHERE id = $1
+    `, [req.params.id]);
+    
+    req.flash('success', 'Installment plan approved. The student can now register for classes.');
+    // Send them back to the profile page they were just looking at
+    res.redirect('back'); 
+  } catch (err) {
+    res.status(500).send("Approve Error: " + err.message);
+  }
+});
+
+
 
 // Staff Claims a Ticket
 app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {

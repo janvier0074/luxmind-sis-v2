@@ -140,7 +140,7 @@ app.post('/login', async (req, res) => {
     res.status(500).send("<pre style='color:red; font-size:20px; background:#fff; padding:20px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
   }
 });
-});
+
 
 app.get('/logout', (req, res) => {
   req.session.destroy();

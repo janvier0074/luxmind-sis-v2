@@ -36,7 +36,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
 const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
 app.set('view engine', 'ejs');
@@ -4239,6 +4238,71 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('<pre style="background:#fee2e2;padding:2rem;color:#991b1b;font-size:1rem;">' + err.stack + '</pre>');
+});
+
+
+// ============================================
+// --- INTERNATIONAL OFFICE PORTAL ---
+// ============================================
+app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
+  try {
+    // Staff ONLY sees tickets assigned to their department
+    const requestsRes = await pool.query(`
+      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+      FROM guidance_requests gr
+      JOIN users u ON u.id = gr.student_id
+      WHERE gr.assigned_department = 'International Office'
+      ORDER BY gr.created_at DESC
+    `);
+
+    res.render('intl-dashboard', {
+      user: req.session.user,
+      requests: requestsRes.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Intl Office Error: " + err.message);
+  }
+});
+
+// Staff Resolves a Ticket
+app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('staff_attachment'), async (req, res) => {
+  const requestId = req.params.id;
+  const { staff_reply } = req.body;
+  
+  // Convert the uploaded file to a Base64 Data URL
+  let attachmentUrl = null;
+  if (req.file) {
+    const b64 = req.file.buffer.toString('base64');
+    attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
+  }
+
+  try {
+    // 1. Update the ticket
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET status = 'Completed', resolved_at = NOW(), staff_reply = $1, staff_attachment = $2
+      WHERE id = $3
+    `, [staff_reply, attachmentUrl, requestId]);
+
+    // 2. Fetch student ID to send notification
+    const reqRes = await pool.query(`SELECT student_id, request_type FROM guidance_requests WHERE id = $1`, [requestId]);
+    if (reqRes.rows.length > 0) {
+      const studentId = reqRes.rows[0].student_id;
+      const reqType = reqRes.rows[0].request_type;
+
+      // 3. Insert Notification for the student
+      await pool.query(`
+        INSERT INTO notifications (user_id, title, body, link) 
+        VALUES ($1, 'Guidance Request Resolved', $2, '/sis/my/guidance')
+      `, [studentId, `Your ${reqType} request has been answered by the International Office.`]);
+    }
+
+    req.flash('success', 'Ticket resolved and student notified.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Resolution Error: " + err.message);
+  }
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

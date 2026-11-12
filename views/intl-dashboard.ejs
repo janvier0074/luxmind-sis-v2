@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>International Office - LuxMind Staff</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); min-height: 100vh; color: var(--navy); padding: 2.5rem; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid var(--frost); padding-bottom: 1rem; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; }
+    .logout-btn { background: var(--danger); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 0.85rem; }
+
+    .table-container { background: #fff; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 900px; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; vertical-align: top; }
+    
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #d97706; }
+    .badge.completed { background: #dcfce7; color: #16a34a; }
+
+    .ticket-box { background: var(--ice); padding: 1rem; border-radius: 8px; border: 1px solid var(--frost); margin-bottom: 0.5rem; }
+    .reply-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+    .form-control { width: 100%; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: #fff; outline: none; font-size: 0.9rem; }
+    .btn-resolve { background: var(--success); color: #fff; padding: 0.7rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1><i class="fas fa-globe" style="color: var(--amber);"></i> International Office Portal</h1>
+      <p style="color: #64748b; font-weight: 600;">Logged in as: <%= user.full_name %></p>
+    </div>
+    <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <% if (flash.success && flash.success.length > 0) { %>
+    <div style="background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700;">
+      <i class="fas fa-check-circle"></i> <%= flash.success[0] %>
+    </div>
+  <% } %>
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ticket Details</th>
+          <th>Status & Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (requests.length === 0) { %>
+          <tr><td colspan="2" style="text-align: center; color: #94a3b8; font-style: italic;">No tickets assigned to the International Office.</td></tr>
+        <% } %>
+        
+        <% requests.forEach(r => { %>
+          <tr>
+            <td style="width: 50%;">
+              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.3rem;">#<%= r.id %> - <%= r.request_type %></div>
+              <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 0.8rem;">
+                Student: <strong><%= r.student_name %></strong> (<%= r.student_number %>) | <%= new Date(r.created_at).toLocaleDateString() %>
+              </div>
+              
+              <div class="ticket-box">
+                <strong style="font-size: 0.75rem; color: var(--blue); text-transform: uppercase;">Student Message:</strong>
+                <p style="margin-top: 0.3rem;"><%= r.description %></p>
+              </div>
+              
+              <% if (r.student_attachment) { %>
+                <a href="<%= r.student_attachment %>" target="_blank" style="display: inline-block; font-size: 0.8rem; color: var(--blue); font-weight: 800; text-decoration: none;">
+                  <i class="fas fa-paperclip"></i> View Student Attachment
+                </a>
+              <% } %>
+            </td>
+            
+            <td style="width: 50%;">
+              <div style="margin-bottom: 0.5rem;">
+                <span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span>
+              </div>
+
+              <% if (r.status === 'Pending') { %>
+                <form action="/sis/intl/resolve/<%= r.id %>" method="POST" enctype="multipart/form-data" class="reply-form">
+                  <textarea name="staff_reply" class="form-control" rows="3" placeholder="Type your official response to the student..." required></textarea>
+                  <input type="file" name="staff_attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="padding: 0.5rem;">
+                  <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Resolve & Notify Student</button>
+                </form>
+              <% } else { %>
+                <div class="ticket-box" style="background: #f0fdf4; border-color: #bbf7d0;">
+                  <strong style="font-size: 0.75rem; color: var(--success); text-transform: uppercase;">Your Reply:</strong>
+                  <p style="margin-top: 0.3rem;"><%= r.staff_reply %></p>
+                  <% if (r.staff_attachment) { %>
+                    <a href="<%= r.staff_attachment %>" target="_blank" style="display: inline-block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--blue); font-weight: 800; text-decoration: none;">
+                      <i class="fas fa-paperclip"></i> View Attached Document
+                    </a>
+                  <% } %>
+                </div>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
- require('dotenv').config(); // <--- MUST BE LINE 1
+require('dotenv').config(); // <--- MUST BE LINE 1
 
 const { createClient } = require('@supabase/supabase-js');
 
@@ -123,8 +123,6 @@ app.post('/login', async (req, res) => {
           req.session.user.dean_faculty = deanFaculty;
         }
       } catch (e) { /* table may not exist yet, ignore */ }
-
-if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
 
             if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
@@ -3818,69 +3816,44 @@ app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
   }
 });
 
-// Student Submits a Request (Task-Based Routing)
 app.post('/sis/my/guidance/request', requireRole('student'), upload.single('attachment'), async (req, res) => {
   const { request_type, description } = req.body;
   
+  // Convert the uploaded file to a Base64 Data URL
   let attachmentUrl = null;
   if (req.file) {
     const b64 = req.file.buffer.toString('base64');
     attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
   }
   
-  // 🏛️ CIU TASK-BASED ROUTING ENGINE
-  let assignedDept = 'International Office';
-  let assignedTeam = 'General Admin';
-
+  // 🏛️ CIU TRIAGE ROUTING LOGIC
+  let assignedDept = 'General Administration';
+  
   if (request_type.includes('Debt') || request_type.includes('receipt')) {
-
-
-
-
-  // IT ROUTING
-  if (request_type.includes('Wi-Fi') || request_type.includes('Password') || request_type.includes('Printer')) {
-    assignedDept = 'IT Department';
-    assignedTeam = 'Helpdesk & Support';
-  } else if (request_type.includes('Software') || request_type.includes('Lab')) {
-    assignedDept = 'IT Department';
-    assignedTeam = 'Software & Labs';
-  } else if (request_type.includes('Hardware') || request_type.includes('Network')) {
-    assignedDept = 'IT Department';
-    assignedTeam = 'Network & Hardware';
-  }
     assignedDept = 'Finance Office';
-
-
-    assignedTeam = 'Finance Team';
   } else if (request_type.includes('Meal') || request_type.includes('Dormitory')) {
     assignedDept = 'Dormitory Directorate';
-    assignedTeam = 'Dormitory Team';
-  } else if (request_type.includes('Visa') || request_type.includes('Residence') || request_type.includes('Health Insurance') || request_type.includes('Embassy')) {
+  } else if (request_type.includes('Visa') || request_type.includes('Residence')) {
     assignedDept = 'International Office';
-    assignedTeam = 'Visa & Immigration Team';
-  } else if (request_type.includes('Airport') || request_type.includes('Orientation') || request_type.includes('SIM') || request_type.includes('ID Card')) {
-    assignedDept = 'International Office';
-    assignedTeam = 'Orientation & Student Life Team';
-  } else if (request_type.includes('Application') || request_type.includes('Acceptance') || request_type.includes('Scholarship') || request_type.includes('Transfer')) {
-    assignedDept = 'International Office';
-    assignedTeam = 'Admissions & Recruitment Team';
-  } else if (request_type.includes('Erasmus') || request_type.includes('Exchange')) {
-    assignedDept = 'International Office';
-    assignedTeam = 'Academic & Exchange Team';
+  } else if (request_type.includes('Psychological') || request_type.includes('Pastoral')) {
+    assignedDept = 'Counseling Center (PCGC)';
+  } else if (request_type.includes('Academic')) {
+    assignedDept = 'Student Affairs / Advisor';
   }
 
   try {
     await pool.query(`
-      INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, assigned_team, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'Pending')
-    `, [req.session.user.id, request_type, description, attachmentUrl, assignedDept, assignedTeam]);
+      INSERT INTO guidance_requests (student_id, request_type, description, student_attachment, assigned_department, status)
+      VALUES ($1, $2, $3, $4, $5, 'Pending')
+    `, [req.session.user.id, request_type, description, attachmentUrl, assignedDept]);
 
-    req.flash('success', `Request successfully routed to the ${assignedTeam}.`);
+    req.flash('success', `Request successfully routed to the ${assignedDept}.`);
     res.redirect('/sis/my/guidance');
   } catch (err) {
     res.status(500).send("Submission Error: " + err.message);
   }
 });
+
 
 // ============================================
 // --- CENTRAL ADMIN: APPROVALS DASHBOARD ---
@@ -4277,75 +4250,21 @@ app.use((err, req, res, next) => {
 // ============================================
 // --- INTERNATIONAL OFFICE PORTAL ---
 // ============================================
-// International Office Dashboard (Role & Team Based)
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   try {
-    const userId = req.session.user.id;
-
-    // 1. Get Staff Member's Role and Team
-    const staffRes = await pool.query(`SELECT intl_team, intl_role FROM users WHERE id = $1`, [userId]);
-    const staff = staffRes.rows[0] || { intl_team: 'General Admin', intl_role: 'officer' };
-    
-    let sharedTickets = [];
-    let myTickets = [];
-
-    // 2. DIRECTOR: Sees everything across all teams
-    if (staff.intl_role === 'director') {
-      const allRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `);
-      // Treat all tickets as "Shared Pool" for the director to manage
-      sharedTickets = allRes.rows;
-    } 
-    // 3. MANAGER: Sees all tickets in their specific team
-    else if (staff.intl_role === 'manager') {
-      const teamRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_team = $1 AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `, [staff.intl_team]);
-      
-      // Managers see all team tickets. We split them into "My Tickets" if assigned to them, otherwise Shared
-      myTickets = teamRes.rows.filter(r => r.assigned_to === userId);
-      sharedTickets = teamRes.rows.filter(r => r.assigned_to !== userId);
-    } 
-    // 4. OFFICER: Sees only their assigned tickets AND unassigned tickets in their team
-    else {
-      const sharedRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `, [staff.intl_team]);
-
-      const myRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `, [userId]);
-
-      sharedTickets = sharedRes.rows;
-      myTickets = myRes.rows;
-    }
-
-    const stats = { shared: sharedTickets.length, mine: myTickets.length };
+    const requestsRes = await pool.query(`
+      SELECT gr.*, u.full_name AS student_name, u.username AS student_number, a.full_name as assigned_name
+      FROM guidance_requests gr
+      JOIN users u ON u.id = gr.student_id
+      LEFT JOIN users a ON a.id = gr.assigned_to
+      WHERE gr.assigned_department = 'International Office'
+        AND (gr.assigned_to = $1 OR gr.assigned_to IS NULL)
+      ORDER BY gr.created_at DESC
+    `, [req.session.user.id]);
 
     res.render('intl-dashboard', {
       user: req.session.user,
-      teamName: staff.intl_team,
-      intlRole: staff.intl_role,
-      sharedTickets,
-      myTickets,
-      stats,
+      requests: requestsRes.rows,
       flash: req.flash ? req.flash() : {}
     });
   } catch (err) {
@@ -4353,132 +4272,43 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   }
 });
 
-
-
-
-
-// Staff: Student Directory Search
-app.get('/sis/intl/search', requireRole('intl_officer'), async (req, res) => {
-  try {
-    const searchQuery = req.query.q || '';
-    let students = [];
-
-    if (searchQuery) {
-      const result = await pool.query(`
-        SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level
-        FROM users u
-        LEFT JOIN student_profiles sp ON sp.user_id = u.id
-        WHERE u.role = 'student' 
-          AND (u.full_name ILIKE $1 OR u.username ILIKE $1 OR sp.admission_number ILIKE $1)
-        LIMIT 20
-      `, [`%${searchQuery}%`]);
-      students = result.rows;
-    }
-
-    res.render('intl-search', {
-      user: req.session.user,
-      searchQuery,
-      students
-    });
-  } catch (err) {
-    res.status(500).send("Search Error: " + err.message);
-  }
-});
-
-
-
-
-// Manager/Director: Assign a Ticket to an Officer
-app.post('/sis/intl/assign/:id', requireRole('intl_officer'), async (req, res) => {
-  const { officer_id } = req.body;
-  try {
-    await pool.query(`UPDATE guidance_requests SET assigned_to = $1 WHERE id = $2`, [officer_id, req.params.id]);
-    req.flash('success', 'Ticket successfully assigned to the officer.');
-    res.redirect('/sis/intl');
-  } catch (err) {
-    res.status(500).send("Assign Error: " + err.message);
-  }
-});
-
-// Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 // Staff Views a Specific Student's Profile (Bypasses Financial Holds)
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
   const studentId = req.params.id;
   try {
-    // 0. Get Team Name for the Sidebar
-    const teamRes = await pool.query(`SELECT intl_team FROM users WHERE id = $1`, [req.session.user.id]);
-    const teamName = teamRes.rows[0] ? teamRes.rows[0].intl_team : 'General Officer';
-
-    // 1. Get ALL Student Info (Personal, Academic, Profile Pic)
+    // 1. Get Student Info
     const studentRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, u.email, u.profile_picture_url, 
-             sp.admission_number, sp.class_level, sp.current_semester, sp.is_international, 
-             sp.high_school_gpa, sp.date_of_birth, sp.gender, sp.home_address, sp.guardian_name, sp.guardian_phone,
-             sp.phone AS phone,
-             adv.full_name as advisor_name
+      SELECT u.id, u.full_name, u.username, u.email, sp.class_level, sp.current_semester, sp.admission_number
       FROM users u 
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
-      LEFT JOIN users adv ON adv.id = sp.advisor_id
       WHERE u.id = $1 AND u.role = 'student'
     `, [studentId]);
 
     if (studentRes.rows.length === 0) return res.redirect('/sis/intl');
     const student = studentRes.rows[0];
 
-    // 2. Get Student's Exam Results
+    // 2. Get Student's Exam Results (Even if they have debt!)
     const examsRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
+      SELECT c.code, c.title, g.midterm_grade, g.final_grade, g.letter_grade 
       FROM grades g 
       JOIN course_sections s ON s.id = g.section_id 
       JOIN courses c ON c.id = s.course_id 
       WHERE g.student_id = $1 AND g.is_published = true
-      ORDER BY c.code ASC
     `, [studentId]);
 
     // 3. Get Student's Installments
-    const instRes = await pool.query(`
-      SELECT * FROM installment_requests 
-      WHERE student_id = $1 ORDER BY created_at DESC
-    `, [studentId]);
-
-    // 4. Get Student's Financial Summary
-    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
-    const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
-    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [studentId]);
-    const totalPaid = Number(paidRes.rows[0].total);
-    const debt = baseTuition - totalPaid;
+    const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [studentId]);
 
     res.render('intl-student-profile', {
       user: req.session.user,
-      teamName, // <--- THIS WAS MISSING
       student,
       exams: examsRes.rows,
-      installments: instRes.rows,
-      financials: { baseTuition, totalPaid, debt }
+      installments: instRes.rows
     });
   } catch (err) {
     res.status(500).send("Profile Error: " + err.message);
   }
 });
-
-// Staff Approves an Installment
-app.post('/sis/intl/installment/:id/approve', requireRole('intl_officer'), async (req, res) => {
-  try {
-    await pool.query(`
-      UPDATE installment_requests 
-      SET status = 'approved' 
-      WHERE id = $1
-    `, [req.params.id]);
-    
-    req.flash('success', 'Installment plan approved. The student can now register for classes.');
-    // Send them back to the profile page they were just looking at
-    res.redirect('back'); 
-  } catch (err) {
-    res.status(500).send("Approve Error: " + err.message);
-  }
-});
-
-
 
 // Staff Claims a Ticket
 app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {
@@ -4581,119 +4411,78 @@ app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) =>
 });
 
 // ============================================
-// --- IT DIRECTORATE PORTAL ---
+// --- RECTORATE: DIRECTIVES & COMMUNICATIONS ---
 // ============================================
-app.get('/sis/it', requireRole('it_staff'), async (req, res) => {
+app.get('/sis/rectorate/directives', requireRole('rectorate'), async (req, res) => {
   try {
-    const userId = req.session.user.id;
-
-    // 1. Get Staff Member's Role and Team
-    const staffRes = await pool.query(`SELECT it_team, it_role FROM users WHERE id = $1`, [userId]);
-    const staff = staffRes.rows[0] || { it_team: 'General IT', it_role: 'technician' };
-    
-    let sharedTickets = [];
-    let myTickets = [];
-
-    // 2. DIRECTOR: Sees all IT tickets
-    if (staff.it_role === 'director') {
-      const allRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_department = 'IT Department' AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `);
-      sharedTickets = allRes.rows;
-    } 
-    // 3. OFFICER: Sees only their team's shared pool and their own tickets
-    else {
-      const sharedRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_it_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `, [staff.it_team]);
-
-      const myRes = await pool.query(`
-        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
-        FROM guidance_requests gr
-        JOIN users u ON u.id = gr.student_id
-        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
-        ORDER BY gr.created_at DESC
-      `, [userId]);
-
-      sharedTickets = sharedRes.rows;
-      myTickets = myRes.rows;
-    }
-
-    const stats = { shared: sharedTickets.length, mine: myTickets.length };
-
-    res.render('it-dashboard', {
+    const directivesRes = await pool.query(`
+      SELECT d.*, u.full_name as sender_name 
+      FROM directives d
+      JOIN users u ON u.id = d.sender_id
+      ORDER BY d.created_at DESC
+    `);
+    res.render('rectorate-directives', {
       user: req.session.user,
-      teamName: staff.it_team,
-      itRole: staff.it_role,
-      sharedTickets,
-      myTickets,
-      stats,
+      directives: directivesRes.rows,
       flash: req.flash ? req.flash() : {}
     });
-  } catch (err) {
-    res.status(500).send("IT Portal Error: " + err.message);
-  }
+  } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
 });
-// ============================================
-// --- IT DIRECTOR: STAFF MANAGEMENT ---
-// ============================================
-app.get('/sis/it/staff', requireRole('it_staff'), async (req, res) => {
+
+app.post('/sis/rectorate/directives/send', requireRole('rectorate'), async (req, res) => {
+  const { target_dept, subject, message } = req.body;
   try {
-    // Check if the logged-in user is actually the IT Director
-    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
-    if (directorCheck.rows[0].it_role !== 'director') {
-      return res.status(403).send("Security Violation: Only the IT Director can manage staff.");
-    }
+    await pool.query(`
+      INSERT INTO directives (sender_id, target_dept, subject, message)
+      VALUES ($1, $2, $3, $4)
+    `, [req.session.user.id, target_dept, subject, message]);
+    
+    req.flash('success', `Directive sent to ${target_dept === 'all' ? 'All Departments' : target_dept.toUpperCase()}.`);
+    res.redirect('/sis/rectorate/directives');
+  } catch (err) { res.status(500).send("Send Directive Error: " + err.message); }
+});
 
-    // Fetch all IT staff members
-    const staffRes = await pool.query(`
-      SELECT id, full_name, username, email, it_team, it_role, created_at 
-      FROM users 
-      WHERE role = 'it_staff' 
-      ORDER BY it_role ASC, full_name ASC
+
+
+// ============================================
+// --- DIRECTORS: EXECUTIVE INBOX ---
+// ============================================
+app.get('/sis/it/inbox', requireRole('it_staff'), async (req, res) => {
+  try {
+    // IT Director only sees directives sent to 'it' or 'all'
+    const inboxRes = await pool.query(`
+      SELECT d.*, u.full_name as sender_name 
+      FROM directives d
+      JOIN users u ON u.id = d.sender_id
+      WHERE d.target_dept IN ('it', 'all')
+      ORDER BY d.created_at DESC
     `);
-
-    res.render('it-staff', {
+    res.render('it-inbox', {
       user: req.session.user,
-      staff: staffRes.rows,
       teamName: 'All IT Teams',
       itRole: 'director',
-      flash: req.flash ? req.flash() : {}
+      directives: inboxRes.rows
     });
-  } catch (err) {
-    res.status(500).send("Staff Management Error: " + err.message);
-  }
+  } catch (err) { res.status(500).send("Inbox Error: " + err.message); }
 });
 
-// POST: Assign a staff member to a team/role
-app.post('/sis/it/staff/assign', requireRole('it_staff'), async (req, res) => {
-  const { staff_id, new_team, new_role } = req.body;
+app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
   try {
-    // Verify the person making the request is the Director
-    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
-    if (directorCheck.rows[0].it_role !== 'director') {
-      return res.status(403).send("Security Violation.");
-    }
-
-    await pool.query(`
-      UPDATE users 
-      SET it_team = $1, it_role = $2 
-      WHERE id = $3 AND role = 'it_staff'
-    `, [new_team, new_role, staff_id]);
-
-    req.flash('success', 'Staff member updated successfully.');
-    res.redirect('/sis/it/staff');
-  } catch (err) {
-    res.status(500).send("Assignment Error: " + err.message);
-  }
+    // Intl Director only sees directives sent to 'intl' or 'all'
+    const inboxRes = await pool.query(`
+      SELECT d.*, u.full_name as sender_name 
+      FROM directives d
+      JOIN users u ON u.id = d.sender_id
+      WHERE d.target_dept IN ('intl', 'all')
+      ORDER BY d.created_at DESC
+    `);
+    res.render('intl-inbox', {
+      user: req.session.user,
+      teamName: 'All Teams',
+      intlRole: 'director',
+      directives: inboxRes.rows
+    });
+  } catch (err) { res.status(500).send("Inbox Error: " + err.message); }
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

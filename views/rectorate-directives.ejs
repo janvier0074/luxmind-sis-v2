@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rectorate Directives | LuxMind</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root { --navy: #0a1e32; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096; --line: #e6ebf2; --gold: #ffc857; --blue: #3b82f6; --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; display: flex; min-height: 100vh; }
+    
+    .sidebar { width: 268px; background: linear-gradient(180deg, var(--navy), #0d172b); color: #d9e2f2; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; z-index: 50; }
+    .brand { padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 12px; align-items: center; }
+    .brand-mark { width: 42px; height: 42px; background: linear-gradient(135deg, #f59e0b, #b45309); border-radius: 12px; display: grid; place-items: center; font-size: 18px; color: #fff; }
+    .brand-name { font: 800 16px "Manrope", sans-serif; color: #fff; }
+    .brand-sub { font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .nav-group { padding: 20px 12px 0; }
+    .nav-label { padding: 0 10px 8px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: 600; margin-bottom: 2px; transition: 0.2s; }
+    .nav-link i { width: 20px; text-align: center; color: #64748b; font-size: 14px; }
+    .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-link.active { background: rgba(245,158,11,0.15); color: var(--gold); }
+    .nav-link.active i { color: var(--gold); }
+    
+    .main { margin-left: 268px; padding: 30px; flex: 1; }
+    .topbar { margin-bottom: 30px; }
+    h1 { font: 800 28px "Manrope", sans-serif; color: #0f172a; margin-bottom: 5px; }
+    .eyebrow { font-size: 10px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+    
+    .alert { background: #ecfdf5; border: 1px solid #10b981; color: #065f46; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+
+    .grid { display: grid; grid-template-columns: 350px 1fr; gap: 25px; }
+    
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; }
+    .card h3 { font: 800 16px "Manrope", sans-serif; margin-bottom: 15px; color: var(--navy); border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; }
+    .form-control:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+    .btn-send { width: 100%; padding: 12px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+    .btn-send:hover { background: #1e293b; }
+
+    .directive-list { display: flex; flex-direction: column; gap: 15px; }
+    .directive-item { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+    .directive-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .directive-title { font: 800 15px "Manrope", sans-serif; color: var(--navy); }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .badge.it { background: #eff6ff; color: #2563eb; }
+    .badge.intl { background: #ecfdf5; color: #059669; }
+    .badge.all { background: #fef3c7; color: #d97706; }
+    .directive-meta { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+    .directive-body { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; line-height: 1.6; color: #334155; }
+    
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-building-columns"></i></div>
+      <div>
+        <div class="brand-name">LuxMind SIS</div>
+        <div class="brand-sub">Rectorate Portal</div>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Executive</div>
+      <a href="/sis/rectorate" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Command Center</span></a>
+      <a href="/sis/rectorate/directives" class="nav-link active"><i class="fa-solid fa-bullhorn"></i><span>Directives & Comms</span></a>
+    </div>
+    <div style="margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+      <a href="/logout" class="nav-link" style="color: #f87171;"><i class="fa-solid fa-sign-out-alt" style="color: #f87171;"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <p class="eyebrow">Rectorate / Communications Bridge</p>
+      <h1>Directives & Communications</h1>
+      <p style="color: var(--muted); font-size: 13px;">Issue official directives to department heads and staff.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert"><i class="fa-solid fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <div class="grid">
+      <!-- FORM -->
+      <div class="card">
+        <h3><i class="fa-solid fa-paper-plane" style="color: var(--gold);"></i> Issue New Directive</h3>
+        <form action="/sis/rectorate/directives/send" method="POST">
+          <div class="form-group">
+            <label>Target Department</label>
+            <select name="target_dept" class="form-control" required>
+              <option value="" disabled selected>Select Target...</option>
+              <option value="it">IT Directorate Only</option>
+              <option value="intl">International Office Only</option>
+              <option value="all">All Departments (Global)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" name="subject" class="form-control" placeholder="e.g., Q3 Budget Report Deadline" required>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="message" class="form-control" rows="5" placeholder="Write the official directive here..." required></textarea>
+          </div>
+          <button type="submit" class="btn-send"><i class="fa-solid fa-bullhorn"></i> Broadcast Directive</button>
+        </form>
+      </div>
+
+      <!-- SENT DIRECTIVES LIST -->
+      <div class="card">
+        <h3><i class="fa-solid fa-clock-rotate-left" style="color: var(--blue);"></i> Sent Directives</h3>
+        <div class="directive-list">
+          <% if (directives.length === 0) { %>
+            <p style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px;">No directives sent yet.</p>
+          <% } %>
+          
+          <% directives.forEach(d => { %>
+            <div class="directive-item">
+              <div class="directive-header">
+                <div class="directive-title"><%= d.subject %></div>
+                <span class="badge <%= d.target_dept %>">To: <%= d.target_dept.toUpperCase() %></span>
+              </div>
+              <div class="directive-meta">
+                <i class="fa-solid fa-user-shield"></i> Sent by <%= d.sender_name %> · <%= new Date(d.created_at).toLocaleString() %>
+              </div>
+              <div class="directive-body"><%= d.message %></div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Inbox | Intl Office</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root { --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096; --line: #e6ebf2; --blue: #3867e8; --green: #15966b; --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; display: flex; min-height: 100vh; }
+    
+    .sidebar { width: 268px; background: linear-gradient(180deg, var(--navy), #0d172b); color: #d9e2f2; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; z-index: 50; }
+    .brand { padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 12px; align-items: center; }
+    .brand-mark { width: 42px; height: 42px; background: linear-gradient(135deg, #527df2, #3157cb); border-radius: 12px; display: grid; place-items: center; font-size: 18px; color: #fff; }
+    .brand-name { font: 800 16px "Manrope", sans-serif; color: #fff; }
+    .brand-sub { font-size: 10px; font-weight: 700; color: #9eacc3; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .nav-group { padding: 20px 12px 0; }
+    .nav-label { padding: 0 10px 8px; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: 600; margin-bottom: 2px; transition: 0.2s; }
+    .nav-link i { width: 20px; text-align: center; color: #64748b; font-size: 14px; }
+    .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-link.active { background: rgba(79,119,232,.2); color: #fff; box-shadow: inset 3px 0 #7796ff; }
+    .nav-link.active i { color: #91adff; }
+    
+    .main { margin-left: 268px; padding: 30px; flex: 1; }
+    .topbar { margin-bottom: 30px; }
+    h1 { font: 800 28px "Manrope", sans-serif; color: #142039; margin-bottom: 5px; }
+    .eyebrow { font-size: 10px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+    
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; }
+    .card h3 { font: 800 18px "Manrope", sans-serif; margin-bottom: 20px; color: var(--navy); border-bottom: 1px solid var(--line); padding-bottom: 15px; }
+    
+    .inbox-list { display: flex; flex-direction: column; gap: 20px; }
+    .inbox-item { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 25px; }
+    .inbox-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .inbox-title { font: 800 16px "Manrope", sans-serif; color: var(--navy); }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; background: #fef3c7; color: #d97706; }
+    .inbox-meta { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 15px; }
+    .inbox-body { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid var(--line); font-size: 14px; line-height: 1.6; color: #334155; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Admin</div>
+        <div class="brand-sub">International Office</div>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Operations</div>
+      <a href="/sis/intl" class="nav-link"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
+      <a href="/sis/intl/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Student Directory</span></a>
+      <a href="/sis/intl/inbox" class="nav-link active"><i class="fa-solid fa-envelope-open-text"></i><span>Executive Inbox</span></a>
+    </div>
+    <div style="margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+      <a href="/logout" class="nav-link" style="color: #ffb0b6;"><i class="fa-solid fa-arrow-right-from-bracket" style="color: #ff9aa3;"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <p class="eyebrow">International Office / Executive Communications</p>
+      <h1>Executive Inbox</h1>
+      <p style="color: var(--muted); font-size: 13px;">Official directives from the Rectorate.</p>
+    </div>
+
+    <div class="card">
+      <h3><i class="fa-solid fa-envelope-open-text" style="color: var(--blue);"></i> Directives from Rectorate</h3>
+      <div class="inbox-list">
+        <% if (directives.length === 0) { %>
+          <p style="color: var(--muted); font-size: 14px; text-align: center; padding: 30px;">Your inbox is empty. No new directives.</p>
+        <% } %>
+        
+        <% directives.forEach(d => { %>
+          <div class="inbox-item">
+            <div class="inbox-header">
+              <div class="inbox-title"><%= d.subject %></div>
+              <span class="badge"><%= d.target_dept.toUpperCase() %> Directive</span>
+            </div>
+            <div class="inbox-meta">
+              <i class="fa-solid fa-building-columns"></i> From Rectorate (<%= d.sender_name %>) · <%= new Date(d.created_at).toLocaleString() %>
+            </div>
+            <div class="inbox-body"><%= d.message %></div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

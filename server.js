@@ -1,4 +1,4 @@
-require('dotenv').config(); // <--- MUST BE LINE 1
+ require('dotenv').config(); // <--- MUST BE LINE 1
 
 const { createClient } = require('@supabase/supabase-js');
 
@@ -4640,6 +4640,59 @@ app.get('/sis/it', requireRole('it_staff'), async (req, res) => {
     });
   } catch (err) {
     res.status(500).send("IT Portal Error: " + err.message);
+  }
+});
+// ============================================
+// --- IT DIRECTOR: STAFF MANAGEMENT ---
+// ============================================
+app.get('/sis/it/staff', requireRole('it_staff'), async (req, res) => {
+  try {
+    // Check if the logged-in user is actually the IT Director
+    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
+    if (directorCheck.rows[0].it_role !== 'director') {
+      return res.status(403).send("Security Violation: Only the IT Director can manage staff.");
+    }
+
+    // Fetch all IT staff members
+    const staffRes = await pool.query(`
+      SELECT id, full_name, username, email, it_team, it_role, created_at 
+      FROM users 
+      WHERE role = 'it_staff' 
+      ORDER BY it_role ASC, full_name ASC
+    `);
+
+    res.render('it-staff', {
+      user: req.session.user,
+      staff: staffRes.rows,
+      teamName: 'All IT Teams',
+      itRole: 'director',
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Staff Management Error: " + err.message);
+  }
+});
+
+// POST: Assign a staff member to a team/role
+app.post('/sis/it/staff/assign', requireRole('it_staff'), async (req, res) => {
+  const { staff_id, new_team, new_role } = req.body;
+  try {
+    // Verify the person making the request is the Director
+    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
+    if (directorCheck.rows[0].it_role !== 'director') {
+      return res.status(403).send("Security Violation.");
+    }
+
+    await pool.query(`
+      UPDATE users 
+      SET it_team = $1, it_role = $2 
+      WHERE id = $3 AND role = 'it_staff'
+    `, [new_team, new_role, staff_id]);
+
+    req.flash('success', 'Staff member updated successfully.');
+    res.redirect('/sis/it/staff');
+  } catch (err) {
+    res.status(500).send("Assignment Error: " + err.message);
   }
 });
 

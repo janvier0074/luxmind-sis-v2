@@ -136,9 +136,10 @@ app.post('/login', async (req, res) => {
 
     req.flash('error', 'Invalid credentials');
     res.redirect('/login');
-  } catch (err) {
-    res.status(500).send("Login error: " + err.message);
+   } catch (err) {
+    res.status(500).send("<pre style='color:red; font-size:20px; background:#fff; padding:20px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
   }
+});
 });
 
 app.get('/logout', (req, res) => {

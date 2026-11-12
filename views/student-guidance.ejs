@@ -109,15 +109,32 @@
       <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy);">Submit New Request</h3>
       <form method="POST" action="/sis/my/guidance/request" enctype="multipart/form-data" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 1rem; align-items: start;">
         
-        <select name="request_type" class="form-control" required style="margin-bottom: 0;">
+              <select name="request_type" class="form-control" required style="margin-bottom: 0;">
           <option value="" disabled selected>Select Request Type...</option>
-          <option value="Debt Inquiry/Installment process">Debt Inquiry/Installment</option>
-          <option value="Meal Type & Dormitory Preference">Meal & Dormitory</option>
-          <option value="About your receipt">About your receipt</option>
-          <option value="Visa/Residence Permit">Visa / Residence Permit</option>
-          <option value="Academic Advising">Academic Advising</option>
-          <option value="Psychological/Pastoral Care">Psychological / Pastoral</option>
-          <option value="General Administrative">General Administrative</option>
+          
+          <optgroup label="Admissions & Recruitment">
+            <option value="Application Status">Application Status</option>
+            <option value="Acceptance Letter">Acceptance Letter</option>
+            <option value="Scholarship Application">Scholarship Application</option>
+            <option value="Transfer Credit">Transfer Credit</option>
+          </optgroup>
+          
+          <optgroup label="Visa & Immigration">
+            <option value="Visa/Residence Permit">Visa / Residence Permit</option>
+            <option value="Health Insurance">Health Insurance</option>
+            <option value="Embassy Letter">Embassy Letter</option>
+          </optgroup>
+
+          <optgroup label="Orientation & Student Life">
+            <option value="Airport Pickup">Airport Pickup</option>
+            <option value="Orientation & Welcome">Orientation & Welcome</option>
+            <option value="Dormitory Check-in">Dormitory Check-in</option>
+            <option value="SIM Card & Bank Account">SIM Card & Bank Account</option>
+          </optgroup>
+
+          <optgroup label="Academic & Exchange">
+            <option value="Erasmus & Exchange">Erasmus / Exchange Program</option>
+          </optgroup>
         </select>
 
         <input type="text" name="description" class="form-control" placeholder="Briefly describe your issue..." required style="margin-bottom: 0;">

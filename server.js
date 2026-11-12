@@ -3795,7 +3795,41 @@ app.post('/sis/faculty/requests/new', requireRole('teacher', 'advisor'), async (
 
 // 3. Admin: View all faculty requests
 
+// ============================================
+// --- STUDENT: GUIDANCE REQUESTS ---
+// ============================================
+app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
+  try {
+    const requestsRes = await pool.query(`
+      SELECT * FROM guidance_requests 
+      WHERE student_id = $1 
+      ORDER BY created_at DESC
+    `, [req.session.user.id]);
 
+    res.render('student-guidance', {
+      user: req.session.user,
+      requests: requestsRes.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Guidance Request Error: " + err.message);
+  }
+});
+
+app.post('/sis/my/guidance/request', requireRole('student'), async (req, res) => {
+  const { request_type, description } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO guidance_requests (student_id, request_type, description, status)
+      VALUES ($1, $2, $3, 'Pending')
+    `, [req.session.user.id, request_type, description]);
+
+    req.flash('success', 'Guidance request submitted successfully.');
+    res.redirect('/sis/my/guidance');
+  } catch (err) {
+    res.status(500).send("Submission Error: " + err.message);
+  }
+});
 
 
 

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guidance Requests - LuxMind SIS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; }
+
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    
+    .alert-success { background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* FORM */
+    .request-form { background: #fff; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); margin-bottom: 2rem; }
+    .form-control { width: 100%; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: var(--ice); outline: none; font-size: 0.9rem; margin-bottom: 0.5rem;}
+    .btn-submit { background: var(--navy); color: #fff; padding: 0.7rem 1.2rem; border-radius: 8px; border: none; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+    .btn-submit:hover { background: var(--blue); }
+
+    /* TABLE */
+    .table-container { background: #fff; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow-x: auto; margin-bottom: 2rem; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 900px; }
+    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; vertical-align: middle; }
+    .data-table tr:hover { background: #f8fafc; }
+    
+    .badge { padding: 0.3rem 0.8rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .badge.pending { background: #fef3c7; color: #d97706; }
+    .badge.completed { background: #dcfce7; color: #16a34a; }
+    .badge.informed { background: #e0f2fe; color: #0284c7; }
+
+    /* MOBILE */
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 280px; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/my/registration" class="menu-link"><i class="fas fa-edit"></i> Course Registration</a></li>
+      <li><a href="/sis/my/timetable" class="menu-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+      <li><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol"></i> Transcript</a></li>
+      <li><a href="/sis/my/finance" class="menu-link"><i class="fas fa-wallet"></i> Accounting</a></li>
+      <li><a href="/sis/my/guidance" class="menu-link active"><i class="fas fa-hands-helping"></i> Guidance Requests</a></li>
+      <li><a href="/sis/my/documents" class="menu-link"><i class="fas fa-file-alt"></i> Document Requests</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    
+    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+
+    <div class="top-bar">
+      <h1>Student Guidance Requests</h1>
+      <p>You can submit your guidance request(s) between 08:00 - 15:00 during weekdays.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert-success"><i class="fas fa-check-circle"></i> <%= flash.success[0] %></div>
+    <% } %>
+
+    <!-- NEW REQUEST FORM -->
+    <div class="request-form">
+      <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy);">Submit New Request</h3>
+      <form method="POST" action="/sis/my/guidance/request" style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 1rem; align-items: start;">
+        <select name="request_type" class="form-control" required style="margin-bottom: 0;">
+          <option value="" disabled selected>Select Request Type...</option>
+          <option value="Debt Inquiry/Installment process">Debt Inquiry/Installment process</option>
+          <option value="Meal Type & Dormitory Preference">Meal Type & Dormitory Preference</option>
+          <option value="About your receipt">About your receipt</option>
+          <option value="Academic Advising">Academic Advising</option>
+          <option value="Psychological/Pastoral Care">Psychological/Pastoral Care</option>
+          <option value="General Administrative">General Administrative</option>
+        </select>
+        <input type="text" name="description" class="form-control" placeholder="Briefly describe your issue..." required style="margin-bottom: 0;">
+        <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit</button>
+      </form>
+    </div>
+
+    <!-- REQUESTS TABLE -->
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Request No</th>
+            <th>Date</th>
+            <th>Request Type</th>
+            <th>Status</th>
+            <th>Student Attachment(s)</th>
+            <th>Staff Attachment(s)</th>
+            <th>Resolved</th>
+            <th>Action(s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (requests.length === 0) { %>
+            <tr><td colspan="8" style="text-align: center; color: #94a3b8; font-style: italic;">No guidance requests found.</td></tr>
+          <% } %>
+          <% requests.forEach(r => { %>
+            <tr>
+              <td>#<%= r.id %></td>
+              <td><%= new Date(r.created_at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
+              <td style="font-weight: 700;"><%= r.request_type %></td>
+              <td>
+                <span class="badge <%= r.status.toLowerCase() %>"><%= r.status %></span>
+              </td>
+              <td><%= r.student_attachment ? '<i class="fas fa-paperclip"></i>' : '-' %></td>
+              <td><%= r.staff_attachment ? '<i class="fas fa-paperclip"></i>' : '-' %></td>
+              <td>
+                <%= r.resolved_at ? new Date(r.resolved_at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' %>
+              </td>
+              <td>
+                <button class="btn-submit" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--blue);">View</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      if (sb && ov) {
+        sb.classList.toggle('active');
+        ov.classList.toggle('active');
+      }
+    }
+  </script>
+
+</body>
+</html>

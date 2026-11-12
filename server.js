@@ -464,8 +464,9 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     if (feeRes.rows.length > 0) {
       const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
       if (debt > 0) {
-        req.flash('error', `Financial Hold: You cannot register for courses until your outstanding balance of $${debt.toFixed(2)} is paid. Please contact the Finance Office.`);
-        return res.redirect('/sis/my/registration');
+       req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must pay your tuition before you can register for classes.`);
+          req.session.returnTo = '/sis/my/registration';
+          return res.redirect('/sis/my/finance');
       }
     }
 
@@ -607,8 +608,10 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
   try {
     await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(req.body.amount)]);
-    req.flash('success', `Payment of $${req.body.amount} processed successfully.`);
-    res.redirect('/sis/my/finance');
+               req.flash('success', `Payment of $${req.body.amount} processed successfully.`);
+            const returnTo = req.session.returnTo || '/sis/my/finance';
+            delete req.session.returnTo;
+            res.redirect(returnTo);
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 

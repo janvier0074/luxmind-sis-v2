@@ -427,6 +427,42 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
+
+
+
+
+
+
+  try {
+    // ==========================================
+    // 1. CHECK FOR FINANCIAL HOLD
+    // ==========================================
+    const feeRes = await pool.query(`
+      SELECT COALESCE(fs.amount, 0) AS amount_billed,
+             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
+      FROM student_profiles sp
+      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+      WHERE sp.user_id = $1
+    `, [req.session.user.id]);
+
+    if (feeRes.rows.length > 0) {
+      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
+      if (debt > 0) {
+        req.flash('error', `Financial Hold: You cannot register for courses until your outstanding balance of $${debt.toFixed(2)} is paid. Please contact the Finance Office.`);
+        return res.redirect('/sis/my/registration');
+      }
+    }
+
+    // ==========================================
+    // 2. Fetch course rules (this is your existing code)
+    // ==========================================
+
+
+
+
+
+
+
   try {
     // 1. Fetch course rules
     const courseRes = await pool.query(`

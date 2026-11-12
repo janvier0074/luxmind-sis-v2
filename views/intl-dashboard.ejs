@@ -98,8 +98,7 @@
 <body>
   <div class="overlay" id="sidebarOverlay"></div>
 
-  <!-- DYNAMIC SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
+   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
       <div>
@@ -119,24 +118,69 @@
         <a href="/sis/intl/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Student Directory</span></a>
       </div>
 
-      <!-- DYNAMIC LINKS BASED ON TEAM -->
-      <% if (teamName === 'Visa & Immigration Team') { %>
+      <% if (teamName === 'Admissions & Recruitment Team') { %>
+        <div class="nav-group">
+          <div class="nav-label">Admissions Modules</div>
+          <a href="#" class="nav-link"><i class="fa-solid fa-clipboard-list"></i><span>Application Evaluation Queue</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-envelope-open-text"></i><span>Acceptance Letter Generator</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-handshake"></i><span>Agent & Representative Portal</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-file-signature"></i><span>Document Equivalency Checker</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-award"></i><span>Scholarship & Discount Pipeline</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-users-viewfinder"></i><span>Prospective Student CRM</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-hourglass-half"></i><span>Waitlist & Deferral Manager</span></a>
+        </div>
+      <% } else if (teamName === 'Visa & Immigration Team') { %>
         <div class="nav-group">
           <div class="nav-label">Visa Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-passport"></i><span>Residence Permits</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-passport"></i><span>Residence Permit Tracker</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance Registry</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-building-columns"></i><span>Embassy Letter Generator</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault & Custody Log</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-fingerprint"></i><span>Police Appointment Scheduler</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i><span>Lost / Expired Passport Reports</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i><span>Visa Extension & Overstay Alerts</span></a>
         </div>
       <% } else if (teamName === 'Orientation & Student Life Team') { %>
         <div class="nav-group">
           <div class="nav-label">Orientation Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-plane-arrival"></i><span>Airport Pickups</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-bed"></i><span>Dorm Check-ins</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-plane-arrival"></i><span>Airport Pickup Coordinator</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-bed"></i><span>Dormitory Check-in Desk</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-calendar-week"></i><span>Welcome Week & Orientation RSVP</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-sim-card"></i><span>SIM Card & Bank Account Setup</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Buddy & Mentor Matching</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-bus"></i><span>Student Clubs & Activities Board</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-phone-volume"></i><span>Emergency Contact Registry</span></a>
+        </div>
+      <% } else if (teamName === 'Academic & Exchange Team') { %>
+        <div class="nav-group">
+          <div class="nav-label">Exchange Modules</div>
+          <a href="#" class="nav-link"><i class="fa-solid fa-globe-europe"></i><span>Erasmus+ Outgoing Applications</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-user-plus"></i><span>Incoming Exchange Student Desk</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-scale-balanced"></i><span>Transfer Credit Evaluator</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-network-wired"></i><span>Partner University Directory</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-file-contract"></i><span>Joint Degree & Dual Diploma Tracker</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-table-list"></i><span>Transcript Mapping & Equivalency Tables</span></a>
+        </div>
+      <% } else if (teamName === 'General Admin') { %>
+        <div class="nav-group">
+          <div class="nav-label">Compliance Modules</div>
+          <a href="#" class="nav-link"><i class="fa-solid fa-briefcase"></i><span>Part-Time Work Permit Desk</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-file-signature"></i><span>Student Contract Manager</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-vial"></i><span>Health Report & Blood Test Verification</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-clipboard-check"></i><span>Compliance & Government Audit Board</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-id-badge"></i><span>Student ID Card Issuance</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-shield-halved"></i><span>Incident & Disciplinary Reports</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-envelope"></i><span>Official Letter & Document Request Desk</span></a>
         </div>
       <% } else if (teamName === 'All Teams') { %>
         <div class="nav-group">
           <div class="nav-label">Director Controls</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Global Analytics</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-users-gear"></i><span>Staff Management</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Global Analytics Dashboard</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-users-gear"></i><span>Staff & Team Management</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-building"></i><span>Department Budget & Procurement</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-bullhorn"></i><span>University-Wide Broadcasts</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-list-check"></i><span>System Audit & Compliance Logs</span></a>
+          <a href="#" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Team Performance Reports</span></a>
         </div>
       <% } %>
     </nav>

@@ -124,6 +124,8 @@ app.post('/login', async (req, res) => {
         }
       } catch (e) { /* table may not exist yet, ignore */ }
 
+if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
+
             if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
@@ -3831,7 +3833,24 @@ app.post('/sis/my/guidance/request', requireRole('student'), upload.single('atta
   let assignedTeam = 'General Admin';
 
   if (request_type.includes('Debt') || request_type.includes('receipt')) {
+
+
+
+
+  // IT ROUTING
+  if (request_type.includes('Wi-Fi') || request_type.includes('Password') || request_type.includes('Printer')) {
+    assignedDept = 'IT Department';
+    assignedTeam = 'Helpdesk & Support';
+  } else if (request_type.includes('Software') || request_type.includes('Lab')) {
+    assignedDept = 'IT Department';
+    assignedTeam = 'Software & Labs';
+  } else if (request_type.includes('Hardware') || request_type.includes('Network')) {
+    assignedDept = 'IT Department';
+    assignedTeam = 'Network & Hardware';
+  }
     assignedDept = 'Finance Office';
+
+
     assignedTeam = 'Finance Team';
   } else if (request_type.includes('Meal') || request_type.includes('Dormitory')) {
     assignedDept = 'Dormitory Directorate';
@@ -4558,6 +4577,69 @@ app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) =>
     res.redirect('/sis/intl');
   } catch (err) {
     res.status(500).send("Claim Error: " + err.message);
+  }
+});
+
+// ============================================
+// --- IT DIRECTORATE PORTAL ---
+// ============================================
+app.get('/sis/it', requireRole('it_staff'), async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+
+    // 1. Get Staff Member's Role and Team
+    const staffRes = await pool.query(`SELECT it_team, it_role FROM users WHERE id = $1`, [userId]);
+    const staff = staffRes.rows[0] || { it_team: 'General IT', it_role: 'technician' };
+    
+    let sharedTickets = [];
+    let myTickets = [];
+
+    // 2. DIRECTOR: Sees all IT tickets
+    if (staff.it_role === 'director') {
+      const allRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_department = 'IT Department' AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `);
+      sharedTickets = allRes.rows;
+    } 
+    // 3. OFFICER: Sees only their team's shared pool and their own tickets
+    else {
+      const sharedRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_it_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.it_team]);
+
+      const myRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [userId]);
+
+      sharedTickets = sharedRes.rows;
+      myTickets = myRes.rows;
+    }
+
+    const stats = { shared: sharedTickets.length, mine: myTickets.length };
+
+    res.render('it-dashboard', {
+      user: req.session.user,
+      teamName: staff.it_team,
+      itRole: staff.it_role,
+      sharedTickets,
+      myTickets,
+      stats,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("IT Portal Error: " + err.message);
   }
 });
 

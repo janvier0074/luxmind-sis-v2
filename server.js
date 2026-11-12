@@ -4245,16 +4245,22 @@ app.use((err, req, res, next) => {
 // ============================================
 // --- INTERNATIONAL OFFICE PORTAL ---
 // ============================================
+
+
+// ============================================
+// --- INTERNATIONAL OFFICE PORTAL ---
+// ============================================
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
   try {
-    // Staff ONLY sees tickets assigned to their department
     const requestsRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+      SELECT gr.*, u.full_name AS student_name, u.username AS student_number, a.full_name as assigned_name
       FROM guidance_requests gr
       JOIN users u ON u.id = gr.student_id
+      LEFT JOIN users a ON a.id = gr.assigned_to
       WHERE gr.assigned_department = 'International Office'
+        AND (gr.assigned_to = $1 OR gr.assigned_to IS NULL)
       ORDER BY gr.created_at DESC
-    `);
+    `, [req.session.user.id]);
 
     res.render('intl-dashboard', {
       user: req.session.user,
@@ -4265,6 +4271,66 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
     res.status(500).send("Intl Office Error: " + err.message);
   }
 });
+
+// Staff Claims a Ticket
+app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {
+  try {
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET assigned_to = $1 
+      WHERE id = $2 AND assigned_to IS NULL
+    `, [req.session.user.id, req.params.id]);
+    
+    req.flash('success', 'Ticket claimed successfully. You are now responsible for it.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Claim Error: " + err.message);
+  }
+});
+
+// Staff Resolves a Ticket
+app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('staff_attachment'), async (req, res) => {
+  const requestId = req.params.id;
+  const { staff_reply } = req.body;
+  
+  try {
+    // 🚨 SECURITY CHECK: Ensure the ticket is actually assigned to the person clicking the button
+    const checkRes = await pool.query(`SELECT assigned_to FROM guidance_requests WHERE id = $1`, [requestId]);
+    if (checkRes.rows.length === 0 || checkRes.rows[0].assigned_to !== req.session.user.id) {
+      return res.status(403).send("Security Violation: You can only resolve tickets assigned to you.");
+    }
+
+    let attachmentUrl = null;
+    if (req.file) {
+      const b64 = req.file.buffer.toString('base64');
+      attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
+    }
+
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET status = 'Completed', resolved_at = NOW(), staff_reply = $1, staff_attachment = $2
+      WHERE id = $3
+    `, [staff_reply, attachmentUrl, requestId]);
+
+    const reqRes = await pool.query(`SELECT student_id, request_type FROM guidance_requests WHERE id = $1`, [requestId]);
+    if (reqRes.rows.length > 0) {
+      const studentId = reqRes.rows[0].student_id;
+      const reqType = reqRes.rows[0].request_type;
+
+      await pool.query(`
+        INSERT INTO notifications (user_id, title, body, link) 
+        VALUES ($1, 'Guidance Request Resolved', $2, '/sis/my/guidance')
+      `, [studentId, `Your ${reqType} request has been answered by the International Office.`]);
+    }
+
+    req.flash('success', 'Ticket resolved and student notified.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Resolution Error: " + err.message);
+  }
+});
+
+
 
 // Staff Resolves a Ticket
 app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {

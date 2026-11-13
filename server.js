@@ -659,6 +659,25 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const approachingDebt = currentDebt > 0 ? 0 : nextNetTuition;
     const totalDebt = currentDebt + approachingDebt;
 
+
+    // --- NEW: HANDLE INSTALLMENT SCHEDULES ---
+    // Automatically mark past-due installments as 'overdue'
+    await pool.query(`
+      UPDATE installment_schedules 
+      SET status = 'overdue' 
+      WHERE student_id = $1 AND status = 'unpaid' AND due_date < CURRENT_DATE
+    `, [req.session.user.id]);
+
+    // Fetch the schedule for the student
+    const scheduleRes = await pool.query(`
+      SELECT * FROM installment_schedules 
+      WHERE student_id = $1 
+      ORDER BY due_date ASC
+    `, [req.session.user.id]);
+
+    // Check if there are ANY overdue payments
+    const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
+
     res.render('student-finance', { 
       user: req.session.user, 
       student, 
@@ -4516,24 +4535,42 @@ app.get('/sis/finance', requireLogin, async (req, res) => {
 });
 
 // Approve an Installment
+// Approve an Installment
 app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
-    await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
+    // 1. Get the request details
+    const reqRes = await pool.query(`SELECT student_id, total_amount, installments_count FROM installment_requests WHERE id = $1`, [instId]);
+    if (reqRes.rows.length === 0) return res.redirect('/sis/finance');
     
-    const reqRes = await pool.query(`SELECT student_id, total_amount FROM installment_requests WHERE id = $1`, [instId]);
-    if (reqRes.rows.length > 0) {
+    const { student_id, total_amount, installments_count } = reqRes.rows[0];
+    const amountPerMonth = Number(total_amount) / Number(installments_count);
+
+    // 2. Mark request as approved
+    await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
+
+    // 3. Generate the Schedule (e.g., 3 months from today)
+    for (let i = 1; i <= installments_count; i++) {
+      // Calculate due date (1st of next month, +2 months, etc.)
+      const dueDate = new Date();
+      dueDate.setMonth(dueDate.getMonth() + i);
+      
       await pool.query(`
-        INSERT INTO notifications (user_id, title, body, link) 
-        VALUES ($1, 'Installment Approved', $2, '/sis/my/finance')
-      `, [reqRes.rows[0].student_id, `Your installment plan for $${Number(reqRes.rows[0].total_amount).toFixed(2)} has been approved. You can now register for classes.`]);
+        INSERT INTO installment_schedules (request_id, student_id, due_date, amount, status)
+        VALUES ($1, $2, $3, $4, 'unpaid')
+      `, [instId, student_id, dueDate, amountPerMonth]);
     }
 
-    req.flash('success', 'Installment approved and student notified.');
+    // 4. Notify the student
+    await pool.query(`
+      INSERT INTO notifications (user_id, title, body, link) 
+      VALUES ($1, 'Installment Plan Approved', $2, '/sis/my/finance')
+    `, [student_id, `Your plan for $${Number(total_amount).toFixed(2)} was approved. Your first payment of $${amountPerMonth.toFixed(2)} is due next month.`]);
+
+    req.flash('success', 'Installment schedule generated and student notified.');
     res.redirect('/sis/finance');
   } catch (err) { res.status(500).send("Approve Error: " + err.message); }
 });
-
 // Reject an Installment
 app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) => {
   const instId = req.params.id;

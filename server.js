@@ -4244,12 +4244,6 @@ app.use((err, req, res, next) => {
   res.status(500).send('<pre style="background:#fee2e2;padding:2rem;color:#991b1b;font-size:1rem;">' + err.stack + '</pre>');
 });
 
-
-// ============================================
-// --- INTERNATIONAL OFFICE PORTAL ---
-// ============================================
-
-
 // ============================================
 // --- INTERNATIONAL OFFICE PORTAL ---
 // ============================================
@@ -4322,17 +4316,14 @@ app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
       flash: req.flash ? req.flash() : {}
     });
   } catch (err) {
-    // This will print the exact error on the screen instead of crashing silently
     res.status(500).send("<pre style='color:red; font-size:20px; padding:20px;'>ERROR: " + err.message + "</pre>");
   }
 });
 
-
-// Staff Views a Specific Student's Profile (Bypasses Financial Holds)
+// Staff Views a Specific Student's Profile
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
   const studentId = req.params.id;
   try {
-    // 1. Get Student Info
     const studentRes = await pool.query(`
       SELECT u.id, u.full_name, u.username, u.email, sp.class_level, sp.current_semester, sp.admission_number
       FROM users u 
@@ -4343,7 +4334,6 @@ app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) =
     if (studentRes.rows.length === 0) return res.redirect('/sis/intl');
     const student = studentRes.rows[0];
 
-    // 2. Get Student's Exam Results (Even if they have debt!)
     const examsRes = await pool.query(`
       SELECT c.code, c.title, g.midterm_grade, g.final_grade, g.letter_grade 
       FROM grades g 
@@ -4352,7 +4342,6 @@ app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) =
       WHERE g.student_id = $1 AND g.is_published = true
     `, [studentId]);
 
-    // 3. Get Student's Installments
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [studentId]);
 
     res.render('intl-student-profile', {
@@ -4388,7 +4377,6 @@ app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('st
   const { staff_reply } = req.body;
   
   try {
-    // 🚨 SECURITY CHECK: Ensure the ticket is actually assigned to the person clicking the button
     const checkRes = await pool.query(`SELECT assigned_to FROM guidance_requests WHERE id = $1`, [requestId]);
     if (checkRes.rows.length === 0 || checkRes.rows[0].assigned_to !== req.session.user.id) {
       return res.status(403).send("Security Violation: You can only resolve tickets assigned to you.");
@@ -4425,47 +4413,6 @@ app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('st
 });
 
 
-
-// Staff Resolves a Ticket
-app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
-  try {
-    // Only see tickets assigned to ME, or Unassigned tickets in my department
-    const requestsRes = await pool.query(`
-      SELECT gr.*, u.full_name AS student_name, u.username AS student_number, a.full_name as assigned_name
-      FROM guidance_requests gr
-      JOIN users u ON u.id = gr.student_id
-      LEFT JOIN users a ON a.id = gr.assigned_to
-      WHERE gr.assigned_department = 'International Office'
-        AND (gr.assigned_to = $1 OR gr.assigned_to IS NULL)
-      ORDER BY gr.created_at DESC
-    `, [req.session.user.id]);
-
-    res.render('intl-dashboard', {
-      user: req.session.user,
-      requests: requestsRes.rows,
-      flash: req.flash ? req.flash() : {}
-    });
-  } catch (err) {
-    res.status(500).send("Intl Office Error: " + err.message);
-  }
-});
-
-// NEW ROUTE: Claim a Ticket
-app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {
-  try {
-    await pool.query(`
-      UPDATE guidance_requests 
-      SET assigned_to = $1 
-      WHERE id = $2 AND assigned_to IS NULL
-    `, [req.session.user.id, req.params.id]);
-    
-    req.flash('success', 'Ticket claimed successfully. You are now responsible for it.');
-    res.redirect('/sis/intl');
-  } catch (err) {
-    res.status(500).send("Claim Error: " + err.message);
-  }
-});
-
 // ============================================
 // --- RECTORATE: DIRECTIVES & COMMUNICATIONS ---
 // ============================================
@@ -4499,13 +4446,11 @@ app.post('/sis/rectorate/directives/send', requireRole('rectorate'), async (req,
 });
 
 
-
 // ============================================
 // --- DIRECTORS: EXECUTIVE INBOX ---
 // ============================================
 app.get('/sis/it/inbox', requireRole('it_staff'), async (req, res) => {
   try {
-    // IT Director only sees directives sent to 'it' or 'all'
     const inboxRes = await pool.query(`
       SELECT d.*, u.full_name as sender_name 
       FROM directives d
@@ -4524,7 +4469,6 @@ app.get('/sis/it/inbox', requireRole('it_staff'), async (req, res) => {
 
 app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
   try {
-    // Intl Director only sees directives sent to 'intl' or 'all'
     const inboxRes = await pool.query(`
       SELECT d.*, u.full_name as sender_name 
       FROM directives d
@@ -4541,15 +4485,15 @@ app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
   } catch (err) { res.status(500).send("Inbox Error: " + err.message); }
 });
 
+
 // ============================================
 // --- FINANCE / BURSAR PORTAL ---
 // ============================================
-app.get('/sis/finance', requireRole('finance_staff'), async (req, res) => {
+app.get('/sis/finance', requireLogin, async (req, res) => {
   try {
     const staffRes = await pool.query(`SELECT finance_role, finance_team FROM users WHERE id = $1`, [req.session.user.id]);
     const staff = staffRes.rows[0] || { finance_role: 'officer', finance_team: 'Bursar Office' };
 
-    // Fetch all pending installment requests with student details
     const instRes = await pool.query(`
       SELECT ir.*, u.full_name AS student_name, u.username AS student_number, sp.class_level
       FROM installment_requests ir
@@ -4559,7 +4503,6 @@ app.get('/sis/finance', requireRole('finance_staff'), async (req, res) => {
       ORDER BY ir.created_at DESC
     `);
 
-    // Fetch recently processed requests (for history)
     const historyRes = await pool.query(`
       SELECT ir.*, u.full_name AS student_name, u.username AS student_number
       FROM installment_requests ir
@@ -4582,7 +4525,7 @@ app.get('/sis/finance', requireRole('finance_staff'), async (req, res) => {
 });
 
 // Approve an Installment
-app.post('/sis/finance/installment/:id/approve', requireRole('finance_staff'), async (req, res) => {
+app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
     await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
@@ -4601,7 +4544,7 @@ app.post('/sis/finance/installment/:id/approve', requireRole('finance_staff'), a
 });
 
 // Reject an Installment
-app.post('/sis/finance/installment/:id/reject', requireRole('finance_staff'), async (req, res) => {
+app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
     await pool.query(`UPDATE installment_requests SET status = 'rejected' WHERE id = $1`, [instId]);

@@ -440,6 +440,38 @@
 
     <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
 
+    <!-- ✅ OVERDUE PAYMENT ALERT -->
+    <% if (typeof stats !== 'undefined' && stats.overdueCount > 0) { %>
+      <div class="notif-banner" style="background: linear-gradient(135deg, #fee2e2, #fecaca); border-color: #f87171; color: #991b1b; border-width: 2px;">
+        <div>
+          <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+          <strong>Overdue Payment: $<%= Number(stats.overdueTotal).toFixed(2) %></strong>
+          <br>
+          <span style="font-size: 0.85rem; font-weight: 500; color: #7f1d1d;">
+            You have <%= stats.overdueCount %> overdue installment<%= stats.overdueCount > 1 ? 's' : '' %>. Please pay immediately to avoid academic holds.
+          </span>
+        </div>
+        <a href="/sis/my/finance" class="notif-btn" style="background: #dc2626;">Pay Now</a>
+      </div>
+    <% } %>
+
+    <!-- ✅ NEXT INSTALLMENT REMINDER -->
+    <% if (typeof stats !== 'undefined' && stats.nextInstallment && stats.overdueCount === 0) { %>
+      <div class="notif-banner" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b; color: #78350f;">
+        <div>
+          <i class="fas fa-calendar-alt" style="font-size: 1.2rem;"></i>
+          <strong>Next Payment: $<%= Number(stats.nextInstallment.amount).toFixed(2) %></strong>
+          <br>
+          <span style="font-size: 0.85rem; font-weight: 500; color: #92400e;">
+            Due on <strong><%= new Date(stats.nextInstallment.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>
+          </span>
+        </div>
+        <a href="/sis/my/finance" class="notif-btn" style="background: #d97706;">View Schedule</a>
+      </div>
+    <% } %>
+
+
+
     <% if (typeof unseenDocs !== 'undefined' && unseenDocs > 0) { %>
       <div class="notif-banner">
         <div><i class="fas fa-bell"></i> You have <strong><%= unseenDocs %></strong> new notification<%= unseenDocs > 1 ? 's' : '' %> regarding document requests.</div>
@@ -501,12 +533,20 @@
           <p><%= stats.credits %> <span style="font-size: 1rem; color: #64748b;">/ 120</span></p>
         </div>
       </div>
-      <div class="stat-card">
+            <div class="stat-card">
         <div class="stat-icon finance"><i class="fas fa-wallet"></i></div>
         <div class="stat-info">
           <h3>Account Balance</h3>
-          <p>$<%= stats.balance %></p>
-          <small>Payment required</small>
+          <p>$<%= Number(stats.balance).toFixed(2) %></p>
+          <% if (stats.balance > 0) { %>
+            <small style="color: var(--danger); font-weight: 800;">
+              <i class="fas fa-exclamation-circle"></i> Payment required
+            </small>
+          <% } else { %>
+            <small style="color: var(--success); font-weight: 800;">
+              <i class="fas fa-check-circle"></i> Fully paid
+            </small>
+          <% } %>
         </div>
       </div>
     </div>

@@ -210,7 +210,74 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
     `, [req.session.user.id]);
     const credits = creditsRes.rows[0].total_credits;
 
-    const stats = { gpa: '3.85', credits: credits, balance: 1250, semester: profile.current_semester };
+        // ==============================
+    // REAL DASHBOARD CALCULATIONS
+    // ==============================
+    
+    // 1. Calculate real CGPA from published grades
+    const cgpaRes = await pool.query(`
+      SELECT 
+        COALESCE(ROUND(SUM(g.gpa_points * c.credits) / NULLIF(SUM(c.credits), 0), 2), 0.00) as cgpa
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1 AND g.is_published = true
+    `, [req.session.user.id]);
+    const realGpa = Number(cgpaRes.rows[0].cgpa).toFixed(2);
+
+    // 2. Calculate real debt (tuition - payments) with scholarship applied
+    const feeRes = await pool.query(`
+      SELECT COALESCE(fs.amount, 0) as amount
+      FROM fee_structure fs
+      WHERE LOWER(fs.program) = LOWER($1) AND fs.semester = $2
+      LIMIT 1
+    `, [profile.class_level, profile.current_semester]);
+    const baseTuition = Number(feeRes.rows[0]?.amount) || 0;
+    
+    // Apply scholarship (same logic as finance page)
+    const studentScholarshipRes = await pool.query(`
+      SELECT is_international, high_school_gpa FROM student_profiles WHERE user_id = $1
+    `, [req.session.user.id]);
+    const sp = studentScholarshipRes.rows[0] || {};
+    let scholarshipPct = 0;
+    if (sp.is_international) scholarshipPct = 50;
+    if (sp.high_school_gpa >= 3.0 && sp.high_school_gpa < 3.5) scholarshipPct = 75;
+    if (sp.high_school_gpa >= 3.5 && sp.high_school_gpa < 3.8) scholarshipPct = 90;
+    if (sp.high_school_gpa >= 3.8) scholarshipPct = 100;
+    
+    const netTuition = baseTuition - (baseTuition * scholarshipPct / 100);
+    
+    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
+    const totalPaidDash = Number(paidRes.rows[0].total);
+    const realBalance = Math.max(0, netTuition - totalPaidDash);
+
+    // 3. Get the NEXT upcoming installment payment
+    const nextInstRes = await pool.query(`
+      SELECT amount, due_date, status FROM installment_schedules 
+      WHERE student_id = $1 AND status IN ('unpaid', 'overdue')
+      ORDER BY due_date ASC LIMIT 1
+    `, [req.session.user.id]);
+    const nextInstallment = nextInstRes.rows[0] || null;
+    
+    // 4. Count overdue installments
+    const overdueCountRes = await pool.query(`
+      SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+      FROM installment_schedules 
+      WHERE student_id = $1 AND status = 'overdue'
+    `, [req.session.user.id]);
+    const overdueCount = parseInt(overdueCountRes.rows[0].count) || 0;
+    const overdueTotal = Number(overdueCountRes.rows[0].total) || 0;
+
+    // 5. Build stats object with REAL values
+    const stats = { 
+      gpa: realGpa, 
+      credits: credits, 
+      balance: realBalance, 
+      semester: profile.current_semester,
+      nextInstallment: nextInstallment,
+      overdueCount: overdueCount,
+      overdueTotal: overdueTotal
+    };
 
     const newAnnCount = await pool.query(`
       SELECT COUNT(*) FROM course_announcements a

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semester Rollover — LuxMind Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --success: #1f8a5f; --danger: #b33e2e; }
+    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
+    
+    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; }
+    .sidebar-brand { padding: 2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-mark { width: 40px; height: 40px; background: var(--amber); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: var(--navy); }
+    .brand-name { font-size: 1.2rem; font-weight: 800; }
+    .brand-name span { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+    .sidebar-menu { list-style: none; padding: 1rem 0; }
+    .menu-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
+    .menu-link i { width: 25px; color: var(--gold); }
+
+    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; }
+    .top-bar { margin-bottom: 2rem; }
+    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
+    .top-bar p { color: #64748b; font-size: 0.95rem; margin-top: 0.3rem; }
+
+    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    .card { background: #fff; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--frost); padding: 2rem; margin-bottom: 2rem; }
+    .card h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--navy); border-bottom: 2px solid var(--frost); padding-bottom: 0.75rem; }
+
+    .alert { background: #fee2e2; border: 2px solid var(--danger); color: var(--danger); padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 700; display: flex; align-items: flex-start; gap: 1rem; }
+    .alert i { font-size: 1.5rem; flex-shrink: 0; }
+    .alert strong { display: block; font-size: 1rem; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 1px; }
+    .alert p { font-weight: 500; font-size: 0.85rem; line-height: 1.6; color: #7f1d1d; }
+
+    .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 1rem 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 600; display: flex; gap: 0.75rem; }
+    .alert-info i { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat { background: #f8fafc; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--frost); text-align: center; }
+    .stat .value { font-size: 2.5rem; font-weight: 800; color: var(--navy); line-height: 1; }
+    .stat .label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-top: 0.5rem; }
+    .stat.promote .value { color: var(--success); }
+    .stat.graduate .value { color: var(--blue); }
+    .stat.unpaid .value { color: var(--danger); }
+
+    .breakdown-table { width: 100%; border-collapse: collapse; }
+    .breakdown-table th { background: var(--navy); color: white; padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; text-align: left; }
+    .breakdown-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--frost); font-size: 0.9rem; font-weight: 600; }
+    .breakdown-table tr:last-child td { border-bottom: none; }
+
+    .btn-danger { background: var(--danger); color: white; padding: 1rem 2rem; border-radius: 10px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.75rem; transition: 0.2s; box-shadow: 0 4px 12px rgba(179, 62, 46, 0.3); }
+    .btn-danger:hover { background: #8b2d20; transform: translateY(-2px); }
+    .btn-danger:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .confirm-box { background: #fef3c7; border: 2px solid var(--amber); padding: 1.5rem; border-radius: 12px; margin-top: 1.5rem; display: none; }
+    .confirm-box.active { display: block; }
+    .confirm-box p { font-size: 0.9rem; color: #78350f; margin-bottom: 1rem; font-weight: 600; }
+    .confirm-box input[type="text"] { width: 100%; padding: 0.75rem; border: 1px solid var(--amber); border-radius: 8px; font-family: inherit; font-size: 1rem; font-weight: 800; text-align: center; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1rem; }
+    .confirm-box input[type="text"]:focus { outline: none; box-shadow: 0 0 0 3px rgba(245,166,35,0.2); }
+
+    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 280px; transition: transform 0.3s ease; }
+      .sidebar.active { transform: translateX(0); }
+      .sidebar-overlay.active { display: block; }
+      .main-content { margin-left: 0; padding: 1.5rem; padding-top: 5rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-name">LuxMind SIS <span>Admin</span></div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="/sis/admin" class="menu-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="/sis/admin/approvals" class="menu-link"><i class="fas fa-check-double"></i> Approvals</a></li>
+      <li><a href="/sis/admin/students" class="menu-link"><i class="fas fa-user-graduate"></i> Students</a></li>
+      <li><a href="/sis/admin/teachers" class="menu-link"><i class="fas fa-chalkboard-teacher"></i> Teachers</a></li>
+      <li><a href="/sis/admin/faculties" class="menu-link"><i class="fas fa-university"></i> Faculties</a></li>
+      <li><a href="/sis/admin/courses" class="menu-link"><i class="fas fa-book"></i> Course Catalog</a></li>
+      <li><a href="/sis/admin/registrations" class="menu-link"><i class="fas fa-user-edit"></i> Registrations</a></li>
+      <li><a href="/sis/admin/leave" class="menu-link"><i class="fas fa-plane-departure"></i> Leave Requests</a></li>
+      <li><a href="/sis/admin/rollover" class="menu-link active"><i class="fas fa-calendar-alt"></i> Semester Rollover</a></li>
+      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main-content">
+    <a href="/sis/admin" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Admin Dashboard</a>
+
+    <div class="top-bar">
+      <h1><i class="fas fa-calendar-alt" style="color: var(--amber);"></i> Semester Rollover</h1>
+      <p>Promote all students to the next semester and graduate Semester 8.</p>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div style="background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700; border: 1px solid #86efac;">
+        <i class="fas fa-check-circle"></i> <%= flash.success[0] %>
+      </div>
+    <% } %>
+
+    <% if (lastRollover) { %>
+      <div class="alert-info">
+        <i class="fas fa-history"></i>
+        <div>
+          <strong>Last rollover:</strong> <%= new Date(lastRollover.created_at).toLocaleString() %>
+          <br><span style="font-weight: 500;"><%= lastRollover.details %></span>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- DANGER WARNING -->
+    <div class="alert">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div>
+        <strong>⚠️ Destructive Operation</strong>
+        <p>This action will <strong>permanently promote all active students</strong> to the next semester. Students in Semester 8 will be <strong>graduated</strong>. This cannot be undone without manual database rollback. Only run this <strong>once per academic term</strong>.</p>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat promote">
+        <div class="value"><%= willPromote %></div>
+        <div class="label">Will Be Promoted</div>
+      </div>
+      <div class="stat graduate">
+        <div class="value"><%= willGraduate %></div>
+        <div class="label">Will Graduate</div>
+      </div>
+      <div class="stat unpaid">
+        <div class="value"><%= unpaidStudents %></div>
+        <div class="label">Have Unpaid Installments</div>
+      </div>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="card">
+      <h2><i class="fas fa-list-ol" style="color: var(--blue);"></i> Current Student Breakdown</h2>
+      <table class="breakdown-table">
+        <thead>
+          <tr>
+            <th>Current Semester</th>
+            <th>Students</th>
+            <th>Action After Rollover</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% breakdown.forEach(row => { %>
+            <tr>
+              <td><strong>Semester <%= row.current_semester %></strong></td>
+              <td><%= row.student_count %> student<%= row.student_count > 1 ? 's' : '' %></td>
+              <td>
+                <% if (Number(row.current_semester) < 8) { %>
+                  <span style="color: var(--success); font-weight: 800;"><i class="fas fa-arrow-up"></i> Promote to Semester <%= Number(row.current_semester) + 1 %></span>
+                <% } else if (Number(row.current_semester) == 8) { %>
+                  <span style="color: var(--blue); font-weight: 800;"><i class="fas fa-graduation-cap"></i> Graduate</span>
+                <% } else { %>
+                  <span style="color: #64748b; font-weight: 700;">No change</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (breakdown.length === 0) { %>
+            <tr><td colspan="3" style="text-align: center; padding: 2rem; color: #94a3b8;">No students found in the system.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- EXECUTE BUTTON -->
+    <div class="card">
+      <h2><i class="fas fa-play-circle" style="color: var(--danger);"></i> Execute Rollover</h2>
+      
+      <% if (willPromote === 0 && willGraduate === 0) { %>
+        <p style="color: #64748b; font-weight: 600; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+          <i class="fas fa-info-circle"></i> No students to promote or graduate. Nothing to do.
+        </p>
+      <% } else { %>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.6;">
+          By clicking <strong>"Start New Semester"</strong>, the following will happen in a single transaction:
+        </p>
+        <ul style="font-size: 0.85rem; color: #334155; line-height: 2; margin-left: 1.5rem; margin-bottom: 1.5rem;">
+          <li><strong><%= willPromote %></strong> students will move to their next semester</li>
+          <li><strong><%= willGraduate %></strong> students (in Semester 8) will be marked as graduated</li>
+          <li>Semester start/end dates will reset to a <strong>16-week term starting today</strong></li>
+          <li>All promoted/graduated students will receive a notification</li>
+          <li>The action will be logged in the audit trail</li>
+        </ul>
+
+        <button type="button" class="btn-danger" id="showConfirmBtn" onclick="showConfirm()">
+          <i class="fas fa-play"></i> Start New Semester
+        </button>
+
+        <div class="confirm-box" id="confirmBox">
+          <p><i class="fas fa-exclamation-triangle"></i> To confirm, type <strong>ROLLOVER</strong> in the box below:</p>
+          <input type="text" id="confirmInput" placeholder="TYPE HERE" autocomplete="off" oninput="validateConfirm()">
+          
+          <form method="POST" action="/sis/admin/rollover/execute" id="rolloverForm" style="display: flex; gap: 1rem;">
+            <button type="button" onclick="cancelConfirm()" style="flex: 1; padding: 1rem; border: 2px solid #94a3b8; background: white; color: #475569; border-radius: 10px; font-weight: 800; font-size: 0.9rem; cursor: pointer;">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" id="confirmBtn" class="btn-danger" style="flex: 1; justify-content: center; opacity: 0.4; pointer-events: none;" disabled>
+              <i class="fas fa-check"></i> Confirm Rollover
+            </button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    function showConfirm() {
+      document.getElementById('showConfirmBtn').style.display = 'none';
+      document.getElementById('confirmBox').classList.add('active');
+      document.getElementById('confirmInput').focus();
+    }
+
+    function cancelConfirm() {
+      document.getElementById('confirmBox').classList.remove('active');
+      document.getElementById('showConfirmBtn').style.display = 'inline-flex';
+      document.getElementById('confirmInput').value = '';
+      document.getElementById('confirmBtn').disabled = true;
+      document.getElementById('confirmBtn').style.opacity = '0.4';
+      document.getElementById('confirmBtn').style.pointerEvents = 'none';
+    }
+
+    function validateConfirm() {
+      const input = document.getElementById('confirmInput').value.trim().toUpperCase();
+      const btn = document.getElementById('confirmBtn');
+      if (input === 'ROLLOVER') {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.pointerEvents = 'none';
+      }
+    }
+  </script>
+
+</body>
+</html>

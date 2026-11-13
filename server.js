@@ -4676,5 +4676,122 @@ app.post('/sis/it/staff/assign', requireRole('it_staff'), async (req, res) => {
   }
 });
 
+// ============================================
+// --- ADMIN: SEMESTER ROLLOVER TOOL ---
+// ============================================
+app.get('/sis/admin/rollover', requireRole('admin'), async (req, res) => {
+  try {
+    // Preview data
+    const previewRes = await pool.query(`
+      SELECT 
+        sp.current_semester,
+        COUNT(*) AS student_count,
+        COUNT(*) FILTER (WHERE sp.is_graduated = true) AS graduated_count
+      FROM student_profiles sp
+      JOIN users u ON u.id = sp.user_id
+      WHERE u.role = 'student'
+      GROUP BY sp.current_semester
+      ORDER BY sp.current_semester
+    `);
+
+    // Breakdown by action
+    const promoteRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM student_profiles sp
+      JOIN users u ON u.id = sp.user_id
+      WHERE u.role = 'student' AND sp.current_semester < 8 AND sp.is_graduated = false
+    `);
+    const graduateRes = await pool.query(`
+      SELECT COUNT(*) AS count FROM student_profiles sp
+      JOIN users u ON u.id = sp.user_id
+      WHERE u.role = 'student' AND sp.current_semester = 8 AND sp.is_graduated = false
+    `);
+
+    // Students with unpaid installments
+    const unpaidRes = await pool.query(`
+      SELECT COUNT(DISTINCT student_id) AS count FROM installment_schedules
+      WHERE status IN ('unpaid', 'overdue')
+    `);
+
+    // Last rollover timestamp (from audit log)
+    const lastRolloverRes = await pool.query(`
+      SELECT created_at, details FROM audit_logs 
+      WHERE action = 'SEMESTER_ROLLOVER'
+      ORDER BY created_at DESC LIMIT 1
+    `);
+
+    res.render('admin-rollover', {
+      user: req.session.user,
+      breakdown: previewRes.rows,
+      willPromote: parseInt(promoteRes.rows[0].count),
+      willGraduate: parseInt(graduateRes.rows[0].count),
+      unpaidStudents: parseInt(unpaidRes.rows[0].count),
+      lastRollover: lastRolloverRes.rows[0] || null,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("<pre style='color:red;'>ROLLOVER PREVIEW ERROR: " + err.message + "</pre>");
+  }
+});
+
+app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Graduate students currently in semester 8
+    const gradRes = await client.query(`
+      UPDATE student_profiles 
+      SET is_graduated = true 
+      WHERE current_semester = 8 
+        AND is_graduated = false
+        AND user_id IN (SELECT id FROM users WHERE role = 'student')
+      RETURNING user_id
+    `);
+
+    // 2. Promote everyone else (semester 1-7)
+    const promoRes = await client.query(`
+      UPDATE student_profiles 
+      SET current_semester = current_semester + 1,
+          semester_start_date = CURRENT_DATE,
+          semester_end_date = CURRENT_DATE + INTERVAL '16 weeks'
+      WHERE current_semester < 8 
+        AND is_graduated = false
+        AND user_id IN (SELECT id FROM users WHERE role = 'student')
+      RETURNING user_id, current_semester
+    `);
+
+    // 3. Notify promoted students
+    for (const row of promoRes.rows) {
+      await client.query(`
+        INSERT INTO notifications (user_id, title, body, link, is_read)
+        VALUES ($1, 'Semester Rollover', $2, '/sis/my', 0)
+      `, [row.user_id, `Welcome to Semester ${row.current_semester}. Your new semester dates have been set.`]);
+    }
+
+    // 4. Notify graduated students
+    for (const row of gradRes.rows) {
+      await client.query(`
+        INSERT INTO notifications (user_id, title, body, link, is_read)
+        VALUES ($1, 'Congratulations — You Have Graduated!', 'You have completed your program. Please contact the Registrar for your official transcript and diploma.', '/sis/my/transcript', 0)
+      `, [row.user_id]);
+    }
+
+    // 5. Log the action
+    await client.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'SEMESTER_ROLLOVER', $2)
+    `, [req.session.user.id, `Promoted ${promoRes.rows.length} students, graduated ${gradRes.rows.length} students. Semester dates updated to 16-week term starting today.`]);
+
+    await client.query('COMMIT');
+
+    req.flash('success', `Rollover complete: ${promoRes.rows.length} promoted, ${gradRes.rows.length} graduated.`);
+    res.redirect('/sis/admin/rollover');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).send("<pre style='color:red;'>ROLLOVER EXECUTE ERROR: " + err.message + "</pre>");
+  } finally {
+    client.release();
+  }
+});
 // START SERVER
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

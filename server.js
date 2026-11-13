@@ -4295,7 +4295,7 @@ app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
 // ============================================
 // --- FINANCE / BURSAR PORTAL ---
 // ============================================
-app.get('/sis/finance', requireLogin, async (req, res) => {
+app.get('/sis/finance', requireRole('finance_staff', 'admin'), async (req, res) => {
   try {
     const staffRes = await pool.query(`SELECT finance_role, finance_team FROM users WHERE id = $1`, [req.session.user.id]);
     const staff = staffRes.rows[0] || { finance_role: 'officer', finance_team: 'Bursar Office' };
@@ -4331,7 +4331,7 @@ app.get('/sis/finance', requireLogin, async (req, res) => {
 });
 
 // Approve an Installment (Calendar-Based)
-app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) => {
+app.post('/sis/finance/installment/:id/approve', requireRole('finance_staff', 'admin'), async (req, res) => {
   const instId = req.params.id;
   try {
     const reqRes = await pool.query(`SELECT student_id, total_amount, installments_count FROM installment_requests WHERE id = $1`, [instId]);
@@ -4379,7 +4379,7 @@ app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) 
   } catch (err) { res.status(500).send("Approve Error: " + err.message); }
 });
 
-app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) => {
+app.post('/sis/finance/installment/:id/reject', requireRole('finance_staff', 'admin'), async (req, res) => {
   const instId = req.params.id;
   try {
     await pool.query(`UPDATE installment_requests SET status = 'rejected' WHERE id = $1`, [instId]);

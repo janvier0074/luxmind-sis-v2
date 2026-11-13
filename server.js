@@ -146,6 +146,40 @@ app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
+const requireLogin = (req, res, next) => {
+  if (!req.session.user) return res.redirect('/login');
+  next();
+};
+
+// ============================================
+// --- CENTRALIZED SECURITY MIDDLEWARE ---
+// ============================================
+const requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.session.user) {
+      return res.redirect('/login');
+    }
+    
+    if (!allowedRoles.includes(req.session.user.role)) {
+      return res.status(403).send(`
+        <div style="font-family: system-ui; padding: 3rem; text-align: center; max-width: 600px; margin: 0 auto;">
+          <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
+          <h1 style="color: #b33e2e; font-size: 2rem; margin-bottom: 1rem;">Access Denied</h1>
+          <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
+            You do not have permission to access this page.<br>
+            Your role: <strong>${req.session.user.role}</strong><br>
+            Required role(s): <strong>${allowedRoles.join(', ')}</strong>
+          </p>
+          <a href="/sis/my" style="display: inline-block; padding: 0.75rem 1.5rem; background: #0a1e32; color: white; text-decoration: none; border-radius: 8px; font-weight: 700;">
+            ← Return to My Portal
+          </a>
+        </div>
+      `);
+    }
+    
+    next();
+  };
+};
 // ============================================
 // --- NOTIFICATIONS API ---
 // ============================================
@@ -193,41 +227,6 @@ app.post('/api/notifications/read-all', requireLogin, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-const requireLogin = (req, res, next) => {
-  if (!req.session.user) return res.redirect('/login');
-  next();
-};
-
-// ============================================
-// --- CENTRALIZED SECURITY MIDDLEWARE ---
-// ============================================
-const requireRole = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.session.user) {
-      return res.redirect('/login');
-    }
-    
-    if (!allowedRoles.includes(req.session.user.role)) {
-      return res.status(403).send(`
-        <div style="font-family: system-ui; padding: 3rem; text-align: center; max-width: 600px; margin: 0 auto;">
-          <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
-          <h1 style="color: #b33e2e; font-size: 2rem; margin-bottom: 1rem;">Access Denied</h1>
-          <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
-            You do not have permission to access this page.<br>
-            Your role: <strong>${req.session.user.role}</strong><br>
-            Required role(s): <strong>${allowedRoles.join(', ')}</strong>
-          </p>
-          <a href="/sis/my" style="display: inline-block; padding: 0.75rem 1.5rem; background: #0a1e32; color: white; text-decoration: none; border-radius: 8px; font-weight: 700;">
-            ← Return to My Portal
-          </a>
-        </div>
-      `);
-    }
-    
-    next();
-  };
-};
 app.get('/', (req, res) => res.redirect('/login'));
 
 // ============================================

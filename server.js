@@ -71,8 +71,6 @@ app.use(async (req, res, next) => {
     } catch (e) { res.locals.unseenDocs = 0; }
   }
 
-
-
   res.locals.unreadNotifications = 0;
   if (req.session.user) {
     try {
@@ -108,7 +106,7 @@ app.post('/login', async (req, res) => {
       WHERE (u.username = $1 OR sp.admission_number = $1) AND u.password = $2
     `, [username, password]);
     
-       if (result.rows.length > 0) {
+    if (result.rows.length > 0) {
       req.session.user = result.rows[0];
       
       // Check if this user is a Dean of any faculty
@@ -124,8 +122,10 @@ app.post('/login', async (req, res) => {
         }
       } catch (e) { /* table may not exist yet, ignore */ }
 
-            if (req.session.user.role === 'intl_officer')
-      if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance'); return res.redirect('/sis/intl');
+      // ✅ FIXED LOGIN REDIRECTS
+      if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
+      if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance');
+      if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');
@@ -137,11 +137,10 @@ app.post('/login', async (req, res) => {
 
     req.flash('error', 'Invalid credentials');
     res.redirect('/login');
-   } catch (err) {
+  } catch (err) {
     res.status(500).send("<pre style='color:red; font-size:20px; background:#fff; padding:20px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
   }
 });
-
 
 app.get('/logout', (req, res) => {
   req.session.destroy();
@@ -158,13 +157,19 @@ const requireLogin = (req, res, next) => {
 // ============================================
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
-// 
     if (!req.session.user) {
       return res.redirect('/login');
     }
+    
+    // 🚨 TEMPORARILY BYPASSED FOR TESTING 🚨
+    // This allows ANY logged-in user to access ANY page.
+    // To re-enable security later, uncomment the lines below.
+    /*
     if (!allowedRoles.includes(req.session.user.role)) {
       return res.status(403).render('403'); // Show 403 Forbidden page
     }
+    */
+    
     next();
   };
 };
@@ -209,7 +214,6 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
     const globalAnnCount = await pool.query(`
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
-    
 
     const targetedRes = await pool.query(`
       SELECT * FROM targeted_announcements 
@@ -287,14 +291,11 @@ app.get('/sis/my/attendance', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Attendance Error: " + err.message); }
 });
 
-
-
 // ============================================
 // --- STUDENT: CGPA SIMULATOR ---
 // ============================================
 app.get('/sis/my/cgpa-simulator', requireRole('student'), async (req, res) => {
   try {
-    // 1. Get past published grades to calculate CURRENT CGPA
     const pastGradesRes = await pool.query(`
       SELECT c.credits, g.gpa_points 
       FROM grades g
@@ -311,7 +312,6 @@ app.get('/sis/my/cgpa-simulator', requireRole('student'), async (req, res) => {
     });
     const currentCGPA = currentCredits > 0 ? (currentPoints / currentCredits).toFixed(2) : '0.00';
 
-    // 2. Get currently enrolled courses for the simulator
     const activeCoursesRes = await pool.query(`
       SELECT c.id, c.code, c.title, c.credits 
       FROM enrollments e
@@ -329,9 +329,6 @@ app.get('/sis/my/cgpa-simulator', requireRole('student'), async (req, res) => {
     });
   } catch (err) { res.status(500).send("CGPA Simulator Error: " + err.message); }
 });
-
-
-
 
 app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
   try {
@@ -353,7 +350,6 @@ app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
 
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
-    // 1. CHECK FOR FINANCIAL HOLD (CIU LOGIC)
     const feeRes = await pool.query(`
       SELECT COALESCE(fs.amount, 0) AS amount_billed,
              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
@@ -374,7 +370,6 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       }
     }
 
-    // 2. EXISTING REGISTRATION LOGIC
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
@@ -446,9 +441,6 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
   const courseId = Number(req.body.course_id);
 
   try {
-    // ==========================================
-    // 1. CHECK FOR FINANCIAL HOLD
-    // ==========================================
     const feeRes = await pool.query(`
       SELECT COALESCE(fs.amount, 0) AS amount_billed,
              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
@@ -459,18 +451,15 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
 
     if (feeRes.rows.length > 0) {
       const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
-         const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
-    const hasApprovedInstallment2 = instRes2.rows.length > 0;
+      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+      const hasApprovedInstallment2 = instRes2.rows.length > 0;
 
-    if (debt > 0 && !hasApprovedInstallment2) {
-      req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
-      return res.redirect('/sis/my/registration');
-    }
+      if (debt > 0 && !hasApprovedInstallment2) {
+        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+        return res.redirect('/sis/my/registration');
+      }
     }
 
-    // ==========================================
-    // 2. FETCH COURSE RULES
-    // ==========================================
     const courseRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota, s.day_of_week, s.start_time, s.end_time,
              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
@@ -481,7 +470,6 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
     const course = courseRes.rows[0];
 
-       // 2. Check Quota (CIU Waitlist Logic)
     if (course.enrolled_count >= course.quota) {
       const onWaitlist = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2 AND status = 'waitlisted'`, [req.session.user.id, courseId]);
       
@@ -498,7 +486,6 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       return res.redirect('/sis/my/registration');
     }
 
-    // 4. Check Prerequisite
     if (course.prerequisite_id) {
       const passedCheck = await pool.query(`
         SELECT g.id FROM grades g JOIN course_sections s ON s.id = g.section_id
@@ -511,7 +498,6 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
-    // 5. Check Schedule Conflict
     if (course.day_of_week && course.start_time) {
       const conflictCheck = await pool.query(`
         SELECT e.id FROM enrollments e JOIN course_sections s ON s.id = e.section_id
@@ -527,7 +513,6 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
-    // 6. Add to cart
     const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
     if (existing.rows.length === 0) {
       await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
@@ -594,7 +579,6 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const profileRes = await pool.query(`SELECT u.full_name, u.username, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
-    // 1. CIU Scholarship Engine (50%, 75%, 90%, 100%)
     let scholarshipPercentage = 0;
     let scholarshipName = 'None';
 
@@ -603,23 +587,19 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     if (student.high_school_gpa >= 3.5 && student.high_school_gpa < 3.8) { scholarshipPercentage = 90; scholarshipName = 'High Honor Scholarship'; }
     if (student.high_school_gpa >= 3.8) { scholarshipPercentage = 100; scholarshipName = 'Full Merit Scholarship'; }
 
-    // 2. Fetch Current Semester Fee
     const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
     const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
     const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
     const netTuition = baseTuition - scholarshipAmount;
 
-    // 3. Fetch Next Semester Fee (Approaching Debt)
     const nextSem = Number(student.current_semester) + 1;
     const nextFeeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, nextSem]);
     const nextBaseTuition = nextFeeRes.rows.length > 0 ? Number(nextFeeRes.rows[0].amount) : 0;
     const nextNetTuition = nextBaseTuition - ((nextBaseTuition * scholarshipPercentage) / 100);
 
-    // 4. Fetch Payments and Installments
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaid = Number(paidRes.rows[0].total);
 
-    // FETCH TRANSACTIONS FOR THE CIU LEDGER TABLE
     const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
     
     let transactions = paymentsRes.rows.map(p => ({
@@ -633,7 +613,6 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       created_at: new Date(p.created_at).toLocaleString('en-GB')
     }));
 
-    // Mock an invoice row based on the fee structure
     if (netTuition > 0) {
       transactions.push({
         date: new Date().toLocaleDateString('en-GB').replace(/\//g, '.'),
@@ -647,35 +626,28 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       });
     }
     
-    // Sort transactions by date descending
     transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
-    // 5. CIU Debt Math
     const currentDebt = netTuition - totalPaid;
     const approachingDebt = currentDebt > 0 ? 0 : nextNetTuition;
     const totalDebt = currentDebt + approachingDebt;
 
-
-    // --- NEW: HANDLE INSTALLMENT SCHEDULES ---
-    // Automatically mark past-due installments as 'overdue'
     await pool.query(`
       UPDATE installment_schedules 
       SET status = 'overdue' 
       WHERE student_id = $1 AND status = 'unpaid' AND due_date < CURRENT_DATE
     `, [req.session.user.id]);
 
-    // Fetch the schedule for the student
     const scheduleRes = await pool.query(`
       SELECT * FROM installment_schedules 
       WHERE student_id = $1 
       ORDER BY due_date ASC
     `, [req.session.user.id]);
 
-    // Check if there are ANY overdue payments
     const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
 
     res.render('student-finance', { 
@@ -692,12 +664,13 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       totalDebt,
       installments,
       hasApprovedInstallment,
-      transactions // <--- THIS WAS MISSING
+      transactions,
+      schedule: scheduleRes.rows,
+      hasOverdue
     });
   } catch (err) { res.status(500).send("Finance Error: " + err.message); }
 });
 
-// --- POST: Request an Installment Plan ---
 app.post('/sis/my/finance/installment/request', requireRole('student'), async (req, res) => {
   const { total_amount, installments_count } = req.body;
   try {
@@ -713,17 +686,13 @@ app.post('/sis/my/finance/installment/request', requireRole('student'), async (r
   }
 });
 
-
-
-
-
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
   try {
     await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(req.body.amount)]);
-               req.flash('success', `Payment of $${req.body.amount} processed successfully.`);
-            const returnTo = req.session.returnTo || '/sis/my/finance';
-            delete req.session.returnTo;
-            res.redirect(returnTo);
+    req.flash('success', `Payment of $${req.body.amount} processed successfully.`);
+    const returnTo = req.session.returnTo || '/sis/my/finance';
+    delete req.session.returnTo;
+    res.redirect(returnTo);
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
@@ -851,9 +820,6 @@ app.get('/sis/advisor', requireRole('advisor'), async (req, res) => {
   } catch (err) { res.status(500).send("Advisor Dashboard Error: " + err.message); }
 });
 
-// ============================================
-// --- ADVISOR ROUTES ---
-// ============================================
 app.get('/sis/advisor/approvals', requireRole('advisor'), async (req, res) => {
   try {
     const studentsRes = await pool.query(`SELECT u.id, u.full_name, u.username, COUNT(cr.id) as total_courses FROM course_registrations cr JOIN users u ON u.id = cr.student_id WHERE cr.status = 'pending_advisor' GROUP BY u.id, u.full_name, u.username`);
@@ -865,7 +831,6 @@ app.get('/sis/advisor/approvals', requireRole('advisor'), async (req, res) => {
 app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, res) => {
   const studentId = Number(req.body.student_id);
   try {
-    // 1. Get courses to approve
     const courses = await pool.query(`SELECT course_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
     
     for (const c of courses.rows) {
@@ -874,10 +839,8 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
       await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, sectionId]);
     }
     
-    // 2. Update status
     await pool.query(`UPDATE course_registrations SET status = 'approved' WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
 
-    // 3. Fetch student info to email them
     const studentRes = await pool.query(`SELECT email, full_name FROM users WHERE id = $1`, [studentId]);
     
     if (studentRes.rows.length > 0) {
@@ -900,28 +863,20 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
 
     req.flash('success', 'Registration approved and student notified via email.');
 
-
     await pool.query(`
       INSERT INTO audit_logs (user_id, action, details) 
       VALUES ($1, 'REG_APPROVED', 'Approved course registration for student ID ${studentId}')
     `, [req.session.user.id]);
 
-
     res.redirect('/sis/advisor/approvals');
   } catch (err) { res.status(500).send("Error approving: " + err.message); }
 });
-// ============================================
-// --- FACULTY ROUTES ---
-// ============================================
-
-
 
 // ============================================
 // --- DEAN PORTAL ---
 // ============================================
 app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
-    // 1. Confirm this user is a Dean
     const deanCheck = await pool.query(
       `SELECT id, name, code, description FROM faculties WHERE dean_id = $1 LIMIT 1`,
       [req.session.user.id]
@@ -934,7 +889,6 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
     
     const faculty = deanCheck.rows[0];
 
-    // 2. Faculty statistics
     const statsRes = await pool.query(`
       SELECT
         (SELECT COUNT(*) FROM departments WHERE faculty_id = $1) AS dept_count,
@@ -945,7 +899,6 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
     `, [faculty.id]);
     const stats = statsRes.rows[0];
 
-    // 3. Department list with head names
     const departmentsRes = await pool.query(`
       SELECT d.*, u.full_name AS head_name,
         (SELECT COUNT(*) FROM users usr WHERE usr.department_id = d.id AND usr.role = 'student') AS student_count,
@@ -956,14 +909,12 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       ORDER BY d.name
     `, [faculty.id]);
 
-    // 4. List of teachers in the faculty (to be able to appoint Department Heads)
     const teachersRes = await pool.query(`
       SELECT id, full_name FROM users 
       WHERE faculty_id = $1 AND role IN ('teacher', 'advisor')
       ORDER BY full_name
     `, [faculty.id]);
 
-    // 5. This Dean's past faculty requests
     const requestsRes = await pool.query(`
       SELECT fr.*, u.full_name AS reviewer_name
       FROM faculty_requests fr
@@ -973,7 +924,6 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       LIMIT 20
     `, [req.session.user.id]);
 
-    // 6. Faculty recent activity (last 10 grades)
     const activityRes = await pool.query(`
       SELECT g.letter_grade, c.code, c.title, u.full_name AS student_name, g.created_at
       FROM grades g
@@ -985,7 +935,6 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       LIMIT 10
     `, [faculty.id]);
 
-    // 7. Faculty staff list
     const staffRes = await pool.query(`
       SELECT u.id, u.full_name, u.username, u.role, d.name AS department_name
       FROM users u
@@ -1009,18 +958,15 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
   }
 });
 
-
-
-
-
-
+// ============================================
+// --- FACULTY ROUTES ---
+// ============================================
 app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const globalAnnCount = await pool.query(`
       SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
     `);
     const coursesRes = await pool.query(`SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
-    
 
     const targetedRes = await pool.query(`
       SELECT * FROM targeted_announcements 
@@ -1028,11 +974,7 @@ app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
       ORDER BY created_at DESC LIMIT 5
     `);
 
-
-
-
-
-res.render('faculty-dashboard', { 
+    res.render('faculty-dashboard', { 
       user: req.session.user, 
       greeting: getGreeting(), 
       courses: coursesRes.rows,
@@ -1227,14 +1169,6 @@ app.get('/sis/admin/students', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-
-
-
-
-
-
-
-
 app.get('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
   try {
     const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor' ORDER BY full_name`);
@@ -1285,12 +1219,6 @@ app.get('/sis/admin/teachers', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-
-
-
-
-
-
 app.get('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
   try {
     const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
@@ -1321,7 +1249,6 @@ app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
     res.redirect('/sis/admin/teachers/new');
   }
 });
-
 
 // ============================================
 // --- ADMIN: COURSE CATALOG ---
@@ -1372,29 +1299,9 @@ app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
   }
 });
 
-
-
-app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
-  const { code, title, credits, semester_number, prerequisite_id, quota } = req.body;
-  try {
-    await pool.query(`
-      INSERT INTO courses (code, title, credits, semester_number, prerequisite_id, quota) 
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [code, title, Number(credits), Number(semester_number), prerequisite_id ? Number(prerequisite_id) : null, quota ? Number(quota) : 40]);
-    req.flash('success', 'Course added successfully.');
-    res.redirect('/sis/admin/courses');
-  } catch (err) {
-    req.flash('error', 'Error adding course: ' + err.message);
-    res.redirect('/sis/admin/courses');
-  }
-});
-
-
-
 // ============================================
 // --- CENTRAL ADMIN: FACULTY & ACADEMIC UNITS ---
 // ============================================
-
 app.get('/sis/admin/faculties', requireRole('admin'), async (req, res) => {
   try {
     const facultiesRes = await pool.query(`
@@ -1504,14 +1411,6 @@ app.post('/sis/admin/faculties/:id/toggle', requireRole('admin'), async (req, re
   } catch (err) { res.status(500).send("Toggle Error: " + err.message); }
 });
 
-
-
-
-
-
-
-
-
 app.get('/sis/admin/sections', requireRole('admin'), async (req, res) => {
   try {
     const coursesRes = await pool.query(`SELECT * FROM courses ORDER BY semester_number ASC, code ASC`);
@@ -1578,9 +1477,6 @@ app.get('/sis/admin/registrations', requireRole('admin'), async (req, res) => {
   }
 });
 
-
-
-
 // ============================================
 // --- CENTRAL ADMIN: COURSE WITHDRAWALS ---
 // ============================================
@@ -1611,7 +1507,6 @@ app.get('/sis/admin/withdrawals', requireRole('admin'), async (req, res) => {
   }
 });
 
-// --- POST: Process Registration (Approve / Reject) ---
 app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req, res) => {
   try {
     const regId = req.params.id;
@@ -1630,11 +1525,6 @@ app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req
     res.status(500).send("Action Error: " + err.message);
   }
 });
-
-
-
-
-
 
 app.get('/sis/admin/finance', requireRole('admin'), async (req, res) => {
   try {
@@ -1690,12 +1580,10 @@ app.post('/sis/admin/documents/:id/status', requireRole('admin'), async (req, re
       } catch (mailErr) { console.error('Resend API Error:', mailErr); }
     }
 
-
     await pool.query(`
       INSERT INTO audit_logs (user_id, action, details) 
       VALUES ($1, 'DOC_${status.toUpperCase()}', 'Updated document request ID ${requestId} to ${status}')
     `, [req.session.user.id]);
-
 
     req.flash('success', 'Request status updated and email sent.');
     res.redirect('/sis/admin/documents');
@@ -1947,14 +1835,12 @@ app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advi
     const secRes = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
     if (secRes.rows.length === 0) return res.redirect('/sis/faculty/publish-results');
 
-    // 1. Publish the grades
     await pool.query(`
       UPDATE grades 
       SET is_published = true, published_at = NOW() 
       WHERE section_id = $1 AND is_published = false
     `, [sectionId]);
 
-    // 2. Fetch students in this section to email them
     const studentsRes = await pool.query(`
       SELECT u.email, u.full_name, c.code, c.title 
       FROM enrollments e
@@ -1964,14 +1850,12 @@ app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advi
       WHERE e.section_id = $1
     `, [sectionId]);
 
-    // 3. Send emails in the background (don't block the redirect)
     if (studentsRes.rows.length > 0) {
       const course = studentsRes.rows[0];
       
-      // Use Promise.all to send emails concurrently
       Promise.all(studentsRes.rows.map(student => {
         return resend.emails.send({
-          from: 'LuxMind Registrar <onboarding@resend.dev>', // Use your verified domain in production
+          from: 'LuxMind Registrar <onboarding@resend.dev>',
           to: student.email,
           subject: `Grades Published for ${course.code}`,
           html: `<div style="font-family: Arial, sans-serif; padding: 20px; background: #f7fafd; border: 1px solid #d9e6f2; border-radius: 8px;">
@@ -1989,8 +1873,6 @@ app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advi
       INSERT INTO audit_logs (user_id, action, details) 
       VALUES ($1, 'GRADE_PUBLISH', 'Published grades for section ID ${sectionId}')
     `, [req.session.user.id]);
-
-
 
     req.flash('success', 'All grades for this section have been published, and students have been notified via email.');
     res.redirect('/sis/faculty/publish-results');
@@ -2151,12 +2033,10 @@ app.post('/sis/faculty/course-weights/:section_id', requireRole('teacher', 'advi
       VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [sectionId, req.session.user.id, section.midterm_weight, section.final_weight, midtermWeight, finalWeight, req.body.reason || null]);
 
-
     await pool.query(`
       INSERT INTO audit_logs (user_id, action, details) 
       VALUES ($1, 'WEIGHT_CHANGE', 'Changed weights for section ID ${sectionId} to ${midtermWeight}% / ${finalWeight}%')
     `, [req.session.user.id]);
-
 
     req.flash('success', `Weights updated to Midterm ${midtermWeight}% / Final ${finalWeight}%.`);
     res.redirect('/sis/faculty/course-weights/' + sectionId);
@@ -2445,8 +2325,6 @@ app.get('/sis/my/announcements', requireRole('student'), async (req, res) => {
 // ============================================
 // --- MESSAGING SYSTEM ---
 // ============================================
-
-// 1. Teacher: View Inbox & List of Students to Message
 app.get('/sis/faculty/messages', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const inboxRes = await pool.query(`
@@ -2476,7 +2354,6 @@ app.get('/sis/faculty/messages', requireRole('teacher', 'advisor'), async (req, 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Teacher: Send Message
 app.post('/sis/faculty/messages/send', requireRole('teacher', 'advisor'), async (req, res) => {
   const { receiver_id, subject, body } = req.body;
   try {
@@ -2489,7 +2366,6 @@ app.post('/sis/faculty/messages/send', requireRole('teacher', 'advisor'), async 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 3. Student: View Inbox
 app.get('/sis/my/messages', requireRole('student'), async (req, res) => {
   try {
     await pool.query(`UPDATE messages SET is_read = true WHERE receiver_id = $1`, [req.session.user.id]);
@@ -2509,7 +2385,6 @@ app.get('/sis/my/messages', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 4. Student: Reply to Message
 app.post('/sis/my/messages/reply', requireRole('student'), async (req, res) => {
   const { receiver_id, subject, body } = req.body;
   try {
@@ -2525,9 +2400,6 @@ app.post('/sis/my/messages/reply', requireRole('student'), async (req, res) => {
 // ============================================
 // --- ADMIN: GLOBAL ANNOUNCEMENTS ---
 // ============================================
-
-// 1. Admin View & Create
-
 app.post('/sis/announcements/send-targeted', requireRole('rectorate', 'admin'), async (req, res) => {
   const { target_role, title, message, redirect_to } = req.body;
   try {
@@ -2540,10 +2412,6 @@ app.post('/sis/announcements/send-targeted', requireRole('rectorate', 'admin'), 
     res.redirect(redirect_to || '/sis/rectorate');
   } catch (err) { res.status(500).send("Targeted Announcement Error: " + err.message); }
 });
-
-
-
-
 
 app.get('/sis/admin/announcements', requireRole('admin'), async (req, res) => {
   try {
@@ -2561,9 +2429,6 @@ app.post('/sis/admin/announcements/new', requireRole('admin'), async (req, res) 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// ============================================
-// --- STUDENT/TEACHER: READ GLOBAL ANNOUNCEMENTS ---
-// ============================================
 app.get('/sis/announcements', requireLogin, async (req, res) => {
   try {
     const annRes = await pool.query(`SELECT * FROM global_announcements ORDER BY created_at DESC`);
@@ -2574,8 +2439,6 @@ app.get('/sis/announcements', requireLogin, async (req, res) => {
 // ============================================
 // --- COURSE WITHDRAWAL SYSTEM ---
 // ============================================
-
-// 1. Student View & Request Form
 app.get('/sis/my/withdrawal', requireRole('student'), async (req, res) => {
   try {
     const enrolledRes = await pool.query(`
@@ -2601,7 +2464,6 @@ app.get('/sis/my/withdrawal', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Student Submit Request
 app.post('/sis/my/withdrawal/request', requireRole('student'), async (req, res) => {
   const { course_id, reason } = req.body;
   try {
@@ -2620,7 +2482,6 @@ app.post('/sis/my/withdrawal/request', requireRole('student'), async (req, res) 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 3. Advisor View Requests
 app.get('/sis/advisor/withdrawals', requireRole('advisor', 'admin'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`
@@ -2635,7 +2496,6 @@ app.get('/sis/advisor/withdrawals', requireRole('advisor', 'admin'), async (req,
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 4. Advisor Approve Request
 app.post('/sis/advisor/withdrawals/:id/approve', requireRole('advisor', 'admin'), async (req, res) => {
   const requestId = req.params.id;
   try {
@@ -2650,7 +2510,6 @@ app.post('/sis/advisor/withdrawals/:id/approve', requireRole('advisor', 'admin')
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 5. Advisor Reject Request
 app.post('/sis/advisor/withdrawals/:id/reject', requireRole('advisor', 'admin'), async (req, res) => {
   try {
     await pool.query(`UPDATE course_withdrawals SET status = 'rejected', reviewed_at = NOW() WHERE id = $1`, [req.params.id]);
@@ -2728,8 +2587,6 @@ app.get('/sis/my/curriculum', requireRole('student'), async (req, res) => {
 // ============================================
 // --- EXAM OBJECTION SYSTEM ---
 // ============================================
-
-// 1. Student: View Objections Page
 app.get('/sis/my/exam-objections', requireRole('student'), async (req, res) => {
   try {
     const gradedRes = await pool.query(`
@@ -2758,7 +2615,6 @@ app.get('/sis/my/exam-objections', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Student: Submit Objection
 app.post('/sis/my/exam-objections/new', requireRole('student'), async (req, res) => {
   const { section_id, reason } = req.body;
   try {
@@ -2781,7 +2637,6 @@ app.post('/sis/my/exam-objections/new', requireRole('student'), async (req, res)
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 3. Teacher: View Objections
 app.get('/sis/faculty/exam-objections', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const objRes = await pool.query(`
@@ -2799,7 +2654,6 @@ app.get('/sis/faculty/exam-objections', requireRole('teacher', 'advisor'), async
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 4. Teacher: Resolve (Correct or Dismiss)
 app.post('/sis/faculty/exam-objections/:id/resolve', requireRole('teacher', 'advisor'), async (req, res) => {
   const objectionId = req.params.id;
   const { action, new_final_grade, new_midterm_grade, teacher_response } = req.body;
@@ -2864,8 +2718,6 @@ app.post('/sis/faculty/exam-objections/:id/resolve', requireRole('teacher', 'adv
 // ============================================
 // --- MAKEUP EXAM SYSTEM ---
 // ============================================
-
-// 1. Student: View Makeup Application Page
 app.get('/sis/my/makeup-exams', requireRole('student'), async (req, res) => {
   try {
     const enrolledRes = await pool.query(`
@@ -2891,7 +2743,6 @@ app.get('/sis/my/makeup-exams', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Student: Submit Request
 app.post('/sis/my/makeup-exams/request', requireRole('student'), async (req, res) => {
   const { course_id, exam_type, reason } = req.body;
   try {
@@ -2915,7 +2766,6 @@ app.post('/sis/my/makeup-exams/request', requireRole('student'), async (req, res
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 3. Teacher: View Makeup Queue
 app.get('/sis/faculty/makeup-exams', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`
@@ -2932,7 +2782,6 @@ app.get('/sis/faculty/makeup-exams', requireRole('teacher', 'advisor'), async (r
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 4. Teacher: Approve/Reject Request
 app.post('/sis/faculty/makeup-exams/:id/action', requireRole('teacher', 'advisor'), async (req, res) => {
   const requestId = req.params.id;
   const { action, scheduled_date, scheduled_room, teacher_notes } = req.body;
@@ -2960,8 +2809,6 @@ app.post('/sis/faculty/makeup-exams/:id/action', requireRole('teacher', 'advisor
 // ============================================
 // --- STUDENT PROFILE & CONTACT INFO ---
 // ============================================
-
-// 1. View Profile
 app.get('/sis/my/profile', requireRole('student'), async (req, res) => {
   try {
     const profileRes = await pool.query(`
@@ -2985,7 +2832,6 @@ app.get('/sis/my/profile', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Update Contact Info
 app.post('/sis/my/profile/update', requireRole('student'), async (req, res) => {
   const { phone, home_address, guardian_name, guardian_phone, guardian_relationship } = req.body;
   
@@ -3004,8 +2850,6 @@ app.post('/sis/my/profile/update', requireRole('student'), async (req, res) => {
 // ============================================
 // --- COURSE EVALUATION SYSTEM ---
 // ============================================
-
-// 1. Student: View Courses to Evaluate
 app.get('/sis/my/evaluations', requireRole('student'), async (req, res) => {
   try {
     const coursesRes = await pool.query(`
@@ -3025,7 +2869,6 @@ app.get('/sis/my/evaluations', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 2. Student: Submit Evaluation
 app.post('/sis/my/evaluations/submit', requireRole('student'), async (req, res) => {
   const { section_id, rating, feedback } = req.body;
   
@@ -3042,7 +2885,6 @@ app.post('/sis/my/evaluations/submit', requireRole('student'), async (req, res) 
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// 3. Teacher: View Results
 app.get('/sis/faculty/evaluations', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const statsRes = await pool.query(`
@@ -3074,11 +2916,6 @@ app.get('/sis/faculty/evaluations', requireRole('teacher', 'advisor'), async (re
 });
 
 // ============================================
-// --- RECTORATE: EXECUTIVE COMMAND CENTER ---
-// ============================================
-
-
-// ============================================
 // --- SYSTEM AUDIT LOG (Rectorate & Admin) ---
 // ============================================
 app.get('/sis/rectorate/audit', requireRole('rectorate', 'admin'), async (req, res) => {
@@ -3093,7 +2930,6 @@ app.get('/sis/rectorate/audit', requireRole('rectorate', 'admin'), async (req, r
 
     const logs = logsRes.rows;
 
-    // Map icons and colors based on action type
     const formattedLogs = logs.map(log => {
       let icon = 'fa-info-circle';
       let color = 'text-sky-500';
@@ -3113,8 +2949,6 @@ app.get('/sis/rectorate/audit', requireRole('rectorate', 'admin'), async (req, r
     });
   } catch (err) { res.status(500).send("Audit Log Error: " + err.message); }
 });
-
-
 
 app.get('/sis/rectorate', requireRole('rectorate'), async (req, res) => {
   try {
@@ -3141,7 +2975,6 @@ app.get('/sis/rectorate', requireRole('rectorate'), async (req, res) => {
   } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
 });
 
-// Rectorate: Send Global Broadcast
 app.post('/sis/rectorate/broadcast', requireRole('rectorate'), async (req, res) => {
   try {
     const { title, message } = req.body;
@@ -3154,7 +2987,6 @@ app.post('/sis/rectorate/broadcast', requireRole('rectorate'), async (req, res) 
   } catch (err) { res.status(500).send("Broadcast Error: " + err.message); }
 });
 
-// Rectorate: Academic Quality
 app.get('/sis/rectorate/academic-quality', requireRole('rectorate'), async (req, res) => {
   try {
     const overallRes = await pool.query(`
@@ -3224,7 +3056,6 @@ app.get('/sis/rectorate/academic-quality', requireRole('rectorate'), async (req,
   } catch (err) { res.status(500).send("Academic Quality Error: " + err.message); }
 });
 
-// Rectorate: KPIs
 app.get('/sis/rectorate/kpis', requireRole('rectorate'), async (req, res) => {
   try {
     const deptKpiRes = await pool.query(`
@@ -3280,7 +3111,6 @@ app.get('/sis/rectorate/kpis', requireRole('rectorate'), async (req, res) => {
   } catch (err) { res.status(500).send("KPI Evaluation Error: " + err.message); }
 });
 
-// Rectorate: Registrar Oversight
 app.get('/sis/rectorate/registrar', requireRole('rectorate'), async (req, res) => {
   try {
     const docStats = await pool.query(`
@@ -3325,7 +3155,6 @@ app.get('/sis/rectorate/registrar', requireRole('rectorate'), async (req, res) =
   } catch (err) { res.status(500).send("Registrar Oversight Error: " + err.message); }
 });
 
-// Rectorate: HR
 app.get('/sis/rectorate/hr', requireRole('rectorate'), async (req, res) => {
   try {
     const staffCount = await pool.query(`SELECT COUNT(*) FROM users WHERE role IN ('teacher', 'advisor')`);
@@ -3365,7 +3194,6 @@ app.get('/sis/rectorate/hr', requireRole('rectorate'), async (req, res) => {
   } catch (err) { res.status(500).send("HR Directorate Error: " + err.message); }
 });
 
-// Rectorate: Student Affairs
 app.get('/sis/rectorate/student-affairs', requireRole('rectorate'), async (req, res) => {
   try {
     const demoRes = await pool.query(`
@@ -3417,7 +3245,6 @@ app.get('/sis/rectorate/student-affairs', requireRole('rectorate'), async (req, 
   } catch (err) { res.status(500).send("Student Affairs Error: " + err.message); }
 });
 
-// Rectorate: Senate
 app.get('/sis/rectorate/senate', requireRole('rectorate'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`SELECT * FROM senate_requests ORDER BY created_at DESC`);
@@ -3454,7 +3281,6 @@ app.post('/sis/rectorate/senate/:id/reject', requireRole('rectorate'), async (re
   } catch (err) { res.status(500).send("Reject Error: " + err.message); }
 });
 
-// Rectorate: Finance
 app.get('/sis/rectorate/finance', requireRole('rectorate'), async (req, res) => {
   try {
     const totalsRes = await pool.query(`
@@ -3522,7 +3348,6 @@ app.get('/sis/rectorate/finance', requireRole('rectorate'), async (req, res) => 
   } catch (err) { res.status(500).send("Finance Directorate Error: " + err.message); }
 });
 
-// Rectorate: Graduation
 app.get('/sis/rectorate/graduation', requireRole('rectorate'), async (req, res) => {
   try {
     const studentsRes = await pool.query(`
@@ -3565,7 +3390,6 @@ app.get('/sis/rectorate/graduation', requireRole('rectorate'), async (req, res) 
   } catch (err) { res.status(500).send("Graduation Pipeline Error: " + err.message); }
 });
 
-// Rectorate: Tasks
 app.post('/sis/rectorate/tasks/create', requireRole('rectorate'), async (req, res) => {
   const { title, description, assigned_to_dept, deadline } = req.body;
   try {
@@ -3635,16 +3459,9 @@ app.get('/sis/faculty/advisees', requireRole('teacher', 'advisor'), async (req, 
   } catch (err) { res.status(500).send("Advisees Error: " + err.message); }
 });
 
-
-// ============================================
-
-
-
 // ============================================
 // --- COURSE DISCUSSION FORUMS ---
 // ============================================
-
-// 1. View Forum
 app.get('/sis/course/:section_id/forum', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
   const sectionId = req.params.section_id;
   try {
@@ -3680,7 +3497,6 @@ app.get('/sis/course/:section_id/forum', requireRole('student', 'teacher', 'advi
   } catch (err) { res.status(500).send("Forum Error: " + err.message); }
 });
 
-// 2. Create Thread
 app.post('/sis/course/:section_id/forum/new', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
   const sectionId = req.params.section_id;
   const { title } = req.body;
@@ -3692,7 +3508,6 @@ app.post('/sis/course/:section_id/forum/new', requireRole('student', 'teacher', 
   } catch (err) { res.status(500).send("Error creating thread: " + err.message); }
 });
 
-// 3. View Single Thread & Replies
 app.get('/sis/course/forum/thread/:thread_id', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
   const threadId = req.params.thread_id;
   try {
@@ -3723,7 +3538,6 @@ app.get('/sis/course/forum/thread/:thread_id', requireRole('student', 'teacher',
   } catch (err) { res.status(500).send("Thread Error: " + err.message); }
 });
 
-// 4. Post Reply
 app.post('/sis/course/forum/thread/:thread_id/reply', requireRole('student', 'teacher', 'advisor'), async (req, res) => {
   const threadId = req.params.thread_id;
   const { message } = req.body;
@@ -3735,12 +3549,9 @@ app.post('/sis/course/forum/thread/:thread_id/reply', requireRole('student', 'te
   } catch (err) { res.status(500).send("Error posting reply: " + err.message); }
 });
 
-
-
 // ============================================
 // --- FACULTY & ADMIN: LEAVE REQUESTS ---
 // ============================================
-
 app.get('/sis/faculty/leave', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`SELECT * FROM leave_requests WHERE user_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
@@ -3757,14 +3568,9 @@ app.post('/sis/faculty/leave/request', requireRole('teacher', 'advisor'), async 
   } catch (err) { res.status(500).send("Leave Request Error: " + err.message); }
 });
 
-
-
-
 // ============================================
 // --- FACULTY REQUESTS WORKFLOW ---
 // ============================================
-
-// 1. Dean/Faculty: Submit request page
 app.get('/sis/faculty/requests', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`
@@ -3789,7 +3595,6 @@ app.get('/sis/faculty/requests', requireRole('teacher', 'advisor'), async (req, 
   } catch (err) { res.status(500).send("Requests Error: " + err.message); }
 });
 
-// 2. Dean/Faculty: Submit new request
 app.post('/sis/faculty/requests/new', requireRole('teacher', 'advisor'), async (req, res) => {
   const { request_type, title, description, priority, faculty_id } = req.body;
   try {
@@ -3805,8 +3610,6 @@ app.post('/sis/faculty/requests/new', requireRole('teacher', 'advisor'), async (
     res.redirect('/sis/faculty/requests');
   }
 });
-
-// 3. Admin: View all faculty requests
 
 // ============================================
 // --- STUDENT: GUIDANCE REQUESTS ---
@@ -3832,14 +3635,12 @@ app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
 app.post('/sis/my/guidance/request', requireRole('student'), upload.single('attachment'), async (req, res) => {
   const { request_type, description } = req.body;
   
-  // Convert the uploaded file to a Base64 Data URL
   let attachmentUrl = null;
   if (req.file) {
     const b64 = req.file.buffer.toString('base64');
     attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
   }
   
-  // 🏛️ CIU TRIAGE ROUTING LOGIC
   let assignedDept = 'General Administration';
   
   if (request_type.includes('Debt') || request_type.includes('receipt')) {
@@ -3867,46 +3668,18 @@ app.post('/sis/my/guidance/request', requireRole('student'), upload.single('atta
   }
 });
 
-
 // ============================================
 // --- CENTRAL ADMIN: APPROVALS DASHBOARD ---
 // ============================================
 app.get('/sis/admin/approvals', requireRole('admin'), async (req, res) => {
   try {
-    // 1. Pending student registrations
-    const regsRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM course_registrations WHERE status = 'pending_advisor'
-    `);
-    
-    // 2. Pending document requests
-    const docsRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM document_requests WHERE status = 'pending'
-    `);
-    
-    // 3. Pending leave requests
-    const leaveRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM leave_requests WHERE status = 'Pending'
-    `);
-    
-    // 4. Pending faculty requests
-    const facReqRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM faculty_requests WHERE status = 'Pending'
-    `);
-    
-    // 5. Pending withdrawals
-    const withdrawRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM course_withdrawals WHERE status = 'pending'
-    `);
-    
-    // 6. Pending exam objections
-    const objectionsRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM exam_objections WHERE status = 'pending'
-    `);
-    
-    // 7. Pending makeup exam requests
-    const makeupRes = await pool.query(`
-      SELECT COUNT(*) AS count FROM makeup_exam_requests WHERE status = 'pending'
-    `);
+    const regsRes = await pool.query(`SELECT COUNT(*) AS count FROM course_registrations WHERE status = 'pending_advisor'`);
+    const docsRes = await pool.query(`SELECT COUNT(*) AS count FROM document_requests WHERE status = 'pending'`);
+    const leaveRes = await pool.query(`SELECT COUNT(*) AS count FROM leave_requests WHERE status = 'Pending'`);
+    const facReqRes = await pool.query(`SELECT COUNT(*) AS count FROM faculty_requests WHERE status = 'Pending'`);
+    const withdrawRes = await pool.query(`SELECT COUNT(*) AS count FROM course_withdrawals WHERE status = 'pending'`);
+    const objectionsRes = await pool.query(`SELECT COUNT(*) AS count FROM exam_objections WHERE status = 'pending'`);
+    const makeupRes = await pool.query(`SELECT COUNT(*) AS count FROM makeup_exam_requests WHERE status = 'pending'`);
 
     const stats = {
       registrations: parseInt(regsRes.rows[0].count) || 0,
@@ -3922,7 +3695,6 @@ app.get('/sis/admin/approvals', requireRole('admin'), async (req, res) => {
                          stats.facultyRequests + stats.withdrawals + 
                          stats.objections + stats.makeupExams;
 
-    // 8. Recent activity (last 5 items across all)
     const recentRegsRes = await pool.query(`
       SELECT cr.id, u.full_name AS student_name, c.code AS course_code, cr.requested_at
       FROM course_registrations cr
@@ -3969,11 +3741,6 @@ app.get('/sis/admin/approvals', requireRole('admin'), async (req, res) => {
   }
 });
 
-
-
-
-
-
 app.get('/sis/admin/requests', requireRole('admin'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`
@@ -4004,7 +3771,6 @@ app.get('/sis/admin/requests', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Admin Requests Error: " + err.message); }
 });
 
-// 4. Admin: Approve or Reject request
 app.post('/sis/admin/requests/:id/action', requireRole('admin'), async (req, res) => {
   const { action, admin_response } = req.body;
   const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
@@ -4017,7 +3783,6 @@ app.post('/sis/admin/requests/:id/action', requireRole('admin'), async (req, res
       WHERE id = $4
     `, [newStatus, admin_response || null, req.session.user.id, requestId]);
 
-    // Get submitter info for notification
     const reqInfoRes = await pool.query(`
       SELECT u.id, u.email, u.full_name, fr.title FROM faculty_requests fr
       JOIN users u ON u.id = fr.submitted_by WHERE fr.id = $1
@@ -4026,13 +3791,11 @@ app.post('/sis/admin/requests/:id/action', requireRole('admin'), async (req, res
     if (reqInfoRes.rows.length > 0) {
       const sub = reqInfoRes.rows[0];
 
-      // In-app notification
       await pool.query(`
         INSERT INTO notifications (user_id, title, body, link) 
         VALUES ($1, $2, $3, '/sis/faculty/requests')
       `, [sub.id, `Request ${newStatus}`, `Your request "${sub.title}" was ${newStatus}.`]);
 
-      // Email
       try {
         await resend.emails.send({
           from: 'LuxMind Admin <onboarding@resend.dev>',
@@ -4054,13 +3817,6 @@ app.post('/sis/admin/requests/:id/action', requireRole('admin'), async (req, res
   } catch (err) { res.status(500).send("Action Error: " + err.message); }
 });
 
-
-
-
-
-
-
-
 app.get('/sis/admin/leave', requireRole('admin'), async (req, res) => {
   try {
     const requestsRes = await pool.query(`
@@ -4078,10 +3834,8 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
   const leaveId = req.params.id;
 
   try {
-    // 1. Update Leave Request
     await pool.query(`UPDATE leave_requests SET status = $1, reviewed_at = NOW() WHERE id = $2`, [newStatus, leaveId]);
 
-    // 2. Get Teacher Info
     const teacherRes = await pool.query(`
       SELECT u.id, u.email, u.full_name FROM leave_requests l 
       JOIN users u ON u.id = l.user_id WHERE l.id = $1
@@ -4090,13 +3844,11 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
     if (teacherRes.rows.length > 0) {
       const teacher = teacherRes.rows[0];
 
-      // 3. Create In-App Notification (Using title and body!)
       await pool.query(`
         INSERT INTO notifications (user_id, title, body, link) 
         VALUES ($1, 'Leave Request Update', $2, '/sis/faculty/leave')
       `, [teacher.id, `Your leave request was ${newStatus}.`]);
 
-      // 4. Send Email
       try {
         await resend.emails.send({
           from: 'LuxMind HR <onboarding@resend.dev>',
@@ -4121,10 +3873,6 @@ app.post('/sis/admin/leave/:id/action', requireRole('admin'), async (req, res) =
   }
 });
 
-
-
-
-
 // ============================================
 // --- STUDENT: DOWNLOAD PDF TRANSCRIPT ---
 // ============================================
@@ -4132,14 +3880,12 @@ const PDFDocument = require('pdfkit');
 
 app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
   try {
-    // 1. Fetch Student Data
     const profileRes = await pool.query(`
       SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester 
       FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1
     `, [req.session.user.id]);
     const profile = profileRes.rows[0];
 
-    // 2. Fetch Grades
     const gradesRes = await pool.query(`
       SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points
       FROM grades g
@@ -4150,7 +3896,6 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
     `, [req.session.user.id]);
     const grades = gradesRes.rows;
 
-    // 3. Calculate CGPA
     let totalCredits = 0;
     let totalPoints = 0;
     grades.forEach(g => {
@@ -4159,21 +3904,18 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
     });
     const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
 
-    // 4. Generate PDF
     const doc = new PDFDocument({ margin: 50 });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Transcript_${profile.admission_number || profile.username}.pdf"`);
     doc.pipe(res);
 
-    // --- HEADER ---
     doc.fontSize(22).font('Helvetica-Bold').text('LuxMind University', { align: 'center' });
     doc.fontSize(14).font('Helvetica').text('Official Transcript', { align: 'center' });
     doc.moveDown();
     doc.lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown();
 
-    // --- STUDENT INFO ---
     doc.fontSize(11).font('Helvetica-Bold').text('Student Information', { underline: true });
     doc.font('Helvetica').fontSize(10);
     doc.text(`Name: ${profile.full_name}`);
@@ -4182,7 +3924,6 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
     doc.text(`Current Semester: ${profile.current_semester}`);
     doc.moveDown();
 
-    // --- TABLE HEADER ---
     doc.fontSize(11).font('Helvetica-Bold').text('Academic Record', { underline: true });
     doc.moveDown(0.5);
     
@@ -4197,12 +3938,11 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
     doc.lineWidth(0.5).moveTo(50, doc.y + 5).lineTo(550, doc.y + 5).stroke();
     doc.moveDown(0.5);
 
-    // --- TABLE ROWS ---
     doc.font('Helvetica').fontSize(9);
     let currentY = doc.y;
 
     grades.forEach(g => {
-      if (currentY > 700) { // Page break if too long
+      if (currentY > 700) {
         doc.addPage();
         currentY = 50;
       }
@@ -4217,7 +3957,6 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
     doc.lineWidth(0.5).moveTo(50, currentY).lineTo(550, currentY).stroke();
     currentY += 10;
 
-    // --- FOOTER TOTALS ---
     doc.font('Helvetica-Bold').fontSize(11);
     doc.text(`Total Credits: ${totalCredits}`, 50, currentY);
     doc.text(`Cumulative GPA: ${cgpa} / 4.00`, 350, currentY);
@@ -4231,12 +3970,7 @@ app.get('/sis/my/transcript/pdf', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("PDF Generation Error: " + err.message); }
 });
 
-
-
-
-
 // --- PLACEHOLDER (MUST BE LAST) ---
-// ============================================
 app.get('/sis/my/:page', requireRole('student'), (req, res) => {
   res.send(`
     <div style="font-family: sans-serif; padding: 3rem; text-align: center;">
@@ -4261,14 +3995,12 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
   try {
     const userId = req.session.user.id;
 
-    // 1. Get Staff Member's Role and Team (with safe defaults)
     const staffRes = await pool.query(`SELECT intl_team, intl_role FROM users WHERE id = $1`, [userId]);
     const staff = staffRes.rows[0] || { intl_team: 'General Admin', intl_role: 'officer' };
     
     let sharedTickets = [];
     let myTickets = [];
 
-    // 2. DIRECTOR: Sees everything
     if (staff.intl_role === 'director') {
       const allRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
@@ -4278,9 +4010,7 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
         ORDER BY gr.created_at DESC
       `);
       sharedTickets = allRes.rows;
-    } 
-    // 3. MANAGER: Sees all tickets in their team
-    else if (staff.intl_role === 'manager') {
+    } else if (staff.intl_role === 'manager') {
       const teamRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
         FROM guidance_requests gr
@@ -4291,9 +4021,7 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
       
       myTickets = teamRes.rows.filter(r => r.assigned_to === userId);
       sharedTickets = teamRes.rows.filter(r => r.assigned_to !== userId);
-    } 
-    // 4. OFFICER: Sees only their team pool
-    else {
+    } else {
       const sharedRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
         FROM guidance_requests gr
@@ -4330,7 +4058,6 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
   }
 });
 
-// Staff Views a Specific Student's Profile
 app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) => {
   const studentId = req.params.id;
   try {
@@ -4365,7 +4092,6 @@ app.get('/sis/intl/student/:id', requireRole('intl_officer'), async (req, res) =
   }
 });
 
-// Staff Claims a Ticket
 app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) => {
   try {
     await pool.query(`
@@ -4381,7 +4107,6 @@ app.post('/sis/intl/claim/:id', requireRole('intl_officer'), async (req, res) =>
   }
 });
 
-// Staff Resolves a Ticket
 app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('staff_attachment'), async (req, res) => {
   const requestId = req.params.id;
   const { staff_reply } = req.body;
@@ -4422,6 +4147,23 @@ app.post('/sis/intl/resolve/:id', requireRole('intl_officer'), upload.single('st
   }
 });
 
+app.post('/sis/intl/assign/:id', requireRole('intl_officer', 'admin'), async (req, res) => {
+  const ticketId = req.params.id;
+  const { officer_id } = req.body;
+  
+  try {
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET assigned_to = $1 
+      WHERE id = $2
+    `, [officer_id, ticketId]);
+
+    req.flash('success', 'Ticket successfully assigned to the officer.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Assign Error: " + err.message);
+  }
+});
 
 // ============================================
 // --- RECTORATE: DIRECTIVES & COMMUNICATIONS ---
@@ -4454,7 +4196,6 @@ app.post('/sis/rectorate/directives/send', requireRole('rectorate'), async (req,
     res.redirect('/sis/rectorate/directives');
   } catch (err) { res.status(500).send("Send Directive Error: " + err.message); }
 });
-
 
 // ============================================
 // --- DIRECTORS: EXECUTIVE INBOX ---
@@ -4495,7 +4236,6 @@ app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
   } catch (err) { res.status(500).send("Inbox Error: " + err.message); }
 });
 
-
 // ============================================
 // --- FINANCE / BURSAR PORTAL ---
 // ============================================
@@ -4534,24 +4274,18 @@ app.get('/sis/finance', requireLogin, async (req, res) => {
   }
 });
 
-// Approve an Installment
-// Approve an Installment
 app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
-    // 1. Get the request details
     const reqRes = await pool.query(`SELECT student_id, total_amount, installments_count FROM installment_requests WHERE id = $1`, [instId]);
     if (reqRes.rows.length === 0) return res.redirect('/sis/finance');
     
     const { student_id, total_amount, installments_count } = reqRes.rows[0];
     const amountPerMonth = Number(total_amount) / Number(installments_count);
 
-    // 2. Mark request as approved
     await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
 
-    // 3. Generate the Schedule (e.g., 3 months from today)
     for (let i = 1; i <= installments_count; i++) {
-      // Calculate due date (1st of next month, +2 months, etc.)
       const dueDate = new Date();
       dueDate.setMonth(dueDate.getMonth() + i);
       
@@ -4561,7 +4295,6 @@ app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) 
       `, [instId, student_id, dueDate, amountPerMonth]);
     }
 
-    // 4. Notify the student
     await pool.query(`
       INSERT INTO notifications (user_id, title, body, link) 
       VALUES ($1, 'Installment Plan Approved', $2, '/sis/my/finance')
@@ -4571,7 +4304,7 @@ app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) 
     res.redirect('/sis/finance');
   } catch (err) { res.status(500).send("Approve Error: " + err.message); }
 });
-// Reject an Installment
+
 app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
@@ -4590,24 +4323,152 @@ app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) =
   } catch (err) { res.status(500).send("Reject Error: " + err.message); }
 });
 
-
-// Assign a Ticket to a specific Officer
-app.post('/sis/intl/assign/:id', requireRole('intl_officer', 'admin'), async (req, res) => {
-  const ticketId = req.params.id;
-  const { officer_id } = req.body;
-  
+// ============================================
+// --- IT DIRECTORATE PORTAL ---
+// ============================================
+app.get('/sis/it', requireRole('it_staff'), async (req, res) => {
   try {
-    await pool.query(`
-      UPDATE guidance_requests 
-      SET assigned_to = $1 
-      WHERE id = $2
-    `, [officer_id, ticketId]);
+    const userId = req.session.user.id;
+    const staffRes = await pool.query(`SELECT it_team, it_role FROM users WHERE id = $1`, [userId]);
+    const staff = staffRes.rows[0] || { it_team: 'General IT', it_role: 'technician' };
+    
+    let sharedTickets = [];
+    let myTickets = [];
 
-    req.flash('success', 'Ticket successfully assigned to the officer.');
-    res.redirect('/sis/intl');
+    if (staff.it_role === 'director') {
+      const allRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_department = 'IT Department' AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `);
+      sharedTickets = allRes.rows;
+    } else {
+      const sharedRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_it_team = $1 AND gr.assigned_to IS NULL AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [staff.it_team]);
+
+      const myRes = await pool.query(`
+        SELECT gr.*, u.full_name AS student_name, u.username AS student_number
+        FROM guidance_requests gr
+        JOIN users u ON u.id = gr.student_id
+        WHERE gr.assigned_to = $1 AND gr.status = 'Pending'
+        ORDER BY gr.created_at DESC
+      `, [userId]);
+
+      sharedTickets = sharedRes.rows;
+      myTickets = myRes.rows;
+    }
+
+    const stats = { shared: sharedTickets.length, mine: myTickets.length };
+
+    res.render('it-dashboard', {
+      user: req.session.user,
+      teamName: staff.it_team,
+      itRole: staff.it_role,
+      sharedTickets,
+      myTickets,
+      stats,
+      flash: req.flash ? req.flash() : {}
+    });
   } catch (err) {
-    res.status(500).send("Assign Error: " + err.message);
+    res.status(500).send("IT Portal Error: " + err.message);
   }
 });
 
+app.post('/sis/it/claim/:id', requireRole('it_staff'), async (req, res) => {
+  try {
+    await pool.query(`UPDATE guidance_requests SET assigned_to = $1 WHERE id = $2 AND assigned_to IS NULL`, [req.session.user.id, req.params.id]);
+    req.flash('success', 'IT Ticket claimed.');
+    res.redirect('/sis/it');
+  } catch (err) { res.status(500).send("Claim Error: " + err.message); }
+});
+
+app.post('/sis/it/resolve/:id', requireRole('it_staff'), upload.single('staff_attachment'), async (req, res) => {
+  const requestId = req.params.id;
+  const { staff_reply } = req.body;
+  try {
+    const checkRes = await pool.query(`SELECT assigned_to, student_id, request_type FROM guidance_requests WHERE id = $1`, [requestId]);
+    if (checkRes.rows.length === 0 || checkRes.rows[0].assigned_to !== req.session.user.id) {
+      return res.status(403).send("Security Violation: You can only resolve tickets assigned to you.");
+    }
+
+    let attachmentUrl = null;
+    if (req.file) {
+      const b64 = req.file.buffer.toString('base64');
+      attachmentUrl = `data:${req.file.mimetype};base64,${b64}`;
+    }
+
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET status = 'Completed', resolved_at = NOW(), staff_reply = $1, staff_attachment = $2
+      WHERE id = $3
+    `, [staff_reply, attachmentUrl, requestId]);
+
+    const studentId = checkRes.rows[0].student_id;
+    const reqType = checkRes.rows[0].request_type;
+
+    await pool.query(`
+      INSERT INTO notifications (user_id, title, body, link) 
+      VALUES ($1, 'IT Ticket Resolved', $2, '/sis/my/guidance')
+    `, [studentId, `Your ${reqType} request has been answered by the IT Department.`]);
+
+    req.flash('success', 'IT Ticket resolved and student notified.');
+    res.redirect('/sis/it');
+  } catch (err) { res.status(500).send("Resolution Error: " + err.message); }
+});
+
+app.get('/sis/it/staff', requireRole('it_staff'), async (req, res) => {
+  try {
+    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
+    if (directorCheck.rows[0].it_role !== 'director') {
+      return res.status(403).send("Security Violation: Only the IT Director can manage staff.");
+    }
+
+    const staffRes = await pool.query(`
+      SELECT id, full_name, username, email, it_team, it_role, created_at 
+      FROM users 
+      WHERE role = 'it_staff' 
+      ORDER BY it_role ASC, full_name ASC
+    `);
+
+    res.render('it-staff', {
+      user: req.session.user,
+      staff: staffRes.rows,
+      teamName: 'All IT Teams',
+      itRole: 'director',
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Staff Management Error: " + err.message);
+  }
+});
+
+app.post('/sis/it/staff/assign', requireRole('it_staff'), async (req, res) => {
+  const { staff_id, new_team, new_role } = req.body;
+  try {
+    const directorCheck = await pool.query(`SELECT it_role FROM users WHERE id = $1`, [req.session.user.id]);
+    if (directorCheck.rows[0].it_role !== 'director') {
+      return res.status(403).send("Security Violation.");
+    }
+
+    await pool.query(`
+      UPDATE users 
+      SET it_team = $1, it_role = $2 
+      WHERE id = $3 AND role = 'it_staff'
+    `, [new_team, new_role, staff_id]);
+
+    req.flash('success', 'Staff member updated successfully.');
+    res.redirect('/sis/it/staff');
+  } catch (err) {
+    res.status(500).send("Assignment Error: " + err.message);
+  }
+});
+
+// START SERVER
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

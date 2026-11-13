@@ -4257,7 +4257,7 @@ app.use((err, req, res, next) => {
 // ============================================
 // --- INTERNATIONAL OFFICE PORTAL ---
 // ============================================
-app.get('/sis/intl', requireRole('intl_officer'), async (req, res) => {
+app.get('/sis/intl', requireLogin, async (req, res) => {
   try {
     const userId = req.session.user.id;
 

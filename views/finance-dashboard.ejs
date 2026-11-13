@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance & Bursar | LuxMind Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #0f172a; 
+      --navy-2: #1e293b;
+      --page: #f4f6fa; 
+      --surface: #fff; 
+      --surface-soft: #f8fafc;
+      --text: #172238; 
+      --muted: #718096; 
+      --line: #e6ebf2; 
+      --blue: #3b82f6; 
+      --emerald: #10b981;
+      --emerald-soft: #ecfdf5;
+      --red: #ef4444;
+      --red-soft: #fef2f2;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); 
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    button, input, textarea, select { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    
+    /* SIDEBAR */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 7px 18px rgba(16,185,129,.3); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: var(--emerald); font-size: 10px; font-weight: 700; letter-spacing: 1.35px; text-transform: uppercase; }
+    .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
+    .nav-group { padding: 23px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; transition: .18s ease; }
+    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { background: rgba(16,185,129,.15); box-shadow: inset 3px 0 #10b981; }
+    .nav-link.active i { color: #10b981; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; } .nav-link.logout i { color: #ff9aa3; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    
+    /* MAIN */
+    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+    .eyebrow { margin: 0 0 7px; color: var(--emerald); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
+    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
+    .role-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; background: var(--emerald-soft); color: var(--emerald); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-left: 8px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
+    
+    .alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; padding: 14px 16px; border: 1px solid #bcebd6; border-radius: 12px; color: #176b4d; background: var(--emerald-soft); font-size: 12px; font-weight: 600; }
+    .alert.error { border-color: #fca5a5; color: #b91c1c; background: var(--red-soft); }
+    
+    /* TABLES */
+    .section { margin-top: 30px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-title { margin: 0; color: #1b2942; font: 800 16px "Manrope", sans-serif; display: flex; align-items: center; gap: 8px; }
+    
+    .table-container { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
+    .data-table th { background: var(--surface-soft); padding: 15px 20px; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    .data-table td { padding: 15px 20px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 500; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover { background: #f8fafc; }
+    
+    .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-approve { background: var(--emerald); color: #fff; }
+    .btn-approve:hover { background: #059669; }
+    .btn-reject { background: var(--red-soft); color: var(--red); border: 1px solid #fca5a5; }
+    .btn-reject:hover { background: #fee2e2; }
+    
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .badge.approved { background: var(--emerald-soft); color: var(--emerald); }
+    .badge.rejected { background: var(--red-soft); color: var(--red); }
+
+    .empty-state { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; background: #fff; border-radius: var(--radius); border: 1px dashed var(--line); }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .overlay.open { display: block; }
+      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-vault"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Finance</div>
+        <div class="brand-subtitle">Bursar Office</div>
+      </div>
+    </div>
+    <div class="team-chip">
+      <small><%= financeRole %> Access</small>
+      <strong><%= teamName %></strong>
+    </div>
+    
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Operations</div>
+        <a href="/sis/finance" class="nav-link active"><i class="fa-solid fa-chart-line"></i><span>Finance Dashboard</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Student Accounts</div>
+        <a href="#" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Invoices & Ledgers</span></a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-handshake"></i><span>Installment Plans</span></a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-money-check-dollar"></i><span>Scholarships</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Reports</div>
+        <a href="#" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Revenue Analytics</span></a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i><span>Overdue Accounts</span></a>
+      </div>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <p class="eyebrow">Finance & Bursar / <%= teamName %></p>
+          <h1>
+            Finance Workstation 
+            <% if (financeRole === 'manager') { %>
+              <span class="role-badge"><i class="fa-solid fa-shield-halved"></i> Manager</span>
+            <% } %>
+          </h1>
+          <p class="welcome">Welcome back, <strong><%= user.full_name %></strong>.</p>
+        </div>
+      </div>
+    </header>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert"><i class="fa-solid fa-circle-check"></i> <%= flash.success[0] %></div>
+    <% } %>
+    <% if (flash.error && flash.error.length > 0) { %>
+      <div class="alert error"><i class="fa-solid fa-circle-exclamation"></i> <%= flash.error[0] %></div>
+    <% } %>
+
+    <!-- PENDING INSTALLMENTS TABLE -->
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--emerald);"></i> Pending Installment Requests</h2>
+      </div>
+      
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Program</th>
+              <th>Amount Requested</th>
+              <th>Plan</th>
+              <th>Date Submitted</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (pendingInstallments.length === 0) { %>
+              <tr><td colspan="6"><div class="empty-state">No pending installment requests. Great job!</div></td></tr>
+            <% } %>
+            
+            <% pendingInstallments.forEach(inst => { %>
+              <tr>
+                <td>
+                  <div style="font-weight: 800; color: var(--text);"><%= inst.student_name %></div>
+                  <div style="font-size: 11px; color: var(--muted);"><%= inst.student_number %></div>
+                </td>
+                <td><%= inst.class_level || 'N/A' %></td>
+                <td><strong style="color: var(--emerald); font-size: 14px;">$<%= Number(inst.total_amount).toFixed(2) %></strong></td>
+                <td><%= inst.installments_count %> Months</td>
+                <td><%= new Date(inst.created_at).toLocaleDateString() %></td>
+                <td style="text-align: right;">
+                  <form action="/sis/finance/installment/<%= inst.id %>/approve" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-approve"><i class="fa-solid fa-check"></i> Approve</button>
+                  </form>
+                  <form action="/sis/finance/installment/<%= inst.id %>/reject" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- HISTORY TABLE -->
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title"><i class="fa-solid fa-list-check" style="color:var(--blue);"></i> Recent Decisions</h2>
+      </div>
+      
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Processed Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (history.length === 0) { %>
+              <tr><td colspan="4"><div class="empty-state">No recent history available.</div></td></tr>
+            <% } %>
+            
+            <% history.forEach(h => { %>
+              <tr>
+                <td>
+                  <div style="font-weight: 800;"><%= h.student_name %></div>
+                  <div style="font-size: 11px; color: var(--muted);"><%= h.student_number %></div>
+                </td>
+                <td><strong>$<%= Number(h.total_amount).toFixed(2) %></strong></td>
+                <td><span class="badge <%= h.status %>"><%= h.status %></span></td>
+                <td><%= new Date(h.created_at).toLocaleDateString() %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+  </script>
+</body>
+</html>

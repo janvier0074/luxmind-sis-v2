@@ -124,7 +124,8 @@ app.post('/login', async (req, res) => {
         }
       } catch (e) { /* table may not exist yet, ignore */ }
 
-            if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
+            if (req.session.user.role === 'intl_officer')
+      if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance'); return res.redirect('/sis/intl');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');
@@ -4537,6 +4538,84 @@ app.get('/sis/intl/inbox', requireRole('intl_officer'), async (req, res) => {
       directives: inboxRes.rows
     });
   } catch (err) { res.status(500).send("Inbox Error: " + err.message); }
+});
+
+// ============================================
+// --- FINANCE / BURSAR PORTAL ---
+// ============================================
+app.get('/sis/finance', requireRole('finance_staff'), async (req, res) => {
+  try {
+    const staffRes = await pool.query(`SELECT finance_role, finance_team FROM users WHERE id = $1`, [req.session.user.id]);
+    const staff = staffRes.rows[0] || { finance_role: 'officer', finance_team: 'Bursar Office' };
+
+    // Fetch all pending installment requests with student details
+    const instRes = await pool.query(`
+      SELECT ir.*, u.full_name AS student_name, u.username AS student_number, sp.class_level
+      FROM installment_requests ir
+      JOIN users u ON u.id = ir.student_id
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE ir.status = 'pending'
+      ORDER BY ir.created_at DESC
+    `);
+
+    // Fetch recently processed requests (for history)
+    const historyRes = await pool.query(`
+      SELECT ir.*, u.full_name AS student_name, u.username AS student_number
+      FROM installment_requests ir
+      JOIN users u ON u.id = ir.student_id
+      WHERE ir.status != 'pending'
+      ORDER BY ir.created_at DESC LIMIT 10
+    `);
+
+    res.render('finance-dashboard', {
+      user: req.session.user,
+      financeRole: staff.finance_role,
+      teamName: staff.finance_team,
+      pendingInstallments: instRes.rows,
+      history: historyRes.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("<pre style='color:red; font-size:20px; padding:20px;'>ERROR: " + err.message + "</pre>");
+  }
+});
+
+// Approve an Installment
+app.post('/sis/finance/installment/:id/approve', requireRole('finance_staff'), async (req, res) => {
+  const instId = req.params.id;
+  try {
+    await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
+    
+    const reqRes = await pool.query(`SELECT student_id, total_amount FROM installment_requests WHERE id = $1`, [instId]);
+    if (reqRes.rows.length > 0) {
+      await pool.query(`
+        INSERT INTO notifications (user_id, title, body, link) 
+        VALUES ($1, 'Installment Approved', $2, '/sis/my/finance')
+      `, [reqRes.rows[0].student_id, `Your installment plan for $${Number(reqRes.rows[0].total_amount).toFixed(2)} has been approved. You can now register for classes.`]);
+    }
+
+    req.flash('success', 'Installment approved and student notified.');
+    res.redirect('/sis/finance');
+  } catch (err) { res.status(500).send("Approve Error: " + err.message); }
+});
+
+// Reject an Installment
+app.post('/sis/finance/installment/:id/reject', requireRole('finance_staff'), async (req, res) => {
+  const instId = req.params.id;
+  try {
+    await pool.query(`UPDATE installment_requests SET status = 'rejected' WHERE id = $1`, [instId]);
+    
+    const reqRes = await pool.query(`SELECT student_id FROM installment_requests WHERE id = $1`, [instId]);
+    if (reqRes.rows.length > 0) {
+      await pool.query(`
+        INSERT INTO notifications (user_id, title, body, link) 
+        VALUES ($1, 'Installment Rejected', 'Your installment request was rejected. Please visit the Finance Office.', '/sis/my/finance')
+      `, [reqRes.rows[0].student_id]);
+    }
+
+    req.flash('error', 'Installment rejected.');
+    res.redirect('/sis/finance');
+  } catch (err) { res.status(500).send("Reject Error: " + err.message); }
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

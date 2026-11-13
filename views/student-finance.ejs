@@ -56,6 +56,7 @@
     .installment-card { background: #fff; padding: 1.5rem; border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--frost); margin-bottom: 2rem; }
     .form-control { width: 100%; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: var(--ice); outline: none; font-size: 0.9rem; margin-bottom: 0.5rem;}
     .btn-pay { background: var(--navy); color: #fff; padding: 0.7rem 1.2rem; border-radius: 8px; border: none; font-weight: 800; font-size: 0.85rem; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn-pay:hover { opacity: 0.9; }
 
     .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
@@ -105,6 +106,11 @@
     <% if (flash.success && flash.success.length > 0) { %>
       <div style="background: #dcfce7; color: #16a34a; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700;">
         <i class="fas fa-check-circle"></i> <%= flash.success[0] %>
+      </div>
+    <% } %>
+    <% if (flash.error && flash.error.length > 0) { %>
+      <div style="background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700;">
+        <i class="fas fa-exclamation-circle"></i> <%= flash.error[0] %>
       </div>
     <% } %>
 
@@ -206,7 +212,7 @@
       </table>
     </div>
 
-    <!-- INSTALLMENT SCHEDULE TABLE -->
+    <!-- ✅ STEP 2: INSTALLMENT SCHEDULE TABLE WITH PAY BUTTONS -->
     <% if (typeof schedule !== 'undefined' && schedule.length > 0) { %>
       <div class="table-container" style="margin-top: 2rem; border-color: <%= hasOverdue ? 'var(--danger)' : 'var(--frost)' %>;">
         <div style="padding: 1rem; border-bottom: 1px solid var(--frost); background: <%= hasOverdue ? '#fef2f2' : '#f8fafc' %>; display: flex; justify-content: space-between; align-items: center;">
@@ -223,22 +229,38 @@
               <th>Installment</th>
               <th>Due Date</th>
               <th>Amount</th>
-              <th>Status</th>
+              <th>Status / Action</th>
             </tr>
           </thead>
           <tbody>
             <% schedule.forEach((s, index) => { %>
-              <tr style="<%= s.status === 'overdue' ? 'background: #fef2f2;' : '' %>">
+              <tr style="<%= s.status === 'overdue' ? 'background: #fef2f2;' : (s.status === 'paid' ? 'background: #f0fdf4;' : '') %>">
                 <td><strong>#<%= index + 1 %></strong></td>
                 <td><%= new Date(s.due_date).toLocaleDateString() %></td>
                 <td><strong>$<%= Number(s.amount).toFixed(2) %></strong></td>
                 <td>
                   <% if (s.status === 'unpaid') { %>
-                    <span style="color: var(--amber); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-clock"></i> Unpaid</span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                      <span style="color: var(--amber); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-clock"></i> Unpaid</span>
+                      <form method="POST" action="/sis/my/finance/pay" style="display: inline;">
+                        <input type="hidden" name="installment_id" value="<%= s.id %>">
+                        <button type="submit" style="background: var(--blue); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.7rem; cursor: pointer; white-space: nowrap;">
+                          <i class="fas fa-credit-card"></i> Pay $<%= Number(s.amount).toFixed(2) %>
+                        </button>
+                      </form>
+                    </div>
                   <% } else if (s.status === 'overdue') { %>
-                    <span style="color: var(--danger); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                      <span style="color: var(--danger); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+                      <form method="POST" action="/sis/my/finance/pay" style="display: inline;">
+                        <input type="hidden" name="installment_id" value="<%= s.id %>">
+                        <button type="submit" style="background: var(--danger); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.7rem; cursor: pointer; white-space: nowrap;">
+                          <i class="fas fa-credit-card"></i> Pay Now $<%= Number(s.amount).toFixed(2) %>
+                        </button>
+                      </form>
+                    </div>
                   <% } else { %>
-                    <span style="color: var(--success); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-check"></i> Paid</span>
+                    <span style="color: var(--success); font-weight: 800; font-size: 0.8rem;"><i class="fas fa-check-circle"></i> Paid</span>
                   <% } %>
                 </td>
               </tr>
@@ -251,14 +273,37 @@
     <!-- ACTIONS: PAY & INSTALLMENTS -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
       
-      <!-- QUICK PAY -->
+      <!-- ✅ STEP 3: IMPROVED QUICK PAYMENT CARD -->
       <% if (currentDebt > 0) { %>
         <div class="installment-card">
-          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 1rem; color: var(--navy);">Quick Payment</h3>
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--navy);">
+            <i class="fas fa-bolt" style="color: var(--amber);"></i> Quick Payment
+          </h3>
+          <p style="font-size: 0.75rem; color: #64748b; margin-bottom: 1rem;">
+            <% if (typeof schedule !== 'undefined' && schedule.some(s => s.status !== 'paid')) { %>
+              You have <strong><%= schedule.filter(s => s.status !== 'paid').length %> unpaid installment(s)</strong>. Pay them individually in the schedule above, or make a general payment below.
+            <% } else { %>
+              Make a general payment toward your tuition balance.
+            <% } %>
+          </p>
           <form method="POST" action="/sis/my/finance/pay" style="display: flex; gap: 1rem;">
-            <input type="number" name="amount" value="<%= currentDebt %>" max="<%= currentDebt %>" min="1" required style="flex: 1; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit;">
-            <button type="submit" class="btn-pay" style="width: auto; padding: 0 1.5rem;">Pay Now</button>
+            <input type="number" name="amount" value="<%= currentDebt %>" max="<%= currentDebt %>" min="1" step="0.01" required style="flex: 1; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit;">
+            <button type="submit" class="btn-pay" style="width: auto; padding: 0 1.5rem; white-space: nowrap;">
+              <i class="fas fa-credit-card"></i> Pay Now
+            </button>
           </form>
+          <div style="margin-top: 0.75rem; padding: 0.6rem 0.75rem; background: #fef3c7; border-radius: 6px; font-size: 0.7rem; color: #92400e; font-weight: 600;">
+            <i class="fas fa-info-circle"></i> General payments do not automatically mark installments as paid. Use the Pay buttons in the schedule above for accurate tracking.
+          </div>
+        </div>
+      <% } else { %>
+        <div class="installment-card" style="background: #ecfdf5; border-color: var(--success);">
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--success);">
+            <i class="fas fa-check-circle"></i> Account Fully Paid
+          </h3>
+          <p style="font-size: 0.85rem; color: #065f46; font-weight: 600;">
+            Your tuition balance is clear. You have no outstanding debt at this time.
+          </p>
         </div>
       <% } %>
 
@@ -339,7 +384,6 @@
       }
     }
 
-    // Installment Calendar Preview
     const SEMESTER_END = '<%= semesterEndDate || "" %>';
     const CURRENT_DEBT = <%= Number(currentDebt) || 0 %>;
 

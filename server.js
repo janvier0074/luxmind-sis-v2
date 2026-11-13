@@ -715,13 +715,34 @@ app.post('/sis/my/finance/installment/request', requireRole('student'), async (r
 });
 
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
+  const { installment_id, amount } = req.body;
   try {
-    await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(req.body.amount)]);
-    req.flash('success', `Payment of $${req.body.amount} processed successfully.`);
-    const returnTo = req.session.returnTo || '/sis/my/finance';
-    delete req.session.returnTo;
-    res.redirect(returnTo);
-  } catch (err) { res.status(500).send("Error: " + err.message); }
+    // If paying a specific installment, mark it as paid
+    if (installment_id) {
+      const schedRes = await pool.query(`SELECT * FROM installment_schedules WHERE id = $1 AND student_id = $2 AND status != 'paid'`, [installment_id, req.session.user.id]);
+      if (schedRes.rows.length > 0) {
+        const inst = schedRes.rows[0];
+        
+        // 1. Record payment
+        await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(inst.amount)]);
+        
+        // 2. Mark schedule as paid
+        await pool.query(`UPDATE installment_schedules SET status = 'paid' WHERE id = $1`, [installment_id]);
+        
+        req.flash('success', `Installment #${installment_id} paid: $${Number(inst.amount).toFixed(2)}`);
+        return res.redirect('/sis/my/finance');
+      }
+      req.flash('error', 'Installment not found or already paid.');
+      return res.redirect('/sis/my/finance');
+    }
+
+    // Fallback: General payment (no installment tied)
+    await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(amount)]);
+    req.flash('success', `Payment of $${amount} processed successfully.`);
+    res.redirect('/sis/my/finance');
+  } catch (err) { 
+    res.status(500).send("Payment Error: " + err.message); 
+  }
 });
 
 // ============================================

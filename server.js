@@ -351,16 +351,9 @@ app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Transcript Error: " + err.message); }
 });
 
-// ============================================
-// --- COURSE REGISTRATION ---
-// ============================================
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
-
-
-
-
-           // 1. CHECK FOR FINANCIAL HOLD (CIU LOGIC)
+    // 1. CHECK FOR FINANCIAL HOLD (CIU LOGIC)
     const feeRes = await pool.query(`
       SELECT COALESCE(fs.amount, 0) AS amount_billed,
              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
@@ -369,20 +362,22 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       WHERE sp.user_id = $1
     `, [req.session.user.id]);
 
-       const instRes = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
-    const hasApprovedInstallment = instRes.rows.length > 0;
+    if (feeRes.rows.length > 0) {
+      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
+      
+      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+      const hasApprovedInstallment2 = instRes2.rows.length > 0;
 
-    if (debt > 0 && !hasApprovedInstallment) {
-      req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
-      req.session.returnTo = '/sis/my/registration';
-      return res.redirect('/sis/my/finance');
+      if (debt > 0 && !hasApprovedInstallment2) {
+        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+        return res.redirect('/sis/my/finance');
+      }
     }
-    
 
+    // 2. EXISTING REGISTRATION LOGIC
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
-    // 1. Get courses, their sections, and current capacity
     const coursesRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota,
              s.id as section_id, s.day_of_week, s.start_time, s.end_time,
@@ -393,7 +388,6 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       ORDER BY c.semester_number ASC
     `);
 
-    // 2. Get student's passed courses (for prerequisites)
     const passedRes = await pool.query(`
       SELECT c.id FROM grades g 
       JOIN course_sections s ON s.id = g.section_id 
@@ -402,36 +396,31 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     `, [req.session.user.id]);
     const passedCourseIds = passedRes.rows.map(r => r.id);
 
-    // 3. Get student's current cart and enrolled schedule (for conflicts)
     const enrolledRes = await pool.query(`
       SELECT c.id, s.day_of_week, s.start_time, s.end_time 
       FROM enrollments e JOIN courses c ON c.id = e.course_id LEFT JOIN course_sections s ON s.id = e.section_id WHERE e.user_id = $1
       UNION
       SELECT c.id, s.day_of_week, s.start_time, s.end_time 
-      FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.id = c.id WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+      FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
     `, [req.session.user.id]);
 
     const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
     const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
 
-    // 4. Calculate eligibility for each course
     const processedCourses = coursesRes.rows.map(course => {
       let isEligible = true;
       let reason = '';
 
-      // Check Quota
       if (course.enrolled_count >= course.quota) {
         isEligible = false;
         reason = 'Section Full';
       }
 
-      // Check Prerequisite
       if (course.prerequisite_id && !passedCourseIds.includes(course.prerequisite_id)) {
         isEligible = false;
         reason = 'Missing Prerequisite';
       }
 
-      // Check Schedule Conflict
       if (course.day_of_week && course.start_time) {
         const conflict = enrolledRes.rows.find(e => 
           e.id !== course.id && 
@@ -448,7 +437,9 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     });
 
     res.render('registration', { user: req.session.user, courses: processedCourses, cart: cartRes.rows, pending: pendingRes.rows, hasRegistered });
-  } catch (err) { res.status(500).send("Registration Error: " + err.message); }
+  } catch (err) { 
+    res.status(500).send("Registration Error: " + err.message); 
+  }
 });
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {

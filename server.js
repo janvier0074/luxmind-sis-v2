@@ -325,15 +325,25 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       overdueTotal: overdueTotal
     };
 
+       // ✅ Fix: only count announcements NEWER than last view
     const newAnnCount = await pool.query(`
       SELECT COUNT(*) FROM course_announcements a
       JOIN course_sections s ON s.id = a.section_id
       JOIN enrollments e ON e.section_id = s.id
-      WHERE e.user_id = $1 AND a.created_at > NOW() - INTERVAL '7 days'
+      WHERE e.user_id = $1 
+      AND a.created_at > COALESCE(
+        (SELECT last_announcements_view_at FROM users WHERE id = $1),
+        NOW() - INTERVAL '7 days'
+      )
     `, [req.session.user.id]);
+    
     const globalAnnCount = await pool.query(`
-      SELECT COUNT(*) FROM global_announcements WHERE created_at > NOW() - INTERVAL '7 days'
-    `);
+      SELECT COUNT(*) FROM global_announcements 
+      WHERE created_at > COALESCE(
+        (SELECT last_announcements_view_at FROM users WHERE id = $1),
+        NOW() - INTERVAL '7 days'
+      )
+    `, [req.session.user.id]);
 
     const targetedRes = await pool.query(`
       SELECT * FROM targeted_announcements 
@@ -2487,10 +2497,14 @@ app.post('/sis/faculty/announcements/new', requireRole('teacher', 'advisor'), as
 app.get('/sis/my/announcements', requireRole('student'), async (req, res) => {
   try {
     const annRes = await pool.query(`SELECT a.*, c.code as course_code, c.title as course_title, u.full_name as teacher_name FROM course_announcements a JOIN course_sections s ON s.id = a.section_id JOIN courses c ON c.id = s.course_id JOIN users u ON u.id = a.teacher_id JOIN enrollments e ON e.section_id = s.id WHERE e.user_id = $1 ORDER BY a.created_at DESC`, [req.session.user.id]);
+    
+    await pool.query(`
+      UPDATE users SET last_announcements_view_at = NOW() WHERE id = $1
+    `, [req.session.user.id]);
+    
     res.render('student-announcements', { user: req.session.user, announcements: annRes.rows });
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
-
 // ============================================
 // --- MESSAGING SYSTEM ---
 // ============================================
@@ -2601,6 +2615,11 @@ app.post('/sis/admin/announcements/new', requireRole('admin'), async (req, res) 
 app.get('/sis/announcements', requireLogin, async (req, res) => {
   try {
     const annRes = await pool.query(`SELECT * FROM global_announcements ORDER BY created_at DESC`);
+    
+    await pool.query(`
+      UPDATE users SET last_announcements_view_at = NOW() WHERE id = $1
+    `, [req.session.user.id]);
+    
     res.render('global-announcements', { user: req.session.user, announcements: annRes.rows });
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });

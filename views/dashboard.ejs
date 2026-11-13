@@ -16,7 +16,7 @@
       --success: #1f8a5f; --danger: #b33e2e;
       --shadow-soft: 0 8px 20px -6px rgba(10, 30, 50, 0.12);
       --shadow-hover: 0 15px 30px -10px rgba(10, 30, 50, 0.18);
-      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);f
     }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -512,6 +512,23 @@
           <i class="fas fa-user-circle"></i>
           <%= user.admission_number || user.username %>
         </div>
+        <!-- ✅ NOTIFICATION BELL -->
+        <div class="notification-bell-wrapper" style="position: relative;">
+          <button id="notifBell" onclick="toggleNotifDropdown()" style="background: #fff; border: 1px solid var(--frost); border-radius: 100px; padding: 0.55rem 0.9rem; cursor: pointer; position: relative; box-shadow: var(--shadow-soft); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-bell" style="color: var(--amber); font-size: 1rem;"></i>
+            <span id="notifCount" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.65rem; font-weight: 800; display: none; align-items: center; justify-content: center; border: 2px solid #fff;">0</span>
+          </button>
+          
+          <div id="notifDropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 0.5rem; width: 380px; max-height: 500px; overflow-y: auto; background: #fff; border: 1px solid var(--frost); border-radius: 12px; box-shadow: 0 10px 40px rgba(10,30,50,0.15); z-index: 999; padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--frost);">
+              <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--navy);">Notifications</h3>
+              <button onclick="markAllAsRead()" style="background: transparent; border: none; color: var(--blue); font-size: 0.7rem; font-weight: 700; cursor: pointer;">Mark all read</button>
+            </div>
+            <div id="notifList" style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <p style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem;">Loading...</p>
+            </div>
+          </div>
+        </div>
         <a href="/logout" class="logout-pill">
           <i class="fas fa-sign-out-alt"></i> <%= lang.logout || 'Logout' %>
         </a>
@@ -621,6 +638,86 @@
         ov.classList.toggle('active');
       }
     }
+    // ==========================================
+    // NOTIFICATIONS SYSTEM
+    // ==========================================
+    
+    function toggleNotifDropdown() {
+      const dropdown = document.getElementById('notifDropdown');
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+        loadNotifications();
+      } else {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch('/api/notifications');
+        const data = await res.json();
+        
+        // Update badge
+        const badge = document.getElementById('notifCount');
+        if (data.unreadCount > 0) {
+          badge.textContent = data.unreadCount > 9 ? '9+' : data.unreadCount;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+        
+        // Render list
+        const list = document.getElementById('notifList');
+        if (data.notifications.length === 0) {
+          list.innerHTML = '<p style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem;">No notifications</p>';
+          return;
+        }
+        
+        list.innerHTML = data.notifications.map(n => `
+          <div onclick="openNotification(${n.id}, '${n.link || '/sis/my'}')" style="padding: 0.75rem; border-radius: 8px; background: ${n.is_read ? '#f8fafc' : '#eff6ff'}; border: 1px solid ${n.is_read ? 'var(--frost)' : '#bfdbfe'}; cursor: pointer; transition: 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="flex: 1;">
+                <div style="font-size: 0.8rem; font-weight: 800; color: ${n.is_read ? '#64748b' : 'var(--navy)'}; margin-bottom: 0.2rem;">
+                  ${!n.is_read ? '● ' : ''}${n.title}
+                </div>
+                <div style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">${n.body}</div>
+                <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 0.3rem;">${new Date(n.created_at).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    }
+
+    async function openNotification(id, link) {
+      try {
+        await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+      } catch (err) {}
+      window.location.href = link;
+    }
+
+    async function markAllAsRead() {
+      try {
+        await fetch('/api/notifications/read-all', { method: 'POST' });
+        loadNotifications();
+      } catch (err) {}
+    }
+
+    // Load notifications on page load
+    loadNotifications();
+
+    // Poll for new notifications every 30 seconds
+    setInterval(loadNotifications, 30000);
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const wrapper = document.querySelector('.notification-bell-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('notifDropdown').style.display = 'none';
+      }
+    });
   </script>
 
 </body>

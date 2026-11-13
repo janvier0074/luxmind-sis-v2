@@ -4590,4 +4590,24 @@ app.post('/sis/finance/installment/:id/reject', requireLogin, async (req, res) =
   } catch (err) { res.status(500).send("Reject Error: " + err.message); }
 });
 
+
+// Assign a Ticket to a specific Officer
+app.post('/sis/intl/assign/:id', requireRole('intl_officer', 'admin'), async (req, res) => {
+  const ticketId = req.params.id;
+  const { officer_id } = req.body;
+  
+  try {
+    await pool.query(`
+      UPDATE guidance_requests 
+      SET assigned_to = $1 
+      WHERE id = $2
+    `, [officer_id, ticketId]);
+
+    req.flash('success', 'Ticket successfully assigned to the officer.');
+    res.redirect('/sis/intl');
+  } catch (err) {
+    res.status(500).send("Assign Error: " + err.message);
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

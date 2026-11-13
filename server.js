@@ -576,30 +576,35 @@ app.get('/sis/my/documents/view/:id', requireRole('student'), async (req, res) =
 // ============================================
 app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
   try {
+    // 1. STUDENT PROFILE
     const profileRes = await pool.query(`SELECT u.full_name, u.username, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
+    // 2. SCHOLARSHIP ENGINE
     let scholarshipPercentage = 0;
     let scholarshipName = 'None';
-
     if (student.is_international) { scholarshipPercentage = 50; scholarshipName = 'International Scholarship'; }
     if (student.high_school_gpa >= 3.0 && student.high_school_gpa < 3.5) { scholarshipPercentage = 75; scholarshipName = 'Honor Scholarship'; }
     if (student.high_school_gpa >= 3.5 && student.high_school_gpa < 3.8) { scholarshipPercentage = 90; scholarshipName = 'High Honor Scholarship'; }
     if (student.high_school_gpa >= 3.8) { scholarshipPercentage = 100; scholarshipName = 'Full Merit Scholarship'; }
 
+    // 3. CURRENT SEMESTER FEE
     const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
     const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
     const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
     const netTuition = baseTuition - scholarshipAmount;
 
+    // 4. NEXT SEMESTER FEE (Approaching Debt)
     const nextSem = Number(student.current_semester) + 1;
     const nextFeeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, nextSem]);
     const nextBaseTuition = nextFeeRes.rows.length > 0 ? Number(nextFeeRes.rows[0].amount) : 0;
     const nextNetTuition = nextBaseTuition - ((nextBaseTuition * scholarshipPercentage) / 100);
 
+    // 5. PAYMENTS
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaid = Number(paidRes.rows[0].total);
 
+    // 6. BUILD TRANSACTIONS LEDGER
     const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
     
     let transactions = paymentsRes.rows.map(p => ({
@@ -628,20 +633,37 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     
     transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+    // 7. INSTALLMENT REQUESTS
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
+    // 8. DEBT MATH
     const currentDebt = netTuition - totalPaid;
     const approachingDebt = currentDebt > 0 ? 0 : nextNetTuition;
     const totalDebt = currentDebt + approachingDebt;
 
+    // 9. AUTO-FLAG OVERDUE PAYMENTS
     await pool.query(`
       UPDATE installment_schedules 
       SET status = 'overdue' 
       WHERE student_id = $1 AND status = 'unpaid' AND due_date < CURRENT_DATE
     `, [req.session.user.id]);
 
+    // 10. CALCULATE OVERDUE AMOUNT
+    const overdueRes = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0) as total_overdue
+      FROM installment_schedules 
+      WHERE student_id = $1 AND status = 'overdue'
+    `, [req.session.user.id]);
+    const overdueAmount = Number(overdueRes.rows[0].total_overdue);
+
+    // 11. SEMESTER CALENDAR DATES
+    const semRes = await pool.query(`SELECT semester_start_date, semester_end_date FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
+    const semesterEndDate = semRes.rows[0]?.semester_end_date || null;
+    const semesterStartDate = semRes.rows[0]?.semester_start_date || null;
+
+    // 12. FETCH SCHEDULE
     const scheduleRes = await pool.query(`
       SELECT * FROM installment_schedules 
       WHERE student_id = $1 
@@ -650,6 +672,7 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
 
     const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
 
+    // 13. RENDER
     res.render('student-finance', { 
       user: req.session.user, 
       student, 
@@ -666,9 +689,14 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       hasApprovedInstallment,
       transactions,
       schedule: scheduleRes.rows,
-      hasOverdue
+      hasOverdue,
+      overdueAmount,
+      semesterEndDate: semesterEndDate ? new Date(semesterEndDate).toISOString().split('T')[0] : null,
+      semesterStartDate: semesterStartDate ? new Date(semesterStartDate).toISOString().split('T')[0] : null
     });
-  } catch (err) { res.status(500).send("Finance Error: " + err.message); }
+  } catch (err) { 
+    res.status(500).send("Finance Error: " + err.message); 
+  }
 });
 
 app.post('/sis/my/finance/installment/request', requireRole('student'), async (req, res) => {
@@ -4274,6 +4302,7 @@ app.get('/sis/finance', requireLogin, async (req, res) => {
   }
 });
 
+// Approve an Installment (Calendar-Based)
 app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) => {
   const instId = req.params.id;
   try {
@@ -4281,26 +4310,43 @@ app.post('/sis/finance/installment/:id/approve', requireLogin, async (req, res) 
     if (reqRes.rows.length === 0) return res.redirect('/sis/finance');
     
     const { student_id, total_amount, installments_count } = reqRes.rows[0];
-    const amountPerMonth = Number(total_amount) / Number(installments_count);
+    const amountPerInstallment = Number(total_amount) / Number(installments_count);
+
+    const semRes = await pool.query(`SELECT semester_end_date FROM student_profiles WHERE user_id = $1`, [student_id]);
+    const semesterEnd = semRes.rows[0]?.semester_end_date ? new Date(semRes.rows[0].semester_end_date) : new Date();
+    
+    const lastPaymentDate = new Date(semesterEnd);
+    lastPaymentDate.setDate(lastPaymentDate.getDate() - 14);
+    
+    const firstPaymentDate = new Date();
+    firstPaymentDate.setDate(firstPaymentDate.getDate() + 7);
+    
+    if (firstPaymentDate >= lastPaymentDate) {
+      req.flash('error', 'Semester ends too soon to schedule installments.');
+      return res.redirect('/sis/finance');
+    }
 
     await pool.query(`UPDATE installment_requests SET status = 'approved' WHERE id = $1`, [instId]);
 
-    for (let i = 1; i <= installments_count; i++) {
-      const dueDate = new Date();
-      dueDate.setMonth(dueDate.getMonth() + i);
+    const totalDays = Math.floor((lastPaymentDate - firstPaymentDate) / (1000 * 60 * 60 * 24));
+    const intervalDays = installments_count > 1 ? totalDays / (installments_count - 1) : 0;
+
+    for (let i = 0; i < installments_count; i++) {
+      const dueDate = new Date(firstPaymentDate);
+      dueDate.setDate(dueDate.getDate() + Math.round(i * intervalDays));
       
       await pool.query(`
         INSERT INTO installment_schedules (request_id, student_id, due_date, amount, status)
         VALUES ($1, $2, $3, $4, 'unpaid')
-      `, [instId, student_id, dueDate, amountPerMonth]);
+      `, [instId, student_id, dueDate.toISOString().split('T')[0], amountPerInstallment]);
     }
 
     await pool.query(`
       INSERT INTO notifications (user_id, title, body, link) 
       VALUES ($1, 'Installment Plan Approved', $2, '/sis/my/finance')
-    `, [student_id, `Your plan for $${Number(total_amount).toFixed(2)} was approved. Your first payment of $${amountPerMonth.toFixed(2)} is due next month.`]);
+    `, [student_id, `Your plan for $${Number(total_amount).toFixed(2)} was approved. Payment dates are aligned before finals week.`]);
 
-    req.flash('success', 'Installment schedule generated and student notified.');
+    req.flash('success', `Schedule generated: ${installments_count} payments of $${amountPerInstallment.toFixed(2)} each, all before finals.`);
     res.redirect('/sis/finance');
   } catch (err) { res.status(500).send("Approve Error: " + err.message); }
 });

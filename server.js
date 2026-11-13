@@ -158,6 +158,7 @@ const requireLogin = (req, res, next) => {
 // ============================================
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
+// 
     if (!req.session.user) {
       return res.redirect('/login');
     }

@@ -5235,7 +5235,6 @@ app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), async
 // ============================================
 // --- INTL OFFICE: DOCUMENT PDF GENERATOR ---
 // ============================================
-const PDFDocument = require('pdfkit');
 
 app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_officer', 'admin'), async (req, res) => {
   const { student_id, type } = req.params;
@@ -5326,6 +5325,36 @@ app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_offi
     doc.end();
   } catch (err) {
     res.status(500).send("PDF Generation Error: " + err.message);
+  }
+});
+// --- INTL OFFICE: DOCUMENT GENERATOR HUB ---
+app.get('/sis/intl/documents', requireRole('intl_officer', 'admin'), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const params = [];
+    let where = '';
+    if (q) {
+      params.push(`%${q}%`);
+      where = `AND (u.full_name ILIKE $1 OR u.username ILIKE $1 OR sp.admission_number ILIKE $1)`;
+    }
+
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.full_name, u.username, sp.admission_number, sp.class_level, sp.current_semester
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.role = 'student' ${where}
+      ORDER BY u.full_name ASC
+      LIMIT 50
+    `, params);
+
+    res.render('intl-documents', {
+      user: req.session.user,
+      students: studentsRes.rows,
+      searchQuery: q,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Document Hub Error: " + err.message);
   }
 });
 

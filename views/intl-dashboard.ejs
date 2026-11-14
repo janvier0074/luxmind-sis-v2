@@ -116,6 +116,8 @@
         <div class="nav-label">Operations</div>
         <a href="/sis/intl" class="nav-link active"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
         <a href="/sis/intl/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Student Directory</span></a>
+        <!-- NEW LINK ADDED HERE -->
+        <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault</span></a>
       </div>
 
       <% if (teamName === 'Admissions & Recruitment Team') { %>
@@ -135,7 +137,8 @@
           <a href="#" class="nav-link"><i class="fa-solid fa-passport"></i><span>Residence Permit Tracker</span></a>
           <a href="#" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance Registry</span></a>
           <a href="#" class="nav-link"><i class="fa-solid fa-building-columns"></i><span>Embassy Letter Generator</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault & Custody Log</span></a>
+          <!-- UPDATED THIS PLACEHOLDER LINK TOO -->
+          <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault & Custody Log</span></a>
           <a href="#" class="nav-link"><i class="fa-solid fa-fingerprint"></i><span>Police Appointment Scheduler</span></a>
           <a href="#" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i><span>Lost / Expired Passport Reports</span></a>
           <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i><span>Visa Extension & Overstay Alerts</span></a>
@@ -298,10 +301,9 @@
               <% if (intlRole === 'manager' || intlRole === 'director') { %>
                 <p class="field-label"><i class="fa-solid fa-user-gear"></i> Assign to Officer</p>
                 <form action="/sis/intl/assign/<%= r.id %>" method="POST">
-                  <!-- In a real app, you would fetch a list of officers for this team from the DB -->
                   <select name="officer_id" class="control" required>
                     <option value="" disabled selected>Select an officer...</option>
-                    <option value="40">Mike (Visa Officer)</option> <!-- Hardcoded for testing -->
+                    <option value="40">Mike (Visa Officer)</option>
                   </select>
                   <button type="submit" class="btn btn-assign"><i class="fa-solid fa-arrow-right-arrow-left"></i> Assign Ticket</button>
                 </form>

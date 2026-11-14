@@ -4930,10 +4930,44 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
     for (const row of promoRes.rows) {
       await client.query(`
         INSERT INTO notifications (user_id, title, body, link, is_read)
-        VALUES ($1, 'Semester Rollover', $2, '/sis/my', 0)
+             VALUES ($1, 'Semester Rollover', $2, '/sis/my', 0)
       `, [row.user_id, `Welcome to Semester ${row.current_semester}. Your new semester dates have been set.`]);
     }
 
+    // ✅ NEW: Create invoice for the new semester for each promoted student
+    for (const row of promoRes.rows) {
+      const stuRes = await client.query(`
+        SELECT sp.class_level, sp.is_international, sp.high_school_gpa, sp.semester_end_date
+        FROM student_profiles sp WHERE sp.user_id = $1
+      `, [row.user_id]);
+      
+      if (stuRes.rows.length === 0) continue;
+      const stu = stuRes.rows[0];
+      
+      const feeRes = await client.query(`
+        SELECT COALESCE(amount, 0) as amount FROM fee_structure 
+        WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1
+      `, [stu.class_level, row.current_semester]);
+      
+      const baseAmount = Number(feeRes.rows[0]?.amount) || 0;
+      if (baseAmount === 0) continue;
+      
+      let pct = 0;
+      if (stu.is_international) pct = 50;
+      if (stu.high_school_gpa >= 3.0 && stu.high_school_gpa < 3.5) pct = 75;
+      if (stu.high_school_gpa >= 3.5 && stu.high_school_gpa < 3.8) pct = 90;
+      if (stu.high_school_gpa >= 3.8) pct = 100;
+      
+      const scholarshipAmount = (baseAmount * pct) / 100;
+      const netAmount = baseAmount - scholarshipAmount;
+      
+      await client.query(`
+        INSERT INTO semester_invoices 
+          (student_id, semester_number, academic_year, base_amount, scholarship_amount, net_amount, paid_amount, status, due_date)
+        VALUES ($1, $2, '2027-28', $3, $4, $5, 0, 'unpaid', $6)
+        ON CONFLICT (student_id, semester_number, academic_year) DO NOTHING
+      `, [row.user_id, row.current_semester, baseAmount, scholarshipAmount, netAmount, stu.semester_end_date]);
+    }
     // 4. Notify graduated students
     for (const row of gradRes.rows) {
       await client.query(`

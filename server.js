@@ -880,8 +880,8 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     let pastDueDebt = 0;
     
     invoices.forEach(inv => {
-      const remaining = Number(inv.net_amount) - Number(inv.paid_amount);
-      if (remaining <= 0) return;
+            const remaining = Math.round((Number(inv.net_amount) - Number(inv.paid_amount)) * 100) / 100;
+      if (remaining < 0.01) return;
       if (Number(inv.semester_number) === Number(student.current_semester)) {
         currentDebt += remaining;
       } else if (Number(inv.semester_number) > Number(student.current_semester)) {

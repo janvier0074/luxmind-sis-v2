@@ -137,7 +137,22 @@
       </div>
     </header>
 
-    <main class="endeavor-body">
+      <main class="endeavor-body">
+
+      <div style="background: linear-gradient(135deg, #0a1e32, #1e4d7b); color: white; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 12px rgba(10,30,50,0.15);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <i class="fas fa-graduation-cap" style="font-size: 1.5rem; color: #ffc857;"></i>
+          <div>
+            <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ffc857;">Semester <%= studentSemester %> Student</div>
+            <div style="font-size: 0.9rem; font-weight: 600;">You can register for courses up to Semester <%= studentSemester %></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 1.5rem; font-size: 0.85rem;">
+          <div><strong style="color: #ffc857;">Min:</strong> <%= minCredits %> cr</div>
+          <div><strong style="color: #ffc857;">Max:</strong> <%= maxCredits %> cr</div>
+          <div><strong style="color: #ffc857;">Now:</strong> <%= totalCartCredits %> cr</div>
+        </div>
+      </div>
       
       <% if (typeof hasRegistered !== 'undefined' && hasRegistered) { %>
         
@@ -304,16 +319,31 @@
 
       <!-- STICKY SUMMARY FOOTER -->
       <div class="summary-footer">
-        <div class="selected-stats">
+                <div class="selected-stats">
           <i class="fas fa-check-double" style="color: var(--amber); font-size: 1.5rem;"></i>
-          <span>Selected: <strong><%= cart.length %></strong> courses</span>
+          <span>
+            <strong><%= totalCartCredits %></strong> / <%= maxCredits %> credits
+            (<%= cart.length %> course<%= cart.length === 1 ? '' : 's' %>)
+            <% if (totalCartCredits < minCredits) { %>
+              · <span style="color: #f59e0b; font-weight: 800;">⚠️ Need <%= minCredits - totalCartCredits %> more</span>
+            <% } else if (totalCartCredits > maxCredits) { %>
+              · <span style="color: #dc2626; font-weight: 800;">⚠️ Over by <%= totalCartCredits - maxCredits %></span>
+            <% } else { %>
+              · <span style="color: #10b981; font-weight: 800;">✓ OK</span>
+            <% } %>
+          </span>
         </div>
-        
         <div>
-          <% if (cart.length > 0 && pending.length === 0) { %>
-            <form method="POST" action="/sis/my/registration/submit" style="margin: 0;">
-              <button type="submit" class="submit-action"><i class="fas fa-rocket"></i> Submit to Advisor</button>
-            </form>
+                   <% if (cart.length > 0 && pending.length === 0) { %>
+            <% if (totalCartCredits < minCredits) { %>
+              <button class="submit-action" disabled style="background: #f59e0b; cursor: not-allowed;"><i class="fas fa-exclamation-triangle"></i> Need <%= minCredits - totalCartCredits %> More</button>
+            <% } else if (totalCartCredits > maxCredits) { %>
+              <button class="submit-action" disabled style="background: #dc2626; cursor: not-allowed;"><i class="fas fa-ban"></i> Over Limit</button>
+            <% } else { %>
+              <form method="POST" action="/sis/my/registration/submit" style="margin: 0;">
+                <button type="submit" class="submit-action"><i class="fas fa-rocket"></i> Submit to Advisor</button>
+              </form>
+            <% } %>
           <% } else if (pending.length > 0) { %>
             <button class="submit-action" disabled style="background: #64748b;"><i class="fas fa-clock"></i> Awaiting Advisor</button>
           <% } %>

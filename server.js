@@ -808,50 +808,31 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const profileRes = await pool.query(`SELECT u.full_name, u.username, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
-    // 2. FETCH ALL INVOICES FOR THIS STUDENT
-    const invoicesRes = await pool.query(`
-      SELECT * FROM semester_invoices 
-      WHERE student_id = $1 
-      ORDER BY semester_number ASC
-    `, [req.session.user.id]);
-    const invoices = invoicesRes.rows;
-
-    // 3. CURRENT SEMESTER INVOICE (for display)
-    const currentInvoice = invoices.find(i => Number(i.semester_number) === Number(student.current_semester));
-    const baseTuition = currentInvoice ? Number(currentInvoice.base_amount) : 0;
-    const scholarshipAmount = currentInvoice ? Number(currentInvoice.scholarship_amount) : 0;
-    const netTuition = currentInvoice ? Number(currentInvoice.net_amount) : 0;
-    const scholarshipPercentage = baseTuition > 0 ? Math.round((scholarshipAmount / baseTuition) * 100) : 0;
-
+    // 2. SCHOLARSHIP ENGINE
+    let scholarshipPercentage = 0;
     let scholarshipName = 'None';
-    if (scholarshipPercentage === 50) scholarshipName = 'International Scholarship';
-    else if (scholarshipPercentage === 75) scholarshipName = 'Honor Scholarship';
-    else if (scholarshipPercentage === 90) scholarshipName = 'High Honor Scholarship';
-    else if (scholarshipPercentage === 100) scholarshipName = 'Full Merit Scholarship';
+    if (student.is_international) { scholarshipPercentage = 50; scholarshipName = 'International Scholarship'; }
+    if (student.high_school_gpa >= 3.0 && student.high_school_gpa < 3.5) { scholarshipPercentage = 75; scholarshipName = 'Honor Scholarship'; }
+    if (student.high_school_gpa >= 3.5 && student.high_school_gpa < 3.8) { scholarshipPercentage = 90; scholarshipName = 'High Honor Scholarship'; }
+    if (student.high_school_gpa >= 3.8) { scholarshipPercentage = 100; scholarshipName = 'Full Merit Scholarship'; }
 
-    // 4. DEBT CALCULATIONS (across ALL semesters)
-    let totalDebt = 0;
-    let totalPaidAllTime = 0;
-    let currentDebt = 0;
-    let approachingDebt = 0;
+    // 3. CURRENT SEMESTER FEE
+    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
+    const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
+    const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
+    const netTuition = baseTuition - scholarshipAmount;
 
-    invoices.forEach(inv => {
-      const remaining = Number(inv.net_amount) - Number(inv.paid_amount);
-      totalPaidAllTime += Number(inv.paid_amount);
-      if (Number(inv.semester_number) === Number(student.current_semester)) {
-        currentDebt = remaining > 0 ? remaining : 0;
-      } else if (Number(inv.semester_number) > Number(student.current_semester) && inv.status !== 'paid') {
-        approachingDebt += remaining > 0 ? remaining : 0;
-      } else if (Number(inv.semester_number) < Number(student.current_semester) && inv.status !== 'paid') {
-        totalDebt += remaining > 0 ? remaining : 0;
-      }
-    });
+    // 4. NEXT SEMESTER FEE (Approaching Debt)
+    const nextSem = Number(student.current_semester) + 1;
+    const nextFeeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, nextSem]);
+    const nextBaseTuition = nextFeeRes.rows.length > 0 ? Number(nextFeeRes.rows[0].amount) : 0;
+    const nextNetTuition = nextBaseTuition - ((nextBaseTuition * scholarshipPercentage) / 100);
 
-    // Sum the totals
-    totalDebt = totalDebt + currentDebt + approachingDebt;
-    const totalPaid = totalPaidAllTime;
+    // 5. PAYMENTS
+    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
+    const totalPaid = Number(paidRes.rows[0].total);
 
-    // 5. BUILD TRANSACTIONS LEDGER (from invoices + payments)
+    // 6. BUILD TRANSACTIONS LEDGER
     const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
     
     let transactions = paymentsRes.rows.map(p => ({
@@ -865,80 +846,109 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       created_at: new Date(p.created_at).toLocaleString('en-GB')
     }));
 
-    invoices.forEach(inv => {
-      if (Number(inv.net_amount) > 0) {
-        transactions.push({
-          date: new Date(inv.created_at).toLocaleDateString('en-GB').replace(/\//g, '.'),
-          type: 'Invoice',
-          description: `Semester ${inv.semester_number} Tuition`,
-          charges: Number(inv.net_amount),
-          payments: null,
-          installment: '-',
-          term: inv.academic_year || '-',
-          created_at: new Date(inv.created_at).toLocaleString('en-GB')
-        });
-      }
-    });
-
+    if (netTuition > 0) {
+      transactions.push({
+        date: new Date().toLocaleDateString('en-GB').replace(/\//g, '.'),
+        type: 'Invoice',
+        description: 'EDUCATION FEE, REGISTRATION FEE',
+        charges: netTuition,
+        payments: null,
+        installment: '1. Installment',
+        term: `2026-27 Fall (Term Based)`,
+        created_at: new Date().toLocaleString('en-GB')
+      });
+    }
+    
     transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // 6. INSTALLMENT REQUESTS
+    // 7. INSTALLMENT REQUESTS
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
-    // 7. AUTO-FLAG OVERDUE INSTALLMENTS
+        // 8. DEBT MATH (aggregated from semester_invoices)
+    const allInvoicesRes = await pool.query(`
+            SELECT semester_number, net_amount, paid_amount, status, 
+             base_amount, scholarship_amount, academic_year 
+      FROM semester_invoices 
+      WHERE student_id = $1 
+      ORDER BY semester_number ASC
+    `, [req.session.user.id]);
+    const invoices = allInvoicesRes.rows;
+    
+    let currentDebt = 0;
+    let approachingDebt = 0;
+    let pastDueDebt = 0;
+    
+    invoices.forEach(inv => {
+            const remaining = Math.round((Number(inv.net_amount) - Number(inv.paid_amount)) * 100) / 100;
+      if (remaining < 0.01) return;
+      if (Number(inv.semester_number) === Number(student.current_semester)) {
+        currentDebt += remaining;
+      } else if (Number(inv.semester_number) > Number(student.current_semester)) {
+        approachingDebt += remaining;
+      } else {
+        pastDueDebt += remaining;
+      }
+    });
+    
+    const totalDebt = pastDueDebt + currentDebt + approachingDebt;
+
+    // 9. AUTO-FLAG OVERDUE PAYMENTS
     await pool.query(`
-      UPDATE installment_schedules
-      SET status = 'overdue'
+      UPDATE installment_schedules 
+      SET status = 'overdue' 
       WHERE student_id = $1 AND status = 'unpaid' AND due_date < CURRENT_DATE
     `, [req.session.user.id]);
 
+    // 10. CALCULATE OVERDUE AMOUNT
     const overdueRes = await pool.query(`
       SELECT COALESCE(SUM(amount), 0) as total_overdue
-      FROM installment_schedules
+      FROM installment_schedules 
       WHERE student_id = $1 AND status = 'overdue'
     `, [req.session.user.id]);
     const overdueAmount = Number(overdueRes.rows[0].total_overdue);
 
-    // 8. SEMESTER CALENDAR DATES
+    // 11. SEMESTER CALENDAR DATES
     const semRes = await pool.query(`SELECT semester_start_date, semester_end_date FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
     const semesterEndDate = semRes.rows[0]?.semester_end_date || null;
     const semesterStartDate = semRes.rows[0]?.semester_start_date || null;
 
-    // 9. INSTALLMENT SCHEDULE
+    // 12. FETCH SCHEDULE
     const scheduleRes = await pool.query(`
-      SELECT * FROM installment_schedules
-      WHERE student_id = $1
+      SELECT * FROM installment_schedules 
+      WHERE student_id = $1 
       ORDER BY due_date ASC
     `, [req.session.user.id]);
+
     const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
 
-    // 10. RENDER
-    res.render('student-finance', {
-      user: req.session.user,
-      student,
-      baseTuition,
-      scholarshipName,
-      scholarshipPercentage,
-      scholarshipAmount,
-      netTuition,
-      totalPaid,
-      currentDebt: currentDebt > 0 ? currentDebt : 0,
+    // 13. RENDER
+    res.render('student-finance', { 
+      user: req.session.user, 
+      student, 
+      baseTuition, 
+      scholarshipName, 
+      scholarshipPercentage, 
+      scholarshipAmount, 
+      netTuition, 
+      totalPaid, 
+            currentDebt: currentDebt > 0 ? currentDebt : 0,
+      pastDueDebt: pastDueDebt > 0 ? pastDueDebt : 0,
       approachingDebt,
       totalDebt,
-      installments,
+           installments,
       hasApprovedInstallment,
+      invoices,
       transactions,
       schedule: scheduleRes.rows,
       hasOverdue,
       overdueAmount,
-      invoices,
       semesterEndDate: semesterEndDate ? new Date(semesterEndDate).toISOString().split('T')[0] : null,
       semesterStartDate: semesterStartDate ? new Date(semesterStartDate).toISOString().split('T')[0] : null
     });
-  } catch (err) {
-    res.status(500).send("Finance Error: " + err.message);
+  } catch (err) { 
+    res.status(500).send("Finance Error: " + err.message); 
   }
 });
 
@@ -959,32 +969,77 @@ app.post('/sis/my/finance/installment/request', requireRole('student'), async (r
 
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
   const { installment_id, amount } = req.body;
+  const client = await pool.connect();
+  
   try {
-    // If paying a specific installment, mark it as paid
+    await client.query('BEGIN');
+    
+    let payAmount = 0;
+    let flashMsg = '';
+    
+    // If paying a specific installment
     if (installment_id) {
-      const schedRes = await pool.query(`SELECT * FROM installment_schedules WHERE id = $1 AND student_id = $2 AND status != 'paid'`, [installment_id, req.session.user.id]);
-      if (schedRes.rows.length > 0) {
-        const inst = schedRes.rows[0];
-        
-        // 1. Record payment
-        await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(inst.amount)]);
-        
-        // 2. Mark schedule as paid
-        await pool.query(`UPDATE installment_schedules SET status = 'paid' WHERE id = $1`, [installment_id]);
-        
-        req.flash('success', `Installment #${installment_id} paid: $${Number(inst.amount).toFixed(2)}`);
+      const schedRes = await client.query(
+        `SELECT * FROM installment_schedules WHERE id = $1 AND student_id = $2 AND status != 'paid'`,
+        [installment_id, req.session.user.id]
+      );
+      if (schedRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        req.flash('error', 'Installment not found or already paid.');
         return res.redirect('/sis/my/finance');
       }
-      req.flash('error', 'Installment not found or already paid.');
-      return res.redirect('/sis/my/finance');
+      payAmount = Number(schedRes.rows[0].amount);
+      flashMsg = `Installment paid: $${payAmount.toFixed(2)}`;
+      
+      // Mark installment as paid
+      await client.query(`UPDATE installment_schedules SET status = 'paid' WHERE id = $1`, [installment_id]);
+    } else {
+      payAmount = Number(amount);
+      flashMsg = `Payment of $${payAmount.toFixed(2)} processed successfully.`;
     }
-
-    // Fallback: General payment (no installment tied)
-    await pool.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, Number(amount)]);
-    req.flash('success', `Payment of $${amount} processed successfully.`);
+    
+    // Record the payment
+    await client.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, payAmount]);
+    
+    // ============================================
+    // ✅ NEW: Apply payment to invoices (FIFO — oldest semester first)
+    // ============================================
+    const invoicesRes = await client.query(`
+      SELECT id, semester_number, net_amount, paid_amount
+      FROM semester_invoices
+      WHERE student_id = $1 
+        AND status != 'paid'
+        AND net_amount > paid_amount
+      ORDER BY semester_number ASC
+    `, [req.session.user.id]);
+    
+    let remaining = payAmount;
+    for (const inv of invoicesRes.rows) {
+      if (remaining <= 0) break;
+      
+      const owed = Number(inv.net_amount) - Number(inv.paid_amount);
+      const applyNow = Math.min(remaining, owed);
+            const newPaid = Math.round((Number(inv.paid_amount) + applyNow) * 100) / 100;
+      const newStatus = newPaid >= Number(inv.net_amount) ? 'paid' : 'partial';
+      
+      await client.query(`
+        UPDATE semester_invoices 
+        SET paid_amount = $1, status = $2 
+        WHERE id = $3
+      `, [newPaid, newStatus, inv.id]);
+      
+      remaining -= applyNow;
+    }
+    
+    await client.query('COMMIT');
+    
+    req.flash('success', flashMsg);
     res.redirect('/sis/my/finance');
-  } catch (err) { 
-    res.status(500).send("Payment Error: " + err.message); 
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).send("Payment Error: " + err.message);
+  } finally {
+    client.release();
   }
 });
 
@@ -4877,10 +4932,44 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
     for (const row of promoRes.rows) {
       await client.query(`
         INSERT INTO notifications (user_id, title, body, link, is_read)
-        VALUES ($1, 'Semester Rollover', $2, '/sis/my', 0)
+             VALUES ($1, 'Semester Rollover', $2, '/sis/my', 0)
       `, [row.user_id, `Welcome to Semester ${row.current_semester}. Your new semester dates have been set.`]);
     }
 
+    // ✅ NEW: Create invoice for the new semester for each promoted student
+    for (const row of promoRes.rows) {
+      const stuRes = await client.query(`
+        SELECT sp.class_level, sp.is_international, sp.high_school_gpa, sp.semester_end_date
+        FROM student_profiles sp WHERE sp.user_id = $1
+      `, [row.user_id]);
+      
+      if (stuRes.rows.length === 0) continue;
+      const stu = stuRes.rows[0];
+      
+      const feeRes = await client.query(`
+        SELECT COALESCE(amount, 0) as amount FROM fee_structure 
+        WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1
+      `, [stu.class_level, row.current_semester]);
+      
+      const baseAmount = Number(feeRes.rows[0]?.amount) || 0;
+      if (baseAmount === 0) continue;
+      
+      let pct = 0;
+      if (stu.is_international) pct = 50;
+      if (stu.high_school_gpa >= 3.0 && stu.high_school_gpa < 3.5) pct = 75;
+      if (stu.high_school_gpa >= 3.5 && stu.high_school_gpa < 3.8) pct = 90;
+      if (stu.high_school_gpa >= 3.8) pct = 100;
+      
+      const scholarshipAmount = (baseAmount * pct) / 100;
+      const netAmount = baseAmount - scholarshipAmount;
+      
+      await client.query(`
+        INSERT INTO semester_invoices 
+          (student_id, semester_number, academic_year, base_amount, scholarship_amount, net_amount, paid_amount, status, due_date)
+        VALUES ($1, $2, '2027-28', $3, $4, $5, 0, 'unpaid', $6)
+        ON CONFLICT (student_id, semester_number, academic_year) DO NOTHING
+      `, [row.user_id, row.current_semester, baseAmount, scholarshipAmount, netAmount, stu.semester_end_date]);
+    }
     // 4. Notify graduated students
     for (const row of gradRes.rows) {
       await client.query(`
@@ -4905,7 +4994,71 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
   } finally {
     client.release();
   }
-});// ============================================
+});
+// START SERVER
+// ============================================
+// --- IT HELPDESK: PASSWORD RESET CONSOLE ---
+// ============================================
+app.get('/sis/it/password-reset', requireRole('it_staff'), async (req, res) => {
+  try {
+    const searchQuery = req.query.q || '';
+    let users = [];
+    
+    if (searchQuery) {
+      const result = await pool.query(`
+        SELECT u.id, u.username, u.full_name, u.email, u.role,
+               sp.admission_number
+        FROM users u
+        LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE u.username ILIKE $1 
+           OR u.full_name ILIKE $1 
+           OR u.email ILIKE $1
+           OR sp.admission_number ILIKE $1
+        ORDER BY u.role, u.full_name
+        LIMIT 20
+      `, [`%${searchQuery}%`]);
+      users = result.rows;
+    }
+    
+    res.render('it-password-reset', {
+      user: req.session.user,
+      users,
+      searchQuery,
+      defaultPassword: 'TempPass2026!',
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Password Reset Console Error: " + err.message);
+  }
+});
+
+app.post('/sis/it/password-reset/:id', requireRole('it_staff'), async (req, res) => {
+  const targetId = req.params.id;
+  const newPassword = 'TempPass2026!';
+  
+  try {
+    const userRes = await pool.query(`SELECT id, username, full_name, role FROM users WHERE id = $1`, [targetId]);
+    if (userRes.rows.length === 0) {
+      req.flash('error', 'User not found.');
+      return res.redirect('/sis/it/password-reset');
+    }
+    
+    const target = userRes.rows[0];
+    
+    await pool.query(`UPDATE users SET password = $1 WHERE id = $2`, [newPassword, targetId]);
+    
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details)
+      VALUES ($1, 'PASSWORD_RESET', $2)
+    `, [req.session.user.id, `Reset password for ${target.username} (${target.role}) - ID ${target.id}`]);
+    
+    req.flash('success', `Password for ${target.full_name} (${target.username}) reset to "${newPassword}".`);
+    res.redirect('/sis/it/password-reset?q=' + encodeURIComponent(target.username));
+  } catch (err) {
+    res.status(500).send("Password Reset Error: " + err.message);
+  }
+});
+// ============================================
 // --- INTL OFFICE: PASSPORT VAULT (Feature #4) ---
 // ============================================
 const PASSPORT_INDEX = '/sis/intl/passports';
@@ -5078,5 +5231,5 @@ app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), async
     res.status(500).send("Return Error: " + err.message);
   } finally { client.release(); }
 });
-// START SERVER
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

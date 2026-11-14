@@ -5305,7 +5305,7 @@ app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), requi
 // --- INTL OFFICE: DOCUMENT PDF GENERATOR ---
 // ============================================
 
-app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
   const { student_id, type } = req.params;
   
   if (!['enrollment', 'embassy'].includes(type)) {
@@ -5397,7 +5397,7 @@ app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_offi
   }
 });
 // --- INTL OFFICE: DOCUMENT GENERATOR HUB ---
-app.get('/sis/intl/documents', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/intl/documents', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const params = [];
@@ -5429,7 +5429,7 @@ app.get('/sis/intl/documents', requireRole('intl_officer', 'admin'), async (req,
 // ============================================
 // --- INTL OFFICE: RESIDENCE PERMIT TRACKER ---
 // ============================================
-app.get('/sis/intl/permits', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/intl/permits', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const params = [];
@@ -5466,7 +5466,7 @@ app.get('/sis/intl/permits', requireRole('intl_officer', 'admin'), async (req, r
   }
 });
 
-app.post('/sis/intl/permits/update', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.post('/sis/intl/permits/update', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   const { student_id, permit_number, status, issue_date, expiry_date, notes } = req.body;
   
   if (!student_id) {
@@ -5519,7 +5519,7 @@ app.post('/sis/intl/permits/update', requireRole('intl_officer', 'admin'), async
 // ============================================
 // --- INTL OFFICE: HEALTH INSURANCE REGISTRY ---
 // ============================================
-app.get('/sis/intl/insurance', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/intl/insurance', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const params = [];
@@ -5556,7 +5556,7 @@ app.get('/sis/intl/insurance', requireRole('intl_officer', 'admin'), async (req,
   }
 });
 
-app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   const { student_id, provider, policy_number, status, issue_date, expiry_date, notes } = req.body;
   
   if (!student_id) {
@@ -5610,7 +5610,19 @@ app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), asy
 // ============================================
 // --- INTL OFFICE: EXECUTIVE COMPLIANCE DASHBOARD ---
 // ============================================
-app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res, next) => {
+  if (req.session.user.role === 'admin' || req.session.user.intl_team === 'All Teams') return next();
+  return res.status(403).send(`
+    <html><body style="font-family:system-ui;padding:4rem;text-align:center;background:#f4f6fa;">
+      <div style="max-width:520px;margin:0 auto;background:#fff;padding:2.5rem;border-radius:16px;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🛡️</div>
+        <h1 style="color:#b33e2e;margin:0 0 1rem;">Director Only</h1>
+        <p style="color:#718096;">The Executive Compliance Dashboard is restricted to the Director of the International Office.</p>
+        <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">← Back to Intl Office</a>
+      </div>
+    </body></html>
+  `);
+}, async (req, res) => {
   try {
     // 1. Fetch Counts (Lightning fast, scales to 100,000+ students)
     const stats = await pool.query(`

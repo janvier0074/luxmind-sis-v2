@@ -5139,7 +5139,7 @@ const PASSPORT_DEST_TO_STATUS = {
 };
 
 // LIST
-app.get(PASSPORT_INDEX, requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get(PASSPORT_INDEX, requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const params = [];
@@ -5192,7 +5192,7 @@ app.get(PASSPORT_INDEX, requireRole('intl_officer', 'admin'), async (req, res) =
 });
 
 // LOG RECEIPT
-app.post(PASSPORT_INDEX + '/receipt', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.post(PASSPORT_INDEX + '/receipt', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   const student_id = Number(req.body.student_id);
   const passport_number = (req.body.passport_number || '').trim();
   if (!student_id || !passport_number) {
@@ -5228,7 +5228,7 @@ app.post(PASSPORT_INDEX + '/receipt', requireRole('intl_officer', 'admin'), asyn
 });
 
 // CHECK OUT
-app.post(PASSPORT_INDEX + '/checkout', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.post(PASSPORT_INDEX + '/checkout', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   const student_id = Number(req.body.student_id);
   const destination = (req.body.destination || '').trim();
   const due_back_at = (req.body.due_back_at || '').trim() || null;
@@ -5267,7 +5267,7 @@ app.post(PASSPORT_INDEX + '/checkout', requireRole('intl_officer', 'admin'), asy
 });
 
 // MARK RETURNED
-app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), requireIntlTeam(['Visa & Immigration Team']), async (req, res) => {
   const student_id = Number(req.body.student_id);
   if (!student_id) {
     req.flash('error', 'Student is required.');

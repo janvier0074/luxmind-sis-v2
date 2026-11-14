@@ -4390,12 +4390,15 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
     const userId = req.session.user.id;
 
     const staffRes = await pool.query(`SELECT intl_team, intl_role FROM users WHERE id = $1`, [userId]);
-    const staff = staffRes.rows[0] || { intl_team: 'General Admin', intl_role: 'officer' };
-    
+    const staff = staffRes.rows[0] || { intl_team: 'All Teams', intl_role: 'officer' };
+
+    const isOverallDirector = staff.intl_team === 'All Teams' || req.session.user.role === 'admin';
+
     let sharedTickets = [];
     let myTickets = [];
 
-    if (staff.intl_role === 'director') {
+    // --- OVERALL DIRECTOR sees all 5 departments ---
+    if (isOverallDirector) {
       const allRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
         FROM guidance_requests gr
@@ -4404,7 +4407,9 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
         ORDER BY gr.created_at DESC
       `);
       sharedTickets = allRes.rows;
-    } else if (staff.intl_role === 'manager') {
+    }
+    // --- DEPARTMENT LEADERS see only their team's tickets ---
+    else if (staff.intl_role === 'manager' || staff.intl_role === 'director') {
       const teamRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
         FROM guidance_requests gr
@@ -4412,10 +4417,12 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
         WHERE gr.assigned_team = $1 AND gr.status = 'Pending'
         ORDER BY gr.created_at DESC
       `, [staff.intl_team]);
-      
+
       myTickets = teamRes.rows.filter(r => r.assigned_to === userId);
       sharedTickets = teamRes.rows.filter(r => r.assigned_to !== userId);
-    } else {
+    }
+    // --- OFFICERS see their own + their team's unassigned ---
+    else {
       const sharedRes = await pool.query(`
         SELECT gr.*, u.full_name AS student_name, u.username AS student_number
         FROM guidance_requests gr
@@ -4436,15 +4443,39 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
       myTickets = myRes.rows;
     }
 
+    // --- Sidebar counters (single query, cheap) ---
+    const countsRes = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM passport_custody WHERE returned_at IS NULL AND due_back_at < NOW()) AS passports_overdue,
+        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date < CURRENT_DATE) AS permits_expired,
+        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date >= CURRENT_DATE AND expiry_date < CURRENT_DATE + INTERVAL '30 days') AS permits_expiring,
+        (SELECT COUNT(*) FROM users u
+           JOIN student_profiles sp ON sp.user_id = u.id
+           LEFT JOIN health_insurance hi ON hi.student_id = u.id
+          WHERE u.role = 'student' AND sp.is_international = true
+            AND (hi.id IS NULL OR hi.status = 'Expired' OR hi.expiry_date < CURRENT_DATE)) AS insurance_missing
+    `);
+
+    const counts = countsRes.rows[0];
+    const sidebarCounts = {
+      passports_overdue: Number(counts.passports_overdue),
+      permits_expired: Number(counts.permits_expired),
+      permits_expiring: Number(counts.permits_expiring),
+      insurance_missing: Number(counts.insurance_missing)
+    };
+
     const stats = { shared: sharedTickets.length, mine: myTickets.length };
 
     res.render('intl-dashboard', {
       user: req.session.user,
       teamName: staff.intl_team,
       intlRole: staff.intl_role,
+      isOverallDirector,
       sharedTickets,
       myTickets,
       stats,
+      sidebarCounts,
+      greeting: getGreeting(),
       flash: req.flash ? req.flash() : {}
     });
   } catch (err) {

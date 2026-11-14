@@ -808,31 +808,50 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const profileRes = await pool.query(`SELECT u.full_name, u.username, sp.class_level, sp.current_semester, sp.is_international, sp.high_school_gpa FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.id = $1`, [req.session.user.id]);
     const student = profileRes.rows[0];
 
-    // 2. SCHOLARSHIP ENGINE
-    let scholarshipPercentage = 0;
+    // 2. FETCH ALL INVOICES FOR THIS STUDENT
+    const invoicesRes = await pool.query(`
+      SELECT * FROM semester_invoices 
+      WHERE student_id = $1 
+      ORDER BY semester_number ASC
+    `, [req.session.user.id]);
+    const invoices = invoicesRes.rows;
+
+    // 3. CURRENT SEMESTER INVOICE (for display)
+    const currentInvoice = invoices.find(i => Number(i.semester_number) === Number(student.current_semester));
+    const baseTuition = currentInvoice ? Number(currentInvoice.base_amount) : 0;
+    const scholarshipAmount = currentInvoice ? Number(currentInvoice.scholarship_amount) : 0;
+    const netTuition = currentInvoice ? Number(currentInvoice.net_amount) : 0;
+    const scholarshipPercentage = baseTuition > 0 ? Math.round((scholarshipAmount / baseTuition) * 100) : 0;
+
     let scholarshipName = 'None';
-    if (student.is_international) { scholarshipPercentage = 50; scholarshipName = 'International Scholarship'; }
-    if (student.high_school_gpa >= 3.0 && student.high_school_gpa < 3.5) { scholarshipPercentage = 75; scholarshipName = 'Honor Scholarship'; }
-    if (student.high_school_gpa >= 3.5 && student.high_school_gpa < 3.8) { scholarshipPercentage = 90; scholarshipName = 'High Honor Scholarship'; }
-    if (student.high_school_gpa >= 3.8) { scholarshipPercentage = 100; scholarshipName = 'Full Merit Scholarship'; }
+    if (scholarshipPercentage === 50) scholarshipName = 'International Scholarship';
+    else if (scholarshipPercentage === 75) scholarshipName = 'Honor Scholarship';
+    else if (scholarshipPercentage === 90) scholarshipName = 'High Honor Scholarship';
+    else if (scholarshipPercentage === 100) scholarshipName = 'Full Merit Scholarship';
 
-    // 3. CURRENT SEMESTER FEE
-    const feeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, student.current_semester]);
-    const baseTuition = feeRes.rows.length > 0 ? Number(feeRes.rows[0].amount) : 0;
-    const scholarshipAmount = (baseTuition * scholarshipPercentage) / 100;
-    const netTuition = baseTuition - scholarshipAmount;
+    // 4. DEBT CALCULATIONS (across ALL semesters)
+    let totalDebt = 0;
+    let totalPaidAllTime = 0;
+    let currentDebt = 0;
+    let approachingDebt = 0;
 
-    // 4. NEXT SEMESTER FEE (Approaching Debt)
-    const nextSem = Number(student.current_semester) + 1;
-    const nextFeeRes = await pool.query(`SELECT amount FROM fee_structure WHERE LOWER(program) = LOWER($1) AND semester = $2 LIMIT 1`, [student.class_level, nextSem]);
-    const nextBaseTuition = nextFeeRes.rows.length > 0 ? Number(nextFeeRes.rows[0].amount) : 0;
-    const nextNetTuition = nextBaseTuition - ((nextBaseTuition * scholarshipPercentage) / 100);
+    invoices.forEach(inv => {
+      const remaining = Number(inv.net_amount) - Number(inv.paid_amount);
+      totalPaidAllTime += Number(inv.paid_amount);
+      if (Number(inv.semester_number) === Number(student.current_semester)) {
+        currentDebt = remaining > 0 ? remaining : 0;
+      } else if (Number(inv.semester_number) > Number(student.current_semester) && inv.status !== 'paid') {
+        approachingDebt += remaining > 0 ? remaining : 0;
+      } else if (Number(inv.semester_number) < Number(student.current_semester) && inv.status !== 'paid') {
+        totalDebt += remaining > 0 ? remaining : 0;
+      }
+    });
 
-    // 5. PAYMENTS
-    const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
-    const totalPaid = Number(paidRes.rows[0].total);
+    // Sum the totals
+    totalDebt = totalDebt + currentDebt + approachingDebt;
+    const totalPaid = totalPaidAllTime;
 
-    // 6. BUILD TRANSACTIONS LEDGER
+    // 5. BUILD TRANSACTIONS LEDGER (from invoices + payments)
     const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
     
     let transactions = paymentsRes.rows.map(p => ({
@@ -846,70 +865,65 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       created_at: new Date(p.created_at).toLocaleString('en-GB')
     }));
 
-    if (netTuition > 0) {
-      transactions.push({
-        date: new Date().toLocaleDateString('en-GB').replace(/\//g, '.'),
-        type: 'Invoice',
-        description: 'EDUCATION FEE, REGISTRATION FEE',
-        charges: netTuition,
-        payments: null,
-        installment: '1. Installment',
-        term: `2026-27 Fall (Term Based)`,
-        created_at: new Date().toLocaleString('en-GB')
-      });
-    }
-    
+    invoices.forEach(inv => {
+      if (Number(inv.net_amount) > 0) {
+        transactions.push({
+          date: new Date(inv.created_at).toLocaleDateString('en-GB').replace(/\//g, '.'),
+          type: 'Invoice',
+          description: `Semester ${inv.semester_number} Tuition`,
+          charges: Number(inv.net_amount),
+          payments: null,
+          installment: '-',
+          term: inv.academic_year || '-',
+          created_at: new Date(inv.created_at).toLocaleString('en-GB')
+        });
+      }
+    });
+
     transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // 7. INSTALLMENT REQUESTS
+    // 6. INSTALLMENT REQUESTS
     const instRes = await pool.query(`SELECT * FROM installment_requests WHERE student_id = $1 ORDER BY created_at DESC`, [req.session.user.id]);
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
-    // 8. DEBT MATH
-    const currentDebt = netTuition - totalPaid;
-    const approachingDebt = currentDebt > 0 ? 0 : nextNetTuition;
-    const totalDebt = currentDebt + approachingDebt;
-
-    // 9. AUTO-FLAG OVERDUE PAYMENTS
+    // 7. AUTO-FLAG OVERDUE INSTALLMENTS
     await pool.query(`
-      UPDATE installment_schedules 
-      SET status = 'overdue' 
+      UPDATE installment_schedules
+      SET status = 'overdue'
       WHERE student_id = $1 AND status = 'unpaid' AND due_date < CURRENT_DATE
     `, [req.session.user.id]);
 
-    // 10. CALCULATE OVERDUE AMOUNT
     const overdueRes = await pool.query(`
       SELECT COALESCE(SUM(amount), 0) as total_overdue
-      FROM installment_schedules 
+      FROM installment_schedules
       WHERE student_id = $1 AND status = 'overdue'
     `, [req.session.user.id]);
     const overdueAmount = Number(overdueRes.rows[0].total_overdue);
 
-    // 11. SEMESTER CALENDAR DATES
+    // 8. SEMESTER CALENDAR DATES
     const semRes = await pool.query(`SELECT semester_start_date, semester_end_date FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
     const semesterEndDate = semRes.rows[0]?.semester_end_date || null;
     const semesterStartDate = semRes.rows[0]?.semester_start_date || null;
 
-    // 12. FETCH SCHEDULE
+    // 9. INSTALLMENT SCHEDULE
     const scheduleRes = await pool.query(`
-      SELECT * FROM installment_schedules 
-      WHERE student_id = $1 
+      SELECT * FROM installment_schedules
+      WHERE student_id = $1
       ORDER BY due_date ASC
     `, [req.session.user.id]);
-
     const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
 
-    // 13. RENDER
-    res.render('student-finance', { 
-      user: req.session.user, 
-      student, 
-      baseTuition, 
-      scholarshipName, 
-      scholarshipPercentage, 
-      scholarshipAmount, 
-      netTuition, 
-      totalPaid, 
+    // 10. RENDER
+    res.render('student-finance', {
+      user: req.session.user,
+      student,
+      baseTuition,
+      scholarshipName,
+      scholarshipPercentage,
+      scholarshipAmount,
+      netTuition,
+      totalPaid,
       currentDebt: currentDebt > 0 ? currentDebt : 0,
       approachingDebt,
       totalDebt,
@@ -919,11 +933,12 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       schedule: scheduleRes.rows,
       hasOverdue,
       overdueAmount,
+      invoices,
       semesterEndDate: semesterEndDate ? new Date(semesterEndDate).toISOString().split('T')[0] : null,
       semesterStartDate: semesterStartDate ? new Date(semesterStartDate).toISOString().split('T')[0] : null
     });
-  } catch (err) { 
-    res.status(500).send("Finance Error: " + err.message); 
+  } catch (err) {
+    res.status(500).send("Finance Error: " + err.message);
   }
 });
 

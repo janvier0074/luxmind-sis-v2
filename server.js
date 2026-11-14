@@ -611,6 +611,9 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       totalCartCredits,
       totalPendingCredits
     });
+  } catch (err) {
+    res.status(500).send("Registration Error: " + err.message);
+  }
 });
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {

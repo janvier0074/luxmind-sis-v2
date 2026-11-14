@@ -180,6 +180,44 @@ const requireRole = (...allowedRoles) => {
     next();
   };
 };
+
+
+
+// ============================================
+// --- INTERNATIONAL OFFICE: TEAM GUARD ---
+// ============================================
+const requireIntlTeam = (allowedTeams) => {
+  return (req, res, next) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    const { intl_role, intl_team } = req.session.user;
+
+    // System Admin + Overall Director (All Teams) bypass all team checks
+    if (req.session.user.role === 'admin' || intl_team === 'All Teams') {
+      return next();
+    }
+
+    // Team members must belong to one of the allowed teams
+    if (allowedTeams.includes(intl_team)) {
+      return next();
+    }
+
+    // Block — never trust the frontend
+    return res.status(403).send(`
+      <html><body style="font-family:system-ui;padding:4rem;text-align:center;background:#f4f6fa;">
+        <div style="max-width:520px;margin:0 auto;background:#fff;padding:2.5rem;border-radius:16px;box-shadow:0 8px 28px rgba(24,39,75,.055);">
+          <div style="width:60px;height:60px;background:#fdf2f4;border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.6rem;">🔒</div>
+          <h1 style="color:#b33e2e;margin:0 0 1rem;">Access Denied</h1>
+          <p style="color:#718096;line-height:1.6;">This tool belongs to the <strong>${allowedTeams.join(' or ')}</strong>.</p>
+          <p style="color:#718096;">Your team: <strong>${intl_team || 'Unassigned'}</strong></p>
+          <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">← Back to Intl Office</a>
+        </div>
+      </body></html>
+    `);
+  };
+};
+
+
 // ============================================
 // --- NOTIFICATIONS API ---
 // ============================================

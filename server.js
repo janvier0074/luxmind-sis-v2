@@ -5232,4 +5232,101 @@ app.post(PASSPORT_INDEX + '/return', requireRole('intl_officer', 'admin'), async
   } finally { client.release(); }
 });
 
+// ============================================
+// --- INTL OFFICE: DOCUMENT PDF GENERATOR ---
+// ============================================
+const PDFDocument = require('pdfkit');
+
+app.get('/sis/intl/documents/generate/:student_id/:type', requireRole('intl_officer', 'admin'), async (req, res) => {
+  const { student_id, type } = req.params;
+  
+  if (!['enrollment', 'embassy'].includes(type)) {
+    return res.status(400).send("Invalid document type. Use 'enrollment' or 'embassy'.");
+  }
+
+  try {
+    // 1. Fetch real student data
+    const studentRes = await pool.query(`
+      SELECT u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, sp.is_international
+      FROM users u 
+      JOIN student_profiles sp ON sp.user_id = u.id 
+      WHERE u.id = $1 AND u.role = 'student'
+    `, [student_id]);
+
+    if (studentRes.rows.length === 0) {
+      return res.status(404).send("Student not found.");
+    }
+    
+    const student = studentRes.rows[0];
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // 2. Setup PDF
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Set headers so the browser downloads it
+    const filename = `${type.toUpperCase()}_${student.admission_number || student.username}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    doc.pipe(res);
+
+    // 3. Draw Letterhead
+    doc.fontSize(22).font('Helvetica-Bold').text('LUXMIND UNIVERSITY', { align: 'center' });
+    doc.fontSize(10).font('Helvetica').text('Kigali, Rwanda | international@luxmind.edu', { align: 'center' });
+    doc.moveDown();
+    doc.lineWidth(2).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(2);
+
+    // 4. Add Date and Reference
+    doc.fontSize(11).font('Helvetica').text(today, { align: 'right' });
+    doc.moveDown();
+    doc.text(`Ref: INT/DOC/${new Date().getFullYear()}/${student.id}${Math.floor(Math.random() * 100)}`, { align: 'right' });
+    doc.moveDown(2);
+
+    // 5. Document Body based on Type
+    if (type === 'enrollment') {
+      doc.fontSize(16).font('Helvetica-Bold').text('CERTIFICATE OF ENROLLMENT', { align: 'center', underline: true });
+      doc.moveDown(2);
+
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`To Whom It May Concern,`, { continued: false });
+      doc.moveDown();
+      doc.text(`This is to certify that Mr./Ms. ${student.full_name.toUpperCase()}, bearing Student ID: ${student.admission_number || student.username}, is a bona fide student of LuxMind University.`, { align: 'justify' });
+      doc.moveDown();
+      doc.text(`The student is currently enrolled in the ${student.class_level} program and is in Semester ${student.current_semester} of their studies.`, { align: 'justify' });
+      doc.moveDown();
+      doc.text(`This certificate is issued upon the student's request for any official purpose it may serve.`, { align: 'justify' });
+
+    } else if (type === 'embassy') {
+      doc.fontSize(16).font('Helvetica-Bold').text('LETTER TO THE EMBASSY', { align: 'center', underline: true });
+      doc.moveDown(2);
+
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`To the Visa Officer,`, { continued: false });
+      doc.moveDown();
+      doc.text(`We confirm that Mr./Ms. ${student.full_name.toUpperCase()} (Passport details on file) is a registered international student at LuxMind University.`, { align: 'justify' });
+      doc.moveDown();
+      doc.text(`The student is enrolled in the ${student.class_level} program (ID: ${student.admission_number || student.username}) and is currently in Semester ${student.current_semester}.`, { align: 'justify' });
+      doc.moveDown();
+      doc.text(`The University has no objection to the student travelling abroad. We kindly request that you grant the necessary visa facilities to allow the student to travel.`, { align: 'justify' });
+    }
+
+    // 6. Sign-off
+    doc.moveDown(4);
+    doc.fontSize(12).font('Helvetica-Bold').text('Sincerely,', { continued: false });
+    doc.moveDown(3);
+    doc.text('_______________________________');
+    doc.text('International Office');
+    doc.text('LuxMind University');
+
+    // 7. Footer
+    doc.fontSize(8).font('Helvetica').fillColor('#64748b');
+    doc.text('This document is generated electronically and does not require a physical signature.', 50, 720, { align: 'center' });
+
+    doc.end();
+  } catch (err) {
+    res.status(500).send("PDF Generation Error: " + err.message);
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

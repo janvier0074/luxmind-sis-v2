@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b32">
+  <title>Document Generator | LuxMind Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #111d35; --navy-2: #192844; --page: #f4f6fa; --surface: #fff; --surface-soft: #f8fafc;
+      --text: #172238; --muted: #718096; --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff;
+      --green: #15966b; --green-soft: #e9f8f1; --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    button, input, textarea, select { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    
+    /* SIDEBAR */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); box-shadow: 0 7px 18px rgba(56,103,232,.3); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; letter-spacing: 1.35px; text-transform: uppercase; }
+    .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
+    .nav-group { padding: 23px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; transition: .18s ease; }
+    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; } .nav-link.logout i { color: #ff9aa3; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    
+    /* MAIN */
+    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
+    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
+    
+    /* TOP SEARCH BAR */
+    .search-container { background: var(--surface); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 24px; display: flex; gap: 12px; }
+    .search-input { flex: 1; padding: 14px 18px; border: 1px solid #dfe5ee; border-radius: 12px; font-size: 14px; outline: none; transition: .2s; background: var(--surface-soft); }
+    .search-input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 4px var(--blue-soft); }
+    .btn-search { padding: 14px 24px; border: 0; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; background: var(--navy); color: #fff; transition: .2s; display: flex; align-items: center; gap: 8px; }
+    .btn-search:hover { background: #1c3155; }
+
+    /* STUDENT GRID */
+    .student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    
+    .student-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+    .student-card:hover { transform: translateY(-4px); box-shadow: 0 12px 35px rgba(24, 39, 75, .1); }
+    
+    .card-top { padding: 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px dashed var(--line); }
+    .avatar { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-soft), #d9e6ff); color: var(--blue); display: grid; place-items: center; font: 800 20px "Manrope", sans-serif; flex-shrink: 0; }
+    .student-info h3 { margin: 0 0 4px 0; color: #1c2940; font: 800 16px "Manrope", sans-serif; }
+    .student-info p { margin: 0; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .student-id { display: inline-block; margin-top: 6px; padding: 4px 8px; background: #f1f5f9; color: #64748b; font-family: monospace; font-size: 11px; font-weight: 700; border-radius: 6px; }
+
+    .card-details { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #fafbfe; }
+    .detail-item { display: flex; flex-direction: column; gap: 4px; }
+    .detail-label { color: #7b8799; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-value { color: #1c2940; font-size: 13px; font-weight: 700; }
+
+    .card-actions { padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+    .btn-action { padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .2s; text-decoration: none; border: 1px solid transparent; }
+    
+    .btn-enrollment { background: var(--green-soft); color: var(--green); border-color: #bcebd6; }
+    .btn-enrollment:hover { background: #d1f2e5; }
+    
+    .btn-embassy { background: var(--blue-soft); color: var(--blue); border-color: #d9e6ff; }
+    .btn-embassy:hover { background: #dbe4ff; }
+
+    .empty-state { padding: 60px 20px; text-align: center; color: var(--muted); background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--line); grid-column: 1 / -1; }
+    .empty-state i { font-size: 40px; margin-bottom: 15px; color: #cbd5e1; }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .overlay.open { display: block; }
+      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
+      .search-container { flex-direction: column; }
+      .btn-search { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Admin</div>
+        <div class="brand-subtitle">International Office</div>
+      </div>
+    </div>
+    <div class="team-chip">
+      <small>Officer Access</small>
+      <strong><%= user.full_name %></strong>
+    </div>
+    
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Operations</div>
+        <a href="/sis/intl" class="nav-link"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
+        <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault</span></a>
+        <a href="/sis/intl/documents" class="nav-link active"><i class="fa-solid fa-file-pdf"></i><span>Document Generator</span></a>
+        <a href="/sis/intl/inbox" class="nav-link"><i class="fa-solid fa-envelope-open-text"></i><span>Executive Inbox</span></a>
+      </div>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <p class="eyebrow">International Office / Operations</p>
+          <h1>Document Generator</h1>
+          <p class="welcome">Generate official PDF letters for <strong><%= user.full_name %></strong>.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+      <form method="GET" action="/sis/intl/documents" style="display:flex; width:100%; gap:12px; flex-wrap:wrap;">
+        <input type="text" name="q" value="<%= searchQuery %>" placeholder="Search by student name, ID, or admission number..." class="search-input">
+        <button type="submit" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Search Directory</button>
+        <% if (searchQuery) { %>
+          <a href="/sis/intl/documents" class="btn-search" style="background:#eef1f5; color:#64748b;"><i class="fa-solid fa-times"></i> Clear</a>
+        <% } %>
+      </form>
+    </div>
+
+    <!-- Student Grid -->
+    <% if (!students.length) { %>
+      <div class="empty-state">
+        <i class="fa-solid fa-folder-open"></i>
+        <h3>No Students Found</h3>
+        <p style="font-size:13px;">No records match your search criteria.</p>
+      </div>
+    <% } else { %>
+      <div class="student-grid">
+        <% students.forEach(s => { 
+           // Get initials for avatar
+           const initials = s.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        %>
+          <article class="student-card">
+            <div class="card-top">
+              <div class="avatar"><%= initials %></div>
+              <div class="student-info">
+                <h3><%= s.full_name %></h3>
+                <p><%= s.class_level || 'Program N/A' %></p>
+                <span class="student-id"><%= s.admission_number || s.username %></span>
+              </div>
+            </div>
+            
+            <div class="card-details">
+              <div class="detail-item">
+                <span class="detail-label">Current Semester</span>
+                <span class="detail-value"><%= s.current_semester || '—' %></span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status</span>
+                <span class="detail-value" style="color:var(--green);"><i class="fa-solid fa-circle-check" style="font-size:10px;"></i> Active</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <a href="/sis/intl/documents/generate/<%= s.id %>/enrollment" target="_blank" class="btn-action btn-enrollment">
+                <i class="fa-solid fa-file-invoice"></i> Certificate of Enrollment
+              </a>
+              <a href="/sis/intl/documents/generate/<%= s.id %>/embassy" target="_blank" class="btn-action btn-embassy">
+                <i class="fa-solid fa-building-columns"></i> Embassy Letter
+              </a>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+  </script>
+</body>
+</html>

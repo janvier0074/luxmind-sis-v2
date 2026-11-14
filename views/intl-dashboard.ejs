@@ -219,10 +219,13 @@
             <i class="fa-solid fa-file-pdf nav-icon"></i>
             <span>Document Generator</span>
           </a>
-          <span class="nav-link disabled" title="Coming in Phase 2">
+                   <a href="/sis/intl/admissions/queue" class="nav-link">
             <i class="fa-solid fa-clipboard-list nav-icon"></i>
             <span>Application Queue</span>
-          </span>
+            <% if (sidebarCounts && sidebarCounts.new_applications > 0) { %>
+              <span class="nav-badge amber"><%= sidebarCounts.new_applications %></span>
+            <% } %>
+          </a>
           <span class="nav-link disabled" title="Coming in Phase 5">
             <i class="fa-solid fa-handshake nav-icon"></i>
             <span>Agent Portal</span>

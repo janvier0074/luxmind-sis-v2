@@ -866,7 +866,7 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
-      // 8. DEBT MATH (aggregated from semester_invoices)
+        // 8. DEBT MATH (aggregated from semester_invoices)
     const allInvoicesRes = await pool.query(`
       SELECT semester_number, net_amount, paid_amount, status 
       FROM semester_invoices 
@@ -932,7 +932,8 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       scholarshipAmount, 
       netTuition, 
       totalPaid, 
-      currentDebt: currentDebt > 0 ? currentDebt : 0,
+            currentDebt: currentDebt > 0 ? currentDebt : 0,
+      pastDueDebt: pastDueDebt > 0 ? pastDueDebt : 0,
       approachingDebt,
       totalDebt,
       installments,

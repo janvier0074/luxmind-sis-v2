@@ -5676,6 +5676,8 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
     await client.query('BEGIN');
 
     const newStatus = actionMap[action];
+
+    // 1. Update the application status
     const upd = await client.query(`
       UPDATE applications
          SET status = $1,
@@ -5684,7 +5686,7 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
              rejection_reason = $3,
              updated_at = NOW()
        WHERE id = $4
-      RETURNING full_name
+      RETURNING *
     `, [newStatus, req.session.user.id, action === 'reject' ? rejection_reason.trim() : null, appId]);
 
     if (upd.rows.length === 0) {
@@ -5693,21 +5695,163 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
       return res.redirect('/sis/intl/admissions/queue');
     }
 
+    const application = upd.rows[0];
     const actionLabels = { approve: 'APPROVED', reject: 'REJECTED', waitlist: 'WAITLISTED', in_review: 'MOVED TO IN REVIEW' };
 
+    // 2. Log the status change
     await client.query(`
       INSERT INTO audit_logs (user_id, action, details)
       VALUES ($1, $2, $3)
     `, [
       req.session.user.id,
       `APPLICATION_${actionLabels[action].replace(/ /g,'_')}`,
-      `Application #${appId} (${upd.rows[0].full_name}) ${actionLabels[action].toLowerCase()}` +
+      `Application #${appId} (${application.full_name}) ${actionLabels[action].toLowerCase()}` +
         (action === 'reject' ? ` — Reason: ${rejection_reason.trim()}` : '')
     ]);
 
+    // ============================================
+    // 3. AUTO-ENROLLMENT (only when approving a not-yet-enrolled application)
+    // ============================================
+    let enrollmentInfo = null;
+    if (action === 'approve' && !application.created_user_id) {
+      // 3a. Generate unique admission number (LUX-XXXXXX, continues from highest existing)
+      const maxRes = await client.query(`
+        SELECT COALESCE(MAX(CAST(SUBSTRING(admission_number FROM 5) AS INTEGER)), 100000) AS max_num
+        FROM student_profiles
+        WHERE admission_number ~ '^LUX-[0-9]+$'
+      `);
+      const nextNum = Number(maxRes.rows[0].max_num) + 1;
+      const admissionNumber = 'LUX-' + String(nextNum).padStart(6, '0');
+
+      // 3b. Generate a unique username from the email local part
+      const baseUsername = (application.email.split('@')[0] || 'student').toLowerCase().replace(/[^a-z0-9]/g, '') || ('student' + appId);
+      let username = baseUsername;
+      let attempt = 0;
+      while (true) {
+        const exists = await client.query(`SELECT id FROM users WHERE username = $1`, [username]);
+        if (exists.rows.length === 0) break;
+        attempt++;
+        username = baseUsername + attempt;
+        if (attempt > 50) { username = baseUsername + Date.now(); break; }
+      }
+
+      // 3c. Create the user
+      const newUserRes = await client.query(`
+        INSERT INTO users (full_name, username, email, password, role, phone)
+        VALUES ($1, $2, $3, 'Student2026!', 'student', $4)
+        RETURNING id
+      `, [application.full_name, username, application.email, application.phone]);
+      const newUserId = newUserRes.rows[0].id;
+
+      // 3d. Create the student profile
+      await client.query(`
+        INSERT INTO student_profiles
+          (user_id, admission_number, class_level, current_semester, is_international, high_school_gpa, phone)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        newUserId,
+        admissionNumber,
+        application.intended_program || 'Computer Engineering',
+        application.intended_semester || 1,
+        true,
+        application.high_school_gpa || null,
+        application.phone || null
+      ]);
+
+      // 3e. Build acceptance letter URL
+      const acceptanceUrl = `${process.env.APP_URL || ''}/sis/intl/documents/generate/${newUserId}/enrollment`;
+
+      // 3f. Link application back to the new user
+      await client.query(`
+        UPDATE applications SET created_user_id = $1, acceptance_letter_url = $2 WHERE id = $3
+      `, [newUserId, acceptanceUrl, appId]);
+
+      // 3g. Create a Visa team ticket (guidance_request)
+      await client.query(`
+        INSERT INTO guidance_requests
+          (student_id, request_type, description, assigned_department, assigned_team, status)
+        VALUES ($1, $2, $3, $4, $5, 'Pending')
+      `, [
+        newUserId,
+        'New Student Visa Processing',
+        `Auto-generated from approved application #${appId} (${application.full_name}). Newly enrolled international student — needs residence permit processing and health insurance setup.`,
+        'International Office',
+        'Visa & Immigration Team'
+      ]);
+
+      // 3h. Log the enrollment
+      await client.query(`
+        INSERT INTO audit_logs (user_id, action, details)
+        VALUES ($1, 'APPLICATION_AUTO_ENROLL', $2)
+      `, [
+        req.session.user.id,
+        `Auto-enrolled student ${application.full_name} (admission ${admissionNumber}, user #${newUserId}) from application #${appId}`
+      ]);
+
+      enrollmentInfo = {
+        newUserId,
+        admissionNumber,
+        username,
+        password: 'Student2026!',
+        email: application.email,
+        fullName: application.full_name
+      };
+    }
+
     await client.query('COMMIT');
 
-    req.flash('success', `Application ${actionLabels[action].toLowerCase()}.`);
+    // 4. Send welcome email after commit (never fails the enrollment)
+    if (enrollmentInfo) {
+      try {
+        await resend.emails.send({
+          from: 'LuxMind Admissions <onboarding@resend.dev>',
+          to: enrollmentInfo.email,
+          subject: 'Welcome to LuxMind University — Your Student Account',
+          html: `
+            <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6fa; padding: 24px;">
+              <div style="background: white; border-radius: 16px; padding: 32px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #527df2, #3157cb); border-radius: 12px; color: white; line-height: 48px; font-size: 22px;">🌍</div>
+                  <h1 style="color: #142039; margin: 16px 0 4px; font-size: 22px;">Welcome to LuxMind University</h1>
+                </div>
+                <p style="color: #4c5a70; font-size: 15px; line-height: 1.6;">Dear <strong>${enrollmentInfo.fullName}</strong>,</p>
+                <p style="color: #4c5a70; font-size: 15px; line-height: 1.6;">Congratulations! Your application has been <strong style="color: #15966b;">approved</strong>. We are delighted to welcome you to our international community.</p>
+                <div style="background: #edf2ff; border-left: 4px solid #3867e8; padding: 16px 20px; border-radius: 8px; margin: 24px 0;">
+                  <h2 style="color: #142039; margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Student Account</h2>
+                  <table style="width: 100%; font-size: 14px;">
+                    <tr><td style="color: #64748b; padding: 4px 0;">Admission #</td><td style="color: #142039; font-weight: 700; text-align: right;">${enrollmentInfo.admissionNumber}</td></tr>
+                    <tr><td style="color: #64748b; padding: 4px 0;">Username</td><td style="color: #142039; font-weight: 700; text-align: right; font-family: monospace;">${enrollmentInfo.username}</td></tr>
+                    <tr><td style="color: #64748b; padding: 4px 0;">Password</td><td style="color: #142039; font-weight: 700; text-align: right; font-family: monospace;">Student2026!</td></tr>
+                  </table>
+                </div>
+                <p style="color: #4c5a70; font-size: 15px; line-height: 1.6;">Please log in to your student portal to complete your onboarding. <strong>Change your password immediately after your first login.</strong></p>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${process.env.APP_URL || ''}/login" style="display: inline-block; background: #111d35; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 700;">Log in to Student Portal</a>
+                </div>
+                <p style="color: #718096; font-size: 13px; line-height: 1.6; margin-bottom: 6px;">Next steps:</p>
+                <ol style="color: #718096; font-size: 13px; line-height: 1.8; padding-left: 20px;">
+                  <li>The International Office will contact you about your residence permit.</li>
+                  <li>Complete your health insurance registration.</li>
+                  <li>Submit any missing documents to admissions.</li>
+                </ol>
+                <hr style="border: 0; border-top: 1px solid #e6ebf2; margin: 24px 0;">
+                <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">LuxMind University · International Office</p>
+              </div>
+            </div>
+          `
+        });
+      } catch (mailErr) {
+        console.error('Enrollment welcome email error:', mailErr);
+      }
+    }
+
+    // 5. Flash message
+    if (enrollmentInfo) {
+      req.flash('success',
+        `✅ Application approved — student enrolled! Admission #${enrollmentInfo.admissionNumber} · Username: ${enrollmentInfo.username} · Password: Student2026! · Welcome email sent to ${enrollmentInfo.email}.`);
+    } else {
+      req.flash('success', `Application ${actionLabels[action].toLowerCase()}.`);
+    }
     res.redirect(`/sis/intl/admissions/applications/${appId}`);
   } catch (err) {
     await client.query('ROLLBACK');

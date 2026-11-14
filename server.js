@@ -4996,4 +4996,67 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
   }
 });
 // START SERVER
+// ============================================
+// --- IT HELPDESK: PASSWORD RESET CONSOLE ---
+// ============================================
+app.get('/sis/it/password-reset', requireRole('it_staff'), async (req, res) => {
+  try {
+    const searchQuery = req.query.q || '';
+    let users = [];
+    
+    if (searchQuery) {
+      const result = await pool.query(`
+        SELECT u.id, u.username, u.full_name, u.email, u.role,
+               sp.admission_number
+        FROM users u
+        LEFT JOIN student_profiles sp ON sp.user_id = u.id
+        WHERE u.username ILIKE $1 
+           OR u.full_name ILIKE $1 
+           OR u.email ILIKE $1
+           OR sp.admission_number ILIKE $1
+        ORDER BY u.role, u.full_name
+        LIMIT 20
+      `, [`%${searchQuery}%`]);
+      users = result.rows;
+    }
+    
+    res.render('it-password-reset', {
+      user: req.session.user,
+      users,
+      searchQuery,
+      defaultPassword: 'TempPass2026!',
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Password Reset Console Error: " + err.message);
+  }
+});
+
+app.post('/sis/it/password-reset/:id', requireRole('it_staff'), async (req, res) => {
+  const targetId = req.params.id;
+  const newPassword = 'TempPass2026!';
+  
+  try {
+    const userRes = await pool.query(`SELECT id, username, full_name, role FROM users WHERE id = $1`, [targetId]);
+    if (userRes.rows.length === 0) {
+      req.flash('error', 'User not found.');
+      return res.redirect('/sis/it/password-reset');
+    }
+    
+    const target = userRes.rows[0];
+    
+    await pool.query(`UPDATE users SET password = $1 WHERE id = $2`, [newPassword, targetId]);
+    
+    await pool.query(`
+      INSERT INTO audit_logs (user_id, action, details)
+      VALUES ($1, 'PASSWORD_RESET', $2)
+    `, [req.session.user.id, `Reset password for ${target.username} (${target.role}) - ID ${target.id}`]);
+    
+    req.flash('success', `Password for ${target.full_name} (${target.username}) reset to "${newPassword}".`);
+    res.redirect('/sis/it/password-reset?q=' + encodeURIComponent(target.username));
+  } catch (err) {
+    res.status(500).send("Password Reset Error: " + err.message);
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

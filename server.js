@@ -530,17 +530,17 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     const failedCourseIds = failedRes.rows.map(r => r.id);
 
     // Filter courses: only show courses at or below student's semester, OR failed retakes
-    const coursesRes = await pool.query(`
+      const coursesRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota,
              s.id as section_id, s.day_of_week, s.start_time, s.end_time,
              ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
               (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
-             CASE WHEN c.semester_number > $2 THEN true ELSE false END AS is_future
+             CASE WHEN c.semester_number > $1 THEN true ELSE false END AS is_future
       FROM courses c 
       LEFT JOIN course_sections s ON s.course_id = c.id
-      WHERE c.semester_number <= $2 OR c.id = ANY($3::int[])
+      WHERE c.semester_number <= $1 OR c.id = ANY($2::int[])
       ORDER BY c.semester_number ASC, c.code ASC
-    `, [req.session.user.id, studentSemester, failedCourseIds]);
+    `, [studentSemester, failedCourseIds]);
 
     const passedRes = await pool.query(`
       SELECT c.id FROM grades g 

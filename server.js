@@ -5357,5 +5357,92 @@ app.get('/sis/intl/documents', requireRole('intl_officer', 'admin'), async (req,
     res.status(500).send("Document Hub Error: " + err.message);
   }
 });
+// ============================================
+// --- INTL OFFICE: RESIDENCE PERMIT TRACKER ---
+// ============================================
+app.get('/sis/intl/permits', requireRole('intl_officer', 'admin'), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const params = [];
+    let where = '';
+    if (q) {
+      params.push(`%${q}%`);
+      where = `AND (u.full_name ILIKE $1 OR sp.admission_number ILIKE $1 OR rp.permit_number ILIKE $1)`;
+    }
+
+    const permitsRes = await pool.query(`
+      SELECT u.id as student_id, u.full_name, u.username, sp.admission_number, sp.class_level,
+             rp.id as permit_id, rp.permit_number, rp.status, rp.issue_date, rp.expiry_date, rp.notes,
+             CASE 
+               WHEN rp.expiry_date IS NOT NULL AND rp.expiry_date < CURRENT_DATE THEN 'expired'
+               WHEN rp.expiry_date IS NOT NULL AND rp.expiry_date < (CURRENT_DATE + INTERVAL '30 days') THEN 'expiring_soon'
+               ELSE 'valid'
+             END as warning_status
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN residence_permits rp ON rp.student_id = u.id
+      WHERE u.role = 'student' ${where}
+      ORDER BY u.full_name ASC
+      LIMIT 100
+    `, params);
+
+    res.render('intl-permits', {
+      user: req.session.user,
+      permits: permitsRes.rows,
+      searchQuery: q,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Permit Tracker Error: " + err.message);
+  }
+});
+
+app.post('/sis/intl/permits/update', requireRole('intl_officer', 'admin'), async (req, res) => {
+  const { student_id, permit_number, status, issue_date, expiry_date, notes } = req.body;
+  
+  if (!student_id) {
+    req.flash('error', 'Student ID is required.');
+    return res.redirect('/sis/intl/permits');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    await client.query(`
+      INSERT INTO residence_permits (student_id, permit_number, status, issue_date, expiry_date, notes, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (student_id) DO UPDATE SET
+        permit_number = EXCLUDED.permit_number,
+        status = EXCLUDED.status,
+        issue_date = EXCLUDED.issue_date,
+        expiry_date = EXCLUDED.expiry_date,
+        notes = EXCLUDED.notes,
+        updated_at = NOW()
+    `, [
+      Number(student_id), 
+      permit_number || null, 
+      status || 'Applied', 
+      issue_date || null, 
+      expiry_date || null, 
+      notes || null, 
+      req.session.user.id
+    ]);
+
+    await client.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'PERMIT_UPDATE', $2)
+    `, [req.session.user.id, `Updated residence permit for student ID ${student_id} to ${status}`]);
+
+    await client.query('COMMIT');
+    req.flash('success', 'Permit record updated successfully.');
+    res.redirect('/sis/intl/permits');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).send("Permit Update Error: " + err.message);
+  } finally {
+    client.release();
+  }
+});
 
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

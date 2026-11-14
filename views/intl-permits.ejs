@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residence Permits | LuxMind Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    
+    /* SIDEBAR */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
+    .nav-group { padding: 23px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; transition: .18s ease; }
+    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    
+    /* MAIN */
+    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 27px; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
+    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
+    
+    /* SEARCH */
+    .search-container { background: var(--surface); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); border: 1px solid var(--line); margin-bottom: 24px; display: flex; gap: 12px; }
+    .search-input { flex: 1; padding: 14px 18px; border: 1px solid #dfe5ee; border-radius: 12px; font-size: 14px; outline: none; background: var(--page); }
+    .search-input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 4px var(--blue-soft); }
+    .btn-search { padding: 14px 24px; border: 0; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; background: var(--navy); color: #fff; }
+    
+    /* GRID */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+    
+    .card-top { padding: 20px 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px dashed var(--line); }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; font: 800 18px "Manrope", sans-serif; flex-shrink: 0; }
+    .student-info h3 { margin: 0 0 4px 0; color: #1c2940; font: 800 16px "Manrope", sans-serif; }
+    .student-info p { margin: 0; color: var(--muted); font-size: 12px; font-weight: 600; }
+    
+    /* STATUS BADGES */
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 8px; }
+    .badge-approved { background: var(--green-soft); color: var(--green); }
+    .badge-applied { background: var(--amber-soft); color: var(--amber); }
+    .badge-expired, .badge-rejected { background: var(--red-soft); color: var(--red); }
+    
+    /* DETAILS */
+    .card-details { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #fafbfe; }
+    .detail-label { color: #7b8799; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: block; }
+    .detail-value { color: #1c2940; font-size: 13px; font-weight: 700; }
+    .text-red { color: var(--red); }
+    .text-amber { color: var(--amber); }
+
+    /* FORM */
+    .card-form { padding: 20px 24px; border-top: 1px solid var(--line); display: none; background: #fff; }
+    .card-form.active { display: block; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #dfe5ee; border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .btn-save { width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+    
+    .btn-toggle { width: 100%; padding: 14px; background: #f8fafc; color: var(--blue); border: none; border-top: 1px solid var(--line); font-weight: 800; font-size: 13px; cursor: pointer; transition: .2s; }
+    .btn-toggle:hover { background: var(--blue-soft); }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .overlay.open { display: block; }
+      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
+      .search-container { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Admin</div>
+        <div class="brand-subtitle">International Office</div>
+      </div>
+    </div>
+    <div class="team-chip">
+      <small>Officer Access</small>
+      <strong><%= user.full_name %></strong>
+    </div>
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Operations</div>
+        <a href="/sis/intl" class="nav-link"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
+        <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault</span></a>
+        <a href="/sis/intl/permits" class="nav-link active"><i class="fa-solid fa-id-card"></i><span>Residence Permits</span></a>
+        <a href="/sis/intl/documents" class="nav-link"><i class="fa-solid fa-file-pdf"></i><span>Document Generator</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <p class="eyebrow">International Office / Compliance</p>
+          <h1>Residence Permits</h1>
+          <p class="welcome">Track legal status and expiry dates for <strong><%= user.full_name %></strong>.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="search-container">
+      <form method="GET" action="/sis/intl/permits" style="display:flex; width:100%; gap:12px; flex-wrap:wrap;">
+        <input type="text" name="q" value="<%= searchQuery %>" placeholder="Search by student name, ID, or permit number..." class="search-input">
+        <button type="submit" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+        <% if (searchQuery) { %>
+          <a href="/sis/intl/permits" class="btn-search" style="background:#eef1f5; color:#64748b;">Clear</a>
+        <% } %>
+      </form>
+    </div>
+
+    <% if (!permits.length) { %>
+      <div style="text-align:center; padding: 40px; color: var(--muted);">No students found.</div>
+    <% } else { %>
+      <div class="grid">
+        <% permits.forEach(p => { 
+           const initials = p.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+           const status = p.status || 'No Record';
+           const badgeClass = status === 'Approved' ? 'badge-approved' : status === 'Applied' ? 'badge-applied' : 'badge-expired';
+           
+           const expiryFormatted = p.expiry_date ? new Date(p.expiry_date).toLocaleDateString('en-GB') : '—';
+        %>
+          <article class="card">
+            <div class="card-top">
+              <div class="avatar"><%= initials %></div>
+              <div class="student-info">
+                <h3><%= p.full_name %></h3>
+                <p><%= p.class_level || 'Program N/A' %></p>
+                <span class="badge <%= badgeClass %>"><%= status %></span>
+              </div>
+            </div>
+            
+            <div class="card-details">
+              <div>
+                <span class="detail-label">Permit Number</span>
+                <span class="detail-value" style="font-family:monospace;"><%= p.permit_number || '—' %></span>
+              </div>
+              <div>
+                <span class="detail-label">Expiry Date</span>
+                <span class="detail-value <%= p.warning_status === 'expired' ? 'text-red' : (p.warning_status === 'expiring_soon' ? 'text-amber' : '') %>">
+                  <%= expiryFormatted %>
+                  <% if (p.warning_status === 'expired') { %><i class="fa-solid fa-triangle-exclamation"></i><% } %>
+                </span>
+              </div>
+            </div>
+
+            <button type="button" class="btn-toggle" onclick="toggleForm('<%= p.student_id %>')">
+              <i class="fa-solid fa-pen-to-square"></i> Update Permit Record
+            </button>
+
+            <div class="card-form" id="form-<%= p.student_id %>">
+              <form method="POST" action="/sis/intl/permits/update">
+                <input type="hidden" name="student_id" value="<%= p.student_id %>">
+                
+                <div class="form-group">
+                  <label>Permit Number</label>
+                  <input type="text" name="permit_number" class="form-control" value="<%= p.permit_number || '' %>" placeholder="e.g. RP-2026-XXXX">
+                </div>
+                <div class="form-group">
+                  <label>Status</label>
+                  <select name="status" class="form-control">
+                    <option value="Applied" <%= p.status === 'Applied' ? 'selected' : '' %>>Applied / Processing</option>
+                    <option value="Approved" <%= p.status === 'Approved' ? 'selected' : '' %>>Approved</option>
+                    <option value="Rejected" <%= p.status === 'Rejected' ? 'selected' : '' %>>Rejected</option>
+                    <option value="Expired" <%= p.status === 'Expired' ? 'selected' : '' %>>Expired</option>
+                  </select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <div class="form-group">
+                    <label>Issue Date</label>
+                    <input type="date" name="issue_date" class="form-control" value="<%= p.issue_date ? new Date(p.issue_date).toISOString().split('T')[0] : '' %>">
+                  </div>
+                  <div class="form-group">
+                    <label>Expiry Date</label>
+                    <input type="date" name="expiry_date" class="form-control" value="<%= p.expiry_date ? new Date(p.expiry_date).toISOString().split('T')[0] : '' %>">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Internal Notes</label>
+                  <input type="text" name="notes" class="form-control" value="<%= p.notes || '' %>" placeholder="e.g. Awaiting police clearance">
+                </div>
+                
+                <button type="submit" class="btn-save">Save Permit Data</button>
+              </form>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+
+    // Toggle form visibility
+    function toggleForm(studentId) {
+      const form = document.getElementById('form-' + studentId);
+      // Close all other forms first
+      document.querySelectorAll('.card-form').forEach(f => {
+        if (f.id !== 'form-' + studentId) f.classList.remove('active');
+      });
+      form.classList.toggle('active');
+    }
+  </script>
+</body>
+</html>

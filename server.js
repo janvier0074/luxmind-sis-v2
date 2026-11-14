@@ -868,7 +868,8 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
 
         // 8. DEBT MATH (aggregated from semester_invoices)
     const allInvoicesRes = await pool.query(`
-      SELECT semester_number, net_amount, paid_amount, status 
+            SELECT semester_number, net_amount, paid_amount, status, 
+             base_amount, scholarship_amount, academic_year 
       FROM semester_invoices 
       WHERE student_id = $1 
       ORDER BY semester_number ASC

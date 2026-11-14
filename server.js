@@ -5536,4 +5536,62 @@ app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), asy
     client.release();
   }
 });
+
+
+// ============================================
+// --- INTL OFFICE: EXECUTIVE COMPLIANCE DASHBOARD ---
+// ============================================
+app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), async (req, res) => {
+  try {
+    // 1. Fetch Counts (Lightning fast, scales to 100,000+ students)
+    const stats = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.role = 'student' AND sp.is_international = true) AS total_intl,
+        
+        (SELECT COUNT(*) FROM passport_custody WHERE returned_at IS NULL AND due_back_at < NOW()) AS passports_overdue,
+        
+        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date < CURRENT_DATE) AS permits_expired,
+        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date >= CURRENT_DATE AND expiry_date < (CURRENT_DATE + INTERVAL '30 days')) AS permits_expiring,
+        
+        (SELECT COUNT(*) FROM users u 
+         LEFT JOIN health_insurance hi ON hi.student_id = u.id 
+         WHERE u.role = 'student' 
+         AND (hi.id IS NULL OR hi.status = 'Expired' OR hi.expiry_date < CURRENT_DATE)) AS insurance_missing
+    `);
+
+    // 2. Fetch the "Exceptions" (Top 5 of each critical issue for the action list)
+    const overduePassports = await pool.query(`
+      SELECT pc.student_id, u.full_name, pc.passport_number, pc.destination, pc.due_back_at
+      FROM passport_custody pc JOIN users u ON u.id = pc.student_id
+      WHERE pc.returned_at IS NULL AND pc.due_back_at < NOW()
+      ORDER BY pc.due_back_at ASC LIMIT 5
+    `);
+
+    const expiringPermits = await pool.query(`
+      SELECT rp.student_id, u.full_name, rp.permit_number, rp.expiry_date
+      FROM residence_permits rp JOIN users u ON u.id = rp.student_id
+      WHERE rp.expiry_date < (CURRENT_DATE + INTERVAL '30 days')
+      ORDER BY rp.expiry_date ASC LIMIT 5
+    `);
+
+    // 3. Fetch recent actions for accountability
+    const recentLogs = await pool.query(`
+      SELECT a.action, a.details, a.created_at, u.full_name as staff_name
+      FROM audit_logs a JOIN users u ON u.id = a.user_id
+      WHERE a.action LIKE 'PASSPORT%' OR a.action LIKE 'PERMIT%' OR a.action LIKE 'INSURANCE%'
+      ORDER BY a.created_at DESC LIMIT 5
+    `);
+
+    res.render('intl-compliance', {
+      user: req.session.user,
+      metrics: stats.rows[0],
+      overduePassports: overduePassports.rows,
+      expiringPermits: expiringPermits.rows,
+      recentLogs: recentLogs.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Compliance Dashboard Error: " + err.message);
+  }
+});
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

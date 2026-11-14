@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compliance Center | LuxMind Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    
+    /* SIDEBAR */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
+    .nav-group { padding: 23px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; transition: .18s ease; }
+    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    
+    /* MAIN */
+    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 27px; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
+    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
+
+    /* METRICS GRID */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; }
+    .metric-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .metric-card.red::before { background: var(--red); }
+    .metric-card.amber::before { background: var(--amber); }
+    .metric-card.green::before { background: var(--green); }
+    .metric-card.blue::before { background: var(--blue); }
+    
+    .metric-data h3 { margin: 0 0 4px 0; font-size: 32px; font-weight: 800; color: #142039; font-family: "Manrope", sans-serif; }
+    .metric-data p { margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; }
+    .metric-card.red .metric-icon { background: var(--red-soft); color: var(--red); }
+    .metric-card.amber .metric-icon { background: var(--amber-soft); color: var(--amber); }
+    .metric-card.green .metric-icon { background: var(--green-soft); color: var(--green); }
+    .metric-card.blue .metric-icon { background: var(--blue-soft); color: var(--blue); }
+
+    /* DASHBOARD PANELS */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+    .panel-header { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: #fafbfe; }
+    .panel-title { margin: 0; font: 800 15px "Manrope", sans-serif; color: #1c2940; display: flex; align-items: center; gap: 8px; }
+    .panel-link { font-size: 12px; font-weight: 800; color: var(--blue); }
+    .panel-body { padding: 0; flex: 1; }
+    
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+    .list-item:last-child { border-bottom: none; }
+    .list-item-title { font-weight: 700; color: #1c2940; font-size: 13px; margin-bottom: 4px; }
+    .list-item-sub { color: var(--muted); font-size: 11px; font-weight: 600; }
+    .list-item-badge { background: var(--red-soft); color: var(--red); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    
+    .empty-list { padding: 30px; text-align: center; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .overlay.open { display: block; }
+      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
+      .panels { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Admin</div>
+        <div class="brand-subtitle">International Office</div>
+      </div>
+    </div>
+    <div class="team-chip">
+      <small>Officer Access</small>
+      <strong><%= user.full_name %></strong>
+    </div>
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Operations</div>
+        <a href="/sis/intl" class="nav-link"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
+        <a href="/sis/intl/compliance" class="nav-link active"><i class="fa-solid fa-shield-halved"></i><span>Compliance Center</span></a>
+        <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault</span></a>
+        <a href="/sis/intl/permits" class="nav-link"><i class="fa-solid fa-id-card"></i><span>Residence Permits</span></a>
+        <a href="/sis/intl/insurance" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance</span></a>
+        <a href="/sis/intl/documents" class="nav-link"><i class="fa-solid fa-file-pdf"></i><span>Document Generator</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <p class="eyebrow">International Office / Command Center</p>
+          <h1>Executive Dashboard</h1>
+          <p class="welcome">Welcome back, <strong><%= user.full_name %></strong>. Here is the compliance status.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Metrics Row -->
+    <section class="metrics-grid">
+      <div class="metric-card blue">
+        <div class="metric-data">
+          <h3><%= metrics.total_intl %></h3>
+          <p>Intl Students</p>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+      </div>
+      
+      <div class="metric-card <%= Number(metrics.passports_overdue) > 0 ? 'red' : 'green' %>">
+        <div class="metric-data">
+          <h3><%= metrics.passports_overdue %></h3>
+          <p>Passports Overdue</p>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-vault"></i></div>
+      </div>
+
+      <div class="metric-card <%= Number(metrics.permits_expired) > 0 ? 'red' : 'green' %>">
+        <div class="metric-data">
+          <h3><%= metrics.permits_expired %></h3>
+          <p>Expired Permits</p>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-id-card"></i></div>
+      </div>
+
+      <div class="metric-card <%= Number(metrics.insurance_missing) > 0 ? 'amber' : 'green' %>">
+        <div class="metric-data">
+          <h3><%= metrics.insurance_missing %></h3>
+          <p>Missing Insurance</p>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-notes-medical"></i></div>
+      </div>
+    </section>
+
+    <!-- Action Panels -->
+    <section class="panels">
+      
+      <!-- Overdue Passports -->
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);"></i> Action Required: Passports</h3>
+          <a href="/sis/intl/passports" class="panel-link">View All →</a>
+        </div>
+        <div class="panel-body">
+          <% if (overduePassports.length === 0) { %>
+            <div class="empty-list"><i class="fa-solid fa-circle-check" style="color:var(--green); font-size:24px; margin-bottom:8px; display:block;"></i> All passports are safe and accounted for.</div>
+          <% } else { %>
+            <% overduePassports.forEach(p => { %>
+              <div class="list-item">
+                <div>
+                  <div class="list-item-title"><%= p.full_name %></div>
+                  <div class="list-item-sub">At <%= p.destination %> • Due: <%= new Date(p.due_back_at).toLocaleDateString('en-GB') %></div>
+                </div>
+                <a href="/sis/intl/passports?q=<%= p.passport_number %>" class="list-item-badge">Fix</a>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Expiring Permits -->
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title"><i class="fa-solid fa-clock" style="color:var(--amber);"></i> Action Required: Permits</h3>
+          <a href="/sis/intl/permits" class="panel-link">View All →</a>
+        </div>
+        <div class="panel-body">
+          <% if (expiringPermits.length === 0) { %>
+            <div class="empty-list"><i class="fa-solid fa-circle-check" style="color:var(--green); font-size:24px; margin-bottom:8px; display:block;"></i> No residence permits expiring in the next 30 days.</div>
+          <% } else { %>
+            <% expiringPermits.forEach(p => { %>
+              <div class="list-item">
+                <div>
+                  <div class="list-item-title"><%= p.full_name %></div>
+                  <div class="list-item-sub">Permit: <%= p.permit_number || 'Pending' %> • Expiry: <%= new Date(p.expiry_date).toLocaleDateString('en-GB') %></div>
+                </div>
+                <a href="/sis/intl/permits?q=<%= p.permit_number || '' %>" class="list-item-badge" style="background:var(--amber-soft); color:var(--amber);">Renew</a>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Recent Activity Log -->
+    <section class="panel" style="margin-top: 24px;">
+      <div class="panel-header">
+        <h3 class="panel-title"><i class="fa-solid fa-list-check" style="color:var(--blue);"></i> Recent Staff Activity</h3>
+      </div>
+      <div class="panel-body">
+        <% if (recentLogs.length === 0) { %>
+          <div class="empty-list">No recent activity.</div>
+        <% } else { %>
+          <% recentLogs.forEach(log => { %>
+            <div class="list-item">
+              <div>
+                <div class="list-item-title"><%= log.staff_name %> <span style="font-weight: 400; color: var(--muted); font-size:11px;">performed <%= log.action.replace(/_/g, ' ') %></span></div>
+                <div class="list-item-sub"><%= log.details %></div>
+              </div>
+              <div class="list-item-sub"><%= new Date(log.created_at).toLocaleString('en-GB') %></div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+  </script>
+</body>
+</html>

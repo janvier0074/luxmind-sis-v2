@@ -5445,4 +5445,95 @@ app.post('/sis/intl/permits/update', requireRole('intl_officer', 'admin'), async
   }
 });
 
+
+
+// ============================================
+// --- INTL OFFICE: HEALTH INSURANCE REGISTRY ---
+// ============================================
+app.get('/sis/intl/insurance', requireRole('intl_officer', 'admin'), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const params = [];
+    let where = '';
+    if (q) {
+      params.push(`%${q}%`);
+      where = `AND (u.full_name ILIKE $1 OR sp.admission_number ILIKE $1 OR hi.policy_number ILIKE $1)`;
+    }
+
+    const insuranceRes = await pool.query(`
+      SELECT u.id as student_id, u.full_name, u.username, sp.admission_number, sp.class_level,
+             hi.id as insurance_id, hi.provider, hi.policy_number, hi.status, hi.issue_date, hi.expiry_date, hi.notes,
+             CASE 
+               WHEN hi.expiry_date IS NOT NULL AND hi.expiry_date < CURRENT_DATE THEN 'expired'
+               WHEN hi.expiry_date IS NOT NULL AND hi.expiry_date < (CURRENT_DATE + INTERVAL '30 days') THEN 'expiring_soon'
+               ELSE 'valid'
+             END as warning_status
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN health_insurance hi ON hi.student_id = u.id
+      WHERE u.role = 'student' ${where}
+      ORDER BY u.full_name ASC
+      LIMIT 100
+    `, params);
+
+    res.render('intl-insurance', {
+      user: req.session.user,
+      policies: insuranceRes.rows,
+      searchQuery: q,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Insurance Tracker Error: " + err.message);
+  }
+});
+
+app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), async (req, res) => {
+  const { student_id, provider, policy_number, status, issue_date, expiry_date, notes } = req.body;
+  
+  if (!student_id) {
+    req.flash('error', 'Student ID is required.');
+    return res.redirect('/sis/intl/insurance');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    await client.query(`
+      INSERT INTO health_insurance (student_id, provider, policy_number, status, issue_date, expiry_date, notes, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (student_id) DO UPDATE SET
+        provider = EXCLUDED.provider,
+        policy_number = EXCLUDED.policy_number,
+        status = EXCLUDED.status,
+        issue_date = EXCLUDED.issue_date,
+        expiry_date = EXCLUDED.expiry_date,
+        notes = EXCLUDED.notes,
+        updated_at = NOW()
+    `, [
+      Number(student_id), 
+      provider || null, 
+      policy_number || null, 
+      status || 'Pending', 
+      issue_date || null, 
+      expiry_date || null, 
+      notes || null, 
+      req.session.user.id
+    ]);
+
+    await client.query(`
+      INSERT INTO audit_logs (user_id, action, details) 
+      VALUES ($1, 'INSURANCE_UPDATE', $2)
+    `, [req.session.user.id, `Updated health insurance for student ID ${student_id} to ${status}`]);
+
+    await client.query('COMMIT');
+    req.flash('success', 'Insurance record updated successfully.');
+    res.redirect('/sis/intl/insurance');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).send("Insurance Update Error: " + err.message);
+  } finally {
+    client.release();
+  }
+});
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

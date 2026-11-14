@@ -4457,11 +4457,13 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
     `);
 
     const counts = countsRes.rows[0];
+       const counts = countsRes.rows[0];
     const sidebarCounts = {
       passports_overdue: Number(counts.passports_overdue),
       permits_expired: Number(counts.permits_expired),
       permits_expiring: Number(counts.permits_expiring),
-      insurance_missing: Number(counts.insurance_missing)
+      insurance_missing: Number(counts.insurance_missing),
+      new_applications: Number(counts.new_applications)
     };
 
     const stats = { shared: sharedTickets.length, mine: myTickets.length };
@@ -5608,6 +5610,76 @@ app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), req
 
 
 // ============================================
+// --- INTL OFFICE: ADMISSIONS QUEUE ---
+// ============================================
+app.get('/sis/intl/admissions/queue', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
+  try {
+    const status = (req.query.status || 'new').trim();
+    const q = (req.query.q || '').trim();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const perPage = 20;
+    const offset = (page - 1) * perPage;
+
+    const validStatuses = ['new','in_review','waiting_faculty','approved','rejected','waitlisted','all'];
+    const activeStatus = validStatuses.includes(status) ? status : 'new';
+
+    const params = [];
+    const conditions = [];
+
+    if (activeStatus !== 'all') {
+      params.push(activeStatus);
+      conditions.push(`status = $${params.length}`);
+    }
+
+    if (q) {
+      params.push(`%${q}%`);
+      conditions.push(`(full_name ILIKE $${params.length} OR email ILIKE $${params.length} OR intended_program ILIKE $${params.length})`);
+    }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*) FROM applications ${whereClause}`, params);
+    const totalCount = parseInt(countRes.rows[0].count);
+    const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
+
+    const rowsRes = await pool.query(`
+      SELECT id, full_name, email, phone, nationality, country_of_residence,
+             high_school_gpa, english_test_type, english_test_score,
+             intended_program, intended_semester, source, status, created_at
+      FROM applications
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `, [...params, perPage, offset]);
+
+    const statusCountsRes = await pool.query(`SELECT status, COUNT(*) AS count FROM applications GROUP BY status`);
+    const statusCounts = { new: 0, in_review: 0, waiting_faculty: 0, approved: 0, rejected: 0, waitlisted: 0 };
+    let totalAll = 0;
+    statusCountsRes.rows.forEach(r => {
+      const n = parseInt(r.count);
+      if (statusCounts[r.status] !== undefined) statusCounts[r.status] = n;
+      totalAll += n;
+    });
+
+    res.render('intl-admissions-queue', {
+      user: req.session.user,
+      applications: rowsRes.rows,
+      totalCount,
+      totalPages,
+      currentPage: page,
+      activeStatus,
+      searchQuery: q,
+      statusCounts,
+      totalAll,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Admissions Queue Error: " + err.message);
+  }
+});
+
+
+// ============================================
 // --- INTL OFFICE: EXECUTIVE COMPLIANCE DASHBOARD ---
 // ============================================
 app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res, next) => {
@@ -5625,21 +5697,18 @@ app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res,
 }, async (req, res) => {
   try {
     // 1. Fetch Counts (Lightning fast, scales to 100,000+ students)
-    const stats = await pool.query(`
+       const countsRes = await pool.query(`
       SELECT
-        (SELECT COUNT(*) FROM users u JOIN student_profiles sp ON sp.user_id = u.id WHERE u.role = 'student' AND sp.is_international = true) AS total_intl,
-        
         (SELECT COUNT(*) FROM passport_custody WHERE returned_at IS NULL AND due_back_at < NOW()) AS passports_overdue,
-        
         (SELECT COUNT(*) FROM residence_permits WHERE expiry_date < CURRENT_DATE) AS permits_expired,
-        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date >= CURRENT_DATE AND expiry_date < (CURRENT_DATE + INTERVAL '30 days')) AS permits_expiring,
-        
-        (SELECT COUNT(*) FROM users u 
-         LEFT JOIN health_insurance hi ON hi.student_id = u.id 
-         WHERE u.role = 'student' 
-         AND (hi.id IS NULL OR hi.status = 'Expired' OR hi.expiry_date < CURRENT_DATE)) AS insurance_missing
+        (SELECT COUNT(*) FROM residence_permits WHERE expiry_date >= CURRENT_DATE AND expiry_date < CURRENT_DATE + INTERVAL '30 days') AS permits_expiring,
+        (SELECT COUNT(*) FROM users u
+           JOIN student_profiles sp ON sp.user_id = u.id
+           LEFT JOIN health_insurance hi ON hi.student_id = u.id
+          WHERE u.role = 'student' AND sp.is_international = true
+            AND (hi.id IS NULL OR hi.status = 'Expired' OR hi.expiry_date < CURRENT_DATE)) AS insurance_missing,
+        (SELECT COUNT(*) FROM applications WHERE status = 'new') AS new_applications
     `);
-
     // 2. Fetch the "Exceptions" (Top 5 of each critical issue for the action list)
     const overduePassports = await pool.query(`
       SELECT pc.student_id, u.full_name, pc.passport_number, pc.destination, pc.due_back_at

@@ -503,15 +503,44 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
+      // ============================================
+    // ✅ NEW: Guided Registration — Get student's semester and settings
+    // ============================================
+    const semesterRes = await pool.query(`
+      SELECT current_semester FROM student_profiles WHERE user_id = $1
+    `, [req.session.user.id]);
+    const studentSemester = semesterRes.rows[0]?.current_semester || 1;
+
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
+    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21, registration_open: true };
+
+    // Check if registration is globally closed
+    if (!settings.registration_open) {
+      req.flash('error', 'Registration is currently closed. Please check back during the registration window.');
+      return res.redirect('/sis/my');
+    }
+
+    // Get list of courses student has FAILED (for retake eligibility)
+    const failedRes = await pool.query(`
+      SELECT DISTINCT c.id FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1 AND g.letter_grade = 'F' AND g.is_published = true
+    `, [req.session.user.id]);
+    const failedCourseIds = failedRes.rows.map(r => r.id);
+
+    // Filter courses: only show courses at or below student's semester, OR failed retakes
     const coursesRes = await pool.query(`
       SELECT c.*, COALESCE(c.quota, 40) as quota,
              s.id as section_id, s.day_of_week, s.start_time, s.end_time,
              ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
-              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count
+              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
+             CASE WHEN c.semester_number > $2 THEN true ELSE false END AS is_future
       FROM courses c 
       LEFT JOIN course_sections s ON s.course_id = c.id
-      ORDER BY c.semester_number ASC
-    `);
+      WHERE c.semester_number <= $2 OR c.id = ANY($3::int[])
+      ORDER BY c.semester_number ASC, c.code ASC
+    `, [req.session.user.id, studentSemester, failedCourseIds]);
 
     const passedRes = await pool.query(`
       SELECT c.id FROM grades g 
@@ -535,6 +564,11 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     const processedCourses = coursesRes.rows.map(course => {
       let isEligible = true;
       let reason = '';
+      // ✅ NEW: Block future-semester courses
+      if (course.is_future) {
+        isEligible = false;
+        reason = 'Future Semester';
+      }
 
       if (course.enrolled_count >= course.quota) {
         isEligible = false;
@@ -561,10 +595,22 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       return { ...course, isEligible, reason };
     });
 
-    res.render('registration', { user: req.session.user, courses: processedCourses, cart: cartRes.rows, pending: pendingRes.rows, hasRegistered });
-  } catch (err) { 
-    res.status(500).send("Registration Error: " + err.message); 
-  }
+      const totalCartCredits = cartRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
+    const totalPendingCredits = pendingRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
+    
+    res.render('registration', { 
+      user: req.session.user, 
+      courses: processedCourses, 
+      cart: cartRes.rows, 
+      pending: pendingRes.rows, 
+      hasRegistered,
+      studentSemester,
+      minCredits: settings.min_credits,
+      maxCredits: settings.max_credits,
+      registrationOpen: settings.registration_open,
+      totalCartCredits,
+      totalPendingCredits
+    });
 });
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
@@ -643,6 +689,37 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
+
+
+
+
+    // ✅ NEW: Enforce max credit limit
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
+    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
+    
+    const currentCartRes = await pool.query(`
+      SELECT COALESCE(SUM(c.credits), 0) as total_credits
+      FROM course_registrations cr
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+    `, [req.session.user.id]);
+    const currentCredits = Number(currentCartRes.rows[0].total_credits);
+    const newCourseCredits = Number(course.credits);
+    
+    if (currentCredits + newCourseCredits > settings.max_credits) {
+      req.flash('error', `Cannot add "${course.code}": Credit limit exceeded. You have ${currentCredits}/${settings.max_credits} credits. Adding ${newCourseCredits} more would go over the maximum.`);
+      return res.redirect('/sis/my/registration');
+    }
+
+
+
+
+
+
+
+
+
+
     const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
     if (existing.rows.length === 0) {
       await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
@@ -664,7 +741,25 @@ app.post('/sis/my/registration/remove', requireRole('student'), async (req, res)
 
 app.post('/sis/my/registration/submit', requireRole('student'), async (req, res) => {
   try {
+    // ✅ NEW: Enforce min credit limit before submission
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
+    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
+    
+    const cartRes = await pool.query(`
+      SELECT COALESCE(SUM(c.credits), 0) as total_credits
+      FROM course_registrations cr
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.student_id = $1 AND cr.status = 'draft'
+    `, [req.session.user.id]);
+    const cartCredits = Number(cartRes.rows[0].total_credits);
+    
+    if (cartCredits < settings.min_credits) {
+      req.flash('error', `Cannot submit: You have ${cartCredits} credits but need at least ${settings.min_credits} to submit your registration.`);
+      return res.redirect('/sis/my/registration');
+    }
+    
     await pool.query(`UPDATE course_registrations SET status = 'pending_advisor' WHERE student_id = $1 AND status = 'draft'`, [req.session.user.id]);
+    req.flash('success', 'Registration submitted to your advisor for review.');
     res.redirect('/sis/my/registration');
   } catch (err) { res.status(500).send("Error submitting: " + err.message); }
 });

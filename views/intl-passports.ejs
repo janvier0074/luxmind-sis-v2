@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passport Vault — Intl Office</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: #f7fafd;
+      color: #0a1e32;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ---- TOP BAR: hamburger | title | back ---- */
+    .pv-topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center;
+      background: #0a1e32; color: #fff;
+      padding: 0.5rem 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      min-height: 56px;
+    }
+    .pv-topbar .pv-title {
+      flex: 1; text-align: center;
+      font-weight: 700; font-size: 1rem; margin: 0 0.5rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pv-icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px;
+      border: none; background: transparent; color: #fff;
+      font-size: 1.3rem; cursor: pointer; border-radius: 8px;
+      text-decoration: none; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pv-icon-btn:hover, .pv-icon-btn:active { background: rgba(255,255,255,0.12); }
+
+    /* ---- SIDE DRAWER ---- */
+    .pv-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 150; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .pv-overlay.pv-open { opacity: 1; pointer-events: auto; }
+    .pv-drawer {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 280px; max-width: 85vw;
+      background: #fff; z-index: 200;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      display: flex; flex-direction: column;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+      overflow-y: auto;
+    }
+    .pv-drawer.pv-open { transform: translateX(0); }
+    .pv-drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0;
+      font-weight: 700; font-size: 0.95rem;
+    }
+    .pv-drawer-header .pv-close {
+      background: transparent; border: none; font-size: 1.3rem; cursor: pointer;
+      color: #64748b; width: 40px; height: 40px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pv-drawer-header .pv-close:hover { background: #f1f5f9; }
+    .pv-drawer nav { display: flex; flex-direction: column; padding: 0.5rem 0; }
+    .pv-drawer nav a {
+      display: block; padding: 0.85rem 1.25rem;
+      color: #0a1e32; text-decoration: none; font-size: 0.92rem;
+      border-left: 3px solid transparent;
+    }
+    .pv-drawer nav a:hover { background: #f8fafc; }
+    .pv-drawer nav a.pv-active {
+      background: #eff6ff; border-left-color: #0ea5e9;
+      font-weight: 600; color: #0369a1;
+    }
+    .pv-drawer hr { border: none; border-top: 1px solid #e2e8f0; margin: 0.5rem 0; }
+
+    /* ---- MAIN ---- */
+    .pv-main { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+    .pv-card {
+      background: #fff; border-radius: 10px; padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 1rem;
+    }
+    .pv-card h2 { font-size: 1rem; margin: 0 0 0.75rem; color: #0a1e32; }
+
+    /* ---- FLASH ---- */
+    .pv-flash { padding: 0.7rem 0.9rem; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.9rem; }
+    .pv-flash-success { background: #d1fae5; color: #065f46; border-left: 3px solid #10b981; }
+    .pv-flash-error   { background: #fee2e2; color: #991b1b; border-left: 3px solid #ef4444; }
+
+    /* ---- FORM ---- */
+    .pv-form { display: grid; gap: 0.75rem; }
+    @media (min-width: 640px) {
+      .pv-form { grid-template-columns: 1.5fr 1.5fr auto; align-items: end; }
+    }
+    .pv-form label {
+      display: block; font-size: 0.7rem; color: #64748b;
+      margin-bottom: 0.25rem; text-transform: uppercase;
+      font-weight: 600; letter-spacing: 0.03em;
+    }
+    .pv-form input, .pv-form select {
+      width: 100%; padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 0.9rem; background: #fff; font-family: inherit;
+    }
+    .pv-form input:focus, .pv-form select:focus {
+      outline: none; border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+    }
+
+    /* ---- BUTTONS ---- */
+    .pv-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.4rem; padding: 0.55rem 1rem; border: none; border-radius: 6px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; min-height: 38px; white-space: nowrap;
+      font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    .pv-btn-primary   { background: #0a1e32; color: #fff; }
+    .pv-btn-primary:hover { background: #162c46; }
+    .pv-btn-danger    { background: #dc2626; color: #fff; }
+    .pv-btn-danger:hover  { background: #b91c1c; }
+    .pv-btn-secondary { background: #e2e8f0; color: #0a1e32; }
+    .pv-btn-secondary:hover { background: #cbd5e1; }
+
+    /* ---- SEARCH ---- */
+    .pv-search { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .pv-search input {
+      flex: 1; min-width: 180px; padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 0.9rem; font-family: inherit;
+    }
+    .pv-search input:focus {
+      outline: none; border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+    }
+
+    /* ---- TABLE (desktop) ---- */
+    .pv-table-wrap { overflow-x: auto; }
+    .pv-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .pv-table th {
+      text-align: left; padding: 0.6rem 0.5rem;
+      border-bottom: 2px solid #e2e8f0; color: #64748b;
+      text-transform: uppercase; font-size: 0.68rem;
+      letter-spacing: 0.05em; font-weight: 700;
+    }
+    .pv-table td { padding: 0.6rem 0.5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .pv-table tr.pv-overdue { background: #fef2f2; }
+    .pv-table tr.pv-overdue td { border-bottom-color: #fecaca; }
+
+    /* ---- BADGE ---- */
+    .pv-badge {
+      display: inline-block; padding: 0.2rem 0.55rem;
+      border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .pv-badge-in_vault, .pv-badge-with_staff { background: #dbeafe; color: #1e40af; }
+    .pv-badge-at_ministry, .pv-badge-at_police, .pv-badge-at_embassy { background: #fce7f3; color: #9f1239; }
+    .pv-badge-with_student { background: #d1fae5; color: #065f46; }
+
+    /* ---- ACTIONS CELL ---- */
+    .pv-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .pv-actions form { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0; }
+    .pv-actions select, .pv-actions input[type=datetime-local] {
+      padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1;
+      border-radius: 6px; font-size: 0.8rem; background: #fff;
+      font-family: inherit; max-width: 180px;
+    }
+    .pv-actions .pv-btn { padding: 0.4rem 0.8rem; font-size: 0.78rem; min-height: 32px; }
+
+    .pv-mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; }
+    .pv-empty { text-align: center; padding: 2rem 1rem; color: #64748b; }
+    .pv-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+    .pv-muted { color: #64748b; font-size: 0.85rem; }
+
+    /* ---- MOBILE: TABLE BECOMES CARDS ---- */
+    @media (max-width: 767px) {
+      .pv-main { padding: 0.75rem; }
+      .pv-card { padding: 0.85rem; border-radius: 8px; }
+      .pv-table, .pv-table thead, .pv-table tbody, .pv-table tr, .pv-table td {
+        display: block; width: 100%;
+      }
+      .pv-table thead { display: none; }
+      .pv-table tr {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 0.65rem 0.75rem; margin-bottom: 0.6rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      }
+      .pv-table tr.pv-overdue {
+        background: #fef2f2; border-color: #fca5a5;
+        border-left: 4px solid #dc2626;
+      }
+      .pv-table td {
+        padding: 0.3rem 0; border: none;
+        display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 0.75rem;
+      }
+      .pv-table td::before {
+        content: attr(data-label);
+        font-weight: 600; color: #64748b; font-size: 0.68rem;
+        text-transform: uppercase; letter-spacing: 0.03em;
+        flex-shrink: 0; padding-top: 0.15rem;
+      }
+      .pv-table td[data-label="Actions"] {
+        flex-direction: column; align-items: stretch;
+        padding-top: 0.65rem; margin-top: 0.4rem;
+        border-top: 1px solid #e2e8f0;
+      }
+      .pv-table td[data-label="Actions"]::before { margin-bottom: 0.4rem; }
+      .pv-actions { flex-direction: column; align-items: stretch; width: 100%; }
+      .pv-actions form { width: 100%; flex-direction: column; }
+      .pv-actions select,
+      .pv-actions input[type=datetime-local],
+      .pv-actions .pv-btn { width: 100%; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="pv-topbar">
+  <button class="pv-icon-btn" id="pvMenuBtn" aria-label="Open menu">☰</button>
+  <h1 class="pv-title">Passport Vault</h1>
+  <a href="/sis/intl" class="pv-icon-btn" aria-label="Back to Intl Dashboard">←</a>
+</header>
+
+<div class="pv-overlay" id="pvOverlay"></div>
+
+<aside class="pv-drawer" id="pvDrawer" aria-label="Navigation menu">
+  <div class="pv-drawer-header">
+    <span>Intl Office</span>
+    <button class="pv-close" id="pvCloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="/sis/intl">📊 Dashboard</a>
+    <a href="/sis/intl/passports" class="pv-active">🛂 Passport Vault</a>
+    <a href="/sis/intl/inbox">📥 Inbox</a>
+    <hr>
+    <a href="/logout">🚪 Logout</a>
+  </nav>
+</aside>
+
+<main class="pv-main">
+
+  <% if (flash.success && flash.success.length) { flash.success.forEach(m => { %>
+    <div class="pv-flash pv-flash-success">✅ <%= m %></div>
+  <% }); } %>
+  <% if (flash.error && flash.error.length) { flash.error.forEach(m => { %>
+    <div class="pv-flash pv-flash-error">⚠️ <%= m %></div>
+  <% }); } %>
+
+  <section class="pv-card">
+    <h2>Log New Receipt</h2>
+    <% if (!students.length) { %>
+      <p class="pv-muted">No students registered yet. Add one in Admin → Students first.</p>
+    <% } else { %>
+      <form method="POST" action="/sis/intl/passports/receipt" class="pv-form">
+        <div>
+          <label for="f-student">Student</label>
+          <select id="f-student" name="student_id" required>
+            <option value="">— pick a student —</option>
+            <% students.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.full_name %> (<%= s.admission_number || s.username %>)</option>
+            <% }); %>
+          </select>
+        </div>
+        <div>
+          <label for="f-passport">Passport Number</label>
+          <input id="f-passport" type="text" name="passport_number" placeholder="AB1234567" minlength="5" maxlength="20" required>
+        </div>
+        <div>
+          <button type="submit" class="pv-btn pv-btn-primary" style="width:100%;">Log Receipt</button>
+        </div>
+      </form>
+    <% } %>
+  </section>
+
+  <section class="pv-card">
+    <form method="GET" action="/sis/intl/passports" class="pv-search">
+      <input type="text" name="q" value="<%= searchQuery %>" placeholder="Search by student name or passport number…">
+      <button type="submit" class="pv-btn pv-btn-primary">Search</button>
+      <% if (searchQuery) { %>
+        <a href="/sis/intl/passports" class="pv-btn pv-btn-secondary">Clear</a>
+      <% } %>
+    </form>
+
+    <% if (!rows.length) { %>
+      <div class="pv-empty">
+        <span class="pv-empty-icon">🛂</span>
+        <p><%= searchQuery ? 'No passports match your search.' : 'No passports in custody yet. Log a receipt above to get started.' %></p>
+      </div>
+    <% } else { %>
+      <div class="pv-table-wrap">
+        <table class="pv-table">
+          <thead>
+            <tr>
+              <th>Student</th><th>Passport No.</th><th>Status</th>
+              <th>Held By</th><th>Received</th><th>Due Back</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach(r => { %>
+              <tr class="<%= r.is_overdue ? 'pv-overdue' : '' %>">
+                <td data-label="Student"><strong><%= r.student_name %></strong></td>
+                <td data-label="Passport No."><span class="pv-mono"><%= r.passport_number %></span></td>
+                <td data-label="Status"><span class="pv-badge pv-badge-<%= r.status %>"><%= r.status.replace(/_/g,' ') %></span></td>
+                <td data-label="Held By"><%= r.held_by_name || '—' %></td>
+                <td data-label="Received"><%= r.received_at ? new Date(r.received_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '—' %></td>
+                <td data-label="Due Back">
+                  <%= r.due_back_at ? new Date(r.due_back_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '—' %>
+                  <% if (r.is_overdue) { %><strong style="color:#dc2626;"> (overdue)</strong><% } %>
+                </td>
+                <td data-label="Actions">
+                  <div class="pv-actions">
+                    <% if (r.status === 'with_student') { %>
+                      <form method="POST" action="/sis/intl/passports/receipt">
+                        <input type="hidden" name="student_id" value="<%= r.student_id %>">
+                        <input type="hidden" name="passport_number" value="<%= r.passport_number %>">
+                        <button type="submit" class="pv-btn pv-btn-primary">Log Receipt</button>
+                      </form>
+                    <% } else { %>
+                      <form method="POST" action="/sis/intl/passports/checkout">
+                        <input type="hidden" name="student_id" value="<%= r.student_id %>">
+                        <select name="destination" required>
+                          <option value="">Destination…</option>
+                          <% destinations.forEach(d => { %><option value="<%= d %>"><%= d %></option><% }); %>
+                        </select>
+                        <input type="datetime-local" name="due_back_at" required>
+                        <button type="submit" class="pv-btn pv-btn-primary">Check Out</button>
+                      </form>
+                      <form method="POST" action="/sis/intl/passports/return" onsubmit="return confirm('Mark passport <%= r.passport_number %> as returned to the student?');">
+                        <input type="hidden" name="student_id" value="<%= r.student_id %>">
+                        <button type="submit" class="pv-btn pv-btn-danger">Mark Returned</button>
+                      </form>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    var menuBtn  = document.getElementById('pvMenuBtn');
+    var drawer   = document.getElementById('pvDrawer');
+    var overlay  = document.getElementById('pvOverlay');
+    var closeBtn = document.getElementById('pvCloseBtn');
+
+    function openMenu() {
+      drawer.classList.add('pv-open');
+      overlay.classList.add('pv-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      drawer.classList.remove('pv-open');
+      overlay.classList.remove('pv-open');
+      document.body.style.overflow = '';
+    }
+
+    menuBtn.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeMenu();
+    });
+  })();
+</script>
+
+</body>
+</html>

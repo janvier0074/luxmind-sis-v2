@@ -177,40 +177,49 @@
     </div>
 
     <!-- INVOICE CATEGORIES / LEDGER TABLE -->
-    <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--navy);">Invoice Categories</h3>
-    <div class="table-container">
-      <table class="data-table" id="ledgerTable">
+    <!-- ✅ INVOICE BREAKDOWN PER SEMESTER -->
+    <% if (typeof invoices !== 'undefined' && invoices.length > 0) { %>
+    <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--navy);">
+      <i class="fas fa-file-invoice-dollar" style="color: var(--amber);"></i> Semester Invoices
+    </h3>
+    <div class="table-container" style="margin-bottom: 2rem;">
+      <table class="data-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Charges (+)</th>
-            <th>Payments / Credits (-)</th>
-            <th>Installment</th>
-            <th>Term/Year</th>
-            <th>Created At</th>
+            <th>Semester</th>
+            <th>Academic Year</th>
+            <th>Base</th>
+            <th>Scholarship</th>
+            <th>Net</th>
+            <th>Paid</th>
+            <th>Remaining</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          <% if (!transactions || transactions.length === 0) { %>
-            <tr><td colspan="8" style="text-align: center; color: #94a3b8; font-style: italic;">No transactions found.</td></tr>
-          <% } %>
-          <% transactions.forEach(t => { %>
+          <% invoices.forEach(inv => { 
+            const net = Number(inv.net_amount);
+            const paid = Number(inv.paid_amount);
+            const remaining = Math.max(0, net - paid);
+            const badgeStyle = inv.status === 'paid' ? 'background: #dcfce7; color: #16a34a;' : (inv.status === 'partial' ? 'background: #fef3c7; color: #d97706;' : 'background: #fee2e2; color: #dc2626;');
+          %>
             <tr>
-              <td><%= t.date %></td>
-              <td><span style="background: <%= t.type === 'Payment' ? '#dcfce7' : '#fee2e2' %>; color: <%= t.type === 'Payment' ? '#16a34a' : '#dc2626' %>; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800;"><%= t.type %></span></td>
-              <td><%= t.description %></td>
-              <td class="charges"><%= t.charges ? '$' + Number(t.charges).toFixed(2) : '-' %></td>
-              <td class="payments"><%= t.payments ? '-$' + Number(t.payments).toFixed(2) : '-' %></td>
-              <td><%= t.installment %></td>
-              <td><%= t.term %></td>
-              <td style="color: #64748b; font-size: 0.75rem;"><%= t.created_at %></td>
+              <td><strong>Semester <%= inv.semester_number %></strong></td>
+              <td><%= inv.academic_year || '-' %></td>
+              <td>$<%= net.toFixed(2) %></td>
+              <td style="color: var(--success);">- $<%= Number(inv.scholarship_amount).toFixed(2) %></td>
+              <td><strong>$<%= net.toFixed(2) %></strong></td>
+              <td style="color: var(--success);">$<%= paid.toFixed(2) %></td>
+              <td style="color: <%= remaining > 0.01 ? 'var(--danger)' : 'var(--success)' %>; font-weight: 800;">$<%= remaining.toFixed(2) %></td>
+              <td><span style="<%= badgeStyle %> padding: 0.25rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;"><%= inv.status %></span></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
+    <% } %>
+
+    <!-- INVOICE CATEGORIES / LEDGER TABLE -->
 
     <!-- ✅ STEP 2: INSTALLMENT SCHEDULE TABLE WITH PAY BUTTONS -->
     <% if (typeof schedule !== 'undefined' && schedule.length > 0) { %>

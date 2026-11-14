@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#101b32">
-  <title>International Office | LuxMind Admin</title>
+  <title>Intl Office | LuxMind Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -12,93 +12,145 @@
   <style>
     :root {
       color-scheme: light;
-      --navy: #111d35; --navy-2: #192844; --page: #f4f6fa; --surface: #fff; --surface-soft: #f8fafc;
-      --text: #172238; --muted: #718096; --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff;
-      --green: #15966b; --green-soft: #e9f8f1; --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b;
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
       --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
-    button, input, textarea, select { font: inherit; }
     a { color: inherit; text-decoration: none; }
-    
+    button { font: inherit; cursor: pointer; }
+
     /* SIDEBAR */
     .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
     .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); box-shadow: 0 7px 18px rgba(56,103,232,.3); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); box-shadow: 0 7px 18px rgba(56,103,232,.3); }
     .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
     .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; letter-spacing: 1.35px; text-transform: uppercase; }
     .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
     .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
     .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
-    .nav-group { padding: 23px 13px 0; }
-    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-group { padding: 20px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
     .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; transition: .18s ease; }
-    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
-    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
-    .nav-link.active { background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .nav-link i.nav-icon { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { color: #fff; background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .nav-link.active i.nav-icon { color: #7796ff; }
+    .nav-link.disabled { opacity: .45; cursor: not-allowed; }
+    .nav-link.disabled:hover { background: transparent; color: #bdc9da; }
+    .nav-badge { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; color: #fff; }
+    .nav-badge.red { background: var(--red); }
+    .nav-badge.amber { background: var(--amber); }
     .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
-    .nav-link.logout { color: #ffb0b6; } .nav-link.logout i { color: #ff9aa3; }
+    .nav-link.logout { color: #ffb0b6; }
+    .nav-link.logout i { color: #ff9aa3; }
     .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
-    
+    .overlay.open { display: block; }
+
     /* MAIN */
-    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+    .main { min-height: 100vh; margin-left: 268px; padding: 26px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); align-items: center; justify-content: center; }
     .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
-    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
-    .role-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; background: var(--amber-soft); color: var(--amber); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-left: 8px; }
-    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
-    
-    .alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; padding: 14px 16px; border: 1px solid #bcebd6; border-radius: 12px; color: #176b4d; background: var(--green-soft); font-size: 12px; font-weight: 600; }
-    
-    /* STATS */
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-    .stat-card { position: relative; display: flex; align-items: center; gap: 15px; min-height: 116px; padding: 21px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
-    .stat-icon { display: grid; place-items: center; width: 49px; height: 49px; border-radius: 14px; font-size: 18px; }
-    .stat-label { margin-bottom: 6px; color: #7b8799; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-    .stat-value { color: #17243d; font: 800 27px "Manrope", sans-serif; }
-    
-    /* TICKETS */
-    .section { margin-top: 30px; }
+    h1 { margin: 0 0 6px; color: #142039; font: 800 clamp(24px, 3vw, 30px) "Manrope", sans-serif; }
+    .welcome-line { margin: 0; color: var(--muted); font-size: 13px; }
+    .role-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: var(--amber-soft); color: var(--amber); font-size: 10px; font-weight: 800; text-transform: uppercase; margin-left: 8px; }
+
+    /* COMPLIANCE STRIP */
+    .compliance-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .cm-card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; transition: transform .2s; }
+    .cm-card:hover { transform: translateY(-2px); }
+    .cm-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 16px 0 0 16px; }
+    .cm-card.red::before { background: var(--red); }
+    .cm-card.amber::before { background: var(--amber); }
+    .cm-card.green::before { background: var(--green); }
+    .cm-card.blue::before { background: var(--blue); }
+    .cm-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 17px; flex-shrink: 0; }
+    .cm-card.red .cm-icon { background: var(--red-soft); color: var(--red); }
+    .cm-card.amber .cm-icon { background: var(--amber-soft); color: var(--amber); }
+    .cm-card.green .cm-icon { background: var(--green-soft); color: var(--green); }
+    .cm-card.blue .cm-icon { background: var(--blue-soft); color: var(--blue); }
+    .cm-data h3 { margin: 0 0 2px; font: 800 22px "Manrope", sans-serif; color: #142039; }
+    .cm-data p { margin: 0; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+
+    /* WELCOME BANNER */
+    .welcome-banner { background: linear-gradient(135deg, var(--navy) 0%, #1a2d4d 100%); color: #fff; border-radius: var(--radius); padding: 22px 26px; margin-bottom: 24px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .welcome-banner h2 { margin: 0 0 4px; font: 800 19px "Manrope", sans-serif; }
+    .welcome-banner p { margin: 0; color: #b8c5db; font-size: 13px; }
+    .wb-stats { display: flex; gap: 22px; }
+    .wb-stat { text-align: center; }
+    .wb-stat strong { display: block; font: 800 22px "Manrope", sans-serif; color: #7796ff; }
+    .wb-stat span { font-size: 10px; text-transform: uppercase; color: #b8c5db; font-weight: 700; letter-spacing: .5px; }
+
+    /* SECTIONS */
+    .section { margin-bottom: 26px; }
     .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .section-title { margin: 0; color: #1b2942; font: 800 16px "Manrope", sans-serif; display: flex; align-items: center; gap: 8px; }
-    .count-pill { padding: 5px 8px; border-radius: 20px; color: #52627a; background: #e9edf4; font-size: 10px; font-weight: 800; }
-    
+    .count-pill { padding: 5px 10px; border-radius: 20px; color: #52627a; background: #e9edf4; font-size: 11px; font-weight: 800; }
+
+    /* TICKETS */
     .ticket-list { display: grid; gap: 13px; }
     .ticket-card { display: grid; grid-template-columns: minmax(0, 1fr) 290px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
-    .ticket-main { padding: 20px 21px; }
-    .ticket-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .ticket-main { padding: 20px 22px; }
+    .ticket-top { display: flex; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
     .ticket-id { color: #8b97a8; font-size: 10px; font-weight: 800; }
-    .ticket-title { margin: 0; color: #1c2940; font: 800 14px "Manrope", sans-serif; }
-    .status { padding: 6px 9px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    .ticket-title { margin: 0; color: #1c2940; font: 800 15px "Manrope", sans-serif; }
+    .status { padding: 6px 10px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
     .status.progress { color: #a86b0b; background: var(--amber-soft); }
     .status.unassigned { color: #64748b; background: #eef1f5; }
-    .meta { display: flex; gap: 12px; margin-bottom: 14px; color: #7b8798; font-size: 10px; font-weight: 600; flex-wrap: wrap; }
-    .student-link { padding: 4px 8px; border-radius: 7px; color: #3564dc; background: #eff3ff; font-weight: 700; }
-    .message { padding: 12px 13px; border: 1px solid #edf0f5; border-radius: 10px; color: #4c5a70; background: #f9fafc; font-size: 11px; line-height: 1.6; }
-    
+    .meta { display: flex; gap: 12px; margin-bottom: 14px; color: #7b8798; font-size: 11px; font-weight: 600; flex-wrap: wrap; align-items: center; }
+    .student-link { padding: 4px 9px; border-radius: 7px; color: #3564dc; background: #eff3ff; font-weight: 700; font-size: 11px; }
+    .message { padding: 12px 14px; border: 1px solid #edf0f5; border-radius: 10px; color: #4c5a70; background: #f9fafc; font-size: 12px; line-height: 1.6; }
     .ticket-action { padding: 19px; border-left: 1px solid var(--line); background: #fafbfe; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
     .field-label { display: block; margin-bottom: 6px; color: #758196; font-size: 9px; font-weight: 800; text-transform: uppercase; }
-    .control { width: 100%; padding: 10px; border: 1px solid #dfe5ee; border-radius: 9px; font-size: 11px; margin-bottom: 10px; outline: none; }
-    .btn { width: 100%; padding: 10px; border: 0; border-radius: 9px; color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; gap: 6px; }
+    .control { width: 100%; padding: 10px; border: 1px solid #dfe5ee; border-radius: 9px; font-size: 12px; margin-bottom: 10px; outline: none; font-family: inherit; }
+    .control:focus { border-color: var(--blue); }
+    .btn { width: 100%; padding: 11px; border: 0; border-radius: 9px; color: #fff; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; gap: 6px; transition: .2s; }
     .btn-resolve { background: var(--green); }
+    .btn-resolve:hover { background: #0f7d57; }
     .btn-claim { background: var(--blue); }
+    .btn-claim:hover { background: #2a53c9; }
     .btn-assign { background: var(--navy); }
-    
+    .empty-tickets { padding: 40px 20px; text-align: center; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); }
+    .empty-tickets i { font-size: 30px; color: #cbd5e1; display: block; margin-bottom: 10px; }
+    .alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; padding: 13px 16px; border: 1px solid #bcebd6; border-radius: 12px; color: #176b4d; background: var(--green-soft); font-size: 12px; font-weight: 600; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) { .compliance-strip { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 900px) {
-      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .overlay.open { display: block; }
-      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
-      .stats { grid-template-columns: 1fr; } .ticket-card { grid-template-columns: 1fr; }
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 20px; } .mobile-toggle { display: inline-flex; }
+      .welcome-banner { flex-direction: column; align-items: flex-start; }
+      .wb-stats { gap: 24px; width: 100%; justify-content: space-around; }
+      .ticket-card { grid-template-columns: 1fr; }
       .ticket-action { border-top: 1px solid var(--line); border-left: 0; }
+    }
+    @media (max-width: 500px) {
+      .compliance-strip { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
     }
   </style>
 </head>
 <body>
   <div class="overlay" id="sidebarOverlay"></div>
 
-   <aside class="sidebar" id="sidebar">
+  <%
+    const team = teamName || '';
+    const role = intlRole || 'officer';
+    const isDir = isOverallDirector || user.role === 'admin';
+    const showVisa        = isDir || team === 'Visa & Immigration Team';
+    const showAdmissions  = isDir || team === 'Admissions & Recruitment Team';
+    const showOrientation = isDir || team === 'Orientation & Student Life Team';
+    const showExchange    = isDir || team === 'Academic & Exchange Team';
+    const showGeneral     = isDir || team === 'General Admin';
+
+    const c = sidebarCounts || { passports_overdue: 0, permits_expired: 0, permits_expiring: 0, insurance_missing: 0 };
+    const totalRed = c.passports_overdue + c.permits_expired + c.insurance_missing;
+  %>
+
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
       <div>
@@ -106,111 +158,108 @@
         <div class="brand-subtitle">International Office</div>
       </div>
     </div>
+
     <div class="team-chip">
-      <small><%= intlRole %> Access</small>
-      <strong><%= teamName %></strong>
+      <small><%= role %> Access</small>
+      <strong><%= team %></strong>
     </div>
-    
+
     <nav>
       <div class="nav-group">
-        <div class="nav-label">Operations</div>
-<a href="/sis/intl/compliance" class="nav-link"><i class="fa-solid fa-shield-halved"></i><span>Compliance Center</span></a>
-        <a href="/sis/intl" class="nav-link active"><i class="fa-solid fa-inbox"></i><span>Ticket Desk</span></a>
-        <a href="/sis/intl/search" class="nav-link"><i class="fa-solid fa-magnifying-glass"></i><span>Student Directory</span></a>
-        <!-- NEW LINK ADDED HERE -->
-        <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault</span></a>
-<a href="/sis/intl/permits" class="nav-link"><i class="fa-solid fa-id-card"></i><span>Residence Permits</span></a>
-<a href="/sis/intl/insurance" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance</span></a>
-<a href="/sis/intl/documents" class="nav-link"><i class="fa-solid fa-file-pdf"></i><span>Document Generator</span></a>
+        <div class="nav-label">Overview</div>
+        <a href="/sis/intl" class="nav-link active">
+          <i class="fa-solid fa-inbox nav-icon"></i>
+          <span>Ticket Desk</span>
+          <% if ((stats.shared + stats.mine) > 0) { %>
+            <span class="nav-badge amber"><%= stats.shared + stats.mine %></span>
+          <% } %>
+        </a>
+        <% if (isDir) { %>
+          <a href="/sis/intl/compliance" class="nav-link">
+            <i class="fa-solid fa-shield-halved nav-icon"></i>
+            <span>Compliance Center</span>
+            <% if (totalRed > 0) { %>
+              <span class="nav-badge red"><%= totalRed %></span>
+            <% } %>
+          </a>
+        <% } %>
       </div>
 
-      <% if (teamName === 'Admissions & Recruitment Team') { %>
+      <% if (showVisa) { %>
         <div class="nav-group">
-          <div class="nav-label">Admissions Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-clipboard-list"></i><span>Application Evaluation Queue</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-envelope-open-text"></i><span>Acceptance Letter Generator</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-handshake"></i><span>Agent & Representative Portal</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-file-signature"></i><span>Document Equivalency Checker</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-award"></i><span>Scholarship & Discount Pipeline</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-users-viewfinder"></i><span>Prospective Student CRM</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-hourglass-half"></i><span>Waitlist & Deferral Manager</span></a>
-        </div>
-      <% } else if (teamName === 'Visa & Immigration Team') { %>
-        <div class="nav-group">
-          <div class="nav-label">Visa Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-passport"></i><span>Residence Permit Tracker</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-notes-medical"></i><span>Health Insurance Registry</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-building-columns"></i><span>Embassy Letter Generator</span></a>
-          <!-- UPDATED THIS PLACEHOLDER LINK TOO -->
-          <a href="/sis/intl/passports" class="nav-link"><i class="fa-solid fa-vault"></i><span>Passport Vault & Custody Log</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-fingerprint"></i><span>Police Appointment Scheduler</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i><span>Lost / Expired Passport Reports</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i><span>Visa Extension & Overstay Alerts</span></a>
-        </div>
-      <% } else if (teamName === 'Orientation & Student Life Team') { %>
-        <div class="nav-group">
-          <div class="nav-label">Orientation Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-plane-arrival"></i><span>Airport Pickup Coordinator</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-bed"></i><span>Dormitory Check-in Desk</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-calendar-week"></i><span>Welcome Week & Orientation RSVP</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-sim-card"></i><span>SIM Card & Bank Account Setup</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Buddy & Mentor Matching</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-bus"></i><span>Student Clubs & Activities Board</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-phone-volume"></i><span>Emergency Contact Registry</span></a>
-        </div>
-      <% } else if (teamName === 'Academic & Exchange Team') { %>
-        <div class="nav-group">
-          <div class="nav-label">Exchange Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-globe-europe"></i><span>Erasmus+ Outgoing Applications</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-user-plus"></i><span>Incoming Exchange Student Desk</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-scale-balanced"></i><span>Transfer Credit Evaluator</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-network-wired"></i><span>Partner University Directory</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-file-contract"></i><span>Joint Degree & Dual Diploma Tracker</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-table-list"></i><span>Transcript Mapping & Equivalency Tables</span></a>
-        </div>
-      <% } else if (teamName === 'General Admin') { %>
-        <div class="nav-group">
-          <div class="nav-label">Compliance Modules</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-briefcase"></i><span>Part-Time Work Permit Desk</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-file-signature"></i><span>Student Contract Manager</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-vial"></i><span>Health Report & Blood Test Verification</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-clipboard-check"></i><span>Compliance & Government Audit Board</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-id-badge"></i><span>Student ID Card Issuance</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-shield-halved"></i><span>Incident & Disciplinary Reports</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-envelope"></i><span>Official Letter & Document Request Desk</span></a>
-        </div>
-            <% } else if (teamName === 'All Teams') { %>
-        <div class="nav-group">
-          <div class="nav-label">Director Controls</div>
-          <a href="#" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Global Analytics Dashboard</span></a>
-          <a href="/sis/intl/inbox" class="nav-link"><i class="fa-solid fa-envelope-open-text"></i><span>Executive Inbox</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-users-gear"></i><span>Staff & Team Management</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-building"></i><span>Department Budget & Procurement</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-bullhorn"></i><span>University-Wide Broadcasts</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-list-check"></i><span>System Audit & Compliance Logs</span></a>
-          <a href="#" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Team Performance Reports</span></a>
+          <div class="nav-label">Visa & Immigration</div>
+          <a href="/sis/intl/passports" class="nav-link">
+            <i class="fa-solid fa-vault nav-icon"></i>
+            <span>Passport Vault</span>
+            <% if (c.passports_overdue > 0) { %>
+              <span class="nav-badge red"><%= c.passports_overdue %></span>
+            <% } %>
+          </a>
+          <a href="/sis/intl/permits" class="nav-link">
+            <i class="fa-solid fa-id-card nav-icon"></i>
+            <span>Residence Permits</span>
+            <% if ((c.permits_expired + c.permits_expiring) > 0) { %>
+              <span class="nav-badge red"><%= c.permits_expired + c.permits_expiring %></span>
+            <% } %>
+          </a>
+          <a href="/sis/intl/insurance" class="nav-link">
+            <i class="fa-solid fa-notes-medical nav-icon"></i>
+            <span>Health Insurance</span>
+            <% if (c.insurance_missing > 0) { %>
+              <span class="nav-badge amber"><%= c.insurance_missing %></span>
+            <% } %>
+          </a>
         </div>
       <% } %>
+
+      <% if (showAdmissions || showGeneral) { %>
+        <div class="nav-group">
+          <div class="nav-label">Admissions</div>
+          <a href="/sis/intl/documents" class="nav-link">
+            <i class="fa-solid fa-file-pdf nav-icon"></i>
+            <span>Document Generator</span>
+          </a>
+          <span class="nav-link disabled" title="Coming in Phase 2">
+            <i class="fa-solid fa-clipboard-list nav-icon"></i>
+            <span>Application Queue</span>
+          </span>
+          <span class="nav-link disabled" title="Coming in Phase 5">
+            <i class="fa-solid fa-handshake nav-icon"></i>
+            <span>Agent Portal</span>
+          </span>
+        </div>
+      <% } %>
+
+      <div class="nav-group">
+        <div class="nav-label">Communication</div>
+        <a href="/sis/intl/inbox" class="nav-link">
+          <i class="fa-solid fa-envelope-open-text nav-icon"></i>
+          <span>Executive Inbox</span>
+        </a>
+      </div>
     </nav>
 
     <div class="sidebar-bottom">
-      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+      <a href="/logout" class="nav-link logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Secure Logout</span>
+      </a>
     </div>
   </aside>
 
   <main class="main">
     <header class="topbar">
       <div style="display:flex; align-items:flex-start; gap:13px;">
-        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <button class="mobile-toggle" id="mobileMenuButton" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
         <div>
-          <p class="eyebrow">International Office / <%= teamName %></p>
+          <p class="eyebrow">International Office / <%= team %></p>
           <h1>
-            Ticket Workstation 
-            <% if (intlRole === 'manager' || intlRole === 'director') { %>
-              <span class="role-badge"><i class="fa-solid fa-shield-halved"></i> <%= intlRole %></span>
+            <%= role === 'director' || isDir ? 'Director Command Center' : role === 'manager' ? 'Team Workstation' : 'Ticket Workstation' %>
+            <% if (role === 'manager' || role === 'director') { %>
+              <span class="role-pill"><i class="fa-solid fa-shield-halved"></i> <%= role %></span>
             <% } %>
           </h1>
-          <p class="welcome">Welcome back, <strong><%= user.full_name %></strong>.</p>
+          <p class="welcome-line"><%= greeting %>, <strong><%= user.full_name %></strong>.</p>
         </div>
       </div>
     </header>
@@ -219,22 +268,54 @@
       <div class="alert"><i class="fa-solid fa-circle-check"></i> <%= flash.success[0] %></div>
     <% } %>
 
-    <section class="stats">
-      <article class="stat-card">
-        <div class="stat-icon" style="background:#edf2ff; color:#3867e8;"><i class="fa-solid fa-clipboard-list"></i></div>
-        <div><div class="stat-label">My Open Tickets</div><div class="stat-value"><%= stats.mine %></div></div>
-      </article>
-      <article class="stat-card">
-        <div class="stat-icon" style="background:#fff5df; color:#c98212;"><i class="fa-solid fa-people-arrows"></i></div>
-        <div><div class="stat-label">Team Shared Pool</div><div class="stat-value"><%= stats.shared %></div></div>
-      </article>
-      <article class="stat-card">
-        <div class="stat-icon" style="background:#e9f8f1; color:#15966b;"><i class="fa-solid fa-stopwatch"></i></div>
-        <div><div class="stat-label">Avg Response Time</div><div class="stat-value">1h 45m</div></div>
-      </article>
-    </section>
+    <div class="welcome-banner">
+      <div>
+        <h2><%= greeting %>, <%= user.full_name.split(' ')[0] %></h2>
+        <p>Here's what needs your attention today in the <%= team %>.</p>
+      </div>
+      <div class="wb-stats">
+        <div class="wb-stat"><strong><%= stats.mine %></strong><span>My Tickets</span></div>
+        <div class="wb-stat"><strong><%= stats.shared %></strong><span>Team Pool</span></div>
+        <% if (showVisa) { %>
+          <div class="wb-stat"><strong><%= c.passports_overdue %></strong><span>Overdue PP</span></div>
+          <div class="wb-stat"><strong><%= c.permits_expired + c.permits_expiring %></strong><span>Permit Alerts</span></div>
+        <% } %>
+      </div>
+    </div>
 
-    <!-- MY TICKETS (Assigned to me) -->
+    <% if (showVisa) { %>
+      <section class="compliance-strip">
+        <a href="/sis/intl/passports" class="cm-card <%= c.passports_overdue > 0 ? 'red' : 'green' %>">
+          <div class="cm-icon"><i class="fa-solid fa-vault"></i></div>
+          <div class="cm-data">
+            <h3><%= c.passports_overdue %></h3>
+            <p>Passports Overdue</p>
+          </div>
+        </a>
+        <a href="/sis/intl/permits" class="cm-card <%= c.permits_expired > 0 ? 'red' : (c.permits_expiring > 0 ? 'amber' : 'green') %>">
+          <div class="cm-icon"><i class="fa-solid fa-id-card"></i></div>
+          <div class="cm-data">
+            <h3><%= c.permits_expired + c.permits_expiring %></h3>
+            <p>Permit Alerts</p>
+          </div>
+        </a>
+        <a href="/sis/intl/insurance" class="cm-card <%= c.insurance_missing > 0 ? 'amber' : 'green' %>">
+          <div class="cm-icon"><i class="fa-solid fa-notes-medical"></i></div>
+          <div class="cm-data">
+            <h3><%= c.insurance_missing %></h3>
+            <p>Insurance Missing</p>
+          </div>
+        </a>
+        <a href="/sis/intl/documents" class="cm-card blue">
+          <div class="cm-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="cm-data">
+            <h3>PDF</h3>
+            <p>Document Generator</p>
+          </div>
+        </a>
+      </section>
+    <% } %>
+
     <section class="section">
       <div class="section-head">
         <h2 class="section-title"><i class="fa-solid fa-user-check" style="color:var(--blue);"></i> My Assigned Tickets</h2>
@@ -242,21 +323,26 @@
       </div>
       <div class="ticket-list">
         <% if (myTickets.length === 0) { %>
-          <div style="padding: 30px; text-align: center; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted);">No tickets currently assigned to you.</div>
+          <div class="empty-tickets">
+            <i class="fa-solid fa-circle-check"></i>
+            No tickets assigned to you. Your queue is clear.
+          </div>
         <% } %>
         <% myTickets.forEach(r => { %>
           <article class="ticket-card">
             <div class="ticket-main">
               <div class="ticket-top">
                 <div>
-                  <div class="ticket-id">TICKET #<%= r.id %> · <%= r.assigned_team %></div>
+                  <div class="ticket-id">TICKET #<%= r.id %> · <%= r.assigned_team || team %></div>
                   <h3 class="ticket-title"><%= r.request_type %></h3>
                 </div>
                 <span class="status progress">Assigned to Me</span>
               </div>
               <div class="meta">
                 <span><i class="fa-regular fa-user"></i> <%= r.student_name %> (<%= r.student_number %>)</span>
-                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dossier</a>
+                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dossier
+                </a>
               </div>
               <div class="message"><%= r.description %></div>
             </div>
@@ -273,46 +359,47 @@
       </div>
     </section>
 
-    <!-- SHARED POOL -->
     <section class="section">
       <div class="section-head">
-        <h2 class="section-title"><i class="fa-solid fa-earth-europe" style="color:var(--amber);"></i> Team Shared Pool (<%= teamName %>)</h2>
+        <h2 class="section-title"><i class="fa-solid fa-earth-europe" style="color:var(--amber);"></i> <%= isDir ? 'All Departments' : team %> Shared Pool</h2>
         <span class="count-pill"><%= sharedTickets.length %></span>
       </div>
       <div class="ticket-list">
         <% if (sharedTickets.length === 0) { %>
-          <div style="padding: 30px; text-align: center; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted);">The shared pool for your team is empty.</div>
+          <div class="empty-tickets">
+            <i class="fa-solid fa-check-double"></i>
+            The shared pool is empty. Well done.
+          </div>
         <% } %>
         <% sharedTickets.forEach(r => { %>
           <article class="ticket-card">
             <div class="ticket-main">
               <div class="ticket-top">
                 <div>
-                  <div class="ticket-id">TICKET #<%= r.id %> · <%= r.assigned_team %></div>
+                  <div class="ticket-id">TICKET #<%= r.id %> · <%= r.assigned_team || 'Unassigned' %></div>
                   <h3 class="ticket-title"><%= r.request_type %></h3>
                 </div>
                 <span class="status unassigned"><%= r.assigned_to ? 'Assigned to Officer' : 'Unassigned' %></span>
               </div>
               <div class="meta">
                 <span><i class="fa-regular fa-user"></i> <%= r.student_name %> (<%= r.student_number %>)</span>
-                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dossier</a>
+                <a href="/sis/intl/student/<%= r.student_id %>" target="_blank" class="student-link">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Dossier
+                </a>
               </div>
               <div class="message"><%= r.description %></div>
             </div>
-            
             <div class="ticket-action">
-              <!-- IF MANAGER OR DIRECTOR, SHOW ASSIGN DROPDOWN -->
-              <% if (intlRole === 'manager' || intlRole === 'director') { %>
+              <% if (role === 'manager' || role === 'director' || isDir) { %>
                 <p class="field-label"><i class="fa-solid fa-user-gear"></i> Assign to Officer</p>
                 <form action="/sis/intl/assign/<%= r.id %>" method="POST">
                   <select name="officer_id" class="control" required>
                     <option value="" disabled selected>Select an officer...</option>
-                    <option value="40">Mike (Visa Officer)</option>
+                    <option value="45">Mike (Visa Officer)</option>
                   </select>
                   <button type="submit" class="btn btn-assign"><i class="fa-solid fa-arrow-right-arrow-left"></i> Assign Ticket</button>
                 </form>
               <% } else { %>
-                <!-- IF OFFICER, SHOW CLAIM BUTTON -->
                 <p class="field-label"><i class="fa-solid fa-hand"></i> Take Responsibility</p>
                 <form action="/sis/intl/claim/<%= r.id %>" method="POST">
                   <button type="submit" class="btn btn-claim"><i class="fa-solid fa-hand-point-up"></i> Claim This Ticket</button>

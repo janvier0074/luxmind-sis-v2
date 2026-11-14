@@ -139,6 +139,65 @@
       .field-grid { grid-template-columns: 1fr; }
       .head-status { margin-left: 0; }
     }
+
+    /* Action Confirmation Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(9, 17, 32, .6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: modalFadeIn .18s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modalSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 32px 32px 26px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 24px 48px rgba(9, 17, 32, .25);
+      animation: modalSlideUp .22s ease;
+      text-align: center;
+    }
+    .modal-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      margin: 0 auto 18px;
+      font-size: 26px;
+    }
+    .modal-title {
+      margin: 0 0 10px;
+      color: #142039;
+      font: 800 20px "Manrope", sans-serif;
+    }
+    .modal-desc {
+      margin: 0 0 26px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-btn {
+      flex: 1;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      border: 0;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .modal-btn-cancel { background: #f1f5f9; color: #4c5a70; }
+    .modal-btn-cancel:hover { background: #e2e8f0; }
+    .modal-btn-confirm { color: #fff; }
+    .modal-btn-confirm:hover { filter: brightness(.95); }
   </style>
 </head>
 <body>
@@ -353,28 +412,27 @@
             </div>
           <% } %>
 
-          <% if (application.status !== 'approved') { %>
+                       <% if (application.status !== 'approved') { %>
             <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
               <input type="hidden" name="action" value="approve">
-              <button type="submit" class="action-btn approve" onclick="return confirm('Approve this application? The applicant will be marked as approved.')">
+              <button type="button" class="action-btn approve" data-action="approve" data-name="<%= application.full_name %>" onclick="openActionModal(this)">
                 <i class="fa-solid fa-circle-check"></i> Approve Application
               </button>
             </form>
           <% } %>
-
-          <% if (application.status !== 'waitlisted') { %>
+                    <% if (application.status !== 'waitlisted') { %>
             <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
               <input type="hidden" name="action" value="waitlist">
-              <button type="submit" class="action-btn waitlist" onclick="return confirm('Move this applicant to the waitlist?')">
+              <button type="button" class="action-btn waitlist" data-action="waitlist" data-name="<%= application.full_name %>" onclick="openActionModal(this)">
                 <i class="fa-solid fa-hourglass-half"></i> Waitlist
               </button>
             </form>
           <% } %>
 
-          <% if (application.status !== 'in_review') { %>
+                   <% if (application.status !== 'in_review') { %>
             <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
               <input type="hidden" name="action" value="in_review">
-              <button type="submit" class="action-btn review">
+              <button type="button" class="action-btn review" data-action="in_review" data-name="<%= application.full_name %>" onclick="openActionModal(this)">
                 <i class="fa-solid fa-magnifying-glass"></i> Move to In Review
               </button>
             </form>
@@ -408,12 +466,104 @@
     </div>
   </main>
 
+  <!-- Action Confirmation Modal -->
+  <div class="modal-overlay" id="actionModal">
+    <div class="modal-card">
+      <div class="modal-icon" id="modalIcon"></div>
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeActionModal()">Cancel</button>
+        <button type="button" class="modal-btn modal-btn-confirm" id="modalConfirmBtn" onclick="submitActionModal()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     const menuButton = document.getElementById('mobileMenuButton');
     menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
     overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+
+
+    // --- Action confirmation modal ---
+    let pendingActionForm = null;
+
+    const ACTION_CONFIG = {
+      approve: {
+        icon: 'fa-circle-check',
+        bg: 'var(--green-soft)',
+        color: 'var(--green)',
+        title: 'Approve Application',
+        descTemplate: (name) => `You are about to approve ${name}. They will be marked as eligible for enrollment.`,
+        confirmText: 'Approve Application',
+        confirmBg: 'var(--green)'
+      },
+      waitlist: {
+        icon: 'fa-hourglass-half',
+        bg: 'var(--amber-soft)',
+        color: 'var(--amber)',
+        title: 'Move to Waitlist',
+        descTemplate: (name) => `${name} will be placed on the waitlist. You can approve or reject them at any time.`,
+        confirmText: 'Waitlist Applicant',
+        confirmBg: 'var(--amber)'
+      },
+      in_review: {
+        icon: 'fa-magnifying-glass',
+        bg: 'var(--blue-soft)',
+        color: 'var(--blue)',
+        title: 'Move to In Review',
+        descTemplate: (name) => `${name}'s application will be marked as in review — use this when waiting on academic verification or faculty confirmation.`,
+        confirmText: 'Move to In Review',
+        confirmBg: 'var(--blue)'
+      }
+    };
+
+    function openActionModal(btn) {
+      const form = btn.closest('form');
+      const action = btn.dataset.action;
+      const name = btn.dataset.name || 'this applicant';
+      const cfg = ACTION_CONFIG[action];
+      if (!cfg) return;
+
+      const iconEl = document.getElementById('modalIcon');
+      iconEl.innerHTML = `<i class="fa-solid ${cfg.icon}"></i>`;
+      iconEl.style.background = cfg.bg;
+      iconEl.style.color = cfg.color;
+
+      document.getElementById('modalTitle').textContent = cfg.title;
+      document.getElementById('modalDesc').textContent = cfg.descTemplate(name);
+
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      confirmBtn.textContent = cfg.confirmText;
+      confirmBtn.style.background = cfg.confirmBg;
+
+      pendingActionForm = form;
+      document.getElementById('actionModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeActionModal() {
+      document.getElementById('actionModal').classList.remove('active');
+      document.body.style.overflow = '';
+      pendingActionForm = null;
+    }
+
+    function submitActionModal() {
+      if (pendingActionForm) pendingActionForm.submit();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeActionModal();
+    });
+
+    const modalOverlay = document.getElementById('actionModal');
+    if (modalOverlay) {
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target.id === 'actionModal') closeActionModal();
+      });
+    }
   </script>
 </body>
 </html>

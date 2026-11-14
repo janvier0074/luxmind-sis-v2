@@ -4456,7 +4456,6 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
             AND (hi.id IS NULL OR hi.status = 'Expired' OR hi.expiry_date < CURRENT_DATE)) AS insurance_missing
     `);
 
-    const counts = countsRes.rows[0];
        const counts = countsRes.rows[0];
     const sidebarCounts = {
       passports_overdue: Number(counts.passports_overdue),
@@ -4465,7 +4464,6 @@ app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
       insurance_missing: Number(counts.insurance_missing),
       new_applications: Number(counts.new_applications)
     };
-
     const stats = { shared: sharedTickets.length, mine: myTickets.length };
 
     res.render('intl-dashboard', {
@@ -5697,7 +5695,7 @@ app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res,
 }, async (req, res) => {
   try {
     // 1. Fetch Counts (Lightning fast, scales to 100,000+ students)
-       const countsRes = await pool.query(`
+         const countsRes = await pool.query(`
       SELECT
         (SELECT COUNT(*) FROM passport_custody WHERE returned_at IS NULL AND due_back_at < NOW()) AS passports_overdue,
         (SELECT COUNT(*) FROM residence_permits WHERE expiry_date < CURRENT_DATE) AS permits_expired,

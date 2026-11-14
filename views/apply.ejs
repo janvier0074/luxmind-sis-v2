@@ -4,98 +4,234 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#101b32">
-  <title>Apply to LuxMind University</title>
+  <title>Apply to LuxMind University · International Admissions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     :root {
-      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
-      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
-      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
-      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+      --navy: #0a1628;
+      --navy-2: #142640;
+      --page: #f4f6fa;
+      --surface: #fff;
+      --text: #172238;
+      --muted: #718096;
+      --line: #e6ebf2;
+      --blue: #3867e8;
+      --blue-soft: #edf2ff;
+      --green: #15966b;
+      --green-soft: #e9f8f1;
+      --amber: #c98212;
+      --amber-soft: #fff5df;
+      --gold: #d4a12a;
+      --purple: #6d28d9;
+      --red: #d34d5b;
+      --red-soft: #fdf2f4;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055);
+      --shadow-lg: 0 20px 60px rgba(24, 39, 75, .12);
+      --radius: 16px;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     a { color: inherit; text-decoration: none; }
     input, select, textarea, button { font: inherit; }
 
-    /* TOP BAR */
-    .topbar { background: var(--navy); color: #fff; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    /* ============ TOP BAR ============ */
+    .topbar { position: sticky; top: 0; z-index: 100; background: rgba(10, 22, 40, .92); backdrop-filter: blur(12px); color: #fff; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
     .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #527df2, #3157cb); display: grid; place-items: center; font-size: 17px; }
-    .brand-name { font: 800 16px "Manrope", sans-serif; }
-    .brand-sub { font-size: 10px; color: #9eacc3; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-top: 2px; }
+    .brand-mark { width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, #527df2, #3157cb); display: grid; place-items: center; font-size: 18px; box-shadow: 0 7px 18px rgba(56,103,232,.35); }
+    .brand-name { font: 800 17px "Manrope", sans-serif; letter-spacing: -0.2px; }
+    .brand-sub { font-size: 10px; color: #9eacc3; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 700; margin-top: 2px; }
     .top-links { display: flex; align-items: center; gap: 18px; font-size: 13px; }
-    .top-links a { color: #b8c5db; font-weight: 600; }
+    .top-links a { color: #b8c5db; font-weight: 600; transition: .15s; }
     .top-links a:hover { color: #fff; }
-    .btn-login { padding: 8px 16px; background: rgba(255,255,255,.12); border-radius: 9px; color: #fff !important; font-weight: 700; }
+    .btn-login { padding: 9px 18px; background: rgba(255,255,255,.1); border-radius: 10px; color: #fff !important; font-weight: 700; border: 1px solid rgba(255,255,255,.1); }
     .btn-login:hover { background: rgba(255,255,255,.2); }
 
-    /* HERO */
-    .hero { background: linear-gradient(135deg, var(--navy) 0%, #1a2d4d 100%); color: #fff; padding: 50px 32px 70px; text-align: center; }
-    .hero h1 { margin: 0 0 12px; font: 800 clamp(28px, 4vw, 42px) "Manrope", sans-serif; }
-    .hero p { margin: 0 auto; max-width: 640px; color: #b8c5db; font-size: 15px; line-height: 1.6; }
+    /* ============ HERO ============ */
+    .hero { position: relative; background: linear-gradient(135deg, #0a1628 0%, #142640 50%, #1e3a5f 100%); color: #fff; padding: 90px 32px 140px; text-align: center; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -50%; left: -20%; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(82,125,242,.25), transparent 70%); pointer-events: none; }
+    .hero::after { content: ''; position: absolute; bottom: -30%; right: -10%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(212,161,42,.15), transparent 70%); pointer-events: none; }
+    .hero-inner { position: relative; z-index: 2; max-width: 900px; margin: 0 auto; }
 
-    /* LAYOUT */
-    .container { max-width: 1100px; margin: -40px auto 60px; padding: 0 20px; display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: rgba(212,161,42,.15); border: 1px solid rgba(212,161,42,.4); border-radius: 30px; color: #f5c451; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; animation: fadeInUp 0.6s ease; }
+    .hero-badge i { color: #f5c451; }
 
-    /* FORM CARD */
-    .form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px 36px; }
+    .hero h1 { margin: 0 0 20px; font-family: "Playfair Display", serif; font-weight: 900; font-size: clamp(36px, 6vw, 68px); line-height: 1.05; letter-spacing: -1px; animation: fadeInUp 0.7s ease 0.1s both; }
+    .hero h1 .highlight { background: linear-gradient(135deg, #f5c451, #e6ac2e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-style: italic; }
 
-    .alert { padding: 14px 18px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; font-weight: 600; display: flex; align-items: flex-start; gap: 10px; }
+    .hero p { margin: 0 auto 40px; max-width: 640px; color: #c5d0e3; font-size: clamp(15px, 1.8vw, 18px); line-height: 1.7; animation: fadeInUp 0.7s ease 0.2s both; }
+
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: fadeInUp 0.7s ease 0.3s both; }
+    .btn-hero { padding: 16px 32px; border-radius: 14px; font-size: 15px; font-weight: 800; display: inline-flex; align-items: center; gap: 10px; transition: .2s; }
+    .btn-hero-primary { background: linear-gradient(135deg, #f5c451, #d4a12a); color: #0a1628; box-shadow: 0 12px 28px rgba(212,161,42,.35); }
+    .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(212,161,42,.5); }
+    .btn-hero-secondary { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,.15); }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* HERO STATS */
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 800px; margin: 60px auto 0; animation: fadeInUp 0.7s ease 0.4s both; }
+    .hero-stat { text-align: center; padding: 20px; }
+    .hero-stat strong { display: block; font-family: "Playfair Display", serif; font-size: clamp(28px, 4vw, 44px); font-weight: 900; background: linear-gradient(135deg, #fff, #b8c5db); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 6px; }
+    .hero-stat span { display: block; font-size: 11px; color: #9eacc3; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+
+    /* SCROLL INDICATOR */
+    .scroll-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #6b7f9c; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: bounce 2s infinite; z-index: 2; }
+    .scroll-hint i { font-size: 18px; }
+    @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+    /* ============ SECTION WRAPPER ============ */
+    .section { padding: 80px 32px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-eyebrow { text-align: center; color: var(--blue); font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { text-align: center; margin: 0 0 16px; font-family: "Playfair Display", serif; font-size: clamp(28px, 4vw, 44px); font-weight: 900; color: #142039; line-height: 1.15; }
+    .section-subtitle { text-align: center; max-width: 640px; margin: 0 auto 56px; color: var(--muted); font-size: 16px; line-height: 1.7; }
+
+    /* ============ WHY LUXMIND ============ */
+    .why-section { background: linear-gradient(180deg, var(--page) 0%, #fff 100%); }
+    .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .why-card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px; text-align: center; transition: transform .25s, box-shadow .25s; box-shadow: var(--shadow); }
+    .why-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .why-icon { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; margin: 0 auto 20px; font-size: 30px; }
+    .why-card:nth-child(1) .why-icon { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; }
+    .why-card:nth-child(2) .why-icon { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
+    .why-card:nth-child(3) .why-icon { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #047857; }
+    .why-card:nth-child(4) .why-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9; }
+    .why-card:nth-child(5) .why-icon { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #b91c1c; }
+    .why-card:nth-child(6) .why-icon { background: linear-gradient(135deg, #cffafe, #a5f3fc); color: #0891b2; }
+    .why-card h3 { margin: 0 0 10px; font-family: "Manrope", sans-serif; font-size: 18px; font-weight: 800; color: #142039; }
+    .why-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+    /* ============ TESTIMONIALS ============ */
+    .testimonials { background: linear-gradient(135deg, #0a1628 0%, #142640 100%); color: #fff; }
+    .testimonials .section-title { color: #fff; }
+    .testimonials .section-eyebrow { color: #f5c451; }
+    .testimonials .section-subtitle { color: #b8c5db; }
+    .testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .testi-card { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 32px 28px; backdrop-filter: blur(10px); transition: .2s; }
+    .testi-card:hover { background: rgba(255,255,255,.08); border-color: rgba(245,196,81,.3); }
+    .testi-quote { font-family: "Playfair Display", serif; font-size: 48px; color: #f5c451; line-height: 0.6; margin-bottom: 16px; }
+    .testi-text { color: #d0d9e6; font-size: 14px; line-height: 1.7; margin: 0 0 24px; font-style: italic; }
+    .testi-author { display: flex; align-items: center; gap: 14px; }
+    .testi-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #f5c451, #d4a12a); color: #0a1628; display: grid; place-items: center; font-family: "Manrope", sans-serif; font-size: 18px; font-weight: 800; flex-shrink: 0; }
+    .testi-name { font-weight: 800; color: #fff; font-size: 14px; margin-bottom: 3px; }
+    .testi-role { color: #9eacc3; font-size: 12px; }
+
+    /* ============ FORM SECTION ============ */
+    .form-section { background: var(--page); padding: 80px 32px; }
+    .form-container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 320px; gap: 32px; }
+    .form-card { background: #fff; border-radius: 24px; box-shadow: var(--shadow-lg); padding: 48px 44px; border: 1px solid var(--line); }
+
+    .alert { padding: 16px 20px; border-radius: 12px; margin-bottom: 28px; font-size: 14px; font-weight: 600; display: flex; align-items: flex-start; gap: 12px; }
     .alert-error { background: var(--red-soft); color: var(--red); border: 1px solid #f5c8ce; }
 
-    .section { margin-bottom: 32px; }
-    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
-    .section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font: 800 14px "Manrope", sans-serif; display: grid; place-items: center; flex-shrink: 0; }
-    .section-title { margin: 0; font: 800 17px "Manrope", sans-serif; color: #142039; }
+    .section-head { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--line); }
+    .section-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), #527df2); color: #fff; font-family: "Manrope", sans-serif; font-size: 16px; font-weight: 800; display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 6px 16px rgba(56,103,232,.3); }
+    .section-title { margin: 0; font-family: "Playfair Display", serif; font-size: 22px; font-weight: 800; color: #142039; }
+    .form-group { margin-bottom: 36px; }
 
-    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     .field-full { grid-column: 1 / -1; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-size: 11px; font-weight: 800; color: #4c5a70; text-transform: uppercase; letter-spacing: 0.4px; }
-    .field label .req { color: var(--red); margin-left: 2px; }
-    .field input, .field select { padding: 11px 14px; border: 1px solid #dfe5ee; border-radius: 10px; font-size: 14px; outline: none; background: #fafbfe; transition: .15s; font-family: inherit; width: 100%; }
-    .field input:focus, .field select:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px var(--blue-soft); }
-
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field label { font-size: 11px; font-weight: 800; color: #4c5a70; text-transform: uppercase; letter-spacing: 0.6px; }
+    .field label .req { color: var(--red); margin-left: 3px; }
+    .field input, .field select { padding: 14px 16px; border: 1.5px solid #dfe5ee; border-radius: 12px; font-size: 15px; outline: none; background: #fafbfe; transition: .15s; font-family: inherit; width: 100%; }
+    .field input:focus, .field select:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 4px var(--blue-soft); }
     .field-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    .doc-notice { background: var(--blue-soft); border-left: 4px solid var(--blue); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; color: #1e40af; display: flex; align-items: flex-start; gap: 10px; }
+    .doc-notice { background: linear-gradient(135deg, var(--blue-soft), #e0e9ff); border-left: 4px solid var(--blue); padding: 18px 22px; border-radius: 12px; margin-bottom: 28px; font-size: 14px; color: #1e40af; display: flex; align-items: flex-start; gap: 12px; line-height: 1.6; }
+    .doc-notice i { font-size: 20px; margin-top: 2px; }
 
-    .submit-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 20px; border-top: 2px solid var(--line); flex-wrap: wrap; }
-    .submit-bar small { color: var(--muted); font-size: 12px; }
-    .btn-submit { padding: 14px 32px; background: var(--green); color: #fff; border: 0; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: .15s; }
-    .btn-submit:hover { background: #0f7d57; }
+    .submit-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 28px; border-top: 2px solid var(--line); flex-wrap: wrap; }
+    .submit-bar small { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .btn-submit { padding: 18px 40px; background: linear-gradient(135deg, var(--green), #0f7d57); color: #fff; border: 0; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: .2s; box-shadow: 0 10px 24px rgba(21,150,107,.3); }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(21,150,107,.4); }
 
-    /* SIDEBAR */
-    .sidebar { display: flex; flex-direction: column; gap: 16px; }
-    .side-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
-    .side-card h3 { margin: 0 0 14px; font: 800 14px "Manrope", sans-serif; color: #142039; display: flex; align-items: center; gap: 8px; }
-    .side-card h3 i { color: var(--blue); }
-    .side-list { display: flex; flex-direction: column; gap: 10px; }
-    .side-item { display: flex; gap: 12px; font-size: 13px; color: #4c5a70; line-height: 1.5; }
-    .side-item i { color: var(--green); flex-shrink: 0; margin-top: 3px; }
-    .deadline-badge { display: inline-block; padding: 4px 10px; background: var(--amber-soft); color: var(--amber); font-size: 11px; font-weight: 800; border-radius: 6px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .side-contact { font-size: 13px; color: #4c5a70; line-height: 1.7; }
+    /* FORM SIDEBAR */
+    .form-sidebar { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 100px; height: fit-content; }
+    .side-card { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 28px; border: 1px solid var(--line); }
+    .side-card h3 { margin: 0 0 16px; font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 800; color: #142039; display: flex; align-items: center; gap: 10px; }
+    .side-card h3 i { color: var(--blue); font-size: 16px; }
+    .deadline-badge { display: inline-block; padding: 6px 14px; background: linear-gradient(135deg, var(--amber-soft), #fde68a); color: #b45309; font-size: 11px; font-weight: 800; border-radius: 8px; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .side-card p { margin: 0; color: #4c5a70; font-size: 13px; line-height: 1.65; }
+    .side-list { display: flex; flex-direction: column; gap: 12px; }
+    .side-item { display: flex; gap: 12px; font-size: 13px; color: #4c5a70; line-height: 1.5; align-items: flex-start; }
+    .side-item i { color: var(--green); flex-shrink: 0; margin-top: 2px; font-size: 14px; }
     .side-contact a { color: var(--blue); font-weight: 700; }
+    .side-contact a:hover { text-decoration: underline; }
 
-    /* FOOTER */
-    .page-footer { padding: 24px 32px; text-align: center; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+    /* ============ JOURNEY TIMELINE ============ */
+    .journey { background: #fff; }
+    .journey-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 20px; }
+    .journey-step { text-align: center; position: relative; padding: 20px; }
+    .journey-step::after { content: ''; position: absolute; top: 44px; right: -12px; width: 24px; height: 2px; background: linear-gradient(90deg, var(--blue), transparent); }
+    .journey-step:last-child::after { display: none; }
+    .journey-num { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), #527df2); color: #fff; display: grid; place-items: center; font-family: "Manrope", sans-serif; font-size: 18px; font-weight: 800; margin: 0 auto 16px; box-shadow: 0 8px 20px rgba(56,103,232,.3); }
+    .journey-step h4 { margin: 0 0 8px; font-family: "Manrope", sans-serif; font-size: 14px; font-weight: 800; color: #142039; }
+    .journey-step p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 
+    /* ============ FAQ ============ */
+    .faq { background: var(--page); }
+    .faq-list { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .faq-item { background: #fff; border-radius: 14px; border: 1px solid var(--line); overflow: hidden; box-shadow: var(--shadow); }
+    .faq-q { width: 100%; padding: 22px 28px; background: none; border: 0; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 700; color: #142039; transition: .15s; }
+    .faq-q:hover { background: #fafbfe; }
+    .faq-q i { color: var(--blue); font-size: 14px; transition: transform .25s; flex-shrink: 0; }
+    .faq-item.open .faq-q i { transform: rotate(45deg); }
+    .faq-a { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+    .faq-item.open .faq-a { max-height: 500px; }
+    .faq-a-inner { padding: 0 28px 22px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+
+    /* ============ CTA BAND ============ */
+    .cta-band { background: linear-gradient(135deg, #0a1628 0%, #142640 50%, #1e3a5f 100%); color: #fff; text-align: center; padding: 80px 32px; position: relative; overflow: hidden; }
+    .cta-band::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(245,196,81,.15), transparent 50%); pointer-events: none; }
+    .cta-band-inner { max-width: 700px; margin: 0 auto; position: relative; z-index: 2; }
+    .cta-band h2 { margin: 0 0 16px; font-family: "Playfair Display", serif; font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.15; }
+    .cta-band p { margin: 0 0 32px; color: #b8c5db; font-size: 16px; line-height: 1.6; }
+
+    /* ============ FOOTER ============ */
+    .footer { background: #0a1628; color: #b8c5db; padding: 60px 32px 32px; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+    .footer h4 { margin: 0 0 16px; color: #fff; font-family: "Manrope", sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+    .footer p { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: #8ea3ba; }
+    .footer a { color: #8ea3ba; }
+    .footer a:hover { color: #f5c451; }
+    .footer-bottom { max-width: 1200px; margin: 0 auto; padding-top: 32px; border-top: 1px solid rgba(255,255,255,.08); text-align: center; font-size: 12px; color: #6b7f9c; }
+    .developer-credit { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(245,196,81,.08); border: 1px solid rgba(245,196,81,.2); border-radius: 20px; margin-top: 12px; color: #f5c451; font-weight: 700; font-size: 12px; }
+    .developer-credit i { font-size: 12px; }
+    .developer-credit strong { color: #fff; }
+
+    /* ============ RESPONSIVE ============ */
     @media (max-width: 900px) {
-      .container { grid-template-columns: 1fr; }
-      .form-card { padding: 24px 20px; }
+      .hero { padding: 60px 20px 100px; }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .hero-stat { padding: 12px; }
+      .section { padding: 60px 20px; }
+      .form-container { grid-template-columns: 1fr; }
+      .form-sidebar { position: static; }
+      .form-card { padding: 32px 22px; }
       .field-grid { grid-template-columns: 1fr; }
-      .hero { padding: 36px 20px 60px; }
-      .topbar { padding: 14px 20px; }
+      .topbar { padding: 12px 16px; }
       .top-links span { display: none; }
+      .footer-inner { grid-template-columns: 1fr; gap: 24px; }
+      .journey-step::after { display: none; }
+      .why-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .hero-stats { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 32px; }
+      .btn-hero { padding: 14px 24px; font-size: 14px; width: 100%; justify-content: center; }
+      .hero-cta { flex-direction: column; }
     }
   </style>
 </head>
 <body>
 
+  <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
       <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
@@ -110,175 +246,455 @@
     </div>
   </header>
 
+  <!-- HERO -->
   <section class="hero">
-    <h1>Begin Your Journey at LuxMind</h1>
-    <p>Apply for admission to one of Rwanda's most diverse international communities. Our team reviews every application personally.</p>
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <i class="fa-solid fa-star"></i>
+        Fall 2026 Intake · Now Open
+      </div>
+      <h1>
+        Begin Your <span class="highlight">Extraordinary</span><br>
+        Journey at LuxMind
+      </h1>
+      <p>
+        Join 5,000+ students from 40+ countries at one of East Africa's most vibrant universities. World-class faculty, full visa support, and up to 100% merit scholarships.
+      </p>
+      <div class="hero-cta">
+        <a href="#apply-form" class="btn-hero btn-hero-primary">
+          <i class="fa-solid fa-rocket"></i> Start Your Application
+        </a>
+        <a href="#why" class="btn-hero btn-hero-secondary">
+          <i class="fa-solid fa-play-circle"></i> Why LuxMind?
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat"><strong>5,000+</strong><span>Students</span></div>
+        <div class="hero-stat"><strong>40+</strong><span>Countries</span></div>
+        <div class="hero-stat"><strong>96%</strong><span>Employment</span></div>
+        <div class="hero-stat"><strong>#1</strong><span>In Region</span></div>
+      </div>
+    </div>
+    <div class="scroll-hint">
+      <span>Scroll to explore</span>
+      <i class="fa-solid fa-chevron-down"></i>
+    </div>
   </section>
 
-  <div class="container">
-    <div class="form-card">
+  <!-- WHY LUXMIND -->
+  <section class="section why-section" id="why">
+    <div class="section-inner">
+      <div class="section-eyebrow">Why LuxMind</div>
+      <h2 class="section-title">A University Built for Global Citizens</h2>
+      <p class="section-subtitle">More than a diploma. A launchpad for your future — with everything you need to succeed, from day one.</p>
 
-      <% if (error) { %>
-        <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> <%= error %></div>
-      <% } %>
+      <div class="why-grid">
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-earth-africa"></i></div>
+          <h3>Global Community</h3>
+          <p>Students from 40+ countries across Africa, Asia, Europe, and the Americas. Your network starts in Kigali and never stops expanding.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-award"></i></div>
+          <h3>Up to 100% Scholarships</h3>
+          <p>Merit-based scholarships awarded automatically based on high school GPA. No separate application, no hidden forms.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-passport"></i></div>
+          <h3>Full Visa Support</h3>
+          <p>Our International Office handles your residence permit, health insurance, and police registration end-to-end. You focus on studies, we handle the bureaucracy.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-city"></i></div>
+          <h3>Safe, Modern Campus</h3>
+          <p>Located in Kigali — consistently ranked Africa's safest and cleanest capital. Our campus is equipped with modern labs, dorms, and student life.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-briefcase"></i></div>
+          <h3>Career Placement</h3>
+          <p>96% of our graduates are employed within 6 months. Our Career Center connects you with top employers across the region.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon"><i class="fa-solid fa-hands-holding-heart"></i></div>
+          <h3>Buddy & Mentor Program</h3>
+          <p>Every new international student is paired with a senior buddy and a faculty mentor. You will never feel alone on campus.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <form method="POST" action="/apply">
+  <!-- TESTIMONIALS -->
+  <section class="section testimonials">
+    <div class="section-inner">
+      <div class="section-eyebrow">Student Voices</div>
+      <h2 class="section-title">They Started Where You Are Now</h2>
+      <p class="section-subtitle">Real students. Real journeys. These are the people you'll soon be studying with.</p>
 
-        <!-- SECTION 1: Personal -->
-        <div class="section">
-          <div class="section-head">
-            <div class="section-num">1</div>
-            <h2 class="section-title">Personal Information</h2>
-          </div>
-          <div class="field-grid">
-            <div class="field field-full">
-              <label>Full Legal Name <span class="req">*</span></label>
-              <input type="text" name="full_name" value="<%= values.full_name || '' %>" required minlength="3" placeholder="As written on your passport">
-            </div>
-            <div class="field">
-              <label>Email Address <span class="req">*</span></label>
-              <input type="email" name="email" value="<%= values.email || '' %>" required placeholder="you@example.com">
-            </div>
-            <div class="field">
-              <label>Phone Number</label>
-              <input type="tel" name="phone" value="<%= values.phone || '' %>" placeholder="+250 788 xxx xxx">
-            </div>
-            <div class="field">
-              <label>Date of Birth</label>
-              <input type="date" name="date_of_birth" value="<%= values.date_of_birth || '' %>">
-            </div>
-            <div class="field">
-              <label>Gender</label>
-              <select name="gender">
-                <option value="">—</option>
-                <option value="Male" <%= values.gender === 'Male' ? 'selected' : '' %>>Male</option>
-                <option value="Female" <%= values.gender === 'Female' ? 'selected' : '' %>>Female</option>
-                <option value="Other" <%= values.gender === 'Other' ? 'selected' : '' %>>Other</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Nationality</label>
-              <input type="text" name="nationality" value="<%= values.nationality || '' %>" placeholder="e.g. Rwandan">
-            </div>
-            <div class="field">
-              <label>Country of Residence</label>
-              <input type="text" name="country_of_residence" value="<%= values.country_of_residence || '' %>" placeholder="e.g. Kenya">
+      <div class="testi-grid">
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <p class="testi-text">LuxMind's team guided me through the visa process before I even stepped on a plane. By the time I arrived in Kigali, my dorm, bank account, and SIM card were already prepared. Incredible.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">AN</div>
+            <div>
+              <div class="testi-name">Amani Nkosi</div>
+              <div class="testi-role">Computer Engineering · Kenya</div>
             </div>
           </div>
         </div>
-
-        <!-- SECTION 2: Academic -->
-        <div class="section">
-          <div class="section-head">
-            <div class="section-num">2</div>
-            <h2 class="section-title">Academic Background</h2>
-          </div>
-          <div class="field-grid">
-            <div class="field field-full">
-              <label>High School / Secondary School Name</label>
-              <input type="text" name="high_school_name" value="<%= values.high_school_name || '' %>" placeholder="Full name of the school you attended">
-            </div>
-            <div class="field">
-              <label>High School GPA <span class="req">*</span></label>
-              <input type="number" name="high_school_gpa" value="<%= values.high_school_gpa || '' %>" required min="0" max="4" step="0.01" placeholder="Out of 4.00">
-              <span class="field-hint">Minimum 2.00 required for most programs</span>
-            </div>
-            <div class="field">
-              <label>Passport Number</label>
-              <input type="text" name="passport_number" value="<%= values.passport_number || '' %>" placeholder="e.g. AB1234567">
-            </div>
-            <div class="field">
-              <label>English Proficiency Test</label>
-              <select name="english_test_type">
-                <option value="">None / Not taken</option>
-                <option value="IELTS" <%= values.english_test_type === 'IELTS' ? 'selected' : '' %>>IELTS</option>
-                <option value="TOEFL" <%= values.english_test_type === 'TOEFL' ? 'selected' : '' %>>TOEFL</option>
-                <option value="Duolingo" <%= values.english_test_type === 'Duolingo' ? 'selected' : '' %>>Duolingo English Test</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>English Test Score</label>
-              <input type="number" name="english_test_score" value="<%= values.english_test_score || '' %>" step="0.1" min="0" placeholder="e.g. 6.5 for IELTS, 95 for TOEFL">
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <p class="testi-text">The scholarship I received covered 90% of my tuition. I applied on a Sunday night — three weeks later, I was approved with my acceptance letter in my inbox. Life-changing.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">FD</div>
+            <div>
+              <div class="testi-name">Fatou Diallo</div>
+              <div class="testi-role">Business Administration · Senegal</div>
             </div>
           </div>
         </div>
-
-        <!-- SECTION 3: Program Choice -->
-        <div class="section">
-          <div class="section-head">
-            <div class="section-num">3</div>
-            <h2 class="section-title">Program of Interest</h2>
-          </div>
-          <div class="field-grid">
-            <div class="field">
-              <label>Intended Program <span class="req">*</span></label>
-              <select name="intended_program" required>
-                <option value="">— select a program —</option>
-                <% programs.forEach(p => { %>
-                  <option value="<%= p %>" <%= values.intended_program === p ? 'selected' : '' %>><%= p %></option>
-                <% }); %>
-              </select>
-            </div>
-            <div class="field">
-              <label>Intended Entry Semester</label>
-              <select name="intended_semester">
-                <% for (let i = 1; i <= 8; i++) { %>
-                  <option value="<%= i %>" <%= String(values.intended_semester) === String(i) ? 'selected' : '' %>>Semester <%= i %></option>
-                <% } %>
-              </select>
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <p class="testi-text">Coming from Burundi, I was nervous about adapting. My buddy mentor made all the difference. The sense of community here is unlike anything I've experienced.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">JM</div>
+            <div>
+              <div class="testi-name">Jean-Claude Mugisha</div>
+              <div class="testi-role">Computer Engineering · Rwanda</div>
             </div>
           </div>
         </div>
-
-        <!-- Documents coming soon note -->
-        <div class="doc-notice">
-          <i class="fa-solid fa-circle-info" style="margin-top:2px;"></i>
-          <div>
-            <strong>Document uploads are coming next.</strong> Once you submit this form, our team will email you a secure link to upload your passport scan, transcripts, and English certificate.
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <p class="testi-text">The faculty here don't just teach — they mentor. My advisor personally introduced me to the CEO of a hospital I now work at. That's the kind of network LuxMind gives you.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">GW</div>
+            <div>
+              <div class="testi-name">Grace Wanjiku</div>
+              <div class="testi-role">Nursing · Kenya</div>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <div class="submit-bar">
-          <small><i class="fa-solid fa-lock"></i> Your information is confidential and reviewed only by the Admissions team.</small>
-          <button type="submit" class="btn-submit">
-            Submit Application <i class="fa-solid fa-arrow-right"></i>
-          </button>
-        </div>
-
-      </form>
+  <!-- FORM SECTION -->
+  <section class="form-section" id="apply-form">
+    <div style="text-align: center; max-width: 640px; margin: 0 auto 48px;">
+      <div class="section-eyebrow">Apply Now</div>
+      <h2 class="section-title" style="margin-bottom: 16px;">Your Application Starts Here</h2>
+      <p style="color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0;">Fill in the form below. It takes about 5 minutes. Our admissions team will review your application within 48 hours.</p>
     </div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="side-card">
-        <h3><i class="fa-solid fa-calendar-check"></i> Fall 2026 Intake</h3>
-        <span class="deadline-badge">Deadline: Aug 31, 2026</span>
-        <p style="margin:0; color:#4c5a70; font-size:13px; line-height:1.6;">Applications are reviewed on a rolling basis. Early applicants receive priority consideration for scholarships.</p>
+    <div class="form-container">
+      <div class="form-card">
+        <% if (error) { %>
+          <div class="alert alert-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span><%= error %></span>
+          </div>
+        <% } %>
+
+        <form method="POST" action="/apply">
+
+          <!-- SECTION 1: Personal -->
+          <div class="form-group">
+            <div class="section-head">
+              <div class="section-num">1</div>
+              <h2 class="section-title">Personal Information</h2>
+            </div>
+            <div class="field-grid">
+              <div class="field field-full">
+                <label>Full Legal Name <span class="req">*</span></label>
+                <input type="text" name="full_name" value="<%= values.full_name || '' %>" required minlength="3" placeholder="As written on your passport">
+              </div>
+              <div class="field">
+                <label>Email Address <span class="req">*</span></label>
+                <input type="email" name="email" value="<%= values.email || '' %>" required placeholder="you@example.com">
+              </div>
+              <div class="field">
+                <label>Phone Number</label>
+                <input type="tel" name="phone" value="<%= values.phone || '' %>" placeholder="+250 788 xxx xxx">
+              </div>
+              <div class="field">
+                <label>Date of Birth</label>
+                <input type="date" name="date_of_birth" value="<%= values.date_of_birth || '' %>">
+              </div>
+              <div class="field">
+                <label>Gender</label>
+                <select name="gender">
+                  <option value="">—</option>
+                  <option value="Male" <%= values.gender === 'Male' ? 'selected' : '' %>>Male</option>
+                  <option value="Female" <%= values.gender === 'Female' ? 'selected' : '' %>>Female</option>
+                  <option value="Other" <%= values.gender === 'Other' ? 'selected' : '' %>>Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Nationality</label>
+                <input type="text" name="nationality" value="<%= values.nationality || '' %>" placeholder="e.g. Rwandan">
+              </div>
+              <div class="field">
+                <label>Country of Residence</label>
+                <input type="text" name="country_of_residence" value="<%= values.country_of_residence || '' %>" placeholder="e.g. Kenya">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Academic -->
+          <div class="form-group">
+            <div class="section-head">
+              <div class="section-num">2</div>
+              <h2 class="section-title">Academic Background</h2>
+            </div>
+            <div class="field-grid">
+              <div class="field field-full">
+                <label>High School / Secondary School Name</label>
+                <input type="text" name="high_school_name" value="<%= values.high_school_name || '' %>" placeholder="Full name of the school you attended">
+              </div>
+              <div class="field">
+                <label>High School GPA <span class="req">*</span></label>
+                <input type="number" name="high_school_gpa" value="<%= values.high_school_gpa || '' %>" required min="0" max="4" step="0.01" placeholder="Out of 4.00">
+                <span class="field-hint">Minimum 2.00 required for most programs</span>
+              </div>
+              <div class="field">
+                <label>Passport Number</label>
+                <input type="text" name="passport_number" value="<%= values.passport_number || '' %>" placeholder="e.g. AB1234567">
+              </div>
+              <div class="field">
+                <label>English Proficiency Test</label>
+                <select name="english_test_type">
+                  <option value="">None / Not taken</option>
+                  <option value="IELTS" <%= values.english_test_type === 'IELTS' ? 'selected' : '' %>>IELTS</option>
+                  <option value="TOEFL" <%= values.english_test_type === 'TOEFL' ? 'selected' : '' %>>TOEFL</option>
+                  <option value="Duolingo" <%= values.english_test_type === 'Duolingo' ? 'selected' : '' %>>Duolingo English Test</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>English Test Score</label>
+                <input type="number" name="english_test_score" value="<%= values.english_test_score || '' %>" step="0.1" min="0" placeholder="e.g. 6.5 IELTS / 95 TOEFL">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Program -->
+          <div class="form-group">
+            <div class="section-head">
+              <div class="section-num">3</div>
+              <h2 class="section-title">Program of Interest</h2>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label>Intended Program <span class="req">*</span></label>
+                <select name="intended_program" required>
+                  <option value="">— select a program —</option>
+                  <% programs.forEach(p => { %>
+                    <option value="<%= p %>" <%= values.intended_program === p ? 'selected' : '' %>><%= p %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="field">
+                <label>Intended Entry Semester</label>
+                <select name="intended_semester">
+                  <% for (let i = 1; i <= 8; i++) { %>
+                    <option value="<%= i %>" <%= String(values.intended_semester) === String(i) ? 'selected' : '' %>>Semester <%= i %></option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documents note -->
+          <div class="doc-notice">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+              <strong>Document uploads are coming next.</strong> Once you submit this form, our team will email you a secure link to upload your passport scan, transcripts, and English certificate.
+            </div>
+          </div>
+
+          <div class="submit-bar">
+            <small><i class="fa-solid fa-lock"></i> Confidential · Reviewed only by the Admissions team</small>
+            <button type="submit" class="btn-submit">
+              Submit Application <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </form>
       </div>
 
-      <div class="side-card">
-        <h3><i class="fa-solid fa-star"></i> Why LuxMind?</h3>
-        <div class="side-list">
-          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Students from 40+ countries</span></div>
-          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Up to 100% merit scholarships</span></div>
-          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Full visa and immigration support</span></div>
-          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Bujumbura — Africa's safest capital</span></div>
+      <!-- FORM SIDEBAR -->
+      <aside class="form-sidebar">
+        <div class="side-card">
+          <h3><i class="fa-solid fa-calendar-check"></i> Fall 2026 Intake</h3>
+          <span class="deadline-badge">Deadline: Aug 31, 2026</span>
+          <p>Applications reviewed on a rolling basis. Early applicants receive priority for scholarships.</p>
+        </div>
+
+        <div class="side-card">
+          <h3><i class="fa-solid fa-star"></i> Why Students Choose Us</h3>
+          <div class="side-list">
+            <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Students from 40+ countries</span></div>
+            <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Up to 100% merit scholarships</span></div>
+            <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Full visa and immigration support</span></div>
+            <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Kigali — Africa's safest capital</span></div>
+            <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>96% graduate employment rate</span></div>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h3><i class="fa-solid fa-envelope"></i> Questions?</h3>
+          <p class="side-contact">
+            Email us at<br>
+            <a href="mailto:admissions@luxmind.edu">admissions@luxmind.edu</a><br><br>
+            We respond within 24 hours.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- JOURNEY TIMELINE -->
+  <section class="section journey">
+    <div class="section-inner">
+      <div class="section-eyebrow">Your Journey</div>
+      <h2 class="section-title">From Application to Arrival</h2>
+      <p class="section-subtitle">Six clear steps. No mystery. You'll always know exactly where you stand.</p>
+
+      <div class="journey-grid">
+        <div class="journey-step">
+          <div class="journey-num">1</div>
+          <h4>Submit Application</h4>
+          <p>Fill out the form above. It takes 5 minutes.</p>
+        </div>
+        <div class="journey-step">
+          <div class="journey-num">2</div>
+          <h4>Upload Documents</h4>
+          <p>Receive an email with a secure upload link.</p>
+        </div>
+        <div class="journey-step">
+          <div class="journey-num">3</div>
+          <h4>Admissions Review</h4>
+          <p>Our team evaluates your application in 5-10 days.</p>
+        </div>
+        <div class="journey-step">
+          <div class="journey-num">4</div>
+          <h4>Acceptance & Visa</h4>
+          <p>Get your acceptance letter + visa support letter.</p>
+        </div>
+        <div class="journey-step">
+          <div class="journey-num">5</div>
+          <h4>Prepare for Arrival</h4>
+          <p>Dorm, buddy mentor, airport pickup — all coordinated.</p>
+        </div>
+        <div class="journey-step">
+          <div class="journey-num">6</div>
+          <h4>Welcome to LuxMind</h4>
+          <p>Land in Kigali. Start your new chapter.</p>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="side-card">
-        <h3><i class="fa-solid fa-envelope"></i> Questions?</h3>
-        <p class="side-contact" style="margin:0;">
-          Email us at<br>
-          <a href="mailto:admissions@luxmind.edu">admissions@luxmind.edu</a><br><br>
-          We respond within 24 hours.
-        </p>
+  <!-- FAQ -->
+  <section class="section faq">
+    <div class="section-inner">
+      <div class="section-eyebrow">FAQ</div>
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-subtitle">Everything you're wondering, answered by the people who actually handle it.</p>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>What are the English proficiency requirements?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">We accept IELTS (min 6.0), TOEFL (min 80), or Duolingo English Test (min 100). If you completed high school in an English-speaking country, this requirement is waived.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>How much does tuition cost?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">Tuition varies by program, typically $2,500–$4,000 per semester. International students automatically qualify for a 50% scholarship. Students with a GPA of 3.0+ receive 75-100% scholarships.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>Do you help with the student visa?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">Yes — completely. Once accepted, our Visa & Immigration Team issues your embassy support letter, guides you through the application at your local embassy, and processes your residence permit on arrival in Rwanda.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>Is housing provided?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">Yes. On-campus dormitories are available for all international students, with single and shared room options. Our Orientation Team handles your check-in, roommate assignment, and arrival coordination.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>When will I know if I'm accepted?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">Applications are reviewed within 5-10 business days. You'll receive an email decision, and you can track your status by logging into the student portal.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            <span>Can I transfer credits from another university?</span>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <div class="faq-a"><div class="faq-a-inner">Yes. Our Academic & Exchange Team evaluates transcripts from other universities and determines transfer credit eligibility on a course-by-course basis.</div></div>
+        </div>
       </div>
-    </aside>
-  </div>
+    </div>
+  </section>
 
-  <footer class="page-footer">
-    © 2026 LuxMind University · International Office · Bujumbura,BURUNDI
+  <!-- CTA BAND -->
+  <section class="cta-band">
+    <div class="cta-band-inner">
+      <h2>Ready to Begin?</h2>
+      <p>Applications for the Fall 2026 intake close on August 31st. Early applicants receive priority scholarship consideration.</p>
+      <a href="#apply-form" class="btn-hero btn-hero-primary" style="font-size: 16px; padding: 18px 40px;">
+        <i class="fa-solid fa-arrow-up"></i> Go to Application
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+          <div>
+            <div class="brand-name" style="color:#fff;">LuxMind University</div>
+            <div class="brand-sub">International Admissions</div>
+          </div>
+        </div>
+        <p>Building Africa's next generation of global leaders. Located in Kigali, Rwanda — Africa's safest and most innovative capital.</p>
+      </div>
+      <div>
+        <h4>Admissions</h4>
+        <p><a href="#apply-form">Apply Now</a></p>
+        <p><a href="/login">Student Portal</a></p>
+        <p><a href="#why">Why LuxMind</a></p>
+        <p><a href="#apply-form">Programs</a></p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p><i class="fa-solid fa-envelope"></i> admissions@luxmind.edu</p>
+        <p><i class="fa-solid fa-phone"></i> +250 788 000 000</p>
+        <p><i class="fa-solid fa-location-dot"></i>Bujumbura,Burundi</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 LuxMind University · International Office · All rights reserved
+      <div class="developer-credit">
+        <i class="fa-solid fa-code"></i>
+        Developed by <strong>Janvier Harerimana</strong>
+        <i class="fa-solid fa-heart" style="color:#ff6b6b;"></i>
+      </div>
+    </div>
   </footer>
 
 </body>

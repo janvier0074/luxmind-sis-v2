@@ -89,6 +89,110 @@ function getGreeting() {
   return 'Good evening';
 }
 
+
+
+
+// ============================================
+// --- PUBLIC APPLICATION FORM (/apply) ---
+// ============================================
+app.get('/apply', async (req, res) => {
+  let programs = [];
+  try {
+    const r = await pool.query(`SELECT DISTINCT program FROM fee_structure WHERE program IS NOT NULL ORDER BY program`);
+    programs = r.rows.map(x => x.program);
+  } catch (e) { /* table may not exist in edge cases */ }
+
+  if (!programs || programs.length === 0) {
+    programs = ['Computer Engineering', 'Business Administration', 'Nursing', 'Civil Engineering', 'Law', 'Education'];
+  }
+
+  res.render('apply', { error: null, values: {}, programs });
+});
+
+app.post('/apply', async (req, res) => {
+  const {
+    full_name, email, phone, date_of_birth, gender, nationality, country_of_residence,
+    high_school_name, high_school_gpa, english_test_type, english_test_score,
+    intended_program, intended_semester, passport_number
+  } = req.body;
+
+  const values = req.body;
+  const errors = [];
+
+  if (!full_name || full_name.trim().length < 3) errors.push('Full name must be at least 3 characters.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('A valid email address is required.');
+  if (!intended_program) errors.push('Please select an intended program.');
+  if (!high_school_gpa || isNaN(Number(high_school_gpa)) || Number(high_school_gpa) < 0 || Number(high_school_gpa) > 4) {
+    errors.push('High school GPA must be a number between 0 and 4.');
+  }
+
+  if (errors.length > 0) {
+    let programs = [];
+    try {
+      const r = await pool.query(`SELECT DISTINCT program FROM fee_structure WHERE program IS NOT NULL ORDER BY program`);
+      programs = r.rows.map(x => x.program);
+    } catch (e) {}
+    if (!programs || programs.length === 0) {
+      programs = ['Computer Engineering', 'Business Administration', 'Nursing', 'Civil Engineering', 'Law', 'Education'];
+    }
+    return res.render('apply', { error: errors.join(' '), values, programs });
+  }
+
+  try {
+    const result = await pool.query(`
+      INSERT INTO applications
+        (full_name, email, phone, date_of_birth, gender, nationality, country_of_residence,
+         high_school_name, high_school_gpa, english_test_type, english_test_score,
+         intended_program, intended_semester, passport_number, source, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'online','new')
+      RETURNING id
+    `, [
+      full_name.trim(),
+      email.trim().toLowerCase(),
+      phone ? phone.trim() : null,
+      date_of_birth || null,
+      gender || null,
+      nationality ? nationality.trim() : null,
+      country_of_residence ? country_of_residence.trim() : null,
+      high_school_name ? high_school_name.trim() : null,
+      Number(high_school_gpa),
+      english_test_type || null,
+      english_test_score ? Number(english_test_score) : null,
+      intended_program,
+      Number(intended_semester) || 1,
+      passport_number ? passport_number.trim().toUpperCase() : null
+    ]);
+
+    res.redirect(`/apply/success/${result.rows[0].id}`);
+  } catch (err) {
+    let programs = [];
+    try {
+      const r = await pool.query(`SELECT DISTINCT program FROM fee_structure WHERE program IS NOT NULL ORDER BY program`);
+      programs = r.rows.map(x => x.program);
+    } catch (e) {}
+    if (!programs || programs.length === 0) {
+      programs = ['Computer Engineering', 'Business Administration', 'Nursing', 'Civil Engineering', 'Law', 'Education'];
+    }
+    res.render('apply', { error: 'Submission error: ' + err.message, values, programs });
+  }
+});
+
+app.get('/apply/success/:id', async (req, res) => {
+  const appId = parseInt(req.params.id);
+  if (!appId) return res.redirect('/apply');
+
+  try {
+    const result = await pool.query(
+      `SELECT id, full_name, email, intended_program, created_at FROM applications WHERE id = $1`,
+      [appId]
+    );
+    if (result.rows.length === 0) return res.redirect('/apply');
+    res.render('apply-success', { application: result.rows[0] });
+  } catch (err) {
+    res.redirect('/apply');
+  }
+});
+
 // ============================================
 // --- AUTHENTICATION ---
 // ============================================

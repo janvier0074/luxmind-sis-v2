@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b32">
+  <title>Apply to LuxMind University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    input, select, textarea, button { font: inherit; }
+
+    /* TOP BAR */
+    .topbar { background: var(--navy); color: #fff; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #527df2, #3157cb); display: grid; place-items: center; font-size: 17px; }
+    .brand-name { font: 800 16px "Manrope", sans-serif; }
+    .brand-sub { font-size: 10px; color: #9eacc3; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-top: 2px; }
+    .top-links { display: flex; align-items: center; gap: 18px; font-size: 13px; }
+    .top-links a { color: #b8c5db; font-weight: 600; }
+    .top-links a:hover { color: #fff; }
+    .btn-login { padding: 8px 16px; background: rgba(255,255,255,.12); border-radius: 9px; color: #fff !important; font-weight: 700; }
+    .btn-login:hover { background: rgba(255,255,255,.2); }
+
+    /* HERO */
+    .hero { background: linear-gradient(135deg, var(--navy) 0%, #1a2d4d 100%); color: #fff; padding: 50px 32px 70px; text-align: center; }
+    .hero h1 { margin: 0 0 12px; font: 800 clamp(28px, 4vw, 42px) "Manrope", sans-serif; }
+    .hero p { margin: 0 auto; max-width: 640px; color: #b8c5db; font-size: 15px; line-height: 1.6; }
+
+    /* LAYOUT */
+    .container { max-width: 1100px; margin: -40px auto 60px; padding: 0 20px; display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+
+    /* FORM CARD */
+    .form-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px 36px; }
+
+    .alert { padding: 14px 18px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; font-weight: 600; display: flex; align-items: flex-start; gap: 10px; }
+    .alert-error { background: var(--red-soft); color: var(--red); border: 1px solid #f5c8ce; }
+
+    .section { margin-bottom: 32px; }
+    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
+    .section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font: 800 14px "Manrope", sans-serif; display: grid; place-items: center; flex-shrink: 0; }
+    .section-title { margin: 0; font: 800 17px "Manrope", sans-serif; color: #142039; }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 800; color: #4c5a70; text-transform: uppercase; letter-spacing: 0.4px; }
+    .field label .req { color: var(--red); margin-left: 2px; }
+    .field input, .field select { padding: 11px 14px; border: 1px solid #dfe5ee; border-radius: 10px; font-size: 14px; outline: none; background: #fafbfe; transition: .15s; font-family: inherit; width: 100%; }
+    .field input:focus, .field select:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px var(--blue-soft); }
+
+    .field-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .doc-notice { background: var(--blue-soft); border-left: 4px solid var(--blue); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; color: #1e40af; display: flex; align-items: flex-start; gap: 10px; }
+
+    .submit-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 20px; border-top: 2px solid var(--line); flex-wrap: wrap; }
+    .submit-bar small { color: var(--muted); font-size: 12px; }
+    .btn-submit { padding: 14px 32px; background: var(--green); color: #fff; border: 0; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: .15s; }
+    .btn-submit:hover { background: #0f7d57; }
+
+    /* SIDEBAR */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .side-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+    .side-card h3 { margin: 0 0 14px; font: 800 14px "Manrope", sans-serif; color: #142039; display: flex; align-items: center; gap: 8px; }
+    .side-card h3 i { color: var(--blue); }
+    .side-list { display: flex; flex-direction: column; gap: 10px; }
+    .side-item { display: flex; gap: 12px; font-size: 13px; color: #4c5a70; line-height: 1.5; }
+    .side-item i { color: var(--green); flex-shrink: 0; margin-top: 3px; }
+    .deadline-badge { display: inline-block; padding: 4px 10px; background: var(--amber-soft); color: var(--amber); font-size: 11px; font-weight: 800; border-radius: 6px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .side-contact { font-size: 13px; color: #4c5a70; line-height: 1.7; }
+    .side-contact a { color: var(--blue); font-weight: 700; }
+
+    /* FOOTER */
+    .page-footer { padding: 24px 32px; text-align: center; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+      .form-card { padding: 24px 20px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .hero { padding: 36px 20px 60px; }
+      .topbar { padding: 14px 20px; }
+      .top-links span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind University</div>
+        <div class="brand-sub">International Admissions</div>
+      </div>
+    </div>
+    <div class="top-links">
+      <span style="color:#b8c5db;">Already applied?</span>
+      <a href="/login" class="btn-login"><i class="fa-solid fa-arrow-right-to-bracket"></i> Log In</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Begin Your Journey at LuxMind</h1>
+    <p>Apply for admission to one of Rwanda's most diverse international communities. Our team reviews every application personally.</p>
+  </section>
+
+  <div class="container">
+    <div class="form-card">
+
+      <% if (error) { %>
+        <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> <%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/apply">
+
+        <!-- SECTION 1: Personal -->
+        <div class="section">
+          <div class="section-head">
+            <div class="section-num">1</div>
+            <h2 class="section-title">Personal Information</h2>
+          </div>
+          <div class="field-grid">
+            <div class="field field-full">
+              <label>Full Legal Name <span class="req">*</span></label>
+              <input type="text" name="full_name" value="<%= values.full_name || '' %>" required minlength="3" placeholder="As written on your passport">
+            </div>
+            <div class="field">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" name="email" value="<%= values.email || '' %>" required placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label>Phone Number</label>
+              <input type="tel" name="phone" value="<%= values.phone || '' %>" placeholder="+250 788 xxx xxx">
+            </div>
+            <div class="field">
+              <label>Date of Birth</label>
+              <input type="date" name="date_of_birth" value="<%= values.date_of_birth || '' %>">
+            </div>
+            <div class="field">
+              <label>Gender</label>
+              <select name="gender">
+                <option value="">—</option>
+                <option value="Male" <%= values.gender === 'Male' ? 'selected' : '' %>>Male</option>
+                <option value="Female" <%= values.gender === 'Female' ? 'selected' : '' %>>Female</option>
+                <option value="Other" <%= values.gender === 'Other' ? 'selected' : '' %>>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Nationality</label>
+              <input type="text" name="nationality" value="<%= values.nationality || '' %>" placeholder="e.g. Rwandan">
+            </div>
+            <div class="field">
+              <label>Country of Residence</label>
+              <input type="text" name="country_of_residence" value="<%= values.country_of_residence || '' %>" placeholder="e.g. Kenya">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Academic -->
+        <div class="section">
+          <div class="section-head">
+            <div class="section-num">2</div>
+            <h2 class="section-title">Academic Background</h2>
+          </div>
+          <div class="field-grid">
+            <div class="field field-full">
+              <label>High School / Secondary School Name</label>
+              <input type="text" name="high_school_name" value="<%= values.high_school_name || '' %>" placeholder="Full name of the school you attended">
+            </div>
+            <div class="field">
+              <label>High School GPA <span class="req">*</span></label>
+              <input type="number" name="high_school_gpa" value="<%= values.high_school_gpa || '' %>" required min="0" max="4" step="0.01" placeholder="Out of 4.00">
+              <span class="field-hint">Minimum 2.00 required for most programs</span>
+            </div>
+            <div class="field">
+              <label>Passport Number</label>
+              <input type="text" name="passport_number" value="<%= values.passport_number || '' %>" placeholder="e.g. AB1234567">
+            </div>
+            <div class="field">
+              <label>English Proficiency Test</label>
+              <select name="english_test_type">
+                <option value="">None / Not taken</option>
+                <option value="IELTS" <%= values.english_test_type === 'IELTS' ? 'selected' : '' %>>IELTS</option>
+                <option value="TOEFL" <%= values.english_test_type === 'TOEFL' ? 'selected' : '' %>>TOEFL</option>
+                <option value="Duolingo" <%= values.english_test_type === 'Duolingo' ? 'selected' : '' %>>Duolingo English Test</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>English Test Score</label>
+              <input type="number" name="english_test_score" value="<%= values.english_test_score || '' %>" step="0.1" min="0" placeholder="e.g. 6.5 for IELTS, 95 for TOEFL">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Program Choice -->
+        <div class="section">
+          <div class="section-head">
+            <div class="section-num">3</div>
+            <h2 class="section-title">Program of Interest</h2>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label>Intended Program <span class="req">*</span></label>
+              <select name="intended_program" required>
+                <option value="">— select a program —</option>
+                <% programs.forEach(p => { %>
+                  <option value="<%= p %>" <%= values.intended_program === p ? 'selected' : '' %>><%= p %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="field">
+              <label>Intended Entry Semester</label>
+              <select name="intended_semester">
+                <% for (let i = 1; i <= 8; i++) { %>
+                  <option value="<%= i %>" <%= String(values.intended_semester) === String(i) ? 'selected' : '' %>>Semester <%= i %></option>
+                <% } %>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents coming soon note -->
+        <div class="doc-notice">
+          <i class="fa-solid fa-circle-info" style="margin-top:2px;"></i>
+          <div>
+            <strong>Document uploads are coming next.</strong> Once you submit this form, our team will email you a secure link to upload your passport scan, transcripts, and English certificate.
+          </div>
+        </div>
+
+        <div class="submit-bar">
+          <small><i class="fa-solid fa-lock"></i> Your information is confidential and reviewed only by the Admissions team.</small>
+          <button type="submit" class="btn-submit">
+            Submit Application <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-card">
+        <h3><i class="fa-solid fa-calendar-check"></i> Fall 2026 Intake</h3>
+        <span class="deadline-badge">Deadline: Aug 31, 2026</span>
+        <p style="margin:0; color:#4c5a70; font-size:13px; line-height:1.6;">Applications are reviewed on a rolling basis. Early applicants receive priority consideration for scholarships.</p>
+      </div>
+
+      <div class="side-card">
+        <h3><i class="fa-solid fa-star"></i> Why LuxMind?</h3>
+        <div class="side-list">
+          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Students from 40+ countries</span></div>
+          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Up to 100% merit scholarships</span></div>
+          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Full visa and immigration support</span></div>
+          <div class="side-item"><i class="fa-solid fa-check-circle"></i><span>Bujumbura — Africa's safest capital</span></div>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h3><i class="fa-solid fa-envelope"></i> Questions?</h3>
+        <p class="side-contact" style="margin:0;">
+          Email us at<br>
+          <a href="mailto:admissions@luxmind.edu">admissions@luxmind.edu</a><br><br>
+          We respond within 24 hours.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="page-footer">
+    © 2026 LuxMind University · International Office · Bujumbura,BURUNDI
+  </footer>
+
+</body>
+</html>

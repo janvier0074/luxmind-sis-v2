@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Submitted — LuxMind University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+
+    .topbar { background: var(--navy); color: #fff; padding: 18px 32px; display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #527df2, #3157cb); display: grid; place-items: center; font-size: 17px; }
+    .brand-name { font: 800 16px "Manrope", sans-serif; }
+    .brand-sub { font-size: 10px; color: #9eacc3; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-top: 2px; }
+
+    .container { max-width: 720px; margin: -30px auto 60px; padding: 0 20px; }
+    .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 44px 40px; text-align: center; }
+
+    .success-icon { width: 88px; height: 88px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; margin: 0 auto 24px; font-size: 42px; animation: pop 0.4s ease; }
+    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+    h1 { margin: 0 0 12px; color: #142039; font: 800 28px "Manrope", sans-serif; }
+    .subtitle { margin: 0 0 30px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+    .ref-box { background: var(--blue-soft); border: 2px dashed #a8c0ef; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+    .ref-label { font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; color: var(--blue); margin-bottom: 8px; }
+    .ref-number { font: 800 28px "Manrope", sans-serif; color: #142039; letter-spacing: 1px; }
+
+    .next-steps { text-align: left; background: #fafbfe; border-radius: 12px; padding: 22px 26px; margin-bottom: 30px; }
+    .next-steps h2 { margin: 0 0 16px; color: #142039; font: 800 14px "Manrope", sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
+    .step { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .step:last-child { border-bottom: 0; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+    .step-body { flex: 1; }
+    .step-title { color: #142039; font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+    .step-desc { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .contact-box { padding: 20px; background: var(--amber-soft); border-radius: 12px; margin-bottom: 24px; font-size: 13px; color: #92400e; }
+    .contact-box strong { display: block; margin-bottom: 4px; }
+
+    .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn { padding: 12px 24px; border-radius: 10px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--navy); color: #fff; }
+    .btn-primary:hover { background: #1c3155; }
+    .btn-secondary { background: #f1f5f9; color: #4c5a70; }
+    .btn-secondary:hover { background: #e2e8f0; }
+
+    @media (max-width: 600px) {
+      .card { padding: 32px 22px; }
+      h1 { font-size: 22px; }
+      .ref-number { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+    <div>
+      <div class="brand-name">LuxMind University</div>
+      <div class="brand-sub">International Admissions</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+      <h1>Application Submitted!</h1>
+      <p class="subtitle">Thank you, <strong><%= application.full_name %></strong>. We have received your application for <strong><%= application.intended_program %></strong>. Our Admissions team will begin reviewing it within 48 hours.</p>
+
+      <div class="ref-box">
+        <div class="ref-label">Your Application Reference Number</div>
+        <div class="ref-number">APP-<%= new Date(application.created_at).getFullYear() %>-<%= String(application.id).padStart(5, '0') %></div>
+      </div>
+
+      <div class="next-steps">
+        <h2>What Happens Next</h2>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Check your email</div>
+            <div class="step-desc">We'll send updates to <strong><%= application.email %></strong>. Add <em>admissions@luxmind.edu</em> to your contacts so our messages don't land in spam.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Upload your documents</div>
+            <div class="step-desc">You will receive a secure link by email to upload your passport scan, high school transcripts, diploma, and English certificate.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Admissions review</div>
+            <div class="step-desc">Our team will evaluate your application. Reviews typically take 5–10 business days. You will receive an email with the decision.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Visa & arrival</div>
+            <div class="step-desc">If accepted, our Visa team will contact you about your residence permit and help you prepare for arrival in Kigali.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-box">
+        <strong><i class="fa-solid fa-envelope"></i> Need to update something?</strong>
+        Email <a href="mailto:admissions@luxmind.edu" style="color:#92400e; text-decoration:underline; font-weight:700;">admissions@luxmind.edu</a> with your reference number.
+      </div>
+
+      <div class="btn-row">
+        <a href="/apply" class="btn btn-secondary"><i class="fa-solid fa-rotate-left"></i> Submit Another</a>
+        <a href="/login" class="btn btn-primary"><i class="fa-solid fa-house"></i> Return to Home</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

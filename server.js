@@ -1017,7 +1017,7 @@ app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
       
       const owed = Number(inv.net_amount) - Number(inv.paid_amount);
       const applyNow = Math.min(remaining, owed);
-      const newPaid = Number(inv.paid_amount) + applyNow;
+            const newPaid = Math.round((Number(inv.paid_amount) + applyNow) * 100) / 100;
       const newStatus = newPaid >= Number(inv.net_amount) ? 'paid' : 'partial';
       
       await client.query(`

@@ -287,7 +287,7 @@
             <% } %>
           </p>
           <form method="POST" action="/sis/my/finance/pay" style="display: flex; gap: 1rem;">
-            <input type="number" name="amount" value="<%= currentDebt %>" max="<%= currentDebt %>" min="1" step="0.01" required style="flex: 1; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit;">
+           <input type="number" name="amount" value="<%= Number(currentDebt).toFixed(2) %>" max="<%= Number(currentDebt).toFixed(2) %>" min="0.01" step="0.01" required style="flex: 1; padding: 0.7rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit;">
             <button type="submit" class="btn-pay" style="width: auto; padding: 0 1.5rem; white-space: nowrap;">
               <i class="fas fa-credit-card"></i> Pay Now
             </button>

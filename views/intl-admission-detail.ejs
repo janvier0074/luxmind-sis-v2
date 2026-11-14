@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b32">
+  <title><%= application.full_name %> · Application #<%= application.id %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --red: #d34d5b; --red-soft: #fdf2f4;
+      --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+
+    /* Sidebar — same as queue page */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; letter-spacing: 1.35px; text-transform: uppercase; }
+    .team-chip { margin: 17px 18px 4px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .team-chip small { display: block; margin-bottom: 4px; color: #91a0b8; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .team-chip strong { color: #fff; font-size: 12px; font-weight: 700; }
+    .nav-group { padding: 20px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; }
+    .nav-link i.nav-icon { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { color: #fff; background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .nav-link.active i.nav-icon { color: #7796ff; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    .overlay.open { display: block; }
+
+    /* Main */
+    .main { min-height: 100vh; margin-left: 268px; padding: 24px 38px 50px; }
+    .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: #4c5a70; font-size: 12px; font-weight: 700; }
+    .back-btn:hover { background: #f8fafc; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); align-items: center; justify-content: center; }
+
+    .page-head { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 22px; flex-wrap: wrap; }
+    .head-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-soft), #d9e6ff); color: var(--blue); display: grid; place-items: center; font: 800 22px "Manrope", sans-serif; flex-shrink: 0; }
+    .head-text h1 { margin: 0 0 4px; color: #142039; font: 800 clamp(22px, 3vw, 28px) "Manrope", sans-serif; }
+    .head-text p { margin: 0; color: var(--muted); font-size: 13px; }
+    .head-status { margin-left: auto; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+    .status-pill.new             { background: var(--amber-soft); color: var(--amber); }
+    .status-pill.in_review       { background: var(--blue-soft); color: var(--blue); }
+    .status-pill.waiting_faculty { background: #fef3c7; color: #b45309; }
+    .status-pill.approved        { background: var(--green-soft); color: var(--green); }
+    .status-pill.rejected        { background: var(--red-soft); color: var(--red); }
+    .status-pill.waitlisted      { background: #ede9fe; color: #6d28d9; }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 1fr 340px; gap: 22px; }
+
+    /* Cards */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px; margin-bottom: 18px; }
+    .card-title { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; color: #1b2942; font: 800 14px "Manrope", sans-serif; text-transform: uppercase; letter-spacing: .3px; }
+    .card-title i { color: var(--blue); }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { color: #7b8799; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+    .field-value { color: #1c2940; font-size: 14px; font-weight: 600; word-break: break-word; }
+    .field-value.empty { color: #b9c2d0; font-style: italic; font-weight: 500; }
+    .field-full { grid-column: 1 / -1; }
+
+    .doc-list { display: grid; gap: 8px; }
+    .doc-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fafbfe; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; font-weight: 600; color: #1c2940; }
+    .doc-item:hover { background: #f4f6fa; }
+    .doc-item i { color: var(--blue); font-size: 14px; }
+    .doc-item .doc-missing { color: var(--muted); font-style: italic; font-weight: 500; }
+
+    /* Action panel */
+    .action-panel { position: sticky; top: 24px; }
+    .action-btn { width: 100%; padding: 12px; border: 0; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .15s; margin-bottom: 10px; }
+    .action-btn:last-child { margin-bottom: 0; }
+    .action-btn.approve { background: var(--green); color: #fff; }
+    .action-btn.approve:hover { background: #0f7d57; }
+    .action-btn.waitlist { background: var(--amber-soft); color: var(--amber); border: 1px solid #f3d99a; }
+    .action-btn.waitlist:hover { background: #ffe9b8; }
+    .action-btn.review { background: var(--blue-soft); color: var(--blue); border: 1px solid #c7d8f7; }
+    .action-btn.review:hover { background: #dbe4ff; }
+    .action-btn.reject { background: var(--red-soft); color: var(--red); border: 1px solid #f5c8ce; }
+    .action-btn.reject:hover { background: #fde0e4; }
+    .action-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .notes-area { width: 100%; padding: 12px 14px; border: 1px solid #dfe5ee; border-radius: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 100px; outline: none; }
+    .notes-area:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+    .btn-save { width: 100%; padding: 11px; margin-top: 10px; border: 0; border-radius: 10px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-save:hover { background: #1c3155; }
+
+    .review-meta { padding: 14px 16px; background: #fafbfe; border: 1px dashed var(--line); border-radius: 10px; margin-bottom: 14px; font-size: 12px; }
+    .review-meta .label { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; }
+    .review-meta .value { color: #1c2940; font-weight: 700; margin-top: 3px; }
+
+    /* History */
+    .history-list { display: flex; flex-direction: column; gap: 0; }
+    .history-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f0f3f8; }
+    .history-item:last-child { border-bottom: 0; }
+    .history-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); margin-top: 5px; flex-shrink: 0; }
+    .history-body { flex: 1; }
+    .history-body strong { color: #1c2940; font-size: 13px; font-weight: 700; }
+    .history-body p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .history-time { color: #b9c2d0; font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+    /* Alerts */
+    .alert { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 13px 16px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .alert-success { border: 1px solid #bcebd6; color: #176b4d; background: var(--green-soft); }
+    .alert-error { border: 1px solid #f5c8ce; color: #a52a3a; background: var(--red-soft); }
+
+    /* Reject modal (inline) */
+    .reject-form { display: none; padding: 12px 0 0; }
+    .reject-form.active { display: block; }
+    .reject-form textarea { width: 100%; padding: 10px 12px; border: 1px solid #f5c8ce; border-radius: 10px; font-family: inherit; font-size: 13px; min-height: 80px; resize: vertical; }
+    .reject-form .actions { display: flex; gap: 8px; margin-top: 8px; }
+    .reject-form .btn-cancel { flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: #4c5a70; font-size: 12px; font-weight: 700; }
+    .reject-form .btn-confirm { flex: 1; padding: 10px; border: 0; border-radius: 9px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
+
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: 1fr; }
+      .action-panel { position: static; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 20px; } .mobile-toggle { display: inline-flex; }
+      .field-grid { grid-template-columns: 1fr; }
+      .head-status { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-globe"></i></div>
+      <div>
+        <div class="brand-name">LuxMind Admin</div>
+        <div class="brand-subtitle">International Office</div>
+      </div>
+    </div>
+    <div class="team-chip">
+      <small>Admissions Team</small>
+      <strong><%= user.full_name %></strong>
+    </div>
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Admissions</div>
+        <a href="/sis/intl" class="nav-link"><i class="fa-solid fa-inbox nav-icon"></i><span>Ticket Desk</span></a>
+        <a href="/sis/intl/admissions/queue" class="nav-link active"><i class="fa-solid fa-clipboard-list nav-icon"></i><span>Application Queue</span></a>
+        <a href="/sis/intl/documents" class="nav-link"><i class="fa-solid fa-file-pdf nav-icon"></i><span>Document Generator</span></a>
+        <a href="/sis/intl/inbox" class="nav-link"><i class="fa-solid fa-envelope-open-text nav-icon"></i><span>Executive Inbox</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+      <a href="/sis/intl/admissions/queue" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Queue</a>
+    </div>
+
+    <% if (flash.success && flash.success.length > 0) { %>
+      <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <%= flash.success[0] %></div>
+    <% } %>
+    <% if (flash.error && flash.error.length > 0) { %>
+      <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> <%= flash.error[0] %></div>
+    <% } %>
+
+    <div class="page-head">
+      <div class="head-avatar">
+        <%= application.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() %>
+      </div>
+      <div class="head-text">
+        <h1><%= application.full_name %></h1>
+        <p>Application #<%= application.id %> · Submitted <%= new Date(application.created_at).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'}) %></p>
+      </div>
+      <div class="head-status">
+        <span class="status-pill <%= application.status %>">
+          <i class="fa-solid fa-circle"></i> <%= application.status.replace('_',' ') %>
+        </span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: Applicant Details -->
+      <div>
+        <!-- Personal -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-user"></i> Personal Information</h2>
+          <div class="field-grid">
+            <div class="field">
+              <span class="field-label">Full Name</span>
+              <span class="field-value"><%= application.full_name %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Email</span>
+              <span class="field-value"><%= application.email %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Phone</span>
+              <span class="field-value <%= application.phone ? '' : 'empty' %>"><%= application.phone || '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Date of Birth</span>
+              <span class="field-value <%= application.date_of_birth ? '' : 'empty' %>"><%= application.date_of_birth ? new Date(application.date_of_birth).toLocaleDateString('en-GB') : '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Gender</span>
+              <span class="field-value <%= application.gender ? '' : 'empty' %>"><%= application.gender || '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Nationality</span>
+              <span class="field-value <%= application.nationality ? '' : 'empty' %>"><%= application.nationality || '—' %></span>
+            </div>
+            <div class="field field-full">
+              <span class="field-label">Country of Residence</span>
+              <span class="field-value <%= application.country_of_residence ? '' : 'empty' %>"><%= application.country_of_residence || '—' %></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-graduation-cap"></i> Academic Background</h2>
+          <div class="field-grid">
+            <div class="field field-full">
+              <span class="field-label">High School</span>
+              <span class="field-value <%= application.high_school_name ? '' : 'empty' %>"><%= application.high_school_name || '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">High School GPA</span>
+              <span class="field-value <%= application.high_school_gpa ? '' : 'empty' %>"><%= application.high_school_gpa ? Number(application.high_school_gpa).toFixed(2) + ' / 4.00' : '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">English Test</span>
+              <span class="field-value <%= application.english_test_type ? '' : 'empty' %>"><%= application.english_test_type ? application.english_test_type + (application.english_test_score ? ' · ' + application.english_test_score : '') : '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Intended Program</span>
+              <span class="field-value <%= application.intended_program ? '' : 'empty' %>"><%= application.intended_program || '—' %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Intended Semester</span>
+              <span class="field-value">Semester <%= application.intended_semester %></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-file-lines"></i> Uploaded Documents</h2>
+          <div class="doc-list">
+            <a href="<%= application.passport_url || '#' %>" target="_blank" class="doc-item <%= application.passport_url ? '' : 'disabled' %>" style="<%= application.passport_url ? '' : 'pointer-events:none; opacity:.6;' %>">
+              <i class="fa-solid fa-passport"></i>
+              <span>Passport · <%= application.passport_number || 'Not provided' %></span>
+              <% if (!application.passport_url) { %><span class="doc-missing" style="margin-left:auto;">Not uploaded</span><% } %>
+            </a>
+            <a href="<%= application.transcript_url || '#' %>" target="_blank" class="doc-item" style="<%= application.transcript_url ? '' : 'pointer-events:none; opacity:.6;' %>">
+              <i class="fa-solid fa-file-lines"></i>
+              <span>Academic Transcript</span>
+              <% if (!application.transcript_url) { %><span class="doc-missing" style="margin-left:auto;">Not uploaded</span><% } %>
+            </a>
+            <a href="<%= application.diploma_url || '#' %>" target="_blank" class="doc-item" style="<%= application.diploma_url ? '' : 'pointer-events:none; opacity:.6;' %>">
+              <i class="fa-solid fa-scroll"></i>
+              <span>High School Diploma</span>
+              <% if (!application.diploma_url) { %><span class="doc-missing" style="margin-left:auto;">Not uploaded</span><% } %>
+            </a>
+            <a href="<%= application.english_cert_url || '#' %>" target="_blank" class="doc-item" style="<%= application.english_cert_url ? '' : 'pointer-events:none; opacity:.6;' %>">
+              <i class="fa-solid fa-language"></i>
+              <span>English Certificate</span>
+              <% if (!application.english_cert_url) { %><span class="doc-missing" style="margin-left:auto;">Not uploaded</span><% } %>
+            </a>
+            <a href="<%= application.photo_url || '#' %>" target="_blank" class="doc-item" style="<%= application.photo_url ? '' : 'pointer-events:none; opacity:.6;' %>">
+              <i class="fa-solid fa-image"></i>
+              <span>Passport Photo</span>
+              <% if (!application.photo_url) { %><span class="doc-missing" style="margin-left:auto;">Not uploaded</span><% } %>
+            </a>
+          </div>
+        </div>
+
+        <!-- Recruitment -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-bullhorn"></i> Recruitment</h2>
+          <div class="field-grid">
+            <div class="field">
+              <span class="field-label">Source</span>
+              <span class="field-value"><%= application.source %></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Agent ID</span>
+              <span class="field-value <%= application.agent_id ? '' : 'empty' %>"><%= application.agent_id || '—' %></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Review History</h2>
+          <% if (history.length === 0) { %>
+            <p style="color:var(--muted); font-size:13px; margin:0;">No actions recorded yet on this application.</p>
+          <% } else { %>
+            <div class="history-list">
+              <% history.forEach(h => { %>
+                <div class="history-item">
+                  <div class="history-dot"></div>
+                  <div class="history-body">
+                    <strong><%= h.staff_name || 'System' %></strong>
+                    <p><%= h.details %></p>
+                  </div>
+                  <div class="history-time"><%= new Date(h.created_at).toLocaleString('en-GB', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) %></div>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- RIGHT: Action Panel -->
+      <div class="action-panel">
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-gavel"></i> Decision</h2>
+
+          <% if (application.reviewed_by) { %>
+            <div class="review-meta">
+              <div class="label">Last reviewed by</div>
+              <div class="value"><%= reviewerName || 'Unknown' %></div>
+              <div class="label" style="margin-top:8px;">on</div>
+              <div class="value"><%= application.reviewed_at ? new Date(application.reviewed_at).toLocaleString('en-GB', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '—' %></div>
+            </div>
+          <% } %>
+
+          <% if (application.status === 'rejected' && application.rejection_reason) { %>
+            <div class="alert alert-error" style="margin-bottom:14px;">
+              <i class="fa-solid fa-ban"></i>
+              <div><strong>Rejection reason:</strong><br><%= application.rejection_reason %></div>
+            </div>
+          <% } %>
+
+          <% if (application.status !== 'approved') { %>
+            <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="action-btn approve" onclick="return confirm('Approve this application? The applicant will be marked as approved.')">
+                <i class="fa-solid fa-circle-check"></i> Approve Application
+              </button>
+            </form>
+          <% } %>
+
+          <% if (application.status !== 'waitlisted') { %>
+            <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
+              <input type="hidden" name="action" value="waitlist">
+              <button type="submit" class="action-btn waitlist" onclick="return confirm('Move this applicant to the waitlist?')">
+                <i class="fa-solid fa-hourglass-half"></i> Waitlist
+              </button>
+            </form>
+          <% } %>
+
+          <% if (application.status !== 'in_review') { %>
+            <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
+              <input type="hidden" name="action" value="in_review">
+              <button type="submit" class="action-btn review">
+                <i class="fa-solid fa-magnifying-glass"></i> Move to In Review
+              </button>
+            </form>
+          <% } %>
+
+          <% if (application.status !== 'rejected') { %>
+            <button type="button" class="action-btn reject" onclick="document.getElementById('rejectForm').classList.toggle('active')">
+              <i class="fa-solid fa-ban"></i> Reject Application
+            </button>
+            <div class="reject-form" id="rejectForm">
+              <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/status">
+                <input type="hidden" name="action" value="reject">
+                <textarea name="rejection_reason" placeholder="Reason for rejection (required, visible on the record)..." minlength="5" required></textarea>
+                <div class="actions">
+                  <button type="button" class="btn-cancel" onclick="document.getElementById('rejectForm').classList.remove('active')">Cancel</button>
+                  <button type="submit" class="btn-confirm"><i class="fa-solid fa-ban"></i> Confirm Reject</button>
+                </div>
+              </form>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-note-sticky"></i> Internal Notes</h2>
+          <form method="POST" action="/sis/intl/admissions/applications/<%= application.id %>/notes">
+            <textarea name="internal_notes" class="notes-area" placeholder="Add internal notes for the admissions team..."><%= application.internal_notes || '' %></textarea>
+            <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Notes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+  </script>
+</body>
+</html>

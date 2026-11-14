@@ -5608,6 +5608,134 @@ app.post('/sis/intl/insurance/update', requireRole('intl_officer', 'admin'), req
 
 
 // ============================================
+// --- INTL OFFICE: APPLICATION DETAIL ---
+// ============================================
+app.get('/sis/intl/admissions/applications/:id', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
+  try {
+    const appId = parseInt(req.params.id);
+    if (!appId) return res.redirect('/sis/intl/admissions/queue');
+
+    const appRes = await pool.query(`SELECT * FROM applications WHERE id = $1`, [appId]);
+    if (appRes.rows.length === 0) {
+      req.flash('error', 'Application not found.');
+      return res.redirect('/sis/intl/admissions/queue');
+    }
+
+    const application = appRes.rows[0];
+
+    let reviewerName = null;
+    if (application.reviewed_by) {
+      const revRes = await pool.query(`SELECT full_name FROM users WHERE id = $1`, [application.reviewed_by]);
+      reviewerName = revRes.rows[0]?.full_name || null;
+    }
+
+    const historyRes = await pool.query(`
+      SELECT a.action, a.details, a.created_at, u.full_name AS staff_name
+      FROM audit_logs a
+      LEFT JOIN users u ON u.id = a.user_id
+      WHERE a.details LIKE $1
+      ORDER BY a.created_at DESC
+      LIMIT 20
+    `, [`%application #${appId}%`]);
+
+    res.render('intl-admission-detail', {
+      user: req.session.user,
+      application,
+      reviewerName,
+      history: historyRes.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+  } catch (err) {
+    res.status(500).send("Application Detail Error: " + err.message);
+  }
+});
+
+app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
+  const appId = parseInt(req.params.id);
+  const { action, rejection_reason } = req.body;
+
+  const actionMap = {
+    approve:   'approved',
+    reject:    'rejected',
+    waitlist:  'waitlisted',
+    in_review: 'in_review'
+  };
+
+  if (!appId || !actionMap[action]) {
+    req.flash('error', 'Invalid action.');
+    return res.redirect(`/sis/intl/admissions/applications/${appId || ''}`);
+  }
+
+  if (action === 'reject' && (!rejection_reason || rejection_reason.trim().length < 5)) {
+    req.flash('error', 'A rejection reason of at least 5 characters is required.');
+    return res.redirect(`/sis/intl/admissions/applications/${appId}`);
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const newStatus = actionMap[action];
+    const upd = await client.query(`
+      UPDATE applications
+         SET status = $1,
+             reviewed_by = $2,
+             reviewed_at = NOW(),
+             rejection_reason = $3,
+             updated_at = NOW()
+       WHERE id = $4
+      RETURNING full_name
+    `, [newStatus, req.session.user.id, action === 'reject' ? rejection_reason.trim() : null, appId]);
+
+    if (upd.rows.length === 0) {
+      await client.query('ROLLBACK');
+      req.flash('error', 'Application not found.');
+      return res.redirect('/sis/intl/admissions/queue');
+    }
+
+    const actionLabels = { approve: 'APPROVED', reject: 'REJECTED', waitlist: 'WAITLISTED', in_review: 'MOVED TO IN REVIEW' };
+
+    await client.query(`
+      INSERT INTO audit_logs (user_id, action, details)
+      VALUES ($1, $2, $3)
+    `, [
+      req.session.user.id,
+      `APPLICATION_${actionLabels[action].replace(/ /g,'_')}`,
+      `Application #${appId} (${upd.rows[0].full_name}) ${actionLabels[action].toLowerCase()}` +
+        (action === 'reject' ? ` — Reason: ${rejection_reason.trim()}` : '')
+    ]);
+
+    await client.query('COMMIT');
+
+    req.flash('success', `Application ${actionLabels[action].toLowerCase()}.`);
+    res.redirect(`/sis/intl/admissions/applications/${appId}`);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).send("Status Update Error: " + err.message);
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/sis/intl/admissions/applications/:id/notes', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {
+  const appId = parseInt(req.params.id);
+  const { internal_notes } = req.body;
+
+  if (!appId) return res.redirect('/sis/intl/admissions/queue');
+
+  try {
+    await pool.query(`
+      UPDATE applications SET internal_notes = $1, updated_at = NOW() WHERE id = $2
+    `, [internal_notes || null, appId]);
+
+    req.flash('success', 'Internal notes saved.');
+    res.redirect(`/sis/intl/admissions/applications/${appId}`);
+  } catch (err) {
+    res.status(500).send("Notes Save Error: " + err.message);
+  }
+});
+
+// ============================================
 // --- INTL OFFICE: ADMISSIONS QUEUE ---
 // ============================================
 app.get('/sis/intl/admissions/queue', requireRole('intl_officer', 'admin'), requireIntlTeam(['Admissions & Recruitment Team', 'General Admin']), async (req, res) => {

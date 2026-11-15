@@ -6169,4 +6169,17 @@ app.get('/sis/lms', requireLogin, async (req, res) => {
     res.status(500).send("LMS Dashboard Error: " + err.message);
   }
 });
+
+app.get('/db-check', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.send(`
+      <h1>Database Connected!</h1>
+      <p>Current DB Time: ${result.rows[0].now}</p>
+      <p>DB URL starts with: ${process.env.DATABASE_URL.substring(0, 30)}</p>
+    `);
+  } catch (err) {
+    res.send("<h1>Database Connection FAILED</h1><pre>" + err.message + "</pre>");
+  }
+});
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

@@ -6118,4 +6118,47 @@ app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res,
     res.status(500).send("Compliance Dashboard Error: " + err.message);
   }
 });
+
+
+
+// ============================================
+// --- LMS: MY COURSES DASHBOARD ---
+// ============================================
+app.get('/sis/lms', requireLogin, async (req, res) => {
+  try {
+    const user = req.session.user;
+    let courses = [];
+
+    if (user.role === 'student') {
+      // Fetch courses the student is enrolled in
+      const result = await pool.query(`
+        SELECT c.id, c.code, c.title, c.credits, u.full_name AS teacher_name
+        FROM courses c
+        JOIN enrollments e ON e.course_id = c.id
+        LEFT JOIN course_sections s ON s.course_id = c.id
+        LEFT JOIN users u ON u.id = s.teacher_id
+        WHERE e.user_id = $1
+      `, [user.id]);
+      courses = result.rows;
+    } else if (user.role === 'teacher' || user.role === 'advisor') {
+      // Fetch courses the teacher is assigned to
+      const result = await pool.query(`
+        SELECT c.id, c.code, c.title, c.credits, s.group_name,
+               (SELECT COUNT(*) FROM enrollments WHERE section_id = s.id) AS student_count
+        FROM courses c
+        JOIN course_sections s ON s.course_id = c.id
+        WHERE s.teacher_id = $1
+      `, [user.id]);
+      courses = result.rows;
+    }
+
+    res.render('lms-dashboard', {
+      user,
+      courses,
+      greeting: getGreeting()
+    });
+  } catch (err) {
+    res.status(500).send("LMS Dashboard Error: " + err.message);
+  }
+});
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

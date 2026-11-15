@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Courses | LuxMind LMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --navy: #111d35; --page: #f4f6fa; --surface: #fff; --text: #172238; --muted: #718096;
+      --line: #e6ebf2; --blue: #3867e8; --blue-soft: #edf2ff; --green: #15966b; --green-soft: #e9f8f1;
+      --amber: #c98212; --amber-soft: #fff5df; --shadow: 0 8px 28px rgba(24, 39, 75, .055); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--page); color: var(--text); font-family: "DM Sans", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    
+    /* Sidebar (Reused) */
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 50; width: 268px; display: flex; flex-direction: column; overflow-y: auto; color: #d9e2f2; background: linear-gradient(180deg, var(--navy), #0d172b); transition: transform .25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 27px 23px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; font-size: 18px; background: linear-gradient(135deg, #527df2, #3157cb); }
+    .brand-name { color: #fff; font: 800 16px "Manrope", sans-serif; }
+    .brand-subtitle { margin-top: 4px; color: #9eacc3; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .nav-group { padding: 20px 13px 0; }
+    .nav-label { padding: 0 12px 9px; color: #7f90ab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 3px 0; padding: 0 12px; border-radius: 10px; color: #bdc9da; font-size: 13px; font-weight: 600; }
+    .nav-link i { width: 18px; color: #91a2bd; text-align: center; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
+    .nav-link.active { background: rgba(79,119,232,.2); box-shadow: inset 3px 0 #7796ff; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 13px 22px; border-top: 1px solid rgba(255,255,255,.08); }
+    .nav-link.logout { color: #ffb0b6; }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 40; background: rgba(9,17,32,.55); backdrop-filter: blur(3px); }
+    .overlay.open { display: block; }
+
+    /* Main */
+    .main { min-height: 100vh; margin-left: 268px; padding: 30px 38px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 27px; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin-bottom: 6px; color: #142039; font: 800 clamp(25px, 3vw, 32px) "Manrope", sans-serif; }
+    .welcome { margin: 0; color: var(--muted); font-size: 13px; }
+    .mobile-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 11px; color: #fff; background: var(--navy); cursor: pointer; }
+
+    /* Course Grid */
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
+    .course-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+    .course-card:hover { transform: translateY(-4px); box-shadow: 0 12px 35px rgba(24, 39, 75, .1); }
+    .course-code { display: inline-block; padding: 4px 8px; background: var(--blue-soft); color: var(--blue); border-radius: 6px; font-size: 11px; font-weight: 800; margin-bottom: 12px; align-self: flex-start; }
+    .course-title { margin: 0 0 8px; font: 800 18px "Manrope", sans-serif; color: #142039; }
+    .course-meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; }
+    .course-action { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .btn-enter { padding: 8px 16px; background: var(--navy); color: #fff; border-radius: 8px; font-size: 12px; font-weight: 700; }
+    .empty-state { padding: 60px 20px; text-align: center; color: var(--muted); background: var(--surface); border-radius: var(--radius); grid-column: 1 / -1; border: 1px dashed var(--line); }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 22px; } .mobile-toggle { display: inline-grid; place-items: center; }
+      .course-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-book-open"></i></div>
+      <div>
+        <div class="brand-name">LuxMind LMS</div>
+        <div class="brand-subtitle">Learning Portal</div>
+      </div>
+    </div>
+    
+    <nav>
+      <div class="nav-group">
+        <div class="nav-label">Learning</div>
+        <a href="/sis/lms" class="nav-link active"><i class="fa-solid fa-graduation-cap"></i><span>My Courses</span></a>
+        <a href="/sis/my" class="nav-link"><i class="fa-solid fa-chart-pie"></i><span>Back to SIS</span></a>
+      </div>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="/logout" class="nav-link logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Secure Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:flex-start; gap:13px;">
+        <button class="mobile-toggle" id="mobileMenuButton"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <p class="eyebrow">LuxMind LMS / Dashboard</p>
+          <h1>My Courses</h1>
+          <p class="welcome"><%= greeting %>, <strong><%= user.full_name %></strong>. Here are your active courses.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="course-grid">
+      <% if (courses.length === 0) { %>
+        <div class="empty-state">
+          <i class="fa-solid fa-folder-open" style="font-size:40px; color:#cbd5e1; margin-bottom:12px;"></i>
+          <h3>No Courses Found</h3>
+          <p>You are not currently enrolled in any courses.</p>
+        </div>
+      <% } else { %>
+        <% courses.forEach(c => { %>
+          <div class="course-card">
+            <span class="course-code"><%= c.code %></span>
+            <h3 class="course-title"><%= c.title %></h3>
+            
+            <% if (user.role === 'student') { %>
+              <div class="course-meta"><i class="fa-solid fa-user-tie"></i> <%= c.teacher_name || 'TBA' %></div>
+            <% } else { %>
+              <div class="course-meta"><i class="fa-solid fa-users"></i> <%= c.student_count %> Students</div>
+            <% } %>
+
+            <div class="course-action">
+              <span style="font-size:12px; color:var(--muted); font-weight:600;"><%= c.credits %> Credits</span>
+              <a href="/sis/lms/course/<%= c.id %>" class="btn-enter">Enter Course <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuButton = document.getElementById('mobileMenuButton');
+    menuButton.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('open'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+  </script>
+</body>
+</html>

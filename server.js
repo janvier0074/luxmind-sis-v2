@@ -36,7 +36,11 @@ const app = express();
 app.set('trust proxy', 1);
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: 'postgres.fclhdbppskmjlmbhtoug',
+  password: 'LuxMindAdmin2026',
+  host: 'aws-1-eu-central-1.pooler.supabase.com',
+  port: 6543,
+  database: 'postgres',
   ssl: { rejectUnauthorized: false }
 });
 const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');

@@ -32,6 +32,9 @@ const langDicts = {
 };
 
 const app = express();
+
+app.set('trust proxy', 1);
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -42,7 +45,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({ secret: 'luxmind-secret', resave: false, saveUninitialized: false }));
+app.use(session({ 
+  secret: 'luxmind-secret', 
+  resave: false, 
+  saveUninitialized: false,
+  cookie: { secure: true, sameSite: 'none', httpOnly: true }
+}));
 
 // ============================================
 // --- i18n: MIDDLEWARE ---

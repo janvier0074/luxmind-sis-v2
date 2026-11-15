@@ -6182,4 +6182,25 @@ app.get('/db-check', async (req, res) => {
     res.send("<h1>Database Connection FAILED</h1><pre>" + err.message + "</pre>");
   }
 });
+
+app.get('/debug-login', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.username, u.password, sp.admission_number 
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE u.username = 'student_john'
+    `);
+    res.json({
+      message: "Here is what the database sees for student_john:",
+      data: result.rows
+    });
+  } catch (err) {
+    res.send("<h1>Query Failed!</h1><pre>" + err.message + "</pre>");
+  }
+});
+
+
+
+
 app.listen(process.env.PORT || 3000, () => console.log('Server running'));

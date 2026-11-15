@@ -205,7 +205,7 @@ app.get('/apply/success/:id', async (req, res) => {
 // --- AUTHENTICATION ---
 // ============================================
 app.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/sis/my');
+  if (req.session.user) return res.send("<h1>LOGIN SUCCESSFUL! The database is connected.</h1><a href='/sis/my'>Go to Dashboard</a>");
   res.render('login', { error: req.flash('error') });
 });
 

@@ -6200,6 +6200,19 @@ app.get('/debug-login', async (req, res) => {
   }
 });
 
+app.get('/debug-all-users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, username, email FROM users LIMIT 10');
+    res.json({
+      count: result.rows.length,
+      users: result.rows,
+      database_url_start: process.env.DATABASE_URL.substring(0, 40)
+    });
+  } catch (err) {
+    res.send(err.message);
+  }
+});
+
 
 
 

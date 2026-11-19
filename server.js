@@ -850,36 +850,60 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   }
 });
 
-app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
-  const courseId = Number(req.body.course_id);
 
 
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
-  let activePeriodId;                      // ← ADD THIS LINE
-
-  try {                                    // ← this `try {` already exists
-    activePeriodId = await getActiveAcademicPeriodId();   // ← ADD THIS LINE
-
-    // ============================================
-    // FINANCIAL ELIGIBILITY CHECK
-    // ============================================
-    const feeRes = await pool.query(`
+  const studentId = req.session.user.id;
 
   try {
+    // ============================================
+    // VALIDATE REQUEST
+    // ============================================
+    if (!Number.isInteger(courseId) || courseId <= 0) {
+      req.flash('error', 'Invalid course selection.');
+      return res.redirect('/sis/my/registration');
+    }
+
+    // ============================================
+    // GET ACTIVE ACADEMIC PERIOD
+    // ============================================
+    const activePeriodId = await getActiveAcademicPeriodId();
+
+    // ============================================
+    // GET STUDENT DEPARTMENT
+    // ============================================
+    const profileRes = await pool.query(`
+      SELECT department_id
+      FROM student_profiles
+      WHERE user_id = $1
+      LIMIT 1
+    `, [studentId]);
+
+    if (
+      profileRes.rows.length === 0 ||
+      !profileRes.rows[0].department_id
+    ) {
+      req.flash('error', 'Your department is not configured. Please contact the administrator.');
+      return res.redirect('/sis/my/registration');
+    }
+
+    const departmentId = profileRes.rows[0].department_id;
+
     // ============================================
     // FINANCIAL ELIGIBILITY CHECK
     // ============================================
     const feeRes = await pool.query(`
       SELECT
-        COALESCE(SUM(
-          GREATEST(net_amount - paid_amount, 0)
-        ), 0) AS outstanding_balance
+        COALESCE(
+          SUM(GREATEST(net_amount - paid_amount, 0)),
+          0
+        ) AS outstanding_balance
       FROM semester_invoices
       WHERE student_id = $1
         AND status != 'paid'
-    `, [req.session.user.id]);
+    `, [studentId]);
 
     const debt = Number(feeRes.rows[0].outstanding_balance || 0);
 
@@ -888,85 +912,54 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       FROM installment_requests
       WHERE student_id = $1
         AND status = 'approved'
-    `, [req.session.user.id]);
+      LIMIT 1
+    `, [studentId]);
 
     const hasApprovedInstallment = instRes.rows.length > 0;
 
     if (debt > 0 && !hasApprovedInstallment) {
       req.flash(
         'error',
-        `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`
+        `Financial Hold: You owe $${debt.toFixed(2)}. Clear your balance or obtain an approved installment plan.`
       );
       return res.redirect('/sis/my/registration');
     }
 
     // ============================================
-    // GET COURSE INFORMATION
+    // GET COURSE AND VALIDATE DEPARTMENT
     // ============================================
     const courseRes = await pool.query(`
-      SELECT c.*,
-             COALESCE(c.quota, 40) AS quota,
-             s.day_of_week,
-             s.start_time,
-             s.end_time,
-             (
-               SELECT COUNT(*)
-               FROM enrollments e
-               WHERE e.course_id = c.id
-             ) +
-             (
-               SELECT COUNT(*)
-               FROM course_registrations cr
-               WHERE cr.course_id = c.id
-                 AND cr.status = 'pending_advisor'
-             ) AS enrolled_count
+      SELECT
+        c.*,
+        COALESCE(c.quota, 40) AS quota
       FROM courses c
-      LEFT JOIN course_sections s ON s.course_id = c.id
       WHERE c.id = $1
+        AND c.department_id = $2
       LIMIT 1
-    `, [courseId]);
+    `, [courseId, departmentId]);
 
     if (courseRes.rows.length === 0) {
+      req.flash('error', 'This course does not belong to your department or does not exist.');
       return res.redirect('/sis/my/registration');
     }
 
     const course = courseRes.rows[0];
 
     // ============================================
-    // CHECK COURSE CAPACITY
+    // CHECK EXISTING REGISTRATION
     // ============================================
-    if (course.enrolled_count >= course.quota) {
-      const onWaitlist = await pool.query(`
-        SELECT id
-        FROM course_registrations
-        WHERE student_id = $1
-          AND course_id = $2
-          AND status = 'waitlisted'
-      `, [req.session.user.id, courseId]);
+    const existing = await pool.query(`
+      SELECT id, status
+      FROM course_registrations
+      WHERE student_id = $1
+        AND course_id = $2
+        AND academic_period_id = $3
+        AND status IN ('draft', 'pending_advisor', 'approved', 'waitlisted')
+      LIMIT 1
+    `, [studentId, courseId, activePeriodId]);
 
-      if (onWaitlist.rows.length > 0) {
-        req.flash('error', 'You are already on the waitlist for this course.');
-        return res.redirect('/sis/my/registration');
-      }
-
-            await pool.query(`
-        INSERT INTO course_registrations
-          (student_id, course_id, status, academic_period_id)
-        VALUES ($1, $2, 'waitlisted', $3)
-      `, [req.session.user.id, courseId, activePeriodId]);
-
-      const waitPos = await pool.query(`
-        SELECT COUNT(*)
-        FROM course_registrations
-        WHERE course_id = $1
-          AND status = 'waitlisted'
-      `, [courseId]);
-
-      req.flash(
-        'success',
-        `Section is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].count}`
-      );
-
+    if (existing.rows.length > 0) {
+      req.flash('error', 'You already have a registration for this course in the active academic period.');
       return res.redirect('/sis/my/registration');
     }
 
@@ -982,7 +975,8 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
           AND s.course_id = $2
           AND g.letter_grade NOT IN ('F', 'N/A')
           AND g.is_published = true
-      `, [req.session.user.id, course.prerequisite_id]);
+        LIMIT 1
+      `, [studentId, course.prerequisite_id]);
 
       if (passedCheck.rows.length === 0) {
         req.flash('error', 'Cannot add course: Missing prerequisite.');
@@ -991,34 +985,66 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
     }
 
     // ============================================
+    // CHECK COURSE CAPACITY
+    // ============================================
+    const capacityRes = await pool.query(`
+      SELECT
+        (
+          SELECT COUNT(*)
+          FROM enrollments e
+          WHERE e.course_id = $1
+        ) +
+        (
+          SELECT COUNT(*)
+          FROM course_registrations cr
+          WHERE cr.course_id = $1
+            AND cr.academic_period_id = $2
+            AND cr.status IN ('pending_advisor', 'approved')
+        ) AS enrolled_count
+    `, [courseId, activePeriodId]);
+
+    const enrolledCount = Number(capacityRes.rows[0].enrolled_count || 0);
+    const quota = Number(course.quota);
+
+    // ============================================
+    // ADD TO WAITLIST IF COURSE IS FULL
+    // ============================================
+    if (enrolledCount >= quota) {
+      await pool.query(`
+        INSERT INTO course_registrations
+          (student_id, course_id, status, academic_period_id)
+        VALUES ($1, $2, 'waitlisted', $3)
+      `, [studentId, courseId, activePeriodId]);
+
+      const waitPos = await pool.query(`
+        SELECT COUNT(*) AS position
+        FROM course_registrations
+        WHERE course_id = $1
+          AND academic_period_id = $2
+          AND status = 'waitlisted'
+      `, [courseId, activePeriodId]);
+
+      req.flash(
+        'success',
+        `Course is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].position}`
+      );
+
+      return res.redirect('/sis/my/registration');
+    }
+
+    // ============================================
     // CHECK SCHEDULE CONFLICTS
     // ============================================
-    if (course.day_of_week && course.start_time) {
-      const conflictCheck = await pool.query(`
-        SELECT e.id
-        FROM enrollments e
-        JOIN course_sections s ON s.id = e.section_id
-        WHERE e.user_id = $1
-          AND s.day_of_week = $2
-          AND s.start_time = $3
+    const sectionRes = await pool.query(`
+      SELECT id
+      FROM course_sections
+      WHERE course_id = $1
+        AND academic_period_id = $2
+      ORDER BY id ASC
+      LIMIT 1
+    `, [courseId, activePeriodId]);
 
-        UNION
-
-        SELECT cr.id
-        FROM course_registrations cr
-        JOIN courses c ON c.id = cr.course_id
-        LEFT JOIN course_sections s ON s.course_id = c.id
-        WHERE cr.student_id = $1
-          AND cr.status IN ('draft', 'pending_advisor')
-          AND s.day_of_week = $2
-          AND s.start_time = $3
-      `, [req.session.user.id, course.day_of_week, course.start_time]);
-
-      if (conflictCheck.rows.length > 0) {
-        req.flash('error', 'Cannot add course: Schedule conflict with another course.');
-        return res.redirect('/sis/my/registration');
-      }
-    }
+    const sectionId = sectionRes.rows[0]?.id || null;
 
     // ============================================
     // ENFORCE MAXIMUM CREDIT LIMIT
@@ -1040,51 +1066,46 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       FROM course_registrations cr
       JOIN courses c ON c.id = cr.course_id
       WHERE cr.student_id = $1
+        AND cr.academic_period_id = $2
         AND cr.status IN ('draft', 'pending_advisor')
-    `, [req.session.user.id]);
+    `, [studentId, activePeriodId]);
 
-    const currentCredits = Number(currentCartRes.rows[0].total_credits);
-    const newCourseCredits = Number(course.credits);
+    const currentCredits = Number(currentCartRes.rows[0].total_credits || 0);
+    const newCourseCredits = Number(course.credits || 0);
 
-    if (currentCredits + newCourseCredits > settings.max_credits) {
+    if (currentCredits + newCourseCredits > Number(settings.max_credits)) {
       req.flash(
         'error',
-        `Cannot add "${course.code}": Credit limit exceeded. You have ${currentCredits}/${settings.max_credits} credits. Adding ${newCourseCredits} more would go over the maximum.`
+        `Credit limit exceeded. Current credits: ${currentCredits}. Maximum: ${settings.max_credits}.`
       );
       return res.redirect('/sis/my/registration');
     }
 
     // ============================================
-    // PREVENT DUPLICATE COURSE REGISTRATION
+    // INSERT DRAFT REGISTRATION
     // ============================================
-    const existing = await pool.query(`
-      SELECT id
-      FROM course_registrations
-      WHERE student_id = $1
-        AND course_id = $2
-    `, [req.session.user.id, courseId]);
+    await pool.query(`
+      INSERT INTO course_registrations
+        (student_id, course_id, section_id, status, academic_period_id)
+      VALUES ($1, $2, $3, 'draft', $4)
+    `, [studentId, courseId, sectionId, activePeriodId]);
 
-       if (existing.rows.length === 0) {
-      await pool.query(`
-        INSERT INTO course_registrations
-          (student_id, course_id, status, academic_period_id)
-        VALUES ($1, $2, 'draft', $3)
-      `, [req.session.user.id, courseId, activePeriodId]);
+    req.flash('success', 'Course added to your registration cart.');
+    return res.redirect('/sis/my/registration');
 
-      req.flash('success', 'Course added to cart.');
-    }
-
-    res.redirect('/sis/my/registration');
-
-   } catch (err) {
+  } catch (err) {
     console.error('Registration POST Error:', err);
+
     if (err.code === 'NO_ACTIVE_PERIOD') {
       req.flash('error', err.message);
       return res.redirect('/sis/my/registration');
     }
-    res.status(500).send('Error adding: ' + err.message);
+
+    req.flash('error', 'Unable to add course. Please contact the administrator.');
+    return res.redirect('/sis/my/registration');
   }
 });
+
 
 app.post('/sis/my/registration/remove', requireRole('student'), async (req, res) => {
   try {

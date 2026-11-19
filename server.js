@@ -717,8 +717,8 @@ const studentSemester = Number(studentProfile.current_semester || 1);
 
     const failedCourseIds = failedRes.rows.map(r => r.id);
 
-    // ============================================
-    // GET AVAILABLE COURSES
+       // ============================================
+    // GET AVAILABLE COURSES (FIXED)
     // ============================================
     const coursesRes = await pool.query(`
   SELECT DISTINCT ON (c.id)
@@ -758,7 +758,7 @@ const studentSemester = Number(studentProfile.current_semester || 1);
 
   JOIN courses c
     ON UPPER(TRIM(c.code)) = UPPER(TRIM(cu.course_code))
-   AND c.department_id = sp.department_id
+   -- REMOVED strict department_id check on courses. The curriculum table already filters it.
 
   WHERE sp.user_id = $1
     AND (

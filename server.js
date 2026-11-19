@@ -914,6 +914,12 @@ const studentSemester = Number(studentProfile.current_semester || 1);
       totalPendingCredits
     });
 
+  } catch (err) {
+    console.error('Registration GET Error:', err);
+    res.status(500).send('Registration Error: ' + err.message);
+  }
+});
+
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);

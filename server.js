@@ -45,6 +45,21 @@ const pool = new Pool({
 });
 const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
+// ✅ FIX: Cache the active academic period id for course_registrations inserts
+async function getActiveAcademicPeriodId() {
+  const r = await pool.query(
+    `SELECT id FROM academic_periods WHERE is_active = true ORDER BY id DESC LIMIT 1`
+  );
+  if (r.rows.length === 0) {
+    const err = new Error(
+      'No active academic period is configured. Ask an admin to activate one in Admin → Periods.'
+    );
+    err.code = 'NO_ACTIVE_PERIOD';
+    throw err;
+  }
+  return r.rows[0].id;
+}
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
@@ -838,6 +853,20 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
 
+
+
+app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
+  const courseId = Number(req.body.course_id);
+  let activePeriodId;                      // ← ADD THIS LINE
+
+  try {                                    // ← this `try {` already exists
+    activePeriodId = await getActiveAcademicPeriodId();   // ← ADD THIS LINE
+
+    // ============================================
+    // FINANCIAL ELIGIBILITY CHECK
+    // ============================================
+    const feeRes = await pool.query(`
+
   try {
     // ============================================
     // FINANCIAL ELIGIBILITY CHECK
@@ -920,11 +949,11 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
         return res.redirect('/sis/my/registration');
       }
 
-      await pool.query(`
+            await pool.query(`
         INSERT INTO course_registrations
-          (student_id, course_id, status)
-        VALUES ($1, $2, 'waitlisted')
-      `, [req.session.user.id, courseId]);
+          (student_id, course_id, status, academic_period_id)
+        VALUES ($1, $2, 'waitlisted', $3)
+      `, [req.session.user.id, courseId, activePeriodId]);
 
       const waitPos = await pool.query(`
         SELECT COUNT(*)
@@ -1035,20 +1064,24 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
         AND course_id = $2
     `, [req.session.user.id, courseId]);
 
-    if (existing.rows.length === 0) {
+       if (existing.rows.length === 0) {
       await pool.query(`
         INSERT INTO course_registrations
-          (student_id, course_id, status)
-        VALUES ($1, $2, 'draft')
-      `, [req.session.user.id, courseId]);
+          (student_id, course_id, status, academic_period_id)
+        VALUES ($1, $2, 'draft', $3)
+      `, [req.session.user.id, courseId, activePeriodId]);
 
       req.flash('success', 'Course added to cart.');
     }
 
     res.redirect('/sis/my/registration');
 
-  } catch (err) {
+   } catch (err) {
     console.error('Registration POST Error:', err);
+    if (err.code === 'NO_ACTIVE_PERIOD') {
+      req.flash('error', err.message);
+      return res.redirect('/sis/my/registration');
+    }
     res.status(500).send('Error adding: ' + err.message);
   }
 });

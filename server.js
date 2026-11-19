@@ -7,7 +7,7 @@ let supabase = null;
 if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
   supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 } else {
-  console.warn("⚠️ WARNING: Supabase keys are missing in environment variables. File uploads will not work.");
+  console.warn("âš ï¸ WARNING: Supabase keys are missing in environment variables. File uploads will not work.");
 }
 const express = require('express');
 const path = require('path');
@@ -238,7 +238,7 @@ app.post('/login', async (req, res) => {
         }
       } catch (e) { /* table may not exist yet, ignore */ }
 
-      // ✅ FIXED LOGIN REDIRECTS
+      // âœ… FIXED LOGIN REDIRECTS
       if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
       if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance');
       if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
@@ -279,7 +279,7 @@ const requireRole = (...allowedRoles) => {
     if (!allowedRoles.includes(req.session.user.role)) {
       return res.status(403).send(`
         <div style="font-family: system-ui; padding: 3rem; text-align: center; max-width: 600px; margin: 0 auto;">
-          <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
+          <div style="font-size: 4rem; margin-bottom: 1rem;">ðŸ”’</div>
           <h1 style="color: #b33e2e; font-size: 2rem; margin-bottom: 1rem;">Access Denied</h1>
           <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
             You do not have permission to access this page.<br>
@@ -287,7 +287,7 @@ const requireRole = (...allowedRoles) => {
             Required role(s): <strong>${allowedRoles.join(', ')}</strong>
           </p>
           <a href="/sis/my" style="display: inline-block; padding: 0.75rem 1.5rem; background: #0a1e32; color: white; text-decoration: none; border-radius: 8px; font-weight: 700;">
-            ← Return to My Portal
+            â† Return to My Portal
           </a>
         </div>
       `);
@@ -318,15 +318,15 @@ const requireIntlTeam = (allowedTeams) => {
       return next();
     }
 
-    // Block — never trust the frontend
+    // Block â€” never trust the frontend
     return res.status(403).send(`
       <html><body style="font-family:system-ui;padding:4rem;text-align:center;background:#f4f6fa;">
         <div style="max-width:520px;margin:0 auto;background:#fff;padding:2.5rem;border-radius:16px;box-shadow:0 8px 28px rgba(24,39,75,.055);">
-          <div style="width:60px;height:60px;background:#fdf2f4;border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.6rem;">🔒</div>
+          <div style="width:60px;height:60px;background:#fdf2f4;border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.6rem;">ðŸ”’</div>
           <h1 style="color:#b33e2e;margin:0 0 1rem;">Access Denied</h1>
           <p style="color:#718096;line-height:1.6;">This tool belongs to the <strong>${allowedTeams.join(' or ')}</strong>.</p>
           <p style="color:#718096;">Your team: <strong>${intl_team || 'Unassigned'}</strong></p>
-          <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">← Back to Intl Office</a>
+          <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">â† Back to Intl Office</a>
         </div>
       </body></html>
     `);
@@ -479,7 +479,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       overdueTotal: overdueTotal
     };
 
-       // ✅ Fix: only count announcements NEWER than last view
+       // âœ… Fix: only count announcements NEWER than last view
     const newAnnCount = await pool.query(`
       SELECT COUNT(*) FROM course_announcements a
       JOIN course_sections s ON s.id = a.section_id
@@ -1121,7 +1121,7 @@ app.post('/sis/my/registration/remove', requireRole('student'), async (req, res)
 
 app.post('/sis/my/registration/submit', requireRole('student'), async (req, res) => {
   try {
-    // ✅ NEW: Enforce min credit limit before submission
+    // âœ… NEW: Enforce min credit limit before submission
     const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
     const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
     
@@ -1379,7 +1379,7 @@ app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
     await client.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, payAmount]);
     
     // ============================================
-    // ✅ NEW: Apply payment to invoices (FIFO — oldest semester first)
+    // âœ… NEW: Apply payment to invoices (FIFO â€” oldest semester first)
     // ============================================
     const invoicesRes = await client.query(`
       SELECT id, semester_number, net_amount, paid_amount
@@ -1886,6 +1886,138 @@ app.get('/sis/admin', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Admin Error: " + err.message); }
 });
 
+app.get('/sis/admin/periods', requireRole('admin'), async (req, res) => {
+  try {
+    const periodsRes = await pool.query(`
+      SELECT
+        ap.*,
+        COUNT(DISTINCT s.id)::int AS section_count
+      FROM academic_periods ap
+      LEFT JOIN course_sections s ON s.academic_period_id = ap.id
+      GROUP BY ap.id
+      ORDER BY ap.start_date DESC NULLS LAST, ap.id DESC
+    `);
+
+    res.render('admin-periods', {
+      user: req.session.user,
+      periods: periodsRes.rows,
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+  } catch (err) {
+    res.status(500).send('Academic Periods Error: ' + err.message);
+  }
+});
+
+app.post('/sis/admin/periods/new', requireRole('admin'), async (req, res) => {
+  const {
+    academic_year,
+    term,
+    start_date,
+    end_date,
+    registration_open_at,
+    registration_close_at
+  } = req.body;
+
+  const yearValue = (academic_year || '').trim();
+  const termValue = (term || '').trim();
+
+  if (!yearValue || !termValue || !start_date || !end_date) {
+    req.flash('error', 'Academic year, term, start date and end date are required.');
+    return res.redirect('/sis/admin/periods');
+  }
+
+  if (end_date < start_date) {
+    req.flash('error', 'The end date cannot be earlier than the start date.');
+    return res.redirect('/sis/admin/periods');
+  }
+
+  if (
+    registration_open_at &&
+    registration_close_at &&
+    new Date(registration_close_at) < new Date(registration_open_at)
+  ) {
+    req.flash('error', 'Registration closing time cannot be earlier than opening time.');
+    return res.redirect('/sis/admin/periods');
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO academic_periods (
+        academic_year,
+        term,
+        start_date,
+        end_date,
+        registration_open_at,
+        registration_close_at,
+        is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, false)
+    `, [
+      yearValue,
+      termValue,
+      start_date,
+      end_date,
+      registration_open_at || null,
+      registration_close_at || null
+    ]);
+
+    req.flash('success', 'Academic period created. Activate it when it is ready.');
+    res.redirect('/sis/admin/periods');
+  } catch (err) {
+    req.flash('error', 'Could not create academic period: ' + err.message);
+    res.redirect('/sis/admin/periods');
+  }
+});
+
+app.post('/sis/admin/periods/:id/activate', requireRole('admin'), async (req, res) => {
+  const periodId = Number(req.params.id);
+
+  if (!Number.isInteger(periodId) || periodId <= 0) {
+    req.flash('error', 'Invalid academic period.');
+    return res.redirect('/sis/admin/periods');
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const targetRes = await client.query(
+      'SELECT id FROM academic_periods WHERE id = $1 FOR UPDATE',
+      [periodId]
+    );
+
+    if (targetRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      req.flash('error', 'Academic period not found.');
+      return res.redirect('/sis/admin/periods');
+    }
+
+    await client.query(`
+      UPDATE academic_periods
+      SET is_active = false
+      WHERE is_active = true
+    `);
+
+    await client.query(`
+      UPDATE academic_periods
+      SET is_active = true
+      WHERE id = $1
+    `, [periodId]);
+
+    await client.query('COMMIT');
+
+    req.flash('success', 'Academic period activated successfully.');
+    res.redirect('/sis/admin/periods');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    req.flash('error', 'Could not activate academic period: ' + err.message);
+    res.redirect('/sis/admin/periods');
+  } finally {
+    client.release();
+  }
+});
 app.get('/sis/admin/students', requireRole('admin'), async (req, res) => {
   try {
     const studentsRes = await pool.query(`SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, adv.full_name as advisor_name FROM users u LEFT JOIN student_profiles sp ON sp.user_id = u.id LEFT JOIN users adv ON adv.id = sp.advisor_id WHERE u.role = 'student' ORDER BY u.created_at DESC`);
@@ -2293,7 +2425,7 @@ app.post('/sis/admin/documents/:id/status', requireRole('admin'), async (req, re
     const infoRes = await pool.query(`SELECT u.email, u.full_name, dr.document_type FROM document_requests dr JOIN users u ON u.id = dr.student_id WHERE dr.id = $1`, [requestId]);
     if (infoRes.rows.length > 0) {
       const s = infoRes.rows[0];
-      const statusLabel = status === 'ready' ? 'APPROVED ✅' : 'REJECTED ❌';
+      const statusLabel = status === 'ready' ? 'APPROVED âœ…' : 'REJECTED âŒ';
       try {
         await resend.emails.send({
           from: 'LuxMind Registrar <onboarding@resend.dev>',
@@ -5344,7 +5476,7 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
       `, [row.user_id, `Welcome to Semester ${row.current_semester}. Your new semester dates have been set.`]);
     }
 
-    // ✅ NEW: Create invoice for the new semester for each promoted student
+    // âœ… NEW: Create invoice for the new semester for each promoted student
     for (const row of promoRes.rows) {
       const stuRes = await client.query(`
         SELECT sp.class_level, sp.is_international, sp.high_school_gpa, sp.semester_end_date
@@ -5382,7 +5514,7 @@ app.post('/sis/admin/rollover/execute', requireRole('admin'), async (req, res) =
     for (const row of gradRes.rows) {
       await client.query(`
         INSERT INTO notifications (user_id, title, body, link, is_read)
-        VALUES ($1, 'Congratulations — You Have Graduated!', 'You have completed your program. Please contact the Registrar for your official transcript and diploma.', '/sis/my/transcript', 0)
+        VALUES ($1, 'Congratulations â€” You Have Graduated!', 'You have completed your program. Please contact the Registrar for your official transcript and diploma.', '/sis/my/transcript', 0)
       `, [row.user_id]);
     }
 
@@ -5595,7 +5727,7 @@ app.post(PASSPORT_INDEX + '/checkout', requireRole('intl_officer', 'admin'), req
       INSERT INTO audit_logs (user_id, action, details) VALUES ($1, 'PASSPORT_CHECKOUT', $2)
     `, [req.session.user.id,
         `Checked out passport ${upd.rows[0].passport_number} (student ${student_id}) to ${destination}` +
-        (due_back_at ? ` — due ${due_back_at}` : '')]);
+        (due_back_at ? ` â€” due ${due_back_at}` : '')]);
     await client.query('COMMIT');
     req.flash('success', `Passport checked out to ${destination}.`);
     res.redirect(PASSPORT_INDEX);
@@ -6045,7 +6177,7 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
       req.session.user.id,
       `APPLICATION_${actionLabels[action].replace(/ /g,'_')}`,
       `Application #${appId} (${application.full_name}) ${actionLabels[action].toLowerCase()}` +
-        (action === 'reject' ? ` — Reason: ${rejection_reason.trim()}` : '')
+        (action === 'reject' ? ` â€” Reason: ${rejection_reason.trim()}` : '')
     ]);
 
     // ============================================
@@ -6113,7 +6245,7 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
       `, [
         newUserId,
         'New Student Visa Processing',
-        `Auto-generated from approved application #${appId} (${application.full_name}). Newly enrolled international student — needs residence permit processing and health insurance setup.`,
+        `Auto-generated from approved application #${appId} (${application.full_name}). Newly enrolled international student â€” needs residence permit processing and health insurance setup.`,
         'International Office',
         'Visa & Immigration Team'
       ]);
@@ -6145,12 +6277,12 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
         await resend.emails.send({
           from: 'LuxMind Admissions <onboarding@resend.dev>',
           to: enrollmentInfo.email,
-          subject: 'Welcome to LuxMind University — Your Student Account',
+          subject: 'Welcome to LuxMind University â€” Your Student Account',
           html: `
             <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6fa; padding: 24px;">
               <div style="background: white; border-radius: 16px; padding: 32px;">
                 <div style="text-align: center; margin-bottom: 24px;">
-                  <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #527df2, #3157cb); border-radius: 12px; color: white; line-height: 48px; font-size: 22px;">🌍</div>
+                  <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #527df2, #3157cb); border-radius: 12px; color: white; line-height: 48px; font-size: 22px;">ðŸŒ</div>
                   <h1 style="color: #142039; margin: 16px 0 4px; font-size: 22px;">Welcome to LuxMind University</h1>
                 </div>
                 <p style="color: #4c5a70; font-size: 15px; line-height: 1.6;">Dear <strong>${enrollmentInfo.fullName}</strong>,</p>
@@ -6174,7 +6306,7 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
                   <li>Submit any missing documents to admissions.</li>
                 </ol>
                 <hr style="border: 0; border-top: 1px solid #e6ebf2; margin: 24px 0;">
-                <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">LuxMind University · International Office</p>
+                <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">LuxMind University Â· International Office</p>
               </div>
             </div>
           `
@@ -6187,7 +6319,7 @@ app.post('/sis/intl/admissions/applications/:id/status', requireRole('intl_offic
     // 5. Flash message
     if (enrollmentInfo) {
       req.flash('success',
-        `✅ Application approved — student enrolled! Admission #${enrollmentInfo.admissionNumber} · Username: ${enrollmentInfo.username} · Password: Student2026! · Welcome email sent to ${enrollmentInfo.email}.`);
+        `âœ… Application approved â€” student enrolled! Admission #${enrollmentInfo.admissionNumber} Â· Username: ${enrollmentInfo.username} Â· Password: Student2026! Â· Welcome email sent to ${enrollmentInfo.email}.`);
     } else {
       req.flash('success', `Application ${actionLabels[action].toLowerCase()}.`);
     }
@@ -6296,10 +6428,10 @@ app.get('/sis/intl/compliance', requireRole('intl_officer', 'admin'), (req, res,
   return res.status(403).send(`
     <html><body style="font-family:system-ui;padding:4rem;text-align:center;background:#f4f6fa;">
       <div style="max-width:520px;margin:0 auto;background:#fff;padding:2.5rem;border-radius:16px;">
-        <div style="font-size:2.5rem;margin-bottom:1rem;">🛡️</div>
+        <div style="font-size:2.5rem;margin-bottom:1rem;">ðŸ›¡ï¸</div>
         <h1 style="color:#b33e2e;margin:0 0 1rem;">Director Only</h1>
         <p style="color:#718096;">The Executive Compliance Dashboard is restricted to the Director of the International Office.</p>
-        <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">← Back to Intl Office</a>
+        <a href="/sis/intl" style="display:inline-block;margin-top:1rem;padding:12px 24px;background:#111d35;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">â† Back to Intl Office</a>
       </div>
     </body></html>
   `);

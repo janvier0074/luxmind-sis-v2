@@ -634,91 +634,197 @@ app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
 
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
+    // ============================================
+    // FINANCIAL ELIGIBILITY CHECK
+    // Use actual student invoices, not fee_structure
+    // ============================================
     const feeRes = await pool.query(`
-      SELECT COALESCE(fs.amount, 0) AS amount_billed,
-             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
-      FROM student_profiles sp
-      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
-      WHERE sp.user_id = $1
+      SELECT
+        COALESCE(SUM(
+          GREATEST(net_amount - paid_amount, 0)
+        ), 0) AS outstanding_balance
+      FROM semester_invoices
+      WHERE student_id = $1
+        AND status != 'paid'
     `, [req.session.user.id]);
 
-    if (feeRes.rows.length > 0) {
-      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
-      
-      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
-      const hasApprovedInstallment2 = instRes2.rows.length > 0;
+    const debt = Number(feeRes.rows[0].outstanding_balance || 0);
 
-      if (debt > 0 && !hasApprovedInstallment2) {
-        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
-        return res.redirect('/sis/my/finance');
-      }
+    const instRes = await pool.query(`
+      SELECT id
+      FROM installment_requests
+      WHERE student_id = $1
+        AND status = 'approved'
+    `, [req.session.user.id]);
+
+    const hasApprovedInstallment = instRes.rows.length > 0;
+
+    if (debt > 0 && !hasApprovedInstallment) {
+      req.flash(
+        'error',
+        `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`
+      );
+      return res.redirect('/sis/my/finance');
     }
 
-    const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
+    // ============================================
+    // CHECK EXISTING ENROLLMENT
+    // ============================================
+    const enrollCheck = await pool.query(`
+      SELECT id FROM enrollments
+      WHERE user_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
     const hasRegistered = enrollCheck.rows.length > 0;
 
-      // ============================================
-    // ✅ NEW: Guided Registration — Get student's semester and settings
+    // ============================================
+    // GET STUDENT SEMESTER AND REGISTRATION SETTINGS
     // ============================================
     const semesterRes = await pool.query(`
-      SELECT current_semester FROM student_profiles WHERE user_id = $1
+      SELECT current_semester
+      FROM student_profiles
+      WHERE user_id = $1
     `, [req.session.user.id]);
+
     const studentSemester = semesterRes.rows[0]?.current_semester || 1;
 
-    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
-    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21, registration_open: true };
+    const settingsRes = await pool.query(`
+      SELECT *
+      FROM registration_settings
+      ORDER BY id ASC
+      LIMIT 1
+    `);
 
-    // Check if registration is globally closed
+    const settings = settingsRes.rows[0] || {
+      min_credits: 12,
+      max_credits: 21,
+      registration_open: true
+    };
+
     if (!settings.registration_open) {
-      req.flash('error', 'Registration is currently closed. Please check back during the registration window.');
+      req.flash(
+        'error',
+        'Registration is currently closed. Please check back during the registration window.'
+      );
       return res.redirect('/sis/my');
     }
 
-    // Get list of courses student has FAILED (for retake eligibility)
+    // ============================================
+    // GET FAILED COURSES FOR RETAKES
+    // ============================================
     const failedRes = await pool.query(`
-      SELECT DISTINCT c.id FROM grades g
+      SELECT DISTINCT c.id
+      FROM grades g
       JOIN course_sections s ON s.id = g.section_id
       JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1 AND g.letter_grade = 'F' AND g.is_published = true
+      WHERE g.student_id = $1
+        AND g.letter_grade = 'F'
+        AND g.is_published = true
     `, [req.session.user.id]);
+
     const failedCourseIds = failedRes.rows.map(r => r.id);
 
-    // Filter courses: only show courses at or below student's semester, OR failed retakes
-      const coursesRes = await pool.query(`
-      SELECT c.*, COALESCE(c.quota, 40) as quota,
-             s.id as section_id, s.day_of_week, s.start_time, s.end_time,
-             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
-              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
-             CASE WHEN c.semester_number > $1 THEN true ELSE false END AS is_future
-      FROM courses c 
+    // ============================================
+    // GET AVAILABLE COURSES
+    // ============================================
+    const coursesRes = await pool.query(`
+      SELECT c.*,
+             COALESCE(c.quota, 40) AS quota,
+             s.id AS section_id,
+             s.day_of_week,
+             s.start_time,
+             s.end_time,
+             (
+               (SELECT COUNT(*)
+                FROM enrollments e
+                WHERE e.course_id = c.id)
+               +
+               (SELECT COUNT(*)
+                FROM course_registrations cr
+                WHERE cr.course_id = c.id
+                  AND cr.status = 'pending_advisor')
+             ) AS enrolled_count,
+             CASE
+               WHEN c.semester_number > $1 THEN true
+               ELSE false
+             END AS is_future
+      FROM courses c
       LEFT JOIN course_sections s ON s.course_id = c.id
-      WHERE c.semester_number <= $1 OR c.id = ANY($2::int[])
+      WHERE c.semester_number <= $1
+         OR c.id = ANY($2::int[])
       ORDER BY c.semester_number ASC, c.code ASC
     `, [studentSemester, failedCourseIds]);
 
+    // ============================================
+    // GET PASSED COURSES
+    // ============================================
     const passedRes = await pool.query(`
-      SELECT c.id FROM grades g 
-      JOIN course_sections s ON s.id = g.section_id 
-      JOIN courses c ON c.id = s.course_id 
-      WHERE g.student_id = $1 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
+      SELECT c.id
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+        AND g.letter_grade NOT IN ('F', 'N/A')
+        AND g.is_published = true
     `, [req.session.user.id]);
+
     const passedCourseIds = passedRes.rows.map(r => r.id);
 
+    // ============================================
+    // GET ENROLLED COURSES AND SCHEDULES
+    // ============================================
     const enrolledRes = await pool.query(`
-      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
-      FROM enrollments e JOIN courses c ON c.id = e.course_id LEFT JOIN course_sections s ON s.id = e.section_id WHERE e.user_id = $1
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time
+      FROM enrollments e
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN course_sections s ON s.id = e.section_id
+      WHERE e.user_id = $1
+
       UNION
-      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
-      FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time
+      FROM course_registrations cr
+      JOIN courses c ON c.id = cr.course_id
+      LEFT JOIN course_sections s ON s.course_id = c.id
+      WHERE cr.student_id = $1
+        AND cr.status IN ('draft', 'pending_advisor')
     `, [req.session.user.id]);
 
-    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
-    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
+    // ============================================
+    // GET REGISTRATION CART
+    // ============================================
+    const cartRes = await pool.query(`
+      SELECT cr.id AS cart_id,
+             cr.course_id,
+             c.title,
+             c.code,
+             c.credits
+      FROM course_registrations cr
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.student_id = $1
+        AND cr.status = 'draft'
+    `, [req.session.user.id]);
 
+    const pendingRes = await pool.query(`
+      SELECT cr.id AS cart_id,
+             cr.course_id,
+             c.title,
+             c.code,
+             c.credits
+      FROM course_registrations cr
+      JOIN courses c ON c.id = cr.course_id
+      WHERE cr.student_id = $1
+        AND cr.status = 'pending_advisor'
+    `, [req.session.user.id]);
+
+    // ============================================
+    // PROCESS COURSE ELIGIBILITY
+    // ============================================
     const processedCourses = coursesRes.rows.map(course => {
       let isEligible = true;
       let reason = '';
-      // ✅ NEW: Block future-semester courses
+
       if (course.is_future) {
         isEligible = false;
         reason = 'Future Semester';
@@ -729,17 +835,21 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
         reason = 'Section Full';
       }
 
-      if (course.prerequisite_id && !passedCourseIds.includes(course.prerequisite_id)) {
+      if (
+        course.prerequisite_id &&
+        !passedCourseIds.includes(course.prerequisite_id)
+      ) {
         isEligible = false;
         reason = 'Missing Prerequisite';
       }
 
       if (course.day_of_week && course.start_time) {
-        const conflict = enrolledRes.rows.find(e => 
-          e.id !== course.id && 
-          e.day_of_week === course.day_of_week && 
+        const conflict = enrolledRes.rows.find(e =>
+          e.id !== course.id &&
+          e.day_of_week === course.day_of_week &&
           e.start_time === course.start_time
         );
+
         if (conflict) {
           isEligible = false;
           reason = 'Schedule Conflict';
@@ -749,14 +859,25 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       return { ...course, isEligible, reason };
     });
 
-      const totalCartCredits = cartRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
-    const totalPendingCredits = pendingRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
-    
-    res.render('registration', { 
-      user: req.session.user, 
-      courses: processedCourses, 
-      cart: cartRes.rows, 
-      pending: pendingRes.rows, 
+    // ============================================
+    // CALCULATE CREDIT TOTALS
+    // ============================================
+    const totalCartCredits = cartRes.rows.reduce(
+      (sum, c) => sum + Number(c.credits), 0
+    );
+
+    const totalPendingCredits = pendingRes.rows.reduce(
+      (sum, c) => sum + Number(c.credits), 0
+    );
+
+    // ============================================
+    // RENDER REGISTRATION PAGE
+    // ============================================
+    res.render('registration', {
+      user: req.session.user,
+      courses: processedCourses,
+      cart: cartRes.rows,
+      pending: pendingRes.rows,
       hasRegistered,
       studentSemester,
       minCredits: settings.min_credits,
@@ -765,79 +886,162 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       totalCartCredits,
       totalPendingCredits
     });
+
   } catch (err) {
-    res.status(500).send("Registration Error: " + err.message);
+    console.error('Registration GET Error:', err);
+    res.status(500).send('Registration Error: ' + err.message);
   }
 });
+
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
 
   try {
+    // ============================================
+    // FINANCIAL ELIGIBILITY CHECK
+    // ============================================
     const feeRes = await pool.query(`
-      SELECT COALESCE(fs.amount, 0) AS amount_billed,
-             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
-      FROM student_profiles sp
-      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
-      WHERE sp.user_id = $1
+      SELECT
+        COALESCE(SUM(
+          GREATEST(net_amount - paid_amount, 0)
+        ), 0) AS outstanding_balance
+      FROM semester_invoices
+      WHERE student_id = $1
+        AND status != 'paid'
     `, [req.session.user.id]);
 
-    if (feeRes.rows.length > 0) {
-      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
-      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
-      const hasApprovedInstallment2 = instRes2.rows.length > 0;
+    const debt = Number(feeRes.rows[0].outstanding_balance || 0);
 
-      if (debt > 0 && !hasApprovedInstallment2) {
-        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
-        return res.redirect('/sis/my/registration');
-      }
+    const instRes = await pool.query(`
+      SELECT id
+      FROM installment_requests
+      WHERE student_id = $1
+        AND status = 'approved'
+    `, [req.session.user.id]);
+
+    const hasApprovedInstallment = instRes.rows.length > 0;
+
+    if (debt > 0 && !hasApprovedInstallment) {
+      req.flash(
+        'error',
+        `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`
+      );
+      return res.redirect('/sis/my/registration');
     }
 
+    // ============================================
+    // GET COURSE INFORMATION
+    // ============================================
     const courseRes = await pool.query(`
-      SELECT c.*, COALESCE(c.quota, 40) as quota, s.day_of_week, s.start_time, s.end_time,
-             (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
-             (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor') as enrolled_count
-      FROM courses c LEFT JOIN course_sections s ON s.course_id = c.id WHERE c.id = $1 LIMIT 1
+      SELECT c.*,
+             COALESCE(c.quota, 40) AS quota,
+             s.day_of_week,
+             s.start_time,
+             s.end_time,
+             (
+               SELECT COUNT(*)
+               FROM enrollments e
+               WHERE e.course_id = c.id
+             ) +
+             (
+               SELECT COUNT(*)
+               FROM course_registrations cr
+               WHERE cr.course_id = c.id
+                 AND cr.status = 'pending_advisor'
+             ) AS enrolled_count
+      FROM courses c
+      LEFT JOIN course_sections s ON s.course_id = c.id
+      WHERE c.id = $1
+      LIMIT 1
     `, [courseId]);
-    
-    if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
+
+    if (courseRes.rows.length === 0) {
+      return res.redirect('/sis/my/registration');
+    }
+
     const course = courseRes.rows[0];
 
+    // ============================================
+    // CHECK COURSE CAPACITY
+    // ============================================
     if (course.enrolled_count >= course.quota) {
-      const onWaitlist = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2 AND status = 'waitlisted'`, [req.session.user.id, courseId]);
-      
+      const onWaitlist = await pool.query(`
+        SELECT id
+        FROM course_registrations
+        WHERE student_id = $1
+          AND course_id = $2
+          AND status = 'waitlisted'
+      `, [req.session.user.id, courseId]);
+
       if (onWaitlist.rows.length > 0) {
         req.flash('error', 'You are already on the waitlist for this course.');
         return res.redirect('/sis/my/registration');
       }
 
-      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'waitlisted')`, [req.session.user.id, courseId]);
-      
-      const waitPos = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE course_id = $1 AND status = 'waitlisted'`, [courseId]);
-      
-      req.flash('success', `Section is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].count}`);
+      await pool.query(`
+        INSERT INTO course_registrations
+          (student_id, course_id, status)
+        VALUES ($1, $2, 'waitlisted')
+      `, [req.session.user.id, courseId]);
+
+      const waitPos = await pool.query(`
+        SELECT COUNT(*)
+        FROM course_registrations
+        WHERE course_id = $1
+          AND status = 'waitlisted'
+      `, [courseId]);
+
+      req.flash(
+        'success',
+        `Section is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].count}`
+      );
+
       return res.redirect('/sis/my/registration');
     }
 
+    // ============================================
+    // CHECK PREREQUISITES
+    // ============================================
     if (course.prerequisite_id) {
       const passedCheck = await pool.query(`
-        SELECT g.id FROM grades g JOIN course_sections s ON s.id = g.section_id
-        WHERE g.student_id = $1 AND s.course_id = $2 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
+        SELECT g.id
+        FROM grades g
+        JOIN course_sections s ON s.id = g.section_id
+        WHERE g.student_id = $1
+          AND s.course_id = $2
+          AND g.letter_grade NOT IN ('F', 'N/A')
+          AND g.is_published = true
       `, [req.session.user.id, course.prerequisite_id]);
-      
+
       if (passedCheck.rows.length === 0) {
         req.flash('error', 'Cannot add course: Missing prerequisite.');
         return res.redirect('/sis/my/registration');
       }
     }
 
+    // ============================================
+    // CHECK SCHEDULE CONFLICTS
+    // ============================================
     if (course.day_of_week && course.start_time) {
       const conflictCheck = await pool.query(`
-        SELECT e.id FROM enrollments e JOIN course_sections s ON s.id = e.section_id
-        WHERE e.user_id = $1 AND s.day_of_week = $2 AND s.start_time = $3
+        SELECT e.id
+        FROM enrollments e
+        JOIN course_sections s ON s.id = e.section_id
+        WHERE e.user_id = $1
+          AND s.day_of_week = $2
+          AND s.start_time = $3
+
         UNION
-        SELECT cr.id FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id
-        WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor') AND s.day_of_week = $2 AND s.start_time = $3
+
+        SELECT cr.id
+        FROM course_registrations cr
+        JOIN courses c ON c.id = cr.course_id
+        LEFT JOIN course_sections s ON s.course_id = c.id
+        WHERE cr.student_id = $1
+          AND cr.status IN ('draft', 'pending_advisor')
+          AND s.day_of_week = $2
+          AND s.start_time = $3
       `, [req.session.user.id, course.day_of_week, course.start_time]);
 
       if (conflictCheck.rows.length > 0) {
@@ -846,46 +1050,65 @@ app.post('/sis/my/registration/add', requireRole('student'), async (req, res) =>
       }
     }
 
+    // ============================================
+    // ENFORCE MAXIMUM CREDIT LIMIT
+    // ============================================
+    const settingsRes = await pool.query(`
+      SELECT *
+      FROM registration_settings
+      ORDER BY id ASC
+      LIMIT 1
+    `);
 
+    const settings = settingsRes.rows[0] || {
+      min_credits: 12,
+      max_credits: 21
+    };
 
-
-
-    // ✅ NEW: Enforce max credit limit
-    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
-    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
-    
     const currentCartRes = await pool.query(`
-      SELECT COALESCE(SUM(c.credits), 0) as total_credits
+      SELECT COALESCE(SUM(c.credits), 0) AS total_credits
       FROM course_registrations cr
       JOIN courses c ON c.id = cr.course_id
-      WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+      WHERE cr.student_id = $1
+        AND cr.status IN ('draft', 'pending_advisor')
     `, [req.session.user.id]);
+
     const currentCredits = Number(currentCartRes.rows[0].total_credits);
     const newCourseCredits = Number(course.credits);
-    
+
     if (currentCredits + newCourseCredits > settings.max_credits) {
-      req.flash('error', `Cannot add "${course.code}": Credit limit exceeded. You have ${currentCredits}/${settings.max_credits} credits. Adding ${newCourseCredits} more would go over the maximum.`);
+      req.flash(
+        'error',
+        `Cannot add "${course.code}": Credit limit exceeded. You have ${currentCredits}/${settings.max_credits} credits. Adding ${newCourseCredits} more would go over the maximum.`
+      );
       return res.redirect('/sis/my/registration');
     }
 
+    // ============================================
+    // PREVENT DUPLICATE COURSE REGISTRATION
+    // ============================================
+    const existing = await pool.query(`
+      SELECT id
+      FROM course_registrations
+      WHERE student_id = $1
+        AND course_id = $2
+    `, [req.session.user.id, courseId]);
 
-
-
-
-
-
-
-
-
-    const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
     if (existing.rows.length === 0) {
-      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
+      await pool.query(`
+        INSERT INTO course_registrations
+          (student_id, course_id, status)
+        VALUES ($1, $2, 'draft')
+      `, [req.session.user.id, courseId]);
+
       req.flash('success', 'Course added to cart.');
     }
-    
+
     res.redirect('/sis/my/registration');
-  } catch (err) { 
-    res.status(500).send("Error adding: " + err.message); 
+
+  } catch (err) {
+    console.error('Registration POST Error:', err);
+    res.status(500).send('Error adding: ' + err.message);
   }
 });
 

@@ -887,6 +887,16 @@ const studentSemester = Number(studentProfile.current_semester || 1);
       (sum, c) => sum + Number(c.credits), 0
     );
 
+       // ============================================
+    // FETCH REGISTRATION SETTINGS
+    // ============================================
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings ORDER BY id ASC LIMIT 1`);
+    const settings = settingsRes.rows[0] || {
+      min_credits: 12,
+      max_credits: 21,
+      registration_open: true
+    };
+
     // ============================================
     // RENDER REGISTRATION PAGE
     // ============================================
@@ -903,12 +913,6 @@ const studentSemester = Number(studentProfile.current_semester || 1);
       totalCartCredits,
       totalPendingCredits
     });
-
-  } catch (err) {
-    console.error('Registration GET Error:', err);
-    res.status(500).send('Registration Error: ' + err.message);
-  }
-});
 
 
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {

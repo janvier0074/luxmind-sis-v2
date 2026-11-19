@@ -681,34 +681,26 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     // ============================================
     // GET STUDENT SEMESTER AND REGISTRATION SETTINGS
     // ============================================
-    const semesterRes = await pool.query(`
-      SELECT current_semester
-      FROM student_profiles
-      WHERE user_id = $1
-    `, [req.session.user.id]);
+   const semesterRes = await pool.query(`
+  SELECT department_id, current_semester
+  FROM student_profiles
+  WHERE user_id = $1
+  LIMIT 1
+`, [req.session.user.id]);
 
-    const studentSemester = semesterRes.rows[0]?.current_semester || 1;
+const studentProfile = semesterRes.rows[0];
 
-    const settingsRes = await pool.query(`
-      SELECT *
-      FROM registration_settings
-      ORDER BY id ASC
-      LIMIT 1
-    `);
+if (!studentProfile || !studentProfile.department_id) {
+  req.flash(
+    'error',
+    'Your academic department is not assigned. Please contact the administration.'
+  );
+  return res.redirect('/sis/my');
+}
 
-    const settings = settingsRes.rows[0] || {
-      min_credits: 12,
-      max_credits: 21,
-      registration_open: true
-    };
+const studentDepartmentId = studentProfile.department_id;
+const studentSemester = Number(studentProfile.current_semester || 1);
 
-    if (!settings.registration_open) {
-      req.flash(
-        'error',
-        'Registration is currently closed. Please check back during the registration window.'
-      );
-      return res.redirect('/sis/my');
-    }
 
     // ============================================
     // GET FAILED COURSES FOR RETAKES
@@ -729,32 +721,57 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     // GET AVAILABLE COURSES
     // ============================================
     const coursesRes = await pool.query(`
-      SELECT c.*,
-             COALESCE(c.quota, 40) AS quota,
-             s.id AS section_id,
-             s.day_of_week,
-             s.start_time,
-             s.end_time,
-             (
-               (SELECT COUNT(*)
-                FROM enrollments e
-                WHERE e.course_id = c.id)
-               +
-               (SELECT COUNT(*)
-                FROM course_registrations cr
-                WHERE cr.course_id = c.id
-                  AND cr.status = 'pending_advisor')
-             ) AS enrolled_count,
-             CASE
-               WHEN c.semester_number > $1 THEN true
-               ELSE false
-             END AS is_future
-      FROM courses c
-      LEFT JOIN course_sections s ON s.course_id = c.id
-      WHERE c.semester_number <= $1
-         OR c.id = ANY($2::int[])
-      ORDER BY c.semester_number ASC, c.code ASC
-    `, [studentSemester, failedCourseIds]);
+  SELECT DISTINCT ON (c.id)
+         c.*,
+         COALESCE(cu.semester_number, c.semester_number) AS semester_number,
+         COALESCE(c.quota, 40) AS quota,
+
+         NULL::integer AS section_id,
+         NULL::integer AS day_of_week,
+         NULL::time AS start_time,
+         NULL::time AS end_time,
+
+         (
+           SELECT COUNT(*)
+           FROM enrollments e
+           WHERE e.course_id = c.id
+             AND e.status = 'enrolled'
+         )
+         +
+         (
+           SELECT COUNT(*)
+           FROM course_registrations cr
+           WHERE cr.course_id = c.id
+             AND cr.status = 'pending_advisor'
+         ) AS enrolled_count,
+
+         CASE
+           WHEN COALESCE(cu.semester_number, c.semester_number) > $2
+           THEN true
+           ELSE false
+         END AS is_future
+
+  FROM student_profiles sp
+
+  JOIN curriculum cu
+    ON cu.department_id = sp.department_id
+
+  JOIN courses c
+    ON UPPER(TRIM(c.code)) = UPPER(TRIM(cu.course_code))
+   AND c.department_id = sp.department_id
+
+  WHERE sp.user_id = $1
+    AND (
+      COALESCE(cu.semester_number, c.semester_number) <= $2
+      OR c.id = ANY($3::int[])
+    )
+
+  ORDER BY c.id, cu.semester_number ASC
+`, [
+  req.session.user.id,
+  studentSemester,
+  failedCourseIds
+]);
 
     // ============================================
     // GET PASSED COURSES

@@ -5,92 +5,208 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Timetable - LuxMind</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
+    :root {
+      --bg-body: #f4f6fa; --bg-surface: #ffffff;
+      --text-main: #0a1e32; --text-muted: #64748b;
+      --primary: #1e4d7b; --primary-light: #eef4fb;
+      --border: #e2e8f0;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f4f6fa; color: #0a1e32; padding: 2rem; }
-    .info-card { background: linear-gradient(135deg, #0a1e32, #1e4d7b); color: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 24px rgba(10,30,50,0.15); }
-    .info-left h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem; }
-    .info-left p { font-size: 0.9rem; color: #cbd5e1; }
-    .info-right { display: flex; gap: 2rem; text-align: right; }
-    .stat-box { display: flex; flex-direction: column; }
-    .stat-box span { font-size: 0.75rem; text-transform: uppercase; color: #ffc857; font-weight: 800; letter-spacing: 1px; }
-    .stat-box strong { font-size: 1.4rem; font-weight: 800; }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e4d7b; font-weight: 800; text-decoration: none; padding: 0.6rem 1.1rem; background: #fff; border-radius: 100px; border: 1px solid #d9e6f2; margin-bottom: 1rem; transition: 0.15s; }
-    .btn-back:hover { background: #0a1e32; color: #fff; }
-    .timetable-container { background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(10,30,50,0.08); overflow-x: auto; border: 1px solid #e2e8f0; }
-    table { width: 100%; border-collapse: collapse; min-width: 900px; table-layout: fixed; }
-    th, td { border: 1px solid #e2e8f0; padding: 0; vertical-align: top; height: 60px; }
-    th { background: #f8fafc; padding: 1rem 0.5rem; font-weight: 800; color: #1e4d7b; text-align: center; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
-    .time-col { width: 80px; background: #f8fafc; text-align: center; font-weight: 700; font-size: 0.8rem; color: #64748b; padding: 1rem 0; vertical-align: middle; border-right: 2px solid #cbd5e1; }
-    .course-tile { display: flex; flex-direction: column; gap: 0.2rem; margin: 2px; padding: 0.6rem; border-radius: 6px; color: #fff; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: calc(100% - 4px); box-sizing: border-box; overflow: hidden; transition: transform 0.1s; }
-    .course-tile:hover { transform: scale(1.02); z-index: 10; position: relative; cursor: pointer; }
-    .course-tile .code { font-weight: 800; font-size: 0.85rem; }
-    .course-tile .meta { font-size: 0.7rem; opacity: 0.9; display: flex; align-items: center; gap: 0.3rem; }
-    .empty-cell { background: #fff; transition: background 0.2s; }
-    .empty-cell:hover { background: #f8fafc; }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); display: flex; min-height: 100vh; }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; transition: transform 0.3s ease; }
+    .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header h2 { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .sidebar-header p { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
+    .nav-links { padding: 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; }
+    .nav-links a { color: #cbd5e1; text-decoration: none; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.1); color: white; }
+    .nav-links a i { width: 20px; text-align: center; font-size: 15px; }
+    .nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0; }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 260px; flex: 1; padding: 32px; max-width: 1400px; }
+    
+    /* Mobile Header */
+    .mobile-header { display: none; background: var(--primary); color: white; padding: 16px 20px; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 90; }
+    .mobile-header h1 { font-size: 16px; font-weight: 700; }
+    .menu-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
+    /* --- PAGE HEADER --- */
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .page-title h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; color: var(--text-main); }
+    .page-title p { font-size: 14px; color: var(--text-muted); }
+    
+    .stat-pills { display: flex; gap: 12px; }
+    .pill { background: var(--bg-surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .pill i { color: var(--primary); }
+
+    /* --- WARNING BANNER --- */
+    .warning-banner { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 12px rgba(245,158,11,0.1); }
+    .warning-banner i { font-size: 20px; margin-top: 2px; color: #d97706; }
+    .warning-banner strong { font-weight: 800; }
+    .warning-banner p { font-size: 13px; margin-top: 4px; line-height: 1.5; }
+
+    /* --- TIMETABLE GRID --- */
+    .timetable-card { background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(10,30,50,0.04); overflow-x: auto; padding: 8px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 800px; }
+    th, td { padding: 4px; text-align: center; vertical-align: top; }
+    th { padding: 16px 8px; font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+    
+    .time-col { font-size: 12px; font-weight: 700; color: var(--text-muted); width: 80px; vertical-align: middle; border-right: 2px solid var(--border); padding: 8px; }
+    
+    .slot { height: 60px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); transition: background 0.2s; border-radius: 4px; }
+    .slot:hover { background: var(--bg-body); }
+    .slot:last-child { border-right: none; }
+
+    /* --- COURSE TILE --- */
+    .course-tile { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; color: white; font-size: 12px; line-height: 1.4; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: left; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: default; }
+    .course-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 10; }
+    .course-tile::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: rgba(255,255,255,0.3); }
+    .course-tile .code { font-weight: 800; font-size: 14px; letter-spacing: 0.3px; }
+    .course-tile .meta { font-size: 11px; opacity: 0.95; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .course-tile .meta i { opacity: 0.7; font-size: 10px; }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; padding-top: 0; }
+      .mobile-header { display: flex; }
+      .page-title h1 { font-size: 22px; }
+      .stat-pills { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+      .pill { white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
-  <a href="/sis/my" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-  <div class="info-card">
-    <div class="info-left">
-      <h1><%= user.full_name %></h1>
-      <p><i class="fas fa-id-card"></i> <%= profile.admission_number || user.username %> · <%= profile.class_level || 'Department' %></p>
-    </div>
-    <div class="info-right">
-      <div class="stat-box"><span>Semester</span><strong><%= profile.current_semester || 1 %></strong></div>
-      <div class="stat-box"><span>Courses</span><strong><%= courses.length %></strong></div>
-      <div class="stat-box"><span>Credits</span><strong><%= totalCredits %></strong></div>
-    </div>
+
+  <!-- MOBILE HEADER -->
+  <div class="mobile-header">
+    <h1>LuxMind Timetable</h1>
+    <button class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
   </div>
-  <div class="timetable-container">
-    <table>
-      <thead>
-        <tr>
-          <th class="time-col">Time</th>
-          <% days.forEach(day => { %><th><%= day %></th><% }); %>
-        </tr>
-      </thead>
-      <tbody>
-        <% timeSlots.forEach((time, timeIndex) => { %>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><i class="fa-solid fa-graduation-cap"></i> LuxMind</h2>
+      <p>Student Portal</p>
+    </div>
+    <div class="nav-links">
+      <a href="/sis/my"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="/sis/my/timetable" class="active"><i class="fa-solid fa-calendar-days"></i> Timetable</a>
+      <a href="/sis/my/attendance"><i class="fa-solid fa-clipboard-user"></i> Attendance</a>
+      <a href="/sis/my/registration"><i class="fa-solid fa-pen-to-square"></i> Registration</a>
+      <div class="nav-divider"></div>
+      <a href="/sis/my/transcript"><i class="fa-solid fa-file-lines"></i> Transcript</a>
+      <a href="/sis/my/finance"><i class="fa-solid fa-wallet"></i> Finance</a>
+      <a href="/sis/my/materials"><i class="fa-solid fa-folder-open"></i> Materials</a>
+      <div class="nav-divider"></div>
+      <a href="/sis/my/cgpa-simulator"><i class="fa-solid fa-calculator"></i> CGPA Simulator</a>
+      <a href="/logout" style="color: #fca5a5; margin-top: auto;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <div class="page-header">
+      <div class="page-title">
+        <h1>My Timetable</h1>
+        <p>View your weekly class schedule and room assignments.</p>
+      </div>
+      <div class="stat-pills">
+        <div class="pill"><i class="fa-solid fa-user"></i> <%= profile.admission_number || user.username %></div>
+        <div class="pill"><i class="fa-solid fa-book"></i> <%= courses.length %> Courses</div>
+        <div class="pill"><i class="fa-solid fa-star"></i> <%= totalCredits %> Credits</div>
+      </div>
+    </div>
+
+    <!-- YELLOW WARNING BANNER -->
+    <% if (typeof missingSchedule !== 'undefined' && missingSchedule.length > 0) { %>
+      <div class="warning-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+          <strong><%= missingSchedule.length %> enrolled course<%= missingSchedule.length === 1 ? '' : 's' %> ha<%= missingSchedule.length === 1 ? 's' : 've' %> no scheduled time yet:</strong>
+          <p>
+            <% missingSchedule.forEach((c, i) => { %>
+              <span style="display: inline-block; margin-right: 12px; background: rgba(245,158,11,0.15); padding: 2px 8px; border-radius: 4px; font-weight: 700;"><%= c.code %></span>
+            <% }); %>
+            <br>Please contact your academic advisor or the registrar to have these scheduled.
+          </p>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- TIMETABLE GRID -->
+    <div class="timetable-card">
+      <table>
+        <thead>
           <tr>
-            <td class="time-col"><%= time %></td>
-            <% days.forEach(day => { 
-                 const course = grid[day][time];
-                 let isCovered = false;
-                 for (let i = timeIndex - 1; i >= 0; i--) {
-                   const prevCourse = grid[day][timeSlots[i]];
-                   if (prevCourse && prevCourse.end_time > time) {
-                     isCovered = true;
-                     break;
-                   }
-                 }
-                 if (isCovered) return; 
-            %>
-              <% if (course) { 
-                   let rowspan = 1;
-                   let checkTime = parseInt(time.split(':')[0]) + 1;
-                   while (timeSlots.includes(checkTime.toString().padStart(2, '0') + ':00') && course.end_time > (checkTime.toString().padStart(2, '0') + ':00')) {
-                     rowspan++; checkTime++;
-                   }
-              %>
-                <td rowspan="<%= rowspan %>">
-                  <div class="course-tile" style="background-color: <%= course.color %>;">
-                    <div class="code"><%= course.code %></div>
-                    <div class="meta"><i class="fas fa-layer-group"></i> <%= course.group_name || 'GRP' %> • <%= course.room || 'TBA' %></div>
-                    <div class="meta" style="margin-top: auto; font-weight: 600;"><i class="fas fa-clock"></i> <%= course.start_time %> - <%= course.end_time %></div>
-                    <% if (course.teacher_name) { %><div class="meta"><i class="fas fa-user"></i> <%= course.teacher_name %></div><% } %>
-                  </div>
-                </td>
-              <% } else { %>
-                <td class="empty-cell"></td>
-              <% } %>
+            <th class="time-col">Time</th>
+            <% days.forEach(day => { %>
+              <th><%= day %></th>
             <% }); %>
           </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <% timeSlots.forEach((time, timeIndex) => { %>
+            <tr>
+              <td class="time-col"><%= time %></td>
+              <% days.forEach(day => { 
+                   const course = grid[day][time];
+                   let isCovered = false;
+                   
+                   // Check if this cell is covered by a class from an earlier row (rowspan)
+                   for (let i = timeIndex - 1; i >= 0; i--) {
+                     const prevCourse = grid[day][timeSlots[i]];
+                     if (prevCourse && prevCourse.end_time > time) {
+                       isCovered = true;
+                       break;
+                     }
+                   }
+                   if (isCovered) return; 
+              %>
+                <% if (course) { 
+                     let rowspan = 1;
+                     let checkHour = parseInt(time.split(':')[0]) + 1;
+                     
+                     // Calculate how many rows this class spans
+                     while (timeSlots.includes(checkHour.toString().padStart(2, '0') + ':00') && course.end_time > (checkHour.toString().padStart(2, '0') + ':00')) {
+                       rowspan++; 
+                       checkHour++;
+                     }
+                %>
+                  <td rowspan="<%= rowspan %>" style="padding: 4px;">
+                    <div class="course-tile" style="background: linear-gradient(135deg, <%= course.color %>, <%= course.color %>dd);">
+                      <div class="code"><%= course.code %></div>
+                      <div class="meta"><i class="fa-solid fa-door-open"></i> <%= course.room || 'TBA' %></div>
+                      <div class="meta"><i class="fa-solid fa-clock"></i> <%= course.start_time %> - <%= course.end_time %></div>
+                      <% if (course.teacher_name) { %>
+                        <div class="meta"><i class="fa-solid fa-user-tie"></i> <%= course.teacher_name %></div>
+                      <% } %>
+                    </div>
+                  </td>
+                <% } else { %>
+                  <td class="slot"></td>
+                <% } %>
+              <% }); %>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+  </script>
 </body>
 </html>

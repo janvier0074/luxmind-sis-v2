@@ -174,7 +174,7 @@
           <i class="fas fa-graduation-cap" style="font-size: 1.5rem; color: #ffc857;"></i>
           <div>
             <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ffc857;">Semester <%= studentSemester %> Student</div>
-            <div style="font-size: 0.9rem; font-weight: 600;">All courses are available to add to your cart</div>
+            <div style="font-size: 0.9rem; font-weight: 600;">Courses from your department only</div>
           </div>
         </div>
         <div style="display: flex; gap: 1.5rem; font-size: 0.85rem; flex-wrap: wrap;">
@@ -202,153 +202,164 @@
           </div>
         <% } %>
 
-        <!-- YEAR BOXES — dynamic, supports any semester number -->
-        <% for (let year = 1; year <= maxYear; year++) {
-             const sem1 = (year * 2) - 1;
-             const sem2 = year * 2;
-
-             const has1 = bySem[sem1] && bySem[sem1].length > 0;
-             const has2 = bySem[sem2] && bySem[sem2].length > 0;
-             if (!has1 && !has2) continue;
-        %>
-          <div class="year-box">
-            <div class="year-header">
-              <span>Year <%= year %></span>
-              <span style="font-size: 0.9rem; font-weight: 600; color: #94a3b8;"><%= yearLabel(year) %></span>
-            </div>
-
-            <div class="semesters-container">
-              <!-- SEMESTER 1 (Odd) -->
-              <div class="semester-column <%= Number(studentSemester) === sem1 ? 'current-highlight' : '' %>">
-                <div class="semester-title">
-                  <span><%= seasonOf(sem1) %> (Semester <%= sem1 %>)</span>
-                  <% if (Number(studentSemester) === sem1) { %><span class="badge-current">CURRENT</span>
-                  <% } else if (sem1 > Number(studentSemester)) { %><span class="badge-future">FUTURE</span>
-                  <% } else { %><span class="badge-past">PAST</span><% } %>
-                </div>
-                <div class="course-list">
-                  <% if (!bySem[sem1] || bySem[sem1].length === 0) { %>
-                    <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
-                  <% } %>
-                  <% (bySem[sem1] || []).forEach(course => {
-                       const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
-                       const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
-                       const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);
-
-                       let tileClass = 'tile-available';
-                       let statusText = '+ Add to Cart';
-                       let statusClass = 'status-available';
-                       let action = 'add';
-
-                       if (pendingItem) {
-                         tileClass = 'tile-pending'; statusText = '✓ Pending Approval'; statusClass = 'status-pending'; action = 'pending';
-                       } else if (cartItem) {
-                         tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; action = 'remove';
-                       }
-                  %>
-                    <% if (action === 'remove') { %>
-                      <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
-                        <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
-                        <button type="submit" class="course-tile <%= tileClass %>" title="Click to remove from cart">
-                    <% } else if (action === 'add') { %>
-                      <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
-                        <input type="hidden" name="course_id" value="<%= course.id %>">
-                        <button type="submit" class="course-tile <%= tileClass %>">
-                    <% } else { %>
-                      <div class="course-tile <%= tileClass %>">
-                    <% } %>
-
-                          <span class="tile-header">
-                            <span class="tile-code"><%= course.code %></span>
-                          </span>
-                          <span class="tile-title"><%= course.title %></span>
-
-                          <span class="badge-row">
-                            <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
-                            <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
-                            <% if (course.reason) { %>
-                              <span class="badge badge-warn"><i class="fas fa-info-circle"></i> <%= course.reason %></span>
-                            <% } %>
-                          </span>
-
-                          <span class="status-text <%= statusClass %>"><%= statusText %></span>
-
-                    <% if (action === 'remove' || action === 'add') { %>
-                        </button>
-                      </form>
-                    <% } else { %>
-                      </div>
-                    <% } %>
-                  <% }) %>
-                </div>
-              </div>
-
-              <!-- SEMESTER 2 (Even) -->
-              <div class="semester-column <%= Number(studentSemester) === sem2 ? 'current-highlight' : '' %>" style="background: var(--ice);">
-                <div class="semester-title" style="color: var(--amber);">
-                  <span><%= seasonOf(sem2) %> (Semester <%= sem2 %>)</span>
-                  <% if (Number(studentSemester) === sem2) { %><span class="badge-current">CURRENT</span>
-                  <% } else if (sem2 > Number(studentSemester)) { %><span class="badge-future">FUTURE</span>
-                  <% } else { %><span class="badge-past">PAST</span><% } %>
-                </div>
-                <div class="course-list">
-                  <% if (!bySem[sem2] || bySem[sem2].length === 0) { %>
-                    <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
-                  <% } %>
-                  <% (bySem[sem2] || []).forEach(course => {
-                       const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
-                       const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
-                       const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);
-
-                       let tileClass = 'tile-available';
-                       let statusText = '+ Add to Cart';
-                       let statusClass = 'status-available';
-                       let action = 'add';
-
-                       if (pendingItem) {
-                         tileClass = 'tile-pending'; statusText = '✓ Pending Approval'; statusClass = 'status-pending'; action = 'pending';
-                       } else if (cartItem) {
-                         tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; action = 'remove';
-                       }
-                  %>
-                    <% if (action === 'remove') { %>
-                      <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
-                        <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
-                        <button type="submit" class="course-tile <%= tileClass %>" title="Click to remove from cart">
-                    <% } else if (action === 'add') { %>
-                      <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
-                        <input type="hidden" name="course_id" value="<%= course.id %>">
-                        <button type="submit" class="course-tile <%= tileClass %>">
-                    <% } else { %>
-                      <div class="course-tile <%= tileClass %>">
-                    <% } %>
-
-                          <span class="tile-header">
-                            <span class="tile-code"><%= course.code %></span>
-                          </span>
-                          <span class="tile-title"><%= course.title %></span>
-
-                          <span class="badge-row">
-                            <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
-                            <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
-                            <% if (course.reason) { %>
-                              <span class="badge badge-warn"><i class="fas fa-info-circle"></i> <%= course.reason %></span>
-                            <% } %>
-                          </span>
-
-                          <span class="status-text <%= statusClass %>"><%= statusText %></span>
-
-                    <% if (action === 'remove' || action === 'add') { %>
-                        </button>
-                      </form>
-                    <% } else { %>
-                      </div>
-                    <% } %>
-                  <% }) %>
-                </div>
-              </div>
-            </div>
+        <% if (courses.length === 0) { %>
+          <!-- No courses in department -->
+          <div style="background: #fff; border-radius: 1.5rem; padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow-soft); border: 1px solid var(--frost);">
+            <i class="fas fa-inbox" style="font-size: 3rem; color: var(--frost); margin-bottom: 1rem;"></i>
+            <h2 style="color: var(--navy); font-size: 1.4rem; margin-bottom: 0.5rem;">No courses available</h2>
+            <p style="color: #64748b;">There are no courses listed for your department. Please contact the registrar.</p>
           </div>
+        <% } else { %>
+
+          <!-- YEAR BOXES — dynamic, supports any semester number -->
+          <% for (let year = 1; year <= maxYear; year++) {
+               const sem1 = (year * 2) - 1;
+               const sem2 = year * 2;
+
+               const has1 = bySem[sem1] && bySem[sem1].length > 0;
+               const has2 = bySem[sem2] && bySem[sem2].length > 0;
+               if (!has1 && !has2) continue;
+          %>
+            <div class="year-box">
+              <div class="year-header">
+                <span>Year <%= year %></span>
+                <span style="font-size: 0.9rem; font-weight: 600; color: #94a3b8;"><%= yearLabel(year) %></span>
+              </div>
+
+              <div class="semesters-container">
+                <!-- SEMESTER 1 (Odd) -->
+                <div class="semester-column <%= Number(studentSemester) === sem1 ? 'current-highlight' : '' %>">
+                  <div class="semester-title">
+                    <span><%= seasonOf(sem1) %> (Semester <%= sem1 %>)</span>
+                    <% if (Number(studentSemester) === sem1) { %><span class="badge-current">CURRENT</span>
+                    <% } else if (sem1 > Number(studentSemester)) { %><span class="badge-future">FUTURE</span>
+                    <% } else { %><span class="badge-past">PAST</span><% } %>
+                  </div>
+                  <div class="course-list">
+                    <% if (!bySem[sem1] || bySem[sem1].length === 0) { %>
+                      <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
+                    <% } %>
+                    <% (bySem[sem1] || []).forEach(course => {
+                         const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
+                         const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
+                         const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);
+
+                         let tileClass = 'tile-available';
+                         let statusText = '+ Add to Cart';
+                         let statusClass = 'status-available';
+                         let action = 'add';
+
+                         if (pendingItem) {
+                           tileClass = 'tile-pending'; statusText = '✓ Pending Approval'; statusClass = 'status-pending'; action = 'pending';
+                         } else if (cartItem) {
+                           tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; action = 'remove';
+                         }
+                    %>
+                      <% if (action === 'remove') { %>
+                        <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                          <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
+                          <button type="submit" class="course-tile <%= tileClass %>" title="Click to remove from cart">
+                      <% } else if (action === 'add') { %>
+                        <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                          <input type="hidden" name="course_id" value="<%= course.id %>">
+                          <button type="submit" class="course-tile <%= tileClass %>">
+                      <% } else { %>
+                        <div class="course-tile <%= tileClass %>">
+                      <% } %>
+
+                            <span class="tile-header">
+                              <span class="tile-code"><%= course.code %></span>
+                            </span>
+                            <span class="tile-title"><%= course.title %></span>
+
+                            <span class="badge-row">
+                              <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
+                              <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
+                              <% if (course.reason) { %>
+                                <span class="badge badge-warn"><i class="fas fa-info-circle"></i> <%= course.reason %></span>
+                              <% } %>
+                            </span>
+
+                            <span class="status-text <%= statusClass %>"><%= statusText %></span>
+
+                      <% if (action === 'remove' || action === 'add') { %>
+                          </button>
+                        </form>
+                      <% } else { %>
+                        </div>
+                      <% } %>
+                    <% }) %>
+                  </div>
+                </div>
+
+                <!-- SEMESTER 2 (Even) -->
+                <div class="semester-column <%= Number(studentSemester) === sem2 ? 'current-highlight' : '' %>" style="background: var(--ice);">
+                  <div class="semester-title" style="color: var(--amber);">
+                    <span><%= seasonOf(sem2) %> (Semester <%= sem2 %>)</span>
+                    <% if (Number(studentSemester) === sem2) { %><span class="badge-current">CURRENT</span>
+                    <% } else if (sem2 > Number(studentSemester)) { %><span class="badge-future">FUTURE</span>
+                    <% } else { %><span class="badge-past">PAST</span><% } %>
+                  </div>
+                  <div class="course-list">
+                    <% if (!bySem[sem2] || bySem[sem2].length === 0) { %>
+                      <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
+                    <% } %>
+                    <% (bySem[sem2] || []).forEach(course => {
+                         const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
+                         const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
+                         const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);
+
+                         let tileClass = 'tile-available';
+                         let statusText = '+ Add to Cart';
+                         let statusClass = 'status-available';
+                         let action = 'add';
+
+                         if (pendingItem) {
+                           tileClass = 'tile-pending'; statusText = '✓ Pending Approval'; statusClass = 'status-pending'; action = 'pending';
+                         } else if (cartItem) {
+                           tileClass = 'tile-selected'; statusText = '✓ In Cart (Click to remove)'; statusClass = 'status-selected'; action = 'remove';
+                         }
+                    %>
+                      <% if (action === 'remove') { %>
+                        <form method="POST" action="/sis/my/registration/remove" style="margin: 0;">
+                          <input type="hidden" name="cart_id" value="<%= cartItem.cart_id %>">
+                          <button type="submit" class="course-tile <%= tileClass %>" title="Click to remove from cart">
+                      <% } else if (action === 'add') { %>
+                        <form method="POST" action="/sis/my/registration/add" style="margin: 0;">
+                          <input type="hidden" name="course_id" value="<%= course.id %>">
+                          <button type="submit" class="course-tile <%= tileClass %>">
+                      <% } else { %>
+                        <div class="course-tile <%= tileClass %>">
+                      <% } %>
+
+                            <span class="tile-header">
+                              <span class="tile-code"><%= course.code %></span>
+                            </span>
+                            <span class="tile-title"><%= course.title %></span>
+
+                            <span class="badge-row">
+                              <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
+                              <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
+                              <% if (course.reason) { %>
+                                <span class="badge badge-warn"><i class="fas fa-info-circle"></i> <%= course.reason %></span>
+                              <% } %>
+                            </span>
+
+                            <span class="status-text <%= statusClass %>"><%= statusText %></span>
+
+                      <% if (action === 'remove' || action === 'add') { %>
+                          </button>
+                        </form>
+                      <% } else { %>
+                        </div>
+                      <% } %>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
         <% } %>
 
         <!-- STICKY SUMMARY FOOTER -->

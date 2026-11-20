@@ -684,16 +684,26 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
     const failedCourseIds = failedRes.rows.map(r => r.id);
 
     // ✅ CHANGED: Show ALL courses (no semester filter). Quota 0 no longer blocks.
-      const coursesRes = await pool.query(`
-      SELECT c.*, COALESCE(NULLIF(c.quota, 0), 40) as quota,
-             s.id as section_id, s.day_of_week, s.start_time, s.end_time,
-             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
-              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
-             CASE WHEN c.semester_number > $1 THEN true ELSE false END AS is_future
-      FROM courses c 
-      LEFT JOIN course_sections s ON s.course_id = c.id
-      ORDER BY c.semester_number ASC, c.code ASC
-    `, [studentSemester]);
+     // ============================================
+// ✅ Filter courses to the student's OWN department only
+// ============================================
+const coursesRes = await pool.query(`
+  SELECT c.*, COALESCE(NULLIF(c.quota, 0), 40) as quota,
+         s.id as section_id, s.day_of_week, s.start_time, s.end_time,
+         ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
+          (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
+         CASE WHEN c.semester_number > $1 THEN true ELSE false END AS is_future
+  FROM courses c 
+  LEFT JOIN course_sections s ON s.course_id = c.id
+  JOIN student_profiles sp ON sp.user_id = $2
+  JOIN departments d ON d.id = c.department_id
+  WHERE 
+    -- Match student's class_level against department name, ignoring case + "Department of" prefix
+    LOWER(d.name) = LOWER('Department of ' || sp.class_level)
+    OR LOWER(d.name) = LOWER(sp.class_level)
+    OR LOWER(REPLACE(d.name, 'Department of ', '')) = LOWER(sp.class_level)
+  ORDER BY c.semester_number ASC, c.code ASC
+`, [studentSemester, req.session.user.id]);
 
     const passedRes = await pool.query(`
       SELECT c.id FROM grades g 

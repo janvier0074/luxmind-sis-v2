@@ -7,19 +7,27 @@
   if (typeof maxCredits === 'undefined') maxCredits = 21;
   if (typeof totalCartCredits === 'undefined') totalCartCredits = 0;
 
-  // Group courses by semester_number
+  // Group courses by semester_number — fully dynamic, no upper limit
   const bySem = {};
-  for (let i = 1; i <= 8; i++) bySem[i] = [];
   courses.forEach(c => {
     const sem = Number(c.semester_number) || 1;
     if (!bySem[sem]) bySem[sem] = [];
     bySem[sem].push(c);
   });
 
-  // Helper: turn a semester number into a year (2 semesters per year)
-  const yearOf = (sem) => Math.ceil(Number(sem) / 2);
+  // Sort each semester's courses alphabetically by code
+  Object.keys(bySem).forEach(s => {
+    bySem[s].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+  });
+
+  // Determine max semester actually present, so nothing is hidden
+  const allSemNumbers = Object.keys(bySem).map(Number);
+  const maxSemester = allSemNumbers.length > 0 ? Math.max(...allSemNumbers) : 2;
+  const maxYear = Math.max(1, Math.ceil(maxSemester / 2));
+
+  // Helpers
   const yearLabel = (y) => y === 1 ? 'Freshman' : y === 2 ? 'Sophomore' : y === 3 ? 'Junior' : y === 4 ? 'Senior' : 'Year ' + y;
-  const seasonOf = (sem) => (Number(sem) % 2 === 1) ? 'Fall' : 'Spring';
+  const seasonOf  = (sem) => (Number(sem) % 2 === 1) ? 'Fall' : 'Spring';
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -194,13 +202,14 @@
           </div>
         <% } %>
 
-        <!-- YEAR BOXES -->
-        <% for (let year = 1; year <= 4; year++) {
+        <!-- YEAR BOXES — dynamic, supports any semester number -->
+        <% for (let year = 1; year <= maxYear; year++) {
              const sem1 = (year * 2) - 1;
              const sem2 = year * 2;
 
-             // Skip a year box entirely if BOTH semesters have no courses
-             if (bySem[sem1].length === 0 && bySem[sem2].length === 0) continue;
+             const has1 = bySem[sem1] && bySem[sem1].length > 0;
+             const has2 = bySem[sem2] && bySem[sem2].length > 0;
+             if (!has1 && !has2) continue;
         %>
           <div class="year-box">
             <div class="year-header">
@@ -218,10 +227,10 @@
                   <% } else { %><span class="badge-past">PAST</span><% } %>
                 </div>
                 <div class="course-list">
-                  <% if (bySem[sem1].length === 0) { %>
+                  <% if (!bySem[sem1] || bySem[sem1].length === 0) { %>
                     <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
                   <% } %>
-                  <% bySem[sem1].forEach(course => {
+                  <% (bySem[sem1] || []).forEach(course => {
                        const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
                        const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
                        const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);
@@ -283,10 +292,10 @@
                   <% } else { %><span class="badge-past">PAST</span><% } %>
                 </div>
                 <div class="course-list">
-                  <% if (bySem[sem2].length === 0) { %>
+                  <% if (!bySem[sem2] || bySem[sem2].length === 0) { %>
                     <div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1rem;">No courses this semester</div>
                   <% } %>
-                  <% bySem[sem2].forEach(course => {
+                  <% (bySem[sem2] || []).forEach(course => {
                        const cartItem = cart.find(c => Number(c.course_id) === Number(course.id));
                        const pendingItem = pending.find(p => Number(p.course_id) === Number(course.id));
                        const isQuotaFull = Number(course.enrolled_count) >= Number(course.quota);

@@ -65,7 +65,7 @@
     .course-list { display: flex; flex-direction: column; gap: 0.8rem; }
 
     /* --- COURSE TILES --- */
-    .course-tile { padding: 0.8rem 1rem; border-radius: 10px; border: 1.5px solid transparent; transition: all 0.15s ease; cursor: pointer; text-align: left; width: 100%; background: #fff; }
+    .course-tile { display: block; padding: 0.8rem 1rem; border-radius: 10px; border: 1.5px solid transparent; transition: all 0.15s ease; cursor: pointer; text-align: left; width: 100%; background: #fff; }
     .course-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(10, 30, 50, 0.1); }
     
     .tile-selected { background: #d4f0e3; border-color: var(--success); cursor: default; }
@@ -73,7 +73,7 @@
     
     .tile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.3rem; }
     .tile-code { font-size: 0.75rem; font-weight: 800; color: var(--blue); text-transform: uppercase; }
-    .tile-title { font-size: 0.9rem; font-weight: 700; color: var(--navy); line-height: 1.3; margin-bottom: 0.5rem; }
+    .tile-title { display: block; font-size: 0.9rem; font-weight: 700; color: var(--navy); line-height: 1.3; margin-bottom: 0.5rem; }
     
     /* NEW INLINE BADGES */
     .badge-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
@@ -82,7 +82,7 @@
     .badge-quota { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
     .badge-quota.full { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-    .status-text { font-size: 0.75rem; font-weight: 800; margin-top: 0.5rem; }
+    .status-text { display: block; font-size: 0.75rem; font-weight: 800; margin-top: 0.5rem; }
     .status-available { color: var(--blue); }
     .status-selected { color: var(--success); }
     .status-restricted { color: var(--danger); }
@@ -225,18 +225,18 @@
                     <div class="course-tile <%= tileClass %>">
                   <% } %>
 
-                      <div class="tile-header">
+                      <span class="tile-header">
                         <span class="tile-code"><%= course.code %></span>
-                      </div>
-                      <div class="tile-title"><%= course.title %></div>
+                      </span>
+                      <span class="tile-title"><%= course.title %></span>
                       
                       <!-- INLINE BADGES (CREDIT & QUOTA) -->
-                      <div class="badge-row">
+                      <span class="badge-row">
                         <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
                         <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
-                      </div>
+                      </span>
 
-                      <div class="status-text <%= statusClass %>"><%= statusText %></div>
+                      <span class="status-text <%= statusClass %>"><%= statusText %></span>
 
                   <% if (clickable || cartItem) { %>
                       </button>
@@ -290,18 +290,18 @@
                     <div class="course-tile <%= tileClass %>">
                   <% } %>
 
-                      <div class="tile-header">
+                      <span class="tile-header">
                         <span class="tile-code"><%= course.code %></span>
-                      </div>
-                      <div class="tile-title"><%= course.title %></div>
+                      </span>
+                      <span class="tile-title"><%= course.title %></span>
                       
                       <!-- INLINE BADGES -->
-                      <div class="badge-row">
+                      <span class="badge-row">
                         <span class="badge badge-credit"><i class="fas fa-star"></i> <%= course.credits %> CR</span>
                         <span class="badge badge-quota <%= isQuotaFull ? 'full' : '' %>"><i class="fas fa-users"></i> Q: <%= course.enrolled_count %>/<%= course.quota %></span>
-                      </div>
+                      </span>
 
-                      <div class="status-text <%= statusClass %>"><%= statusText %></div>
+                      <span class="status-text <%= statusClass %>"><%= statusText %></span>
 
                   <% if (clickable || cartItem) { %>
                       </button>

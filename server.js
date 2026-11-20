@@ -524,7 +524,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
 // ============================================
 app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
   try {
-    // 1. Fetch enrolled courses with section times
+    // 1. Fetch enrolled courses
     const scheduleRes = await pool.query(`
       SELECT c.code, c.title, c.credits, s.group_name, s.day_of_week, 
              s.start_time, s.end_time, s.room, u.full_name AS teacher_name
@@ -536,7 +536,7 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
       ORDER BY c.code ASC
     `, [req.session.user.id]);
 
-    // 2. Fetch student profile for header info
+    // 2. Fetch profile
     const profileRes = await pool.query(`
       SELECT sp.class_level, sp.current_semester, sp.admission_number 
       FROM student_profiles sp WHERE sp.user_id = $1
@@ -545,14 +545,14 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
     const classes = scheduleRes.rows;
     const profile = profileRes.rows[0] || {};
     
-    // 3. Setup Grid
+    // 3. Setup Time Grid (Supports 08:00 to 19:00)
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const timeSlots = [
       '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
       '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
     ];
 
-    // Assign consistent colors
+    // Assign consistent colors based on course code
     const colorPalette = ['#1e88e5', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00acc1', '#3949ab', '#d81b60'];
     const colorMap = {};
     let colorIndex = 0;
@@ -563,25 +563,31 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
       }
     });
 
+    // Initialize an empty grid
     const grid = {};
     days.forEach(day => {
       grid[day] = {};
       timeSlots.forEach(time => grid[day][time] = null);
     });
 
+    // Place classes into the grid
     classes.forEach(cls => {
-      const start = cls.start_time ? cls.start_time.slice(0, 5) : null;
-      if (start && grid[cls.day_of_week] && grid[cls.day_of_week][start] !== undefined) {
+      if (!cls.start_time) return;
+      
+      // Force format to HH:MM (removes seconds if they exist)
+      const start = cls.start_time.slice(0, 5);
+      const end = cls.end_time ? cls.end_time.slice(0, 5) : '';
+      
+      if (grid[cls.day_of_week] && grid[cls.day_of_week][start] !== undefined) {
         grid[cls.day_of_week][start] = {
           ...cls,
           start_time: start,
-          end_time: cls.end_time ? cls.end_time.slice(0, 5) : '',
+          end_time: end,
           color: colorMap[cls.code]
         };
       }
     });
 
-    // Calculate total credits
     const totalCredits = classes.reduce((sum, c) => sum + Number(c.credits), 0);
 
     res.render('timetable', { 
@@ -597,7 +603,6 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
     res.status(500).send("Timetable Error: " + err.message); 
   }
 });
-
 app.get('/sis/my/attendance', requireRole('student'), async (req, res) => {
   try {
     const attendanceRes = await pool.query(`

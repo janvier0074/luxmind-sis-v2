@@ -523,6 +523,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
 // --- STUDENT: TIMETABLE (CIU STYLE) ---
 // ============================================
 app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
+ return res.send("SERVER IS UPDATED"); // <--- ADD THIS LINE
   try {
     // 1. Fetch enrolled courses
     const scheduleRes = await pool.query(`

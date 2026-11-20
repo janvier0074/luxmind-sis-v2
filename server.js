@@ -16,7 +16,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const { Resend } = require('resend');
 const multer = require('multer');
-const upload = multer({
+const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // Increased to 5MB for PDFs
 });
@@ -45,28 +45,13 @@ const pool = new Pool({
 });
 const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
-// ✅ FIX: Cache the active academic period id for course_registrations inserts
-async function getActiveAcademicPeriodId() {
-  const r = await pool.query(
-    `SELECT id FROM academic_periods WHERE is_active = true ORDER BY id DESC LIMIT 1`
-  );
-  if (r.rows.length === 0) {
-    const err = new Error(
-      'No active academic period is configured. Ask an admin to activate one in Admin → Periods.'
-    );
-    err.code = 'NO_ACTIVE_PERIOD';
-    throw err;
-  }
-  return r.rows[0].id;
-}
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: 'luxmind-secret',
-  resave: false,
+app.use(session({ 
+  secret: 'luxmind-secret', 
+  resave: false, 
   saveUninitialized: false,
   cookie: { secure: true, sameSite: 'none', httpOnly: true }
 }));
@@ -87,7 +72,7 @@ app.use(async (req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.flash = { success: req.flash('success'), error: req.flash('error') };
   res.locals.unseenDocs = 0;
-
+  
   if (req.session.user && req.session.user.role === 'student') {
     try {
       const r = await pool.query(
@@ -115,6 +100,9 @@ function getGreeting() {
   if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+
+
 
 // ============================================
 // --- PUBLIC APPLICATION FORM (/apply) ---
@@ -233,10 +221,10 @@ app.post('/login', async (req, res) => {
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
       WHERE (u.username = $1 OR sp.admission_number = $1) AND u.password = $2
     `, [username, password]);
-
+    
     if (result.rows.length > 0) {
       req.session.user = result.rows[0];
-
+      
       // Check if this user is a Dean of any faculty
       let deanFaculty = null;
       try {
@@ -259,7 +247,7 @@ app.post('/login', async (req, res) => {
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');
       if (deanFaculty) return res.redirect('/sis/dean');
       if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
-
+      
       return res.redirect('/sis/my');
     }
 
@@ -287,7 +275,7 @@ const requireRole = (...allowedRoles) => {
     if (!req.session.user) {
       return res.redirect('/login');
     }
-
+    
     if (!allowedRoles.includes(req.session.user.role)) {
       return res.status(403).send(`
         <div style="font-family: system-ui; padding: 3rem; text-align: center; max-width: 600px; margin: 0 auto;">
@@ -304,10 +292,12 @@ const requireRole = (...allowedRoles) => {
         </div>
       `);
     }
-
+    
     next();
   };
 };
+
+
 
 // ============================================
 // --- INTERNATIONAL OFFICE: TEAM GUARD ---
@@ -343,6 +333,7 @@ const requireIntlTeam = (allowedTeams) => {
   };
 };
 
+
 // ============================================
 // --- NOTIFICATIONS API ---
 // ============================================
@@ -355,9 +346,9 @@ app.get('/api/notifications', requireLogin, async (req, res) => {
       ORDER BY created_at DESC
       LIMIT 10
     `, [req.session.user.id]);
-
+    
     const unreadCount = result.rows.filter(n => !n.is_read).length;
-
+    
     res.json({
       notifications: result.rows,
       unreadCount: unreadCount
@@ -410,7 +401,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
   try {
     const profileRes = await pool.query(`SELECT * FROM student_profiles WHERE user_id = $1`, [req.session.user.id]);
     const profile = profileRes.rows[0] || { current_semester: 1, class_level: 'Computer Engineering' };
-
+    
     const creditsRes = await pool.query(`
       SELECT COALESCE(SUM(c.credits), 0) as total_credits 
       FROM enrollments e 
@@ -419,10 +410,10 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
     `, [req.session.user.id]);
     const credits = creditsRes.rows[0].total_credits;
 
-    // ==============================
+        // ==============================
     // REAL DASHBOARD CALCULATIONS
     // ==============================
-
+    
     // 1. Calculate real CGPA from published grades
     const cgpaRes = await pool.query(`
       SELECT 
@@ -442,7 +433,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       LIMIT 1
     `, [profile.class_level, profile.current_semester]);
     const baseTuition = Number(feeRes.rows[0]?.amount) || 0;
-
+    
     // Apply scholarship (same logic as finance page)
     const studentScholarshipRes = await pool.query(`
       SELECT is_international, high_school_gpa FROM student_profiles WHERE user_id = $1
@@ -453,9 +444,9 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
     if (sp.high_school_gpa >= 3.0 && sp.high_school_gpa < 3.5) scholarshipPct = 75;
     if (sp.high_school_gpa >= 3.5 && sp.high_school_gpa < 3.8) scholarshipPct = 90;
     if (sp.high_school_gpa >= 3.8) scholarshipPct = 100;
-
+    
     const netTuition = baseTuition - (baseTuition * scholarshipPct / 100);
-
+    
     const paidRes = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE student_id = $1`, [req.session.user.id]);
     const totalPaidDash = Number(paidRes.rows[0].total);
     const realBalance = Math.max(0, netTuition - totalPaidDash);
@@ -467,7 +458,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       ORDER BY due_date ASC LIMIT 1
     `, [req.session.user.id]);
     const nextInstallment = nextInstRes.rows[0] || null;
-
+    
     // 4. Count overdue installments
     const overdueCountRes = await pool.query(`
       SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
@@ -478,17 +469,17 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
     const overdueTotal = Number(overdueCountRes.rows[0].total) || 0;
 
     // 5. Build stats object with REAL values
-    const stats = {
-      gpa: realGpa,
-      credits: credits,
-      balance: realBalance,
+    const stats = { 
+      gpa: realGpa, 
+      credits: credits, 
+      balance: realBalance, 
       semester: profile.current_semester,
       nextInstallment: nextInstallment,
       overdueCount: overdueCount,
       overdueTotal: overdueTotal
     };
 
-    // ✅ Fix: only count announcements NEWER than last view
+       // ✅ Fix: only count announcements NEWER than last view
     const newAnnCount = await pool.query(`
       SELECT COUNT(*) FROM course_announcements a
       JOIN course_sections s ON s.id = a.section_id
@@ -499,7 +490,7 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
         NOW() - INTERVAL '7 days'
       )
     `, [req.session.user.id]);
-
+    
     const globalAnnCount = await pool.query(`
       SELECT COUNT(*) FROM global_announcements 
       WHERE created_at > COALESCE(
@@ -514,10 +505,10 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
       ORDER BY created_at DESC LIMIT 5
     `);
 
-    res.render('dashboard', {
-      user: req.session.user,
-      profile: profile,
-      stats: stats,
+    res.render('dashboard', { 
+      user: req.session.user, 
+      profile: profile, 
+      stats: stats, 
       greeting: getGreeting(),
       announcementCount: parseInt(newAnnCount.rows[0].count) || 0,
       globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0,
@@ -641,200 +632,127 @@ app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("Transcript Error: " + err.message); }
 });
 
-// ============================================
-// --- STUDENT: COURSE REGISTRATION (FIXED) ---
-// ============================================
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
-    // ============================================
-    // FINANCIAL ELIGIBILITY CHECK (unchanged logic)
-    // ============================================
     const feeRes = await pool.query(`
-      SELECT COALESCE(SUM(GREATEST(net_amount - paid_amount, 0)), 0) AS outstanding_balance
-      FROM semester_invoices
-      WHERE student_id = $1 AND status != 'paid'
+      SELECT COALESCE(fs.amount, 0) AS amount_billed,
+             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
+      FROM student_profiles sp
+      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+      WHERE sp.user_id = $1
     `, [req.session.user.id]);
-    const debt = Number(feeRes.rows[0].outstanding_balance || 0);
 
-    const instRes = await pool.query(
-      `SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`,
-      [req.session.user.id]
-    );
-    const hasApprovedInstallment = instRes.rows.length > 0;
+    if (feeRes.rows.length > 0) {
+      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
+      
+      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+      const hasApprovedInstallment2 = instRes2.rows.length > 0;
 
-    if (debt > 0 && !hasApprovedInstallment) {
-      req.flash('error',
-        `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
-      return res.redirect('/sis/my/finance');
+      if (debt > 0 && !hasApprovedInstallment2) {
+        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+        return res.redirect('/sis/my/finance');
+      }
     }
 
-    // ============================================
-    // EXISTING ENROLLMENT CHECK (unchanged)
-    // ============================================
-    const enrollCheck = await pool.query(
-      `SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`,
-      [req.session.user.id]
-    );
+    const enrollCheck = await pool.query(`SELECT id FROM enrollments WHERE user_id = $1 LIMIT 1`, [req.session.user.id]);
     const hasRegistered = enrollCheck.rows.length > 0;
 
+      // ============================================
+    // ✅ NEW: Guided Registration — Get student's semester and settings
     // ============================================
-    // ✅ FIX: RESOLVE DEPARTMENT FROM user OR profile
-    // ============================================
-    const profileRes = await pool.query(`
-      SELECT
-        COALESCE(sp.department_id, u.department_id) AS department_id,
-        COALESCE(sp.current_semester, 1)            AS current_semester,
-        sp.class_level
-      FROM users u
-      LEFT JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE u.id = $1
-      LIMIT 1
+    const semesterRes = await pool.query(`
+      SELECT current_semester FROM student_profiles WHERE user_id = $1
     `, [req.session.user.id]);
+    const studentSemester = semesterRes.rows[0]?.current_semester || 1;
 
-    const studentProfile = profileRes.rows[0];
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
+    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21, registration_open: true };
 
-    if (!studentProfile || !studentProfile.department_id) {
-      req.flash('error',
-        'Your academic department is not assigned. Please contact the administration.');
+    // Check if registration is globally closed
+    if (!settings.registration_open) {
+      req.flash('error', 'Registration is currently closed. Please check back during the registration window.');
       return res.redirect('/sis/my');
     }
 
-    const studentDepartmentId = studentProfile.department_id;
-    const studentSemester = Number(studentProfile.current_semester || 1);
-
-    // ============================================
-    // FAILED COURSES (retakes)
-    // ============================================
+    // Get list of courses student has FAILED (for retake eligibility)
     const failedRes = await pool.query(`
-      SELECT DISTINCT c.id
-      FROM grades g
+      SELECT DISTINCT c.id FROM grades g
       JOIN course_sections s ON s.id = g.section_id
       JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1
-        AND g.letter_grade = 'F'
-        AND g.is_published = true
+      WHERE g.student_id = $1 AND g.letter_grade = 'F' AND g.is_published = true
     `, [req.session.user.id]);
     const failedCourseIds = failedRes.rows.map(r => r.id);
 
-    // ============================================
-    // ✅ FIX: CURRICULUM-DRIVEN COURSE FETCH
-    // - curriculum joined on student's department_id
-    // - current semester + any failed courses (retakes)
-    // ============================================
+    // ✅ CHANGED: Show ALL courses (no semester filter). Quota 0 no longer blocks.
+      const coursesRes = await pool.query(`
+      SELECT c.*, COALESCE(NULLIF(c.quota, 0), 40) as quota,
+             s.id as section_id, s.day_of_week, s.start_time, s.end_time,
+             ((SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
+              (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor')) as enrolled_count,
+             CASE WHEN c.semester_number > $1 THEN true ELSE false END AS is_future
+      FROM courses c 
+      LEFT JOIN course_sections s ON s.course_id = c.id
+      ORDER BY c.semester_number ASC, c.code ASC
+    `, [studentSemester]);
+
     const passedRes = await pool.query(`
-      SELECT c.id
-      FROM grades g
-      JOIN course_sections s ON s.id = g.section_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE g.student_id = $1
-        AND g.letter_grade NOT IN ('F', 'N/A')
-        AND g.is_published = true
+      SELECT c.id FROM grades g 
+      JOIN course_sections s ON s.id = g.section_id 
+      JOIN courses c ON c.id = s.course_id 
+      WHERE g.student_id = $1 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
     `, [req.session.user.id]);
     const passedCourseIds = passedRes.rows.map(r => r.id);
 
-    const coursesRes = await pool.query(`
-      SELECT DISTINCT ON (c.id)
-        c.*,
-        cu.semester_number AS curriculum_semester,
-        COALESCE(c.quota, 40) AS quota,
-
-        (
-          SELECT COUNT(*) FROM enrollments e
-          WHERE e.course_id = c.id
-        ) + (
-          SELECT COUNT(*) FROM course_registrations cr
-          WHERE cr.course_id = c.id
-            AND cr.status = 'pending_advisor'
-        ) AS enrolled_count
-
-      FROM curriculum cu
-      JOIN courses c
-        ON UPPER(TRIM(c.code)) = UPPER(TRIM(cu.course_code))
-      WHERE cu.department_id = $1
-        AND (
-          cu.semester_number = $2
-          OR c.id = ANY($3::int[])
-        )
-      ORDER BY c.id, cu.semester_number ASC
-    `, [studentDepartmentId, studentSemester, failedCourseIds.length ? failedCourseIds : [-1]]);
-
-    // ============================================
-    // ENROLLED / CART / PENDING (unchanged)
-    // ============================================
     const enrolledRes = await pool.query(`
-      SELECT c.id, s.day_of_week, s.start_time, s.end_time
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN course_sections s ON s.id = e.section_id
-      WHERE e.user_id = $1
-
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
+      FROM enrollments e JOIN courses c ON c.id = e.course_id LEFT JOIN course_sections s ON s.id = e.section_id WHERE e.user_id = $1
       UNION
-
-      SELECT c.id, s.day_of_week, s.start_time, s.end_time
-      FROM course_registrations cr
-      JOIN courses c ON c.id = cr.course_id
-      LEFT JOIN course_sections s ON s.course_id = c.id
-      WHERE cr.student_id = $1
-        AND cr.status IN ('draft', 'pending_advisor')
+      SELECT c.id, s.day_of_week, s.start_time, s.end_time 
+      FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
     `, [req.session.user.id]);
 
-    const cartRes = await pool.query(`
-      SELECT cr.id AS cart_id, cr.course_id, c.title, c.code, c.credits
-      FROM course_registrations cr
-      JOIN courses c ON c.id = cr.course_id
-      WHERE cr.student_id = $1 AND cr.status = 'draft'
-    `, [req.session.user.id]);
+    const cartRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'draft'`, [req.session.user.id]);
+    const pendingRes = await pool.query(`SELECT cr.id as cart_id, cr.course_id, c.title, c.code, c.credits FROM course_registrations cr JOIN courses c ON c.id = cr.course_id WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'`, [req.session.user.id]);
 
-    const pendingRes = await pool.query(`
-      SELECT cr.id AS cart_id, cr.course_id, c.title, c.code, c.credits
-      FROM course_registrations cr
-      JOIN courses c ON c.id = cr.course_id
-      WHERE cr.student_id = $1 AND cr.status = 'pending_advisor'
-    `, [req.session.user.id]);
-
-    // ============================================
-    // ELIGIBILITY PROCESSING
-    // ============================================
+    // ✅ CHANGED: isEligible is ALWAYS true. `reason` is informational only.
+    // Server-side guards still exist on POST /add for prereq, conflict, credits.
     const processedCourses = coursesRes.rows.map(course => {
-      let isEligible = true;
       let reason = '';
 
-      if (passedCourseIds.includes(course.id)) {
-        isEligible = false;
-        reason = 'Already Passed';
+      if (course.is_future) {
+        reason = 'Future Semester';
       }
+
       if (course.enrolled_count >= course.quota) {
-        isEligible = false;
         reason = 'Section Full';
       }
+
       if (course.prerequisite_id && !passedCourseIds.includes(course.prerequisite_id)) {
-        isEligible = false;
         reason = 'Missing Prerequisite';
       }
 
-      return { ...course, isEligible, reason };
+      if (course.day_of_week && course.start_time) {
+        const conflict = enrolledRes.rows.find(e => 
+          e.id !== course.id && 
+          e.day_of_week === course.day_of_week && 
+          e.start_time === course.start_time
+        );
+        if (conflict) {
+          reason = 'Schedule Conflict';
+        }
+      }
+
+      return { ...course, isEligible: true, reason };
     });
 
-    const totalCartCredits = cartRes.rows.reduce((s, c) => s + Number(c.credits), 0);
-    const totalPendingCredits = pendingRes.rows.reduce((s, c) => s + Number(c.credits), 0);
-
-    // ============================================
-    // SETTINGS + RENDER
-    // ============================================
-    const settingsRes = await pool.query(
-      `SELECT * FROM registration_settings ORDER BY id ASC LIMIT 1`
-    );
-    const settings = settingsRes.rows[0] || {
-      min_credits: 12,
-      max_credits: 21,
-      registration_open: true
-    };
-
-    res.render('registration', {
-      user: req.session.user,
-      courses: processedCourses,
-      cart: cartRes.rows,
-      pending: pendingRes.rows,
+      const totalCartCredits = cartRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
+    const totalPendingCredits = pendingRes.rows.reduce((sum, c) => sum + Number(c.credits), 0);
+    
+    res.render('registration', { 
+      user: req.session.user, 
+      courses: processedCourses, 
+      cart: cartRes.rows, 
+      pending: pendingRes.rows, 
       hasRegistered,
       studentSemester,
       minCredits: settings.min_credits,
@@ -843,269 +761,136 @@ app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
       totalCartCredits,
       totalPendingCredits
     });
-
   } catch (err) {
-    console.error('Registration GET Error:', err);
-    res.status(500).send('Registration Error: ' + err.message);
+    res.status(500).send("Registration Error: " + err.message);
   }
 });
 
-
-
-
 app.post('/sis/my/registration/add', requireRole('student'), async (req, res) => {
   const courseId = Number(req.body.course_id);
-  const studentId = req.session.user.id;
 
   try {
-    // ============================================
-    // VALIDATE REQUEST
-    // ============================================
-    if (!Number.isInteger(courseId) || courseId <= 0) {
-      req.flash('error', 'Invalid course selection.');
-      return res.redirect('/sis/my/registration');
-    }
-
-    // ============================================
-    // GET ACTIVE ACADEMIC PERIOD
-    // ============================================
-    const activePeriodId = await getActiveAcademicPeriodId();
-
-    // ============================================
-    // GET STUDENT DEPARTMENT
-    // ============================================
-    const profileRes = await pool.query(`
-      SELECT department_id
-      FROM student_profiles
-      WHERE user_id = $1
-      LIMIT 1
-    `, [studentId]);
-
-    if (
-      profileRes.rows.length === 0 ||
-      !profileRes.rows[0].department_id
-    ) {
-      req.flash('error', 'Your department is not configured. Please contact the administrator.');
-      return res.redirect('/sis/my/registration');
-    }
-
-    const departmentId = profileRes.rows[0].department_id;
-
-    // ============================================
-    // FINANCIAL ELIGIBILITY CHECK
-    // ============================================
     const feeRes = await pool.query(`
-      SELECT
-        COALESCE(
-          SUM(GREATEST(net_amount - paid_amount, 0)),
-          0
-        ) AS outstanding_balance
-      FROM semester_invoices
-      WHERE student_id = $1
-        AND status != 'paid'
-    `, [studentId]);
+      SELECT COALESCE(fs.amount, 0) AS amount_billed,
+             COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = $1), 0) AS amount_paid
+      FROM student_profiles sp
+      LEFT JOIN fee_structure fs ON LOWER(fs.program) = LOWER(sp.class_level) AND fs.semester = sp.current_semester
+      WHERE sp.user_id = $1
+    `, [req.session.user.id]);
 
-    const debt = Number(feeRes.rows[0].outstanding_balance || 0);
+    if (feeRes.rows.length > 0) {
+      const debt = Number(feeRes.rows[0].amount_billed) - Number(feeRes.rows[0].amount_paid);
+      const instRes2 = await pool.query(`SELECT id FROM installment_requests WHERE student_id = $1 AND status = 'approved'`, [req.session.user.id]);
+      const hasApprovedInstallment2 = instRes2.rows.length > 0;
 
-    const instRes = await pool.query(`
-      SELECT id
-      FROM installment_requests
-      WHERE student_id = $1
-        AND status = 'approved'
-      LIMIT 1
-    `, [studentId]);
-
-    const hasApprovedInstallment = instRes.rows.length > 0;
-
-    if (debt > 0 && !hasApprovedInstallment) {
-      req.flash(
-        'error',
-        `Financial Hold: You owe $${debt.toFixed(2)}. Clear your balance or obtain an approved installment plan.`
-      );
-      return res.redirect('/sis/my/registration');
+      if (debt > 0 && !hasApprovedInstallment2) {
+        req.flash('error', `Financial Hold: You owe $${debt.toFixed(2)}. You must clear your balance or have an approved installment plan to register.`);
+        return res.redirect('/sis/my/registration');
+      }
     }
 
-    // ============================================
-    // GET COURSE AND VALIDATE DEPARTMENT
-    // ============================================
     const courseRes = await pool.query(`
-      SELECT
-        c.*,
-        COALESCE(c.quota, 40) AS quota
-      FROM courses c
-      WHERE c.id = $1
-        AND c.department_id = $2
-      LIMIT 1
-    `, [courseId, departmentId]);
-
-    if (courseRes.rows.length === 0) {
-      req.flash('error', 'This course does not belong to your department or does not exist.');
-      return res.redirect('/sis/my/registration');
-    }
-
+      SELECT c.*, COALESCE(NULLIF(c.quota, 0), 40) as quota, s.day_of_week, s.start_time, s.end_time,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) + 
+             (SELECT COUNT(*) FROM course_registrations cr WHERE cr.course_id = c.id AND cr.status = 'pending_advisor') as enrolled_count
+      FROM courses c LEFT JOIN course_sections s ON s.course_id = c.id WHERE c.id = $1 LIMIT 1
+    `, [courseId]);
+    
+    if (courseRes.rows.length === 0) return res.redirect('/sis/my/registration');
     const course = courseRes.rows[0];
 
-    // ============================================
-    // CHECK EXISTING REGISTRATION
-    // ============================================
-    const existing = await pool.query(`
-      SELECT id, status
-      FROM course_registrations
-      WHERE student_id = $1
-        AND course_id = $2
-        AND academic_period_id = $3
-        AND status IN ('draft', 'pending_advisor', 'approved', 'waitlisted')
-      LIMIT 1
-    `, [studentId, courseId, activePeriodId]);
+    if (course.enrolled_count >= course.quota) {
+      const onWaitlist = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2 AND status = 'waitlisted'`, [req.session.user.id, courseId]);
+      
+      if (onWaitlist.rows.length > 0) {
+        req.flash('error', 'You are already on the waitlist for this course.');
+        return res.redirect('/sis/my/registration');
+      }
 
-    if (existing.rows.length > 0) {
-      req.flash('error', 'You already have a registration for this course in the active academic period.');
+      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'waitlisted')`, [req.session.user.id, courseId]);
+      
+      const waitPos = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE course_id = $1 AND status = 'waitlisted'`, [courseId]);
+      
+      req.flash('success', `Section is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].count}`);
       return res.redirect('/sis/my/registration');
     }
 
-    // ============================================
-    // CHECK PREREQUISITES
-    // ============================================
     if (course.prerequisite_id) {
       const passedCheck = await pool.query(`
-        SELECT g.id
-        FROM grades g
-        JOIN course_sections s ON s.id = g.section_id
-        WHERE g.student_id = $1
-          AND s.course_id = $2
-          AND g.letter_grade NOT IN ('F', 'N/A')
-          AND g.is_published = true
-        LIMIT 1
-      `, [studentId, course.prerequisite_id]);
-
+        SELECT g.id FROM grades g JOIN course_sections s ON s.id = g.section_id
+        WHERE g.student_id = $1 AND s.course_id = $2 AND g.letter_grade NOT IN ('F', 'N/A') AND g.is_published = true
+      `, [req.session.user.id, course.prerequisite_id]);
+      
       if (passedCheck.rows.length === 0) {
         req.flash('error', 'Cannot add course: Missing prerequisite.');
         return res.redirect('/sis/my/registration');
       }
     }
 
-    // ============================================
-    // CHECK COURSE CAPACITY
-    // ============================================
-    const capacityRes = await pool.query(`
-      SELECT
-        (
-          SELECT COUNT(*)
-          FROM enrollments e
-          WHERE e.course_id = $1
-        ) +
-        (
-          SELECT COUNT(*)
-          FROM course_registrations cr
-          WHERE cr.course_id = $1
-            AND cr.academic_period_id = $2
-            AND cr.status IN ('pending_advisor', 'approved')
-        ) AS enrolled_count
-    `, [courseId, activePeriodId]);
+    if (course.day_of_week && course.start_time) {
+      const conflictCheck = await pool.query(`
+        SELECT e.id FROM enrollments e JOIN course_sections s ON s.id = e.section_id
+        WHERE e.user_id = $1 AND s.day_of_week = $2 AND s.start_time = $3
+        UNION
+        SELECT cr.id FROM course_registrations cr JOIN courses c ON c.id = cr.course_id LEFT JOIN course_sections s ON s.course_id = c.id
+        WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor') AND s.day_of_week = $2 AND s.start_time = $3
+      `, [req.session.user.id, course.day_of_week, course.start_time]);
 
-    const enrolledCount = Number(capacityRes.rows[0].enrolled_count || 0);
-    const quota = Number(course.quota);
-
-    // ============================================
-    // ADD TO WAITLIST IF COURSE IS FULL
-    // ============================================
-    if (enrolledCount >= quota) {
-      await pool.query(`
-        INSERT INTO course_registrations
-          (student_id, course_id, status, academic_period_id)
-        VALUES ($1, $2, 'waitlisted', $3)
-      `, [studentId, courseId, activePeriodId]);
-
-      const waitPos = await pool.query(`
-        SELECT COUNT(*) AS position
-        FROM course_registrations
-        WHERE course_id = $1
-          AND academic_period_id = $2
-          AND status = 'waitlisted'
-      `, [courseId, activePeriodId]);
-
-      req.flash(
-        'success',
-        `Course is full. You have been added to the waitlist. Your position: #${waitPos.rows[0].position}`
-      );
-
-      return res.redirect('/sis/my/registration');
+      if (conflictCheck.rows.length > 0) {
+        req.flash('error', 'Cannot add course: Schedule conflict with another course.');
+        return res.redirect('/sis/my/registration');
+      }
     }
 
-    // ============================================
-    // CHECK SCHEDULE CONFLICTS
-    // ============================================
-    const sectionRes = await pool.query(`
-      SELECT id
-      FROM course_sections
-      WHERE course_id = $1
-        AND academic_period_id = $2
-      ORDER BY id ASC
-      LIMIT 1
-    `, [courseId, activePeriodId]);
 
-    const sectionId = sectionRes.rows[0]?.id || null;
 
-    // ============================================
-    // ENFORCE MAXIMUM CREDIT LIMIT
-    // ============================================
-    const settingsRes = await pool.query(`
-      SELECT *
-      FROM registration_settings
-      ORDER BY id ASC
-      LIMIT 1
-    `);
 
-    const settings = settingsRes.rows[0] || {
-      min_credits: 12,
-      max_credits: 21
-    };
 
+    // ✅ NEW: Enforce max credit limit
+    const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
+    const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
+    
     const currentCartRes = await pool.query(`
-      SELECT COALESCE(SUM(c.credits), 0) AS total_credits
+      SELECT COALESCE(SUM(c.credits), 0) as total_credits
       FROM course_registrations cr
       JOIN courses c ON c.id = cr.course_id
-      WHERE cr.student_id = $1
-        AND cr.academic_period_id = $2
-        AND cr.status IN ('draft', 'pending_advisor')
-    `, [studentId, activePeriodId]);
-
-    const currentCredits = Number(currentCartRes.rows[0].total_credits || 0);
-    const newCourseCredits = Number(course.credits || 0);
-
-    if (currentCredits + newCourseCredits > Number(settings.max_credits)) {
-      req.flash(
-        'error',
-        `Credit limit exceeded. Current credits: ${currentCredits}. Maximum: ${settings.max_credits}.`
-      );
+      WHERE cr.student_id = $1 AND cr.status IN ('draft', 'pending_advisor')
+    `, [req.session.user.id]);
+    const currentCredits = Number(currentCartRes.rows[0].total_credits);
+    const newCourseCredits = Number(course.credits);
+    
+    if (currentCredits + newCourseCredits > settings.max_credits) {
+      req.flash('error', `Cannot add "${course.code}": Credit limit exceeded. You have ${currentCredits}/${settings.max_credits} credits. Adding ${newCourseCredits} more would go over the maximum.`);
       return res.redirect('/sis/my/registration');
     }
 
-    // ============================================
-    // INSERT DRAFT REGISTRATION
-    // ============================================
-    await pool.query(`
-      INSERT INTO course_registrations
-        (student_id, course_id, section_id, status, academic_period_id)
-      VALUES ($1, $2, $3, 'draft', $4)
-    `, [studentId, courseId, sectionId, activePeriodId]);
 
-    req.flash('success', 'Course added to your registration cart.');
-    return res.redirect('/sis/my/registration');
 
-  } catch (err) {
-    console.error('Registration POST Error:', err);
 
-    if (err.code === 'NO_ACTIVE_PERIOD') {
-      req.flash('error', err.message);
-      return res.redirect('/sis/my/registration');
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const existing = await pool.query(`SELECT id FROM course_registrations WHERE student_id = $1 AND course_id = $2`, [req.session.user.id, courseId]);
+    if (existing.rows.length === 0) {
+      await pool.query(`INSERT INTO course_registrations (student_id, course_id, status) VALUES ($1, $2, 'draft')`, [req.session.user.id, courseId]);
+      req.flash('success', 'Course added to cart.');
     }
-
-    req.flash('error', 'Unable to add course. Please contact the administrator.');
-    return res.redirect('/sis/my/registration');
+    
+    res.redirect('/sis/my/registration');
+  } catch (err) { 
+    res.status(500).send("Error adding: " + err.message); 
   }
 });
-
 
 app.post('/sis/my/registration/remove', requireRole('student'), async (req, res) => {
   try {
@@ -1119,7 +904,7 @@ app.post('/sis/my/registration/submit', requireRole('student'), async (req, res)
     // ✅ NEW: Enforce min credit limit before submission
     const settingsRes = await pool.query(`SELECT * FROM registration_settings LIMIT 1`);
     const settings = settingsRes.rows[0] || { min_credits: 12, max_credits: 21 };
-
+    
     const cartRes = await pool.query(`
       SELECT COALESCE(SUM(c.credits), 0) as total_credits
       FROM course_registrations cr
@@ -1127,12 +912,12 @@ app.post('/sis/my/registration/submit', requireRole('student'), async (req, res)
       WHERE cr.student_id = $1 AND cr.status = 'draft'
     `, [req.session.user.id]);
     const cartCredits = Number(cartRes.rows[0].total_credits);
-
+    
     if (cartCredits < settings.min_credits) {
       req.flash('error', `Cannot submit: You have ${cartCredits} credits but need at least ${settings.min_credits} to submit your registration.`);
       return res.redirect('/sis/my/registration');
     }
-
+    
     await pool.query(`UPDATE course_registrations SET status = 'pending_advisor' WHERE student_id = $1 AND status = 'draft'`, [req.session.user.id]);
     req.flash('success', 'Registration submitted to your advisor for review.');
     res.redirect('/sis/my/registration');
@@ -1206,7 +991,7 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
 
     // 6. BUILD TRANSACTIONS LEDGER
     const paymentsRes = await pool.query(`SELECT id, amount, created_at FROM payments WHERE student_id = $1`, [req.session.user.id]);
-
+    
     let transactions = paymentsRes.rows.map(p => ({
       date: new Date(p.created_at).toLocaleDateString('en-GB').replace(/\//g, '.'),
       type: 'Payment',
@@ -1230,7 +1015,7 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
         created_at: new Date().toLocaleString('en-GB')
       });
     }
-
+    
     transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // 7. INSTALLMENT REQUESTS
@@ -1238,22 +1023,22 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const installments = instRes.rows;
     const hasApprovedInstallment = installments.some(i => i.status === 'approved');
 
-    // 8. DEBT MATH (aggregated from semester_invoices)
+        // 8. DEBT MATH (aggregated from semester_invoices)
     const allInvoicesRes = await pool.query(`
-      SELECT semester_number, net_amount, paid_amount, status, 
+            SELECT semester_number, net_amount, paid_amount, status, 
              base_amount, scholarship_amount, academic_year 
       FROM semester_invoices 
       WHERE student_id = $1 
       ORDER BY semester_number ASC
     `, [req.session.user.id]);
     const invoices = allInvoicesRes.rows;
-
+    
     let currentDebt = 0;
     let approachingDebt = 0;
     let pastDueDebt = 0;
-
+    
     invoices.forEach(inv => {
-      const remaining = Math.round((Number(inv.net_amount) - Number(inv.paid_amount)) * 100) / 100;
+            const remaining = Math.round((Number(inv.net_amount) - Number(inv.paid_amount)) * 100) / 100;
       if (remaining < 0.01) return;
       if (Number(inv.semester_number) === Number(student.current_semester)) {
         currentDebt += remaining;
@@ -1263,7 +1048,7 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
         pastDueDebt += remaining;
       }
     });
-
+    
     const totalDebt = pastDueDebt + currentDebt + approachingDebt;
 
     // 9. AUTO-FLAG OVERDUE PAYMENTS
@@ -1296,20 +1081,20 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
     const hasOverdue = scheduleRes.rows.some(s => s.status === 'overdue');
 
     // 13. RENDER
-    res.render('student-finance', {
-      user: req.session.user,
-      student,
-      baseTuition,
-      scholarshipName,
-      scholarshipPercentage,
-      scholarshipAmount,
-      netTuition,
-      totalPaid,
-      currentDebt: currentDebt > 0 ? currentDebt : 0,
+    res.render('student-finance', { 
+      user: req.session.user, 
+      student, 
+      baseTuition, 
+      scholarshipName, 
+      scholarshipPercentage, 
+      scholarshipAmount, 
+      netTuition, 
+      totalPaid, 
+            currentDebt: currentDebt > 0 ? currentDebt : 0,
       pastDueDebt: pastDueDebt > 0 ? pastDueDebt : 0,
       approachingDebt,
       totalDebt,
-      installments,
+           installments,
       hasApprovedInstallment,
       invoices,
       transactions,
@@ -1319,8 +1104,8 @@ app.get('/sis/my/finance', requireRole('student'), async (req, res) => {
       semesterEndDate: semesterEndDate ? new Date(semesterEndDate).toISOString().split('T')[0] : null,
       semesterStartDate: semesterStartDate ? new Date(semesterStartDate).toISOString().split('T')[0] : null
     });
-  } catch (err) {
-    res.status(500).send("Finance Error: " + err.message);
+  } catch (err) { 
+    res.status(500).send("Finance Error: " + err.message); 
   }
 });
 
@@ -1342,13 +1127,13 @@ app.post('/sis/my/finance/installment/request', requireRole('student'), async (r
 app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
   const { installment_id, amount } = req.body;
   const client = await pool.connect();
-
+  
   try {
     await client.query('BEGIN');
-
+    
     let payAmount = 0;
     let flashMsg = '';
-
+    
     // If paying a specific installment
     if (installment_id) {
       const schedRes = await client.query(
@@ -1362,17 +1147,17 @@ app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
       }
       payAmount = Number(schedRes.rows[0].amount);
       flashMsg = `Installment paid: $${payAmount.toFixed(2)}`;
-
+      
       // Mark installment as paid
       await client.query(`UPDATE installment_schedules SET status = 'paid' WHERE id = $1`, [installment_id]);
     } else {
       payAmount = Number(amount);
       flashMsg = `Payment of $${payAmount.toFixed(2)} processed successfully.`;
     }
-
+    
     // Record the payment
     await client.query(`INSERT INTO payments (student_id, amount) VALUES ($1, $2)`, [req.session.user.id, payAmount]);
-
+    
     // ============================================
     // ✅ NEW: Apply payment to invoices (FIFO — oldest semester first)
     // ============================================
@@ -1384,27 +1169,27 @@ app.post('/sis/my/finance/pay', requireRole('student'), async (req, res) => {
         AND net_amount > paid_amount
       ORDER BY semester_number ASC
     `, [req.session.user.id]);
-
+    
     let remaining = payAmount;
     for (const inv of invoicesRes.rows) {
       if (remaining <= 0) break;
-
+      
       const owed = Number(inv.net_amount) - Number(inv.paid_amount);
       const applyNow = Math.min(remaining, owed);
-      const newPaid = Math.round((Number(inv.paid_amount) + applyNow) * 100) / 100;
+            const newPaid = Math.round((Number(inv.paid_amount) + applyNow) * 100) / 100;
       const newStatus = newPaid >= Number(inv.net_amount) ? 'paid' : 'partial';
-
+      
       await client.query(`
         UPDATE semester_invoices 
         SET paid_amount = $1, status = $2 
         WHERE id = $3
       `, [newPaid, newStatus, inv.id]);
-
+      
       remaining -= applyNow;
     }
-
+    
     await client.query('COMMIT');
-
+    
     req.flash('success', flashMsg);
     res.redirect('/sis/my/finance');
   } catch (err) {
@@ -1439,13 +1224,13 @@ app.get('/sis/advisor/advisees', requireRole('teacher', 'advisor'), async (req, 
     const avgCGPA = totalAdvisees > 0 ? (advisees.reduce((sum, s) => sum + Number(s.cgpa), 0) / totalAdvisees).toFixed(2) : '0.00';
     const atRiskCount = advisees.filter(s => Number(s.cgpa) < 2.0).length;
 
-    res.render('advisor-advisees', {
-      user: req.session.user,
-      advisees,
-      totalAdvisees,
-      avgCGPA,
+    res.render('advisor-advisees', { 
+      user: req.session.user, 
+      advisees, 
+      totalAdvisees, 
+      avgCGPA, 
       atRiskCount,
-      greeting: getGreeting()
+      greeting: getGreeting() 
     });
   } catch (err) { res.status(500).send("Advisees Error: " + err.message); }
 });
@@ -1457,7 +1242,7 @@ app.get('/sis/advisor/advisees/:student_id', requireRole('teacher', 'advisor'), 
       FROM users u JOIN student_profiles sp ON sp.user_id = u.id
       WHERE u.id = $1 AND sp.advisor_id = $2
     `, [req.params.student_id, req.session.user.id]);
-
+    
     if (studentRes.rows.length === 0) return res.redirect('/sis/advisor/advisees');
     const student = studentRes.rows[0];
 
@@ -1493,14 +1278,14 @@ app.get('/sis/advisor/advisees/:student_id', requireRole('teacher', 'advisor'), 
       transcript[sem].push(g);
     });
 
-    res.render('advisor-student-progress', {
-      user: req.session.user,
-      student,
-      transcript,
+    res.render('advisor-student-progress', { 
+      user: req.session.user, 
+      student, 
+      transcript, 
       enrollments: enrollmentsRes.rows,
       cgpa,
       totalCredits,
-      greeting: getGreeting()
+      greeting: getGreeting() 
     });
   } catch (err) { res.status(500).send("Progress Error: " + err.message); }
 });
@@ -1520,7 +1305,7 @@ app.get('/sis/advisor', requireRole('advisor'), async (req, res) => {
     `, [req.session.user.id]);
 
     const pendingRegs = await pool.query(`SELECT COUNT(*) FROM course_registrations WHERE status = 'pending_advisor'`);
-
+    
     const coursesRes = await pool.query(`
       SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time, 
              (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) as student_count 
@@ -1551,17 +1336,17 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
   const studentId = Number(req.body.student_id);
   try {
     const courses = await pool.query(`SELECT course_id FROM course_registrations WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
-
+    
     for (const c of courses.rows) {
       const sec = await pool.query(`SELECT id FROM course_sections WHERE course_id = $1 LIMIT 1`, [c.course_id]);
       const sectionId = sec.rows.length > 0 ? sec.rows[0].id : null;
       await pool.query(`INSERT INTO enrollments (user_id, course_id, section_id) VALUES ($1, $2, $3)`, [studentId, c.course_id, sectionId]);
     }
-
+    
     await pool.query(`UPDATE course_registrations SET status = 'approved' WHERE student_id = $1 AND status = 'pending_advisor'`, [studentId]);
 
     const studentRes = await pool.query(`SELECT email, full_name FROM users WHERE id = $1`, [studentId]);
-
+    
     if (studentRes.rows.length > 0) {
       const student = studentRes.rows[0];
       try {
@@ -1600,12 +1385,12 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       `SELECT id, name, code, description FROM faculties WHERE dean_id = $1 LIMIT 1`,
       [req.session.user.id]
     );
-
+    
     if (deanCheck.rows.length === 0) {
       req.flash('error', 'You are not assigned as a Dean of any faculty.');
       return res.redirect('/sis/faculty');
     }
-
+    
     const faculty = deanCheck.rows[0];
 
     const statsRes = await pool.query(`
@@ -1693,9 +1478,9 @@ app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
       ORDER BY created_at DESC LIMIT 5
     `);
 
-    res.render('faculty-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
+    res.render('faculty-dashboard', { 
+      user: req.session.user, 
+      greeting: getGreeting(), 
       courses: coursesRes.rows,
       globalAnnouncementCount: parseInt(globalAnnCount.rows[0].count) || 0,
       targetedMessages: targetedRes.rows
@@ -1860,13 +1645,13 @@ app.get('/sis/admin', requireRole('admin'), async (req, res) => {
       targetedMessages = targetedRes.rows;
     } catch(e) { targetedMessages = []; }
 
-    res.render('admin-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
-      stats: {
-        students: studentsCount.rows[0].count,
-        teachers: teachersCount.rows[0].count,
-        courses: coursesCount.rows[0].count,
+    res.render('admin-dashboard', { 
+      user: req.session.user, 
+      greeting: getGreeting(), 
+      stats: { 
+        students: studentsCount.rows[0].count, 
+        teachers: teachersCount.rows[0].count, 
+        courses: coursesCount.rows[0].count, 
         pendingRegs: pendingRegs.rows[0].count,
         pendingDocs: pendingDocs.rows[0].count
       },
@@ -1881,139 +1666,6 @@ app.get('/sis/admin', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Admin Error: " + err.message); }
 });
 
-app.get('/sis/admin/periods', requireRole('admin'), async (req, res) => {
-  try {
-    const periodsRes = await pool.query(`
-      SELECT
-        ap.*,
-        COUNT(DISTINCT s.id)::int AS section_count
-      FROM academic_periods ap
-      LEFT JOIN course_sections s ON s.academic_period_id = ap.id
-      GROUP BY ap.id
-      ORDER BY ap.start_date DESC NULLS LAST, ap.id DESC
-    `);
-
-    res.render('admin-periods', {
-      user: req.session.user,
-      periods: periodsRes.rows,
-      success: req.flash('success'),
-      error: req.flash('error')
-    });
-  } catch (err) {
-    res.status(500).send('Academic Periods Error: ' + err.message);
-  }
-});
-
-app.post('/sis/admin/periods/new', requireRole('admin'), async (req, res) => {
-  const {
-    academic_year,
-    term,
-    start_date,
-    end_date,
-    registration_open_at,
-    registration_close_at
-  } = req.body;
-
-  const yearValue = (academic_year || '').trim();
-  const termValue = (term || '').trim();
-
-  if (!yearValue || !termValue || !start_date || !end_date) {
-    req.flash('error', 'Academic year, term, start date and end date are required.');
-    return res.redirect('/sis/admin/periods');
-  }
-
-  if (end_date < start_date) {
-    req.flash('error', 'The end date cannot be earlier than the start date.');
-    return res.redirect('/sis/admin/periods');
-  }
-
-  if (
-    registration_open_at &&
-    registration_close_at &&
-    new Date(registration_close_at) < new Date(registration_open_at)
-  ) {
-    req.flash('error', 'Registration closing time cannot be earlier than opening time.');
-    return res.redirect('/sis/admin/periods');
-  }
-
-  try {
-    await pool.query(`
-      INSERT INTO academic_periods (
-        academic_year,
-        term,
-        start_date,
-        end_date,
-        registration_open_at,
-        registration_close_at,
-        is_active
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, false)
-    `, [
-      yearValue,
-      termValue,
-      start_date,
-      end_date,
-      registration_open_at || null,
-      registration_close_at || null
-    ]);
-
-    req.flash('success', 'Academic period created. Activate it when it is ready.');
-    res.redirect('/sis/admin/periods');
-  } catch (err) {
-    req.flash('error', 'Could not create academic period: ' + err.message);
-    res.redirect('/sis/admin/periods');
-  }
-});
-
-app.post('/sis/admin/periods/:id/activate', requireRole('admin'), async (req, res) => {
-  const periodId = Number(req.params.id);
-
-  if (!Number.isInteger(periodId) || periodId <= 0) {
-    req.flash('error', 'Invalid academic period.');
-    return res.redirect('/sis/admin/periods');
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
-    const targetRes = await client.query(
-      'SELECT id FROM academic_periods WHERE id = $1 FOR UPDATE',
-      [periodId]
-    );
-
-    if (targetRes.rows.length === 0) {
-      await client.query('ROLLBACK');
-      req.flash('error', 'Academic period not found.');
-      return res.redirect('/sis/admin/periods');
-    }
-
-    await client.query(`
-      UPDATE academic_periods
-      SET is_active = false
-      WHERE is_active = true
-    `);
-
-    await client.query(`
-      UPDATE academic_periods
-      SET is_active = true
-      WHERE id = $1
-    `, [periodId]);
-
-    await client.query('COMMIT');
-
-    req.flash('success', 'Academic period activated successfully.');
-    res.redirect('/sis/admin/periods');
-  } catch (err) {
-    await client.query('ROLLBACK');
-    req.flash('error', 'Could not activate academic period: ' + err.message);
-    res.redirect('/sis/admin/periods');
-  } finally {
-    client.release();
-  }
-});
-
 app.get('/sis/admin/students', requireRole('admin'), async (req, res) => {
   try {
     const studentsRes = await pool.query(`SELECT u.id, u.full_name, u.username, u.email, sp.admission_number, sp.class_level, sp.current_semester, adv.full_name as advisor_name FROM users u LEFT JOIN student_profiles sp ON sp.user_id = u.id LEFT JOIN users adv ON adv.id = sp.advisor_id WHERE u.role = 'student' ORDER BY u.created_at DESC`);
@@ -2026,8 +1678,8 @@ app.get('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
     const advisorsRes = await pool.query(`SELECT id, full_name FROM users WHERE role = 'advisor' ORDER BY full_name`);
     const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
     const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
-    res.render('admin-student-new', {
-      user: req.session.user,
+    res.render('admin-student-new', { 
+      user: req.session.user, 
       advisors: advisorsRes.rows,
       faculties: facultiesRes.rows,
       departments: departmentsRes.rows
@@ -2035,7 +1687,6 @@ app.get('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-// ✅ FIX: Persist department_id to student_profiles too so registration works
 app.post('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
   const { full_name, username, email, class_level, advisor_id, admission_number, is_international, high_school_gpa, faculty_id, department_id } = req.body;
   const defaultPassword = 'Student2026!';
@@ -2043,26 +1694,20 @@ app.post('/sis/admin/students/new', requireRole('admin'), async (req, res) => {
   try {
     const userRes = await pool.query(
       `INSERT INTO users (full_name, username, email, password, role, faculty_id, department_id) 
-       VALUES ($1, $2, $3, $4, 'student', $5, $6) RETURNING id`,
-      [full_name, username, email || username + '@luxmind.edu', defaultPassword,
-       faculty_id ? Number(faculty_id) : null,
+       VALUES ($1, $2, $3, $4, 'student', $5, $6) RETURNING id`, 
+      [full_name, username, email || username + '@luxmind.edu', defaultPassword, 
+       faculty_id ? Number(faculty_id) : null, 
        department_id ? Number(department_id) : null]
     );
     const userId = userRes.rows[0].id;
-
-    // ✅ FIX: also store department_id on the profile so curriculum JOINs work
     await pool.query(
-      `INSERT INTO student_profiles 
-         (user_id, admission_number, class_level, current_semester,
-          advisor_id, is_international, high_school_gpa, department_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [userId, generatedId, class_level || 'Computer Engineering', 1,
-       advisor_id ? Number(advisor_id) : null,
-       is_international === 'true',
-       high_school_gpa ? Number(high_school_gpa) : null,
-       department_id ? Number(department_id) : null]
+      `INSERT INTO student_profiles (user_id, admission_number, class_level, current_semester, advisor_id, is_international, high_school_gpa) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
+      [userId, generatedId, class_level || 'Computer Engineering', 1, 
+       advisor_id ? Number(advisor_id) : null, 
+       is_international === 'true', 
+       high_school_gpa ? Number(high_school_gpa) : null]
     );
-
     req.flash('success', `Student ${full_name} created! Password: ${defaultPassword}`);
     res.redirect('/sis/admin/students');
   } catch (err) {
@@ -2082,7 +1727,7 @@ app.get('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
   try {
     const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
     const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
-    res.render('admin-teacher-new', {
+    res.render('admin-teacher-new', { 
       user: req.session.user,
       faculties: facultiesRes.rows,
       departments: departmentsRes.rows
@@ -2096,7 +1741,7 @@ app.post('/sis/admin/teachers/new', requireRole('admin'), async (req, res) => {
   try {
     await pool.query(
       `INSERT INTO users (full_name, username, email, password, role, faculty_id, department_id) 
-       VALUES ($1, $2, $3, $4, 'teacher', $5, $6)`,
+       VALUES ($1, $2, $3, $4, 'teacher', $5, $6)`, 
       [full_name, username, email || username + '@luxmind.edu', defaultPassword,
        faculty_id ? Number(faculty_id) : null,
        department_id ? Number(department_id) : null]
@@ -2125,8 +1770,8 @@ app.get('/sis/admin/courses', requireRole('admin'), async (req, res) => {
     `);
     const facultiesRes = await pool.query(`SELECT id, name, code FROM faculties WHERE is_active = true ORDER BY name`);
     const departmentsRes = await pool.query(`SELECT id, name, code, faculty_id FROM departments ORDER BY name`);
-    res.render('admin-courses', {
-      user: req.session.user,
+    res.render('admin-courses', { 
+      user: req.session.user, 
       courses: coursesRes.rows,
       faculties: facultiesRes.rows,
       departments: departmentsRes.rows
@@ -2141,11 +1786,11 @@ app.post('/sis/admin/courses/new', requireRole('admin'), async (req, res) => {
       INSERT INTO courses (code, title, credits, semester_number, prerequisite_id, quota, faculty_id, department_id) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
-      code,
-      title,
-      Number(credits),
-      Number(semester_number),
-      prerequisite_id ? Number(prerequisite_id) : null,
+      code, 
+      title, 
+      Number(credits), 
+      Number(semester_number), 
+      prerequisite_id ? Number(prerequisite_id) : null, 
       quota ? Number(quota) : 40,
       faculty_id ? Number(faculty_id) : null,
       department_id ? Number(department_id) : null
@@ -2174,7 +1819,7 @@ app.get('/sis/admin/faculties', requireRole('admin'), async (req, res) => {
       ORDER BY f.name
     `);
     const deansRes = await pool.query(`SELECT id, full_name FROM users WHERE role IN ('teacher', 'advisor') ORDER BY full_name`);
-
+    
     res.render('admin-faculties', {
       user: req.session.user,
       faculties: facultiesRes.rows,
@@ -2186,13 +1831,13 @@ app.get('/sis/admin/faculties', requireRole('admin'), async (req, res) => {
 app.post('/sis/admin/faculties/new', requireRole('admin'), async (req, res) => {
   const { name, code, dean_id, description } = req.body;
   try {
-    await pool.query(`INSERT INTO faculties (name, code, dean_id, description) VALUES ($1, $2, $3, $4)`,
+    await pool.query(`INSERT INTO faculties (name, code, dean_id, description) VALUES ($1, $2, $3, $4)`, 
       [name, code.toUpperCase(), dean_id ? Number(dean_id) : null, description || null]);
     req.flash('success', `Faculty "${name}" created successfully.`);
     res.redirect('/sis/admin/faculties');
-  } catch (err) {
+  } catch (err) { 
     req.flash('error', 'Error: ' + err.message);
-    res.redirect('/sis/admin/faculties');
+    res.redirect('/sis/admin/faculties'); 
   }
 });
 
@@ -2203,7 +1848,7 @@ app.get('/sis/admin/faculties/:id', requireRole('admin'), async (req, res) => {
       LEFT JOIN users u ON u.id = f.dean_id WHERE f.id = $1
     `, [req.params.id]);
     if (facultyRes.rows.length === 0) return res.redirect('/sis/admin/faculties');
-
+    
     const departmentsRes = await pool.query(`
       SELECT d.*, u.full_name AS head_name,
         (SELECT COUNT(*) FROM users usr WHERE usr.department_id = d.id AND usr.role = 'student') AS student_count
@@ -2211,9 +1856,9 @@ app.get('/sis/admin/faculties/:id', requireRole('admin'), async (req, res) => {
       LEFT JOIN users u ON u.id = d.head_id
       WHERE d.faculty_id = $1 ORDER BY d.name
     `, [req.params.id]);
-
+    
     const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role IN ('teacher', 'advisor') ORDER BY full_name`);
-
+    
     res.render('admin-faculty-detail', {
       user: req.session.user,
       faculty: facultyRes.rows[0],
@@ -2226,11 +1871,11 @@ app.get('/sis/admin/faculties/:id', requireRole('admin'), async (req, res) => {
 app.post('/sis/admin/faculties/:id/assign-dean', requireRole('admin'), async (req, res) => {
   const { dean_id } = req.body;
   try {
-    await pool.query(`UPDATE faculties SET dean_id = $1 WHERE id = $2`,
+    await pool.query(`UPDATE faculties SET dean_id = $1 WHERE id = $2`, 
       [dean_id ? Number(dean_id) : null, req.params.id]);
     req.flash('success', 'Dean assigned successfully.');
     res.redirect(`/sis/admin/faculties/${req.params.id}`);
-  } catch (err) {
+  } catch (err) { 
     req.flash('error', 'Error: ' + err.message);
     res.redirect(`/sis/admin/faculties/${req.params.id}`);
   }
@@ -2243,7 +1888,7 @@ app.post('/sis/admin/faculties/:id/departments/new', requireRole('admin'), async
       [req.params.id, name, code || null, head_id ? Number(head_id) : null]);
     req.flash('success', `Department "${name}" created successfully.`);
     res.redirect(`/sis/admin/faculties/${req.params.id}`);
-  } catch (err) {
+  } catch (err) { 
     req.flash('error', 'Error: ' + err.message);
     res.redirect(`/sis/admin/faculties/${req.params.id}`);
   }
@@ -2252,11 +1897,11 @@ app.post('/sis/admin/faculties/:id/departments/new', requireRole('admin'), async
 app.post('/sis/admin/faculties/:facultyId/departments/:deptId/assign-head', requireRole('admin'), async (req, res) => {
   const { head_id } = req.body;
   try {
-    await pool.query(`UPDATE departments SET head_id = $1 WHERE id = $2`,
+    await pool.query(`UPDATE departments SET head_id = $1 WHERE id = $2`, 
       [head_id ? Number(head_id) : null, req.params.deptId]);
     req.flash('success', 'Department head assigned successfully.');
     res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
-  } catch (err) {
+  } catch (err) { 
     req.flash('error', 'Error: ' + err.message);
     res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
   }
@@ -2421,7 +2066,7 @@ app.get('/sis/admin/documents', requireRole('admin'), async (req, res) => {
 });
 
 app.post('/sis/admin/documents/:id/status', requireRole('admin'), async (req, res) => {
-  const { status, admin_notes } = req.body;
+  const { status, admin_notes } = req.body; 
   const requestId = req.params.id;
   try {
     await pool.query(`UPDATE document_requests SET status = $1, admin_notes = $2, seen_by_student = false WHERE id = $3`, [status, admin_notes || null, requestId]);
@@ -2521,15 +2166,14 @@ app.get('/sis/my/materials', requireRole('student'), async (req, res) => {
       ORDER BY c.code ASC
     `, [req.session.user.id]);
 
-    res.render('student-materials-hub', {
-      user: req.session.user,
+    res.render('student-materials-hub', { 
+      user: req.session.user, 
       sections: sectionsRes.rows,
       greeting: getGreeting()
     });
   } catch (err) { res.status(500).send("Materials Hub Error: " + err.message); }
 });
 
-// ✅ COMPLETED (was truncated in source) — verifies enrollment and loads materials + announcements
 app.get('/sis/my/materials/:section_id', requireRole('student'), async (req, res) => {
   try {
     const enrollCheck = await pool.query(`
@@ -2541,286 +2185,169 @@ app.get('/sis/my/materials/:section_id', requireRole('student'), async (req, res
       WHERE e.user_id = $1 AND s.id = $2
     `, [req.session.user.id, req.params.section_id]);
 
-    if (enrollCheck.rows.length === 0) {
-      return res.redirect('/sis/my/materials');
-    }
-
+    if (enrollCheck.rows.length === 0) return res.redirect('/sis/my/materials');
     const section = enrollCheck.rows[0];
 
-    let materials = [];
-    try {
-      const m = await pool.query(`
-        SELECT m.*, u.full_name AS uploader_name
-        FROM course_materials m
-        LEFT JOIN users u ON u.id = m.uploaded_by
-        WHERE m.section_id = $1
-        ORDER BY m.created_at DESC
-      `, [req.params.section_id]);
-      materials = m.rows;
-    } catch (e) { /* table may not exist yet */ }
+    const syllabusRes = await pool.query(`
+      SELECT * FROM syllabus_versions WHERE section_id = $1 AND is_current = true LIMIT 1
+    `, [req.params.section_id]);
 
-    let announcements = [];
-    try {
-      const a = await pool.query(`
-        SELECT a.*, u.full_name AS author_name
-        FROM course_announcements a
-        LEFT JOIN users u ON u.id = a.author_id
-        WHERE a.section_id = $1
-        ORDER BY a.created_at DESC
-        LIMIT 10
-      `, [req.params.section_id]);
-      announcements = a.rows;
-    } catch (e) { /* table may not exist yet */ }
+    const notesRes = await pool.query(`
+      SELECT * FROM course_materials WHERE section_id = $1 ORDER BY week_number ASC, uploaded_at DESC
+    `, [req.params.section_id]);
 
-    res.render('student-materials', {
+    const notesByWeek = {};
+    for (let i = 1; i <= 14; i++) notesByWeek[i] = [];
+    notesRes.rows.forEach(n => {
+      if (notesByWeek[n.week_number]) notesByWeek[n.week_number].push(n);
+    });
+
+    res.render('student-materials-detail', {
       user: req.session.user,
       section,
-      materials,
-      announcements,
+      syllabus: syllabusRes.rows[0] || null,
+      notesByWeek,
       greeting: getGreeting()
     });
-  } catch (err) {
-    res.status(500).send("Materials Error: " + err.message);
-  }
+  } catch (err) { res.status(500).send("Materials Detail Error: " + err.message); }
 });
 
 // ============================================
-// --- FACULTY: COURSE MATERIALS UPLOAD ---
-// ✅ RECONSTRUCTED — verify against your original file
+// --- FACULTY: CLASS ROSTER ---
 // ============================================
-app.get('/sis/faculty/materials/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
+app.get('/sis/faculty/class-roster', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
-    const secRes = await pool.query(`
-      SELECT s.id, c.code, c.title, s.group_name
+    const sectionsRes = await pool.query(`
+      SELECT 
+        s.id AS section_id,
+        c.code, c.title, c.credits,
+        s.group_name,
+        s.day_of_week, s.start_time, s.end_time, s.room,
+        (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
+
+    const totalStudents = sectionsRes.rows.reduce((sum, s) => sum + Number(s.student_count), 0);
+    const totalCredits = sectionsRes.rows.reduce((sum, s) => sum + Number(s.credits), 0);
+
+    res.render('faculty-class-roster', {
+      user: req.session.user,
+      sections: sectionsRes.rows,
+      totalStudents,
+      totalCredits,
+      greeting: getGreeting()
+    });
+  } catch (err) { res.status(500).send("Class Roster Error: " + err.message); }
+});
+
+app.get('/sis/faculty/class-roster/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
+  try {
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, c.credits, s.group_name,
+             s.day_of_week, s.start_time, s.end_time, s.room
       FROM course_sections s
       JOIN courses c ON c.id = s.course_id
       WHERE s.id = $1 AND s.teacher_id = $2
     `, [req.params.section_id, req.session.user.id]);
 
-    if (secRes.rows.length === 0) return res.redirect('/sis/faculty');
+    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/class-roster');
 
-    let materials = [];
-    try {
-      const m = await pool.query(
-        `SELECT * FROM course_materials WHERE section_id = $1 ORDER BY created_at DESC`,
-        [req.params.section_id]
-      );
-      materials = m.rows;
-    } catch (e) {}
+    const rosterRes = await pool.query(`
+      SELECT 
+        u.id AS user_id,
+        u.full_name,
+        u.email,
+        sp.admission_number,
+        sp.class_level,
+        sp.current_semester,
+        sp.phone,
+        COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN a.id END) AS present_count,
+        COUNT(DISTINCT a.id) AS total_attendance,
+        g.midterm_grade,
+        g.final_grade,
+        g.letter_grade,
+        g.gpa_points
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN attendance a ON a.student_id = u.id AND a.section_id = e.section_id
+      LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = e.section_id
+      WHERE e.section_id = $1
+      GROUP BY u.id, u.full_name, u.email, sp.admission_number, sp.class_level,
+               sp.current_semester, sp.phone, g.midterm_grade, g.final_grade,
+               g.letter_grade, g.gpa_points
+      ORDER BY u.full_name ASC
+    `, [req.params.section_id]);
 
-    res.render('faculty-materials', {
-      user: req.session.user,
-      section: secRes.rows[0],
-      materials
+    const roster = rosterRes.rows.map(r => {
+      const present = Number(r.present_count || 0);
+      const total = Number(r.total_attendance || 0);
+      return {
+        ...r,
+        attendance_pct: total > 0 ? Math.round((present / total) * 100) : null,
+        present_count: present,
+        total_attendance: total
+      };
     });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
-});
 
-app.post('/sis/faculty/materials/:section_id/upload', requireRole('teacher', 'advisor'), upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      req.flash('error', 'No file uploaded.');
-      return res.redirect('/sis/faculty/materials/' + req.params.section_id);
-    }
-    if (!supabase) {
-      req.flash('error', 'Storage not configured (missing Supabase keys).');
-      return res.redirect('/sis/faculty/materials/' + req.params.section_id);
-    }
+    const withAttendance = roster.filter(r => r.attendance_pct !== null);
+    const avgAttendance = withAttendance.length > 0
+      ? Math.round(withAttendance.reduce((s, r) => s + r.attendance_pct, 0) / withAttendance.length)
+      : null;
+    const atRiskCount = roster.filter(r => r.attendance_pct !== null && r.attendance_pct < 70).length;
+    const gradedCount = roster.filter(r => r.letter_grade).length;
 
-    const secCheck = await pool.query(
-      `SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`,
-      [req.params.section_id, req.session.user.id]
-    );
-    if (secCheck.rows.length === 0) {
-      req.flash('error', 'Unauthorized.');
-      return res.redirect('/sis/faculty');
-    }
-
-    const filename = `${req.params.section_id}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const { error } = await supabase.storage
-      .from('materials')
-      .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
-    if (error) throw error;
-
-    const { data: urlData } = supabase.storage.from('materials').getPublicUrl(filename);
-
-    await pool.query(`
-      INSERT INTO course_materials (section_id, title, description, file_url, file_name, uploaded_by)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [
-      req.params.section_id,
-      req.body.title || req.file.originalname,
-      req.body.description || null,
-      urlData.publicUrl,
-      req.file.originalname,
-      req.session.user.id
-    ]);
-
-    req.flash('success', 'Material uploaded successfully.');
-    res.redirect('/sis/faculty/materials/' + req.params.section_id);
-  } catch (err) {
-    res.status(500).send("Upload Error: " + err.message);
-  }
-});
-
-// ============================================
-// --- STUDENT: ANNOUNCEMENTS ---
-// ✅ RECONSTRUCTED — verify against your original file
-// ============================================
-app.get('/sis/my/announcements', requireRole('student'), async (req, res) => {
-  try {
-    const courseAnnRes = await pool.query(`
-      SELECT a.*, u.full_name AS author_name, c.code AS course_code, c.title AS course_title
-      FROM course_announcements a
-      JOIN course_sections s ON s.id = a.section_id
-      JOIN courses c ON c.id = s.course_id
-      JOIN enrollments e ON e.section_id = s.id
-      LEFT JOIN users u ON u.id = a.author_id
-      WHERE e.user_id = $1
-      ORDER BY a.created_at DESC
-      LIMIT 30
-    `, [req.session.user.id]);
-
-    const globalAnnRes = await pool.query(
-      `SELECT * FROM global_announcements ORDER BY created_at DESC LIMIT 20`
-    );
-
-    const targetedRes = await pool.query(`
-      SELECT * FROM targeted_announcements 
-      WHERE target_role IN ('student', 'all') 
-      ORDER BY created_at DESC LIMIT 20
-    `);
-
-    await pool.query(
-      `UPDATE users SET last_announcements_view_at = NOW() WHERE id = $1`,
-      [req.session.user.id]
-    );
-
-    res.render('student-announcements', {
+    res.render('faculty-class-roster-detail', {
       user: req.session.user,
-      courseAnnouncements: courseAnnRes.rows,
-      globalAnnouncements: globalAnnRes.rows,
-      targetedMessages: targetedRes.rows,
+      section: sectionRes.rows[0],
+      roster,
+      avgAttendance,
+      atRiskCount,
+      gradedCount,
       greeting: getGreeting()
     });
-  } catch (err) { res.status(500).send("Announcements Error: " + err.message); }
+  } catch (err) { res.status(500).send("Roster Detail Error: " + err.message); }
 });
 
 // ============================================
-// ⚠️ RECONSTRUCTED DASHBOARDS (were truncated in source)
-// If your original file has richer versions, keep those.
-// These exist so login redirects (/sis/intl, /sis/finance, /sis/it, /sis/rectorate) don't 404.
+// --- FACULTY: PUBLISH GRADES ---
 // ============================================
-
-// --- INTERNATIONAL OFFICE ---
-app.get('/sis/intl', requireRole('intl_officer', 'admin'), async (req, res) => {
+app.get('/sis/faculty/publish-results', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
-    const appsRes = await pool.query(
-      `SELECT COUNT(*) FROM applications WHERE status = 'new'`
-    );
-    const intlRes = await pool.query(
-      `SELECT COUNT(*) FROM student_profiles WHERE is_international = true`
-    );
-    const docsRes = await pool.query(
-      `SELECT COUNT(*) FROM document_requests WHERE status = 'pending'`
-    );
-    const applicationsRes = await pool.query(
-      `SELECT * FROM applications WHERE status = 'new' ORDER BY created_at DESC LIMIT 20`
-    );
+    const sectionsRes = await pool.query(`
+      SELECT s.id AS section_id, c.code, c.title, s.group_name,
+             (SELECT COUNT(*) FROM enrollments e WHERE e.section_id = s.id) AS student_count,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.letter_grade IS NOT NULL) AS graded_count,
+             (SELECT COUNT(*) FROM grades g WHERE g.section_id = s.id AND g.is_published = true AND g.letter_grade IS NOT NULL) AS published_count,
+             (SELECT MAX(published_at) FROM grades g WHERE g.section_id = s.id AND g.is_published = true) AS last_published
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.teacher_id = $1
+      ORDER BY c.code ASC, s.group_name ASC
+    `, [req.session.user.id]);
 
-    res.render('intl-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
-      stats: {
-        applications: parseInt(appsRes.rows[0].count) || 0,
-        intlStudents: parseInt(intlRes.rows[0].count) || 0,
-        pendingDocs: parseInt(docsRes.rows[0].count) || 0
-      },
-      applications: applicationsRes.rows
-    });
-  } catch (err) { res.status(500).send("Intl Office Error: " + err.message); }
+    res.render('faculty-publish-results', { user: req.session.user, sections: sectionsRes.rows, greeting: getGreeting() });
+  } catch (err) { res.status(500).send("Publish Hub Error: " + err.message); }
 });
 
-// --- FINANCE STAFF ---
-app.get('/sis/finance', requireRole('finance_staff', 'admin'), async (req, res) => {
+app.post('/sis/faculty/grades/:section_id/publish', requireRole('teacher', 'advisor'), async (req, res) => {
+  const sectionId = req.params.section_id;
   try {
-    const invoicesRes = await pool.query(`
-      SELECT COUNT(*) AS pending, COALESCE(SUM(net_amount - paid_amount), 0) AS outstanding
-      FROM semester_invoices WHERE status != 'paid'
-    `);
-    const paymentsRes = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE created_at >= NOW() - INTERVAL '30 days'`
-    );
+    const secRes = await pool.query(`SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2`, [sectionId, req.session.user.id]);
+    if (secRes.rows.length === 0) return res.redirect('/sis/faculty/publish-results');
 
-    res.render('finance-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
-      stats: {
-        pendingInvoices: parseInt(invoicesRes.rows[0].pending) || 0,
-        outstanding: Number(invoicesRes.rows[0].outstanding) || 0,
-        last30: Number(paymentsRes.rows[0].total) || 0
-      }
-    });
-  } catch (err) { res.status(500).send("Finance Error: " + err.message); }
-});
+    await pool.query(`
+      UPDATE grades 
+      SET is_published = true, published_at = NOW()
+      WHERE section_id = $1 AND letter_grade IS NOT NULL
+    `, [sectionId]);
 
-// --- IT STAFF ---
-app.get('/sis/it', requireRole('it_staff', 'admin'), async (req, res) => {
-  try {
-    const usersRes = await pool.query(
-      `SELECT COUNT(*) AS total FROM users`
-    );
-    const activeRes = await pool.query(
-      `SELECT COUNT(*) AS total FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`
-    );
-
-    res.render('it-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
-      stats: {
-        totalUsers: parseInt(usersRes.rows[0].total) || 0,
-        newUsers30: parseInt(activeRes.rows[0].total) || 0
-      }
-    });
-  } catch (err) { res.status(500).send("IT Error: " + err.message); }
-});
-
-// --- RECTORATE ---
-app.get('/sis/rectorate', requireRole('rectorate', 'admin'), async (req, res) => {
-  try {
-    const studentsRes = await pool.query(
-      `SELECT COUNT(*) AS total FROM users WHERE role = 'student'`
-    );
-    const staffRes = await pool.query(
-      `SELECT COUNT(*) AS total FROM users WHERE role IN ('teacher','advisor','admin','intl_officer','finance_staff','it_staff')`
-    );
-    const appsRes = await pool.query(
-      `SELECT COUNT(*) AS total FROM applications WHERE status = 'new'`
-    );
-
-    res.render('rectorate-dashboard', {
-      user: req.session.user,
-      greeting: getGreeting(),
-      stats: {
-        students: parseInt(studentsRes.rows[0].total) || 0,
-        staff: parseInt(staffRes.rows[0].total) || 0,
-        newApplications: parseInt(appsRes.rows[0].total) || 0
-      }
-    });
-  } catch (err) { res.status(500).send("Rectorate Error: " + err.message); }
-});
-
-// ============================================
-// --- 404 FALLBACK ---
-// ============================================
-app.use((req, res) => {
-  res.status(404).send(`
-    <div style="font-family: system-ui; padding: 4rem; text-align: center;">
-      <h1 style="font-size: 3rem; margin: 0;">404</h1>
-      <p style="color: #64748b;">Route not found: <code>${req.method} ${req.originalUrl}</code></p>
-      <a href="/login" style="color: #0a1e32;">← Back to login</a>
-    </div>
-  `);
+    req.flash('success', 'Grades published successfully. Students can now see their results.');
+    res.redirect('/sis/faculty/publish-results');
+  } catch (err) { res.status(500).send("Publish Error: " + err.message); }
 });
 
 // ============================================
@@ -2829,6 +2356,4 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
-  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   Supabase: ${supabase ? 'connected' : 'NOT configured'}`);
 });

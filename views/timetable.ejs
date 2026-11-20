@@ -9,8 +9,6 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f4f6fa; color: #0a1e32; padding: 2rem; }
-    
-    /* --- HEADER INFO SECTION --- */
     .info-card { background: linear-gradient(135deg, #0a1e32, #1e4d7b); color: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 24px rgba(10,30,50,0.15); }
     .info-left h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem; }
     .info-left p { font-size: 0.9rem; color: #cbd5e1; }
@@ -18,132 +16,81 @@
     .stat-box { display: flex; flex-direction: column; }
     .stat-box span { font-size: 0.75rem; text-transform: uppercase; color: #ffc857; font-weight: 800; letter-spacing: 1px; }
     .stat-box strong { font-size: 1.4rem; font-weight: 800; }
-
     .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e4d7b; font-weight: 800; text-decoration: none; padding: 0.6rem 1.1rem; background: #fff; border-radius: 100px; border: 1px solid #d9e6f2; margin-bottom: 1rem; transition: 0.15s; }
     .btn-back:hover { background: #0a1e32; color: #fff; }
-
-    /* --- TIMETABLE GRID --- */
     .timetable-container { background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(10,30,50,0.08); overflow-x: auto; border: 1px solid #e2e8f0; }
-    
     table { width: 100%; border-collapse: collapse; min-width: 900px; table-layout: fixed; }
     th, td { border: 1px solid #e2e8f0; padding: 0; vertical-align: top; height: 60px; }
-    
     th { background: #f8fafc; padding: 1rem 0.5rem; font-weight: 800; color: #1e4d7b; text-align: center; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
-    
     .time-col { width: 80px; background: #f8fafc; text-align: center; font-weight: 700; font-size: 0.8rem; color: #64748b; padding: 1rem 0; vertical-align: middle; border-right: 2px solid #cbd5e1; }
-
-    .course-tile { 
-      display: flex; flex-direction: column; gap: 0.2rem; margin: 2px; padding: 0.6rem; border-radius: 6px; color: #fff; 
-      font-size: 0.75rem; line-height: 1.3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      height: calc(100% - 4px); box-sizing: border-box; overflow: hidden;
-      transition: transform 0.1s;
-    }
+    .course-tile { display: flex; flex-direction: column; gap: 0.2rem; margin: 2px; padding: 0.6rem; border-radius: 6px; color: #fff; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: calc(100% - 4px); box-sizing: border-box; overflow: hidden; transition: transform 0.1s; }
     .course-tile:hover { transform: scale(1.02); z-index: 10; position: relative; cursor: pointer; }
-    
     .course-tile .code { font-weight: 800; font-size: 0.85rem; }
     .course-tile .meta { font-size: 0.7rem; opacity: 0.9; display: flex; align-items: center; gap: 0.3rem; }
-    
     .empty-cell { background: #fff; transition: background 0.2s; }
     .empty-cell:hover { background: #f8fafc; }
-
-    @media (max-width: 768px) {
-      body { padding: 1rem; }
-      .info-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
-      .info-right { text-align: left; width: 100%; justify-content: space-between; }
-    }
   </style>
 </head>
 <body>
-
   <a href="/sis/my" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-
-  <!-- TOP INFO SECTION -->
   <div class="info-card">
     <div class="info-left">
       <h1><%= user.full_name %></h1>
       <p><i class="fas fa-id-card"></i> <%= profile.admission_number || user.username %> · <%= profile.class_level || 'Department' %></p>
     </div>
     <div class="info-right">
-      <div class="stat-box">
-        <span>Semester</span>
-        <strong><%= profile.current_semester || 1 %></strong>
-      </div>
-      <div class="stat-box">
-        <span>Courses</span>
-        <strong><%= courses.length %></strong>
-      </div>
-      <div class="stat-box">
-        <span>Credits</span>
-        <strong><%= totalCredits %></strong>
-      </div>
+      <div class="stat-box"><span>Semester</span><strong><%= profile.current_semester || 1 %></strong></div>
+      <div class="stat-box"><span>Courses</span><strong><%= courses.length %></strong></div>
+      <div class="stat-box"><span>Credits</span><strong><%= totalCredits %></strong></div>
     </div>
   </div>
-
-  <!-- TIMETABLE GRID -->
   <div class="timetable-container">
     <table>
       <thead>
         <tr>
           <th class="time-col">Time</th>
-          <% days.forEach(day => { %>
-            <th><%= day %></th>
-          <% }); %>
+          <% days.forEach(day => { %><th><%= day %></th><% }); %>
         </tr>
       </thead>
       <tbody>
         <% timeSlots.forEach((time, timeIndex) => { %>
           <tr>
             <td class="time-col"><%= time %></td>
-            
             <% days.forEach(day => { 
                  const course = grid[day][time];
-                 
-                 // Check if this cell is covered by a course that started earlier (rowspan)
                  let isCovered = false;
                  for (let i = timeIndex - 1; i >= 0; i--) {
-                   const prevTime = timeSlots[i];
-                   const prevCourse = grid[day][prevTime];
+                   const prevCourse = grid[day][timeSlots[i]];
                    if (prevCourse && prevCourse.end_time > time) {
                      isCovered = true;
                      break;
                    }
                  }
-                 
                  if (isCovered) return; 
             %>
-              
               <% if (course) { 
-                   // Calculate rowspan (how many hours does this class take?)
                    let rowspan = 1;
                    let checkTime = parseInt(time.split(':')[0]) + 1;
-                   while (
-                     timeSlots.includes(checkTime.toString().padStart(2, '0') + ':00') && 
-                     course.end_time > (checkTime.toString().padStart(2, '0') + ':00')
-                   ) {
-                     rowspan++;
-                     checkTime++;
+                   while (timeSlots.includes(checkTime.toString().padStart(2, '0') + ':00') && course.end_time > (checkTime.toString().padStart(2, '0') + ':00')) {
+                     rowspan++; checkTime++;
                    }
               %>
                 <td rowspan="<%= rowspan %>">
-                  <div class="course-tile" style="background-color: <%= course.color %>;" title="<%= course.title %>">
+                  <div class="course-tile" style="background-color: <%= course.color %>;">
                     <div class="code"><%= course.code %></div>
                     <div class="meta"><i class="fas fa-layer-group"></i> <%= course.group_name || 'GRP' %> • <%= course.room || 'TBA' %></div>
                     <div class="meta" style="margin-top: auto; font-weight: 600;"><i class="fas fa-clock"></i> <%= course.start_time %> - <%= course.end_time %></div>
-                    <% if (course.teacher_name) { %>
-                      <div class="meta"><i class="fas fa-user"></i> <%= course.teacher_name %></div>
-                    <% } %>
+                    <% if (course.teacher_name) { %><div class="meta"><i class="fas fa-user"></i> <%= course.teacher_name %></div><% } %>
                   </div>
                 </td>
               <% } else { %>
                 <td class="empty-cell"></td>
               <% } %>
-              
             <% }); %>
           </tr>
         <% }); %>
       </tbody>
     </table>
   </div>
-
 </body>
 </html>

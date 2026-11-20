@@ -545,14 +545,14 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
     const classes = scheduleRes.rows;
     const profile = profileRes.rows[0] || {};
     
-    // 3. Setup Time Grid (Supports 08:00 to 19:00)
+    // 3. Setup Time Grid
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const timeSlots = [
       '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
       '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
     ];
 
-    // Assign consistent colors based on course code
+    // Assign consistent colors
     const colorPalette = ['#1e88e5', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00acc1', '#3949ab', '#d81b60'];
     const colorMap = {};
     let colorIndex = 0;
@@ -563,18 +563,16 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
       }
     });
 
-    // Initialize an empty grid
+    // Initialize empty grid
     const grid = {};
     days.forEach(day => {
       grid[day] = {};
       timeSlots.forEach(time => grid[day][time] = null);
     });
 
-    // Place classes into the grid
+    // Place classes
     classes.forEach(cls => {
       if (!cls.start_time) return;
-      
-      // Force format to HH:MM (removes seconds if they exist)
       const start = cls.start_time.slice(0, 5);
       const end = cls.end_time ? cls.end_time.slice(0, 5) : '';
       

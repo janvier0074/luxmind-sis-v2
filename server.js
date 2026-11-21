@@ -2269,6 +2269,90 @@ app.post(
 );
 
 
+// ============================================================
+// DEAN - FACULTY STAFF WORKSPACE
+// ============================================================
+app.get('/sis/dean/faculty-staff', requireRole('dean'), async (req, res) => {
+  try {
+    const facultyResult = await pool.query(`
+      SELECT id, name, code
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (!facultyResult.rows.length) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const faculty = facultyResult.rows[0];
+
+    const staffResult = await pool.query(`
+      SELECT
+        u.id,
+        u.full_name,
+        u.username,
+        u.email,
+        u.role,
+        u.department_id,
+        d.name AS department_name,
+        CASE
+          WHEN d.head_id = u.id THEN TRUE
+          ELSE FALSE
+        END AS is_department_head
+      FROM users u
+      LEFT JOIN departments d
+        ON d.id = u.department_id
+       AND d.faculty_id = u.faculty_id
+      WHERE u.faculty_id = $1
+        AND u.role IN ('teacher', 'advisor', 'department_head')
+      ORDER BY
+        CASE u.role
+          WHEN 'department_head' THEN 1
+          WHEN 'teacher' THEN 2
+          WHEN 'advisor' THEN 3
+          ELSE 4
+        END,
+        u.full_name ASC NULLS LAST
+    `, [faculty.id]);
+
+    const departmentsResult = await pool.query(`
+      SELECT id, name, code, head_id
+      FROM departments
+      WHERE faculty_id = $1
+      ORDER BY name
+    `, [faculty.id]);
+
+    const staff = staffResult.rows;
+    const departments = departmentsResult.rows;
+
+    const stats = {
+      total: staff.length,
+      teachers: staff.filter(s => s.role === 'teacher').length,
+      advisors: staff.filter(s => s.role === 'advisor').length,
+      departmentHeads: staff.filter(
+        s => s.role === 'department_head'
+      ).length
+    };
+
+    res.render('dean-faculty-staff', {
+      user: req.session.user,
+      faculty,
+      staff,
+      departments,
+      stats,
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+
+  } catch (err) {
+    console.error('Dean Faculty Staff Error:', err);
+    res.status(500).send('Faculty Staff Error: ' + err.message);
+  }
+});
+
+
 // ============================================
 // --- DEPARTMENT HEAD PORTAL ---
 // ============================================

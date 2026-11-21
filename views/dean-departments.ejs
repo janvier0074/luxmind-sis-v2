@@ -1,12 +1,21 @@
-
+```ejs
 <%
   const departmentList = Array.isArray(departments) ? departments : [];
   const staffCandidates = Array.isArray(candidates) ? candidates : [];
   const summary = stats || {};
+  const facultyInfo = faculty || {};
   const deanName = user?.full_name || user?.username || 'Dean';
   const initials = deanName.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
-  const messageSuccess = typeof success !== 'undefined' ? success : null;
-  const messageError = typeof error !== 'undefined' ? error : null;
+
+  const successMessage =
+    (typeof success !== 'undefined' && success) ||
+    (typeof messages !== 'undefined' && messages && messages.success) ||
+    null;
+
+  const errorMessage =
+    (typeof error !== 'undefined' && error) ||
+    (typeof messages !== 'undefined' && messages && messages.error) ||
+    null;
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,6 +23,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Departments Management | LuxMind SIS</title>
+
 <style>
 :root {
   --green:#0e9f6e;
@@ -123,6 +133,7 @@ h1{font-size:29px;letter-spacing:-1px;margin:8px 0}
   font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;
   align-items:center;justify-content:center;gap:7px
 }
+.btn:disabled{opacity:.6;cursor:not-allowed}
 .btn-primary{background:var(--green);color:white}
 .btn-primary:hover{background:var(--green-dark)}
 .btn-light{background:#f1f5f2;color:#53645b;border:1px solid var(--border)}
@@ -134,7 +145,9 @@ h1{font-size:29px;letter-spacing:-1px;margin:8px 0}
   width:100%;padding:12px 13px;border:1px solid var(--border);
   border-radius:9px;background:white;color:var(--ink);outline:none;font-size:12px
 }
-.field input:focus,.field select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.09)}
+.field input:focus,.field select:focus{
+  border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.09)
+}
 .form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:17px}
 .alert{padding:13px 16px;border-radius:10px;margin-bottom:18px;font-size:12px;font-weight:700}
 .alert-success{background:#e9f7f0;color:#087f59}
@@ -153,12 +166,13 @@ h1{font-size:29px;letter-spacing:-1px;margin:8px 0}
 }
 .department-name{font-size:15px;font-weight:850;margin:13px 0 5px}
 .department-code{font-size:10px;color:var(--muted);font-weight:700}
-.status{
-  display:inline-block;padding:6px 9px;border-radius:20px;font-size:9px;font-weight:800
-}
+.status{display:inline-block;padding:6px 9px;border-radius:20px;font-size:9px;font-weight:800}
 .status-assigned{background:#e9f7f0;color:#087f59}
 .status-unassigned{background:#fff6e5;color:#986500}
-.metrics{display:flex;gap:22px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:13px 0;margin:15px 0}
+.metrics{
+  display:flex;gap:22px;border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:13px 0;margin:15px 0
+}
 .metric strong{display:block;font-size:17px}
 .metric span{font-size:10px;color:var(--muted)}
 .head-name{font-size:12px;font-weight:800;margin-top:5px}
@@ -175,46 +189,66 @@ dialog{
   box-shadow:0 25px 80px rgba(0,0,0,.2)
 }
 dialog::backdrop{background:rgba(13,30,22,.48)}
-.modal-head{padding:20px 23px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-head{
+  padding:20px 23px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center
+}
 .modal-head h3{margin:0;font-size:16px}
 .modal-body{padding:23px}
-.modal-close{border:0;background:#f1f5f2;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px}
+.modal-close{
+  border:0;background:#f1f5f2;border-radius:8px;
+  width:32px;height:32px;cursor:pointer;font-size:18px
+}
+.modal-note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:12px}
 footer{text-align:center;padding:25px;color:#96a39b;font-size:10px}
 @media(max-width:850px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .department-grid{grid-template-columns:1fr}
 }
 @media(max-width:600px){
-  .topbar{padding:0 15px}.user-chip{display:none}.page{padding:23px 15px}
-  .heading-row{flex-direction:column}.stats{gap:10px}.stat{padding:15px}
-  .stat-value{font-size:23px}.form-grid{grid-template-columns:1fr}
+  .topbar{padding:0 15px}
+  .user-chip{display:none}
+  .page{padding:23px 15px}
+  .heading-row{flex-direction:column}
+  .stats{gap:10px}
+  .stat{padding:15px}
+  .stat-value{font-size:23px}
+  .form-grid{grid-template-columns:1fr}
   .panel-head{align-items:flex-start;flex-direction:column}
-  .toolbar{width:100%}.search{min-width:0;flex:1;width:100%}
+  .toolbar{width:100%}
+  .search{min-width:0;flex:1;width:100%}
 }
 </style>
 </head>
+
 <body>
 
 <header class="topbar">
   <div class="top-left">
-    <button class="menu-toggle" type="button" onclick="toggleMenu()" aria-label="Open navigation">
+    <button class="menu-toggle" type="button" id="menuToggle" aria-label="Open navigation" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
     <div class="brand">LuxMind<small>STUDENT INFORMATION SYSTEM</small></div>
   </div>
+
   <div class="top-right">
-    <div class="user-chip"><span class="user-avatar"><%= initials %></span><%= deanName %></div>
+    <div class="user-chip">
+      <span class="user-avatar"><%= initials %></span>
+      <%= deanName %>
+    </div>
     <a class="logout" href="/logout">Logout</a>
   </div>
 </header>
 
-<div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+<div class="menu-overlay" id="menuOverlay"></div>
+
 <aside class="drawer" id="drawer">
   <div class="drawer-head">
     <strong>LuxMind SIS</strong>
     <span>DEAN WORKSPACE</span>
-    <button class="drawer-close" type="button" onclick="toggleMenu()">×</button>
+    <button class="drawer-close" type="button" id="drawerClose" aria-label="Close navigation">×</button>
   </div>
+
   <div class="drawer-label">WORKSPACE</div>
   <a class="drawer-link" href="/sis/dean">⌂ <span>Dean Dashboard</span></a>
   <a class="drawer-link" href="/sis/dean/faculty-profile">▤ <span>Faculty Profile</span></a>
@@ -222,160 +256,424 @@ footer{text-align:center;padding:25px;color:#96a39b;font-size:10px}
 </aside>
 
 <main class="page">
-  <div class="breadcrumb"><a href="/sis/dean">Dean Workspace</a> / Departments Management</div>
+
+  <div class="breadcrumb">
+    <a href="/sis/dean">Dean Workspace</a> / Departments Management
+  </div>
 
   <div class="heading-row">
     <div>
       <div class="eyebrow">FACULTY ORGANIZATION</div>
       <h1>Departments Management</h1>
-      <div class="subtitle">Manage the academic departments, review leadership assignments, and organize your faculty.</div>
+      <div class="subtitle">
+        Manage academic departments, review leadership assignments, and organize your faculty.
+      </div>
     </div>
-    <div class="faculty-tag"><%= faculty.name %> · <%= faculty.code || 'Faculty' %></div>
+
+    <div class="faculty-tag">
+      <%= facultyInfo.name || 'Faculty' %> · <%= facultyInfo.code || 'Faculty' %>
+    </div>
   </div>
 
-  <% if (typeof messages !== 'undefined' && messages && messages.success) { %>
-    <div class="alert alert-success"><%= messages.success %></div>
+  <% if (successMessage) { %>
+    <div class="alert alert-success"><%= successMessage %></div>
   <% } %>
-  <% if (typeof messages !== 'undefined' && messages && messages.error) { %>
-    <div class="alert alert-error"><%= messages.error %></div>
+
+  <% if (errorMessage) { %>
+    <div class="alert alert-error"><%= errorMessage %></div>
   <% } %>
 
   <section class="stats">
-    <div class="stat"><div class="stat-label">TOTAL DEPARTMENTS</div><div class="stat-value"><%= summary.total || 0 %></div><div class="stat-note">In your faculty</div></div>
-    <div class="stat"><div class="stat-label">ASSIGNED HEADS</div><div class="stat-value"><%= summary.assigned || 0 %></div><div class="stat-note">Departments with leadership</div></div>
-    <div class="stat"><div class="stat-label">UNASSIGNED HEADS</div><div class="stat-value"><%= summary.unassigned || 0 %></div><div class="stat-note">Require a Department Head</div></div>
-    <div class="stat"><div class="stat-label">STUDENTS</div><div class="stat-value"><%= summary.students || 0 %></div><div class="stat-note">Across all departments</div></div>
+    <div class="stat">
+      <div class="stat-label">TOTAL DEPARTMENTS</div>
+      <div class="stat-value"><%= summary.total || 0 %></div>
+      <div class="stat-note">In your faculty</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">ASSIGNED HEADS</div>
+      <div class="stat-value"><%= summary.assigned || 0 %></div>
+      <div class="stat-note">Departments with leadership</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">UNASSIGNED HEADS</div>
+      <div class="stat-value"><%= summary.unassigned || 0 %></div>
+      <div class="stat-note">Require a Department Head</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">STUDENTS</div>
+      <div class="stat-value"><%= summary.students || 0 %></div>
+      <div class="stat-note">Across all departments</div>
+    </div>
   </section>
+
+  <!-- CREATE DEPARTMENT -->
 
   <section class="panel">
     <div class="panel-head">
-      <div><h2>Create a Department</h2><p>Add a new academic department to <%= faculty.name %>.</p></div>
+      <div>
+        <h2>Create a Department</h2>
+        <p>Add a new academic department to <%= facultyInfo.name || 'your faculty' %>.</p>
+      </div>
     </div>
+
     <div class="panel-body">
       <form method="POST" action="/sis/dean/departments/new">
         <div class="form-grid">
-          <div class="field"><label for="newName">DEPARTMENT NAME</label><input id="newName" name="name" required maxlength="150" placeholder="e.g. Computer Engineering"></div>
-          <div class="field"><label for="newCode">DEPARTMENT CODE</label><input id="newCode" name="code" maxlength="50" placeholder="e.g. CMPE"></div>
+          <div class="field">
+            <label for="newName">DEPARTMENT NAME</label>
+            <input
+              id="newName"
+              name="name"
+              required
+              maxlength="150"
+              placeholder="e.g. Computer Engineering">
+          </div>
+
+          <div class="field">
+            <label for="newCode">DEPARTMENT CODE</label>
+            <input
+              id="newCode"
+              name="code"
+              maxlength="50"
+              placeholder="e.g. CMPE">
+          </div>
         </div>
-        <div class="form-actions"><button class="btn btn-primary" type="submit">＋ Create Department</button></div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">＋ Create Department</button>
+        </div>
       </form>
     </div>
   </section>
 
+  <!-- DEPARTMENT DIRECTORY -->
+
   <section class="panel">
     <div class="panel-head">
-      <div><h2>Department Directory</h2><p><%= departmentList.length %> department(s) registered in this faculty.</p></div>
-      <div class="toolbar"><input class="search" id="departmentSearch" type="search" placeholder="Search departments..."></div>
+      <div>
+        <h2>Department Directory</h2>
+        <p><%= departmentList.length %> department(s) registered in this faculty.</p>
+      </div>
+
+      <div class="toolbar">
+        <input
+          class="search"
+          id="departmentSearch"
+          type="search"
+          placeholder="Search departments..."
+          aria-label="Search departments">
+      </div>
     </div>
+
     <div class="panel-body">
       <div class="department-grid" id="departmentGrid">
+
         <% departmentList.forEach(dept => { %>
-          <article class="department-card" data-search="<%= (dept.name + ' ' + (dept.code || '') + ' ' + (dept.head_name || '')).toLowerCase() %>">
+
+          <article
+            class="department-card"
+            data-search="<%= [dept.name, dept.code || '', dept.head_name || ''].join(' ').toLowerCase() %>">
+
             <div class="department-top">
               <div class="department-icon">▥</div>
+
               <span class="status <%= dept.head_id ? 'status-assigned' : 'status-unassigned' %>">
                 <%= dept.head_id ? 'HEAD ASSIGNED' : 'HEAD NEEDED' %>
               </span>
             </div>
+
             <div class="department-name"><%= dept.name %></div>
             <div class="department-code">CODE: <%= dept.code || 'NOT SET' %></div>
 
             <div class="metrics">
-              <div class="metric"><strong><%= dept.student_count || 0 %></strong><span>Students</span></div>
-              <div class="metric"><strong><%= dept.staff_count || 0 %></strong><span>Staff</span></div>
+              <div class="metric">
+                <strong><%= dept.student_count || 0 %></strong>
+                <span>Students</span>
+              </div>
+
+              <div class="metric">
+                <strong><%= dept.staff_count || 0 %></strong>
+                <span>Staff</span>
+              </div>
             </div>
 
             <div class="head-label">DEPARTMENT HEAD</div>
-            <div class="head-name"><%= dept.head_name || 'No Department Head assigned' %></div>
+            <div class="head-name">
+              <%= dept.head_name || 'No Department Head assigned' %>
+            </div>
 
             <div class="card-actions">
-              <button class="btn btn-light" type="button"
-                onclick="openEdit('<%= dept.id %>', <%- JSON.stringify(dept.name).replace(/</g, '\\u003c') %>, <%- JSON.stringify(dept.code || '').replace(/</g, '\\u003c') %>)">Edit Details</button>
-              <button class="btn btn-primary" type="button"
-                onclick="openHead('<%= dept.id %>', <%- JSON.stringify(dept.name).replace(/</g, '\\u003c') %>, '<%= dept.head_id || '' %>')">
+
+              <button
+                class="btn btn-light edit-department-btn"
+                type="button"
+                data-id="<%= dept.id %>"
+                data-name="<%= dept.name %>"
+                data-code="<%= dept.code || '' %>">
+                Edit Details
+              </button>
+
+              <button
+                class="btn btn-primary assign-head-btn"
+                type="button"
+                data-id="<%= dept.id %>"
+                data-name="<%= dept.name %>"
+                data-head-id="<%= dept.head_id || '' %>">
                 <%= dept.head_id ? 'Change Head' : 'Assign Head' %>
               </button>
+
             </div>
           </article>
+
         <% }) %>
+
         <% if (departmentList.length === 0) { %>
-          <div class="empty"><strong>No departments yet</strong>Create your first department using the form above.</div>
+          <div class="empty">
+            <strong>No departments yet</strong>
+            Create your first department using the form above.
+          </div>
         <% } %>
+
       </div>
-      <div class="empty" id="noSearchResults" style="display:none;margin-top:15px">No matching departments found.</div>
+
+      <div class="empty" id="noSearchResults" style="display:none;margin-top:15px">
+        No matching departments found.
+      </div>
     </div>
   </section>
+
 </main>
 
 <footer>LuxMind SIS · Dean Workspace</footer>
 
+<!-- EDIT DEPARTMENT DIALOG -->
+
 <dialog id="editDialog">
-  <div class="modal-head"><h3>Edit Department</h3><button class="modal-close" type="button" onclick="closeDialog('editDialog')">×</button></div>
+  <div class="modal-head">
+    <h3>Edit Department</h3>
+    <button class="modal-close" type="button" data-close-dialog="editDialog" aria-label="Close">×</button>
+  </div>
+
   <div class="modal-body">
     <form id="editForm" method="POST">
-      <div class="field"><label>DEPARTMENT NAME</label><input id="editName" name="name" required maxlength="150"></div>
-      <div class="field" style="margin-top:14px"><label>DEPARTMENT CODE</label><input id="editCode" name="code" maxlength="50"></div>
-      <div class="form-actions"><button class="btn btn-light" type="button" onclick="closeDialog('editDialog')">Cancel</button><button class="btn btn-primary" type="submit">Save Changes</button></div>
+
+      <div class="field">
+        <label for="editName">DEPARTMENT NAME</label>
+        <input id="editName" name="name" required maxlength="150">
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label for="editCode">DEPARTMENT CODE</label>
+        <input id="editCode" name="code" maxlength="50">
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-light" type="button" data-close-dialog="editDialog">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save Changes</button>
+      </div>
+
     </form>
   </div>
 </dialog>
 
+<!-- DEPARTMENT HEAD ASSIGNMENT DIALOG -->
+
 <dialog id="headDialog">
-  <div class="modal-head"><h3>Department Head Assignment</h3><button class="modal-close" type="button" onclick="closeDialog('headDialog')">×</button></div>
+  <div class="modal-head">
+    <h3>Department Head Assignment</h3>
+    <button class="modal-close" type="button" data-close-dialog="headDialog" aria-label="Close">×</button>
+  </div>
+
   <div class="modal-body">
+
     <p id="headDepartmentName" class="subtitle"></p>
+
     <form id="headForm" method="POST">
+
       <div class="field">
         <label for="headSelect">SELECT DEPARTMENT HEAD</label>
+
         <select id="headSelect" name="head_id">
           <option value="">No Department Head</option>
+
           <% staffCandidates.forEach(person => { %>
-            <option value="<%= person.id %>"><%= person.full_name %> (@<%= person.username %>) · <%= person.role %></option>
+            <option value="<%= person.id %>">
+              <%= person.full_name %> (@<%= person.username %>) · <%= person.role %>
+            </option>
           <% }) %>
+
         </select>
       </div>
-      <p class="subtitle" style="margin-top:12px">Only teachers and advisors in your faculty are eligible. A person can head only one department.</p>
+
+      <p class="modal-note">
+        Select an eligible staff member from your faculty.
+        A person can head only one department.
+        Select "No Department Head" to remove the current assignment.
+      </p>
+
       <div class="form-actions">
-        <button class="btn btn-light" type="button" onclick="closeDialog('headDialog')">Cancel</button>
+        <button class="btn btn-light" type="button" data-close-dialog="headDialog">Cancel</button>
         <button class="btn btn-primary" type="submit">Save Assignment</button>
       </div>
+
     </form>
   </div>
 </dialog>
 
 <script>
-function toggleMenu(){
-  document.getElementById('drawer').classList.toggle('open');
-  document.getElementById('menuOverlay').classList.toggle('open');
-}
-function closeDialog(id){document.getElementById(id).close();}
-function openEdit(id,name,code){
-  document.getElementById('editForm').action='/sis/dean/departments/'+id+'/edit';
-  document.getElementById('editName').value=name;
-  document.getElementById('editCode').value=code;
-  document.getElementById('editDialog').showModal();
-}
-function openHead(id,name,headId){
-  document.getElementById('headForm').action='/sis/dean/departments/'+id+'/assign-head';
-  document.getElementById('headDepartmentName').textContent=name;
-  document.getElementById('headSelect').value=headId;
-  document.getElementById('headDialog').showModal();
-}
-document.getElementById('departmentSearch').addEventListener('input',function(){
-  const term=this.value.trim().toLowerCase();
-  let visible=0;
-  document.querySelectorAll('.department-card').forEach(card=>{
-    const match=card.dataset.search.includes(term);
-    card.style.display=match?'':'none';
-    if(match)visible++;
+(function () {
+  'use strict';
+
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('menuOverlay');
+  const menuToggle = document.getElementById('menuToggle');
+
+  const editDialog = document.getElementById('editDialog');
+  const headDialog = document.getElementById('headDialog');
+
+  function openMenu() {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    menuToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMenu() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  menuToggle.addEventListener('click', function () {
+    if (drawer.classList.contains('open')) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   });
-  document.getElementById('noSearchResults').style.display=visible===0&&document.querySelectorAll('.department-card').length>0?'block':'none';
-});
-document.querySelectorAll('dialog').forEach(dialog=>{
-  dialog.addEventListener('click',event=>{
-    if(event.target===dialog)dialog.close();
+
+  overlay.addEventListener('click', closeMenu);
+  document.getElementById('drawerClose').addEventListener('click', closeMenu);
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeMenu();
+    }
   });
-});
+
+  // Close dialogs using their close buttons.
+
+  document.querySelectorAll('[data-close-dialog]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const dialog = document.getElementById(this.dataset.closeDialog);
+
+      if (dialog && dialog.open) {
+        dialog.close();
+      }
+    });
+  });
+
+  // Close a dialog when the user clicks its backdrop.
+
+  document.querySelectorAll('dialog').forEach(function (dialog) {
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) {
+        dialog.close();
+      }
+    });
+  });
+
+  // EDIT DEPARTMENT
+
+  document.querySelectorAll('.edit-department-btn').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const id = this.dataset.id;
+      const name = this.dataset.name;
+      const code = this.dataset.code;
+
+      if (!id) {
+        alert('Department ID is missing.');
+        return;
+      }
+
+      document.getElementById('editForm').action =
+        '/sis/dean/departments/' + encodeURIComponent(id) + '/edit';
+
+      document.getElementById('editName').value = name || '';
+      document.getElementById('editCode').value = code || '';
+
+      editDialog.showModal();
+    });
+  });
+
+  // ASSIGN OR CHANGE DEPARTMENT HEAD
+
+  document.querySelectorAll('.assign-head-btn').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const id = this.dataset.id;
+      const name = this.dataset.name;
+      const headId = this.dataset.headId || '';
+
+      if (!id) {
+        alert('Department ID is missing.');
+        return;
+      }
+
+      document.getElementById('headForm').action =
+        '/sis/dean/departments/' + encodeURIComponent(id) + '/assign-head';
+
+      document.getElementById('headDepartmentName').textContent =
+        'Department: ' + (name || 'Selected department');
+
+      const headSelect = document.getElementById('headSelect');
+      headSelect.value = headId;
+
+      headDialog.showModal();
+    });
+  });
+
+  // DEPARTMENT SEARCH
+
+  const searchInput = document.getElementById('departmentSearch');
+  const departmentCards = document.querySelectorAll('.department-card');
+  const noSearchResults = document.getElementById('noSearchResults');
+
+  searchInput.addEventListener('input', function () {
+    const term = this.value.trim().toLowerCase();
+    let visibleCount = 0;
+
+    departmentCards.forEach(function (card) {
+      const matches = (card.dataset.search || '').includes(term);
+
+      card.style.display = matches ? '' : 'none';
+
+      if (matches) {
+        visibleCount++;
+      }
+    });
+
+    noSearchResults.style.display =
+      visibleCount === 0 && departmentCards.length > 0 ? 'block' : 'none';
+  });
+
+  // Prevent accidental duplicate form submissions.
+
+  document.querySelectorAll('#editForm, #headForm').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Saving...';
+      }
+    });
+  });
+
+})();
 </script>
+
 </body>
 </html>
+```

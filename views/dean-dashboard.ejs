@@ -8,7 +8,8 @@
   - Overview
   - Faculty Profile
   - Departments Management
-  - All other Dean modules: internal workspaces
+  - Department Heads
+  - Other Dean modules: internal workspaces
 
   Existing route locals:
   user, faculty, stats, departments, students,
@@ -47,12 +48,6 @@ const fmtDate = value => {
 
 /*
   CENTRAL DEAN NAVIGATION
-  Add future modules here.
-  Each module automatically receives:
-  - Sidebar navigation
-  - Workspace section
-  - Breadcrumb title
-  - Active navigation state
 */
 
 const navGroups = [
@@ -159,14 +154,16 @@ const navGroups = [
 ];
 
 /*
-  Actual standalone pages.
-  Other modules use the internal workspace until their backend routes
-  and database operations are implemented.
+  ACTUAL STANDALONE PAGES
+
+  These pages have their own Express routes and EJS templates.
+  Department Heads is now connected here.
 */
 
 const standaloneRoutes = {
   'faculty-profile': '/sis/dean/faculty-profile',
-  'departments': '/sis/dean/departments'
+  'departments': '/sis/dean/departments',
+  'department-heads': '/sis/dean/department-heads'
 };
 
 const quickAccess = [
@@ -1274,8 +1271,7 @@ tr:last-child td{border-bottom:0}
       </section>
 
       <!-- =====================================
-           ALL OTHER DEAN WORKSPACES
-           Automatically generated from navGroups
+           OTHER INTERNAL DEAN WORKSPACES
       ====================================== -->
 
       <% navGroups.forEach(group => { %>
@@ -1332,15 +1328,6 @@ tr:last-child td{border-bottom:0}
                       Back to Overview
                     </button>
 
-                    <% if (item[0] === 'department-heads') { %>
-                      <a
-                        class="workspace-action"
-                        href="/sis/dean/departments"
-                      >
-                        Manage Departments
-                      </a>
-                    <% } %>
-
                   </div>
 
                 </div>
@@ -1363,9 +1350,7 @@ tr:last-child td{border-bottom:0}
   </main>
 </div>
 
-<!-- =====================================
-     DEAN WORKSPACE NAVIGATION JAVASCRIPT
-====================================== -->
+<!-- DEAN WORKSPACE NAVIGATION JAVASCRIPT -->
 
 <script>
 (function(){
@@ -1395,8 +1380,7 @@ tr:last-child td{border-bottom:0}
   };
 
   /*
-    Open a Dean workspace.
-    Each sidebar item has its own data-view identifier.
+    Open an internal Dean workspace.
   */
 
   function openView(viewId){
@@ -1409,12 +1393,10 @@ tr:last-child td{border-bottom:0}
       return;
     }
 
-    // Hide every other workspace.
     pages.forEach(page => {
       page.classList.toggle('active', page === target);
     });
 
-    // Update active sidebar item.
     navLinks.forEach(link => {
       link.classList.toggle(
         'active',
@@ -1422,7 +1404,6 @@ tr:last-child td{border-bottom:0}
       );
     });
 
-    // Get selected navigation title.
     const selected = navLinks.find(
       link => link.dataset.view === viewId
     );
@@ -1440,7 +1421,6 @@ tr:last-child td{border-bottom:0}
       behavior:'smooth'
     });
 
-    // Preserve selected workspace in browser URL.
     history.replaceState(
       null,
       '',
@@ -1448,7 +1428,7 @@ tr:last-child td{border-bottom:0}
     );
   }
 
-  // Sidebar workspace navigation.
+  // Internal sidebar navigation.
   navLinks.forEach(link => {
 
     link.addEventListener('click', function(){
@@ -1489,10 +1469,9 @@ tr:last-child td{border-bottom:0}
 
   });
 
-  // Close mobile menu when overlay is clicked.
   overlay.addEventListener('click', closeMenu);
 
-  // Notifications open the notifications workspace.
+  // Notifications open the internal notifications workspace.
   document.getElementById('notificationBtn').addEventListener(
     'click',
     function(){
@@ -1508,12 +1487,7 @@ tr:last-child td{border-bottom:0}
     }
   );
 
-  /*
-    Standalone pages:
-    Faculty Profile and Departments Management
-    navigate directly through their Express routes.
-  */
-
+  // Standalone pages navigate directly to their Express routes.
   standaloneLinks.forEach(link => {
 
     link.addEventListener('click', function(){
@@ -1524,7 +1498,7 @@ tr:last-child td{border-bottom:0}
 
   });
 
-  // Restore selected workspace when refreshing.
+  // Restore selected internal workspace when refreshing.
   function restoreWorkspace(){
 
     const hash = decodeURIComponent(

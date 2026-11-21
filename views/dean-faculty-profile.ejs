@@ -1,0 +1,1043 @@
+
+<%
+  const profile = faculty || {};
+  const safe = (value) => value == null ? '' : String(value);
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Profile | LuxMind SIS</title>
+
+<style>
+:root {
+  --green: #0e9f6e;
+  --green-dark: #087f59;
+  --green-light: #e9f7f0;
+  --ink: #172b25;
+  --muted: #718078;
+  --border: #e5ece8;
+  --background: #f4f7f5;
+  --white: #fff;
+  --shadow: 0 10px 35px rgba(20, 55, 38, .07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--ink);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+button, input, textarea {
+  font-family: inherit;
+}
+
+/* TOP NAVIGATION */
+
+.topbar {
+  height: 74px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 35px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-left, .top-right {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+
+.menu-toggle {
+  width: 43px;
+  height: 43px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 11px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  transition: .2s;
+}
+
+.menu-toggle:hover {
+  background: var(--green-light);
+  border-color: var(--green);
+}
+
+.menu-toggle span {
+  width: 19px;
+  height: 2px;
+  border-radius: 5px;
+  background: var(--ink);
+  transition: .2s;
+}
+
+.brand {
+  font-size: 21px;
+  font-weight: 850;
+  letter-spacing: -.7px;
+  color: var(--green-dark);
+}
+
+.brand small {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #f5f8f6;
+  border: 1px solid var(--border);
+  padding: 9px 14px;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-avatar {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.logout {
+  background: var(--green);
+  color: white;
+  text-decoration: none;
+  padding: 11px 17px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.logout:hover { background: var(--green-dark); }
+
+/* SLIDE-OUT MENU */
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 30, 22, .40);
+  z-index: 150;
+  opacity: 0;
+  visibility: hidden;
+  transition: .25s;
+}
+
+.menu-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 290px;
+  max-width: 85%;
+  background: white;
+  z-index: 160;
+  transform: translateX(-105%);
+  transition: transform .28s ease;
+  box-shadow: 15px 0 45px rgba(0,0,0,.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-head {
+  padding: 25px 22px;
+  background: linear-gradient(135deg, #087f59, #12a878);
+  color: white;
+}
+
+.drawer-head strong {
+  display: block;
+  font-size: 21px;
+}
+
+.drawer-head span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  opacity: .8;
+  margin-top: 5px;
+}
+
+.drawer-close {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: white;
+  font-size: 23px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.drawer-label {
+  padding: 23px 22px 9px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #99a69f;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 22px;
+  margin: 3px 12px;
+  border-radius: 9px;
+  text-decoration: none;
+  color: #53645b;
+  font-size: 13px;
+  font-weight: 700;
+  transition: .2s;
+}
+
+.drawer-link:hover {
+  background: #f0f8f4;
+  color: var(--green-dark);
+}
+
+.drawer-link.active {
+  color: var(--green-dark);
+  background: var(--green-light);
+}
+
+.drawer-icon {
+  width: 25px;
+  text-align: center;
+  font-size: 17px;
+}
+
+.drawer-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 19px 22px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* MAIN PAGE */
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 30px 65px;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  background: white;
+  color: #40534a;
+  text-decoration: none;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: .2s;
+}
+
+.back-button:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+  transform: translateX(-2px);
+}
+
+/* PAGE HERO */
+
+.hero {
+  margin-top: 25px;
+  padding: 30px;
+  border-radius: 17px;
+  background: linear-gradient(115deg, #075c42, #0e9f6e);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+  box-shadow: 0 12px 28px rgba(8, 127, 89, .15);
+}
+
+.hero-content { max-width: 650px; }
+
+.hero-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  opacity: .78;
+  margin-bottom: 11px;
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+  font-size: 30px;
+  letter-spacing: -.8px;
+}
+
+.hero p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  opacity: .88;
+}
+
+.hero-badge {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  padding: 14px 19px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 125px;
+}
+
+.hero-badge small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1px;
+  opacity: .75;
+  margin-bottom: 7px;
+}
+
+.hero-badge strong {
+  font-size: 14px;
+}
+
+/* MESSAGES */
+
+.notice {
+  padding: 14px 17px;
+  border-radius: 10px;
+  margin-top: 20px;
+  font-size: 13px;
+  background: #e8f7ef;
+  color: #087f59;
+  border: 1px solid #c9ead8;
+}
+
+.notice.error {
+  background: #fff0ef;
+  color: #b42318;
+  border-color: #f4ceca;
+}
+
+.info-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 15px 18px;
+  margin: 22px 0;
+  background: #edf5f1;
+  border: 1px solid #dceae2;
+  border-radius: 11px;
+  color: #62746a;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.info-icon {
+  font-size: 19px;
+}
+
+/* CARDS */
+
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  margin-bottom: 21px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  padding: 21px 25px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.section-number {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.card-header h2 {
+  margin: 0 0 5px;
+  font-size: 15px;
+}
+
+.card-header p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.card-body { padding: 25px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 21px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.full { grid-column: 1 / -1; }
+
+label {
+  color: #40534a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #dce5df;
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  font-size: 13px;
+  outline: none;
+  transition: .2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(14,159,110,.10);
+}
+
+input[readonly] {
+  background: #f3f6f4;
+  color: #718078;
+  cursor: not-allowed;
+}
+
+textarea {
+  min-height: 115px;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* LOGO PREVIEW */
+
+.logo-preview-area {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-top: 12px;
+  padding: 15px;
+  background: #f8faf9;
+  border: 1px dashed #d5e2da;
+  border-radius: 11px;
+}
+
+.logo-preview {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px;
+}
+
+.logo-placeholder {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-radius: 10px;
+  font-size: 25px;
+}
+
+.logo-preview-area span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* SAVE BAR */
+
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  box-shadow: 0 -5px 25px rgba(20,55,38,.07);
+  padding: 15px 19px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.save-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 19px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.btn-secondary {
+  background: #edf2ef;
+  color: #40534a;
+}
+
+.btn-secondary:hover { background: #e0e9e3; }
+
+.btn-primary {
+  background: var(--green);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+@media(max-width: 760px) {
+  .topbar { padding: 0 15px; height: 67px; }
+  .top-left, .top-right { gap: 10px; }
+  .brand { font-size: 18px; }
+  .brand small { font-size: 8px; }
+  .user-chip { display: none; }
+  .container { padding: 22px 15px 45px; }
+  .hero { padding: 24px 20px; align-items: flex-start; flex-direction: column; }
+  .hero h1 { font-size: 25px; }
+  .hero-badge { min-width: 0; }
+  .grid { grid-template-columns: 1fr; }
+  .full { grid-column: auto; }
+  .card-body { padding: 19px; }
+  .card-header { padding: 18px; }
+  .save-bar { align-items: stretch; flex-direction: column; }
+  .buttons { width: 100%; }
+  .buttons .btn { flex: 1; }
+}
+
+@media(max-width: 400px) {
+  .logout { padding: 10px 11px; }
+  .menu-toggle { width: 39px; height: 39px; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- HAMBURGER MENU DRAWER -->
+
+<div class="menu-overlay" id="menuOverlay"></div>
+
+<aside class="drawer" id="navigationDrawer">
+
+  <div class="drawer-head">
+    <strong>LuxMind</strong>
+    <span>FACULTY MANAGEMENT PORTAL</span>
+    <button class="drawer-close" id="drawerClose" type="button">×</button>
+  </div>
+
+  <div class="drawer-label">DEAN WORKSPACE</div>
+
+  <a href="/sis/dean" class="drawer-link">
+    <span class="drawer-icon">⌂</span>
+    Dashboard Overview
+  </a>
+
+  <a href="/sis/dean/faculty-profile" class="drawer-link active">
+    <span class="drawer-icon">▣</span>
+    Faculty Profile
+  </a>
+
+  <div class="drawer-label">FACULTY ADMINISTRATION</div>
+
+  <a href="/sis/dean#departments-management" class="drawer-link">
+    <span class="drawer-icon">▤</span>
+    Departments
+  </a>
+
+  <a href="/sis/dean#department-heads" class="drawer-link">
+    <span class="drawer-icon">♙</span>
+    Department Heads
+  </a>
+
+  <a href="/sis/dean#faculty-staff" class="drawer-link">
+    <span class="drawer-icon">♧</span>
+    Faculty Staff
+  </a>
+
+  <a href="/sis/dean#academic-programs" class="drawer-link">
+    <span class="drawer-icon">▥</span>
+    Academic Programs
+  </a>
+
+  <div class="drawer-label">ACCOUNT</div>
+
+  <a href="/logout" class="drawer-link">
+    <span class="drawer-icon">⇥</span>
+    Logout
+  </a>
+
+  <div class="drawer-footer">
+    LuxMind SIS<br>
+    Faculty Administration Workspace
+  </div>
+
+</aside>
+
+<!-- TOP BAR -->
+
+<header class="topbar">
+
+  <div class="top-left">
+
+    <button class="menu-toggle" id="menuToggle"
+      type="button" aria-label="Open navigation menu"
+      aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="brand">
+      LuxMind
+      <small>FACULTY MANAGEMENT PORTAL</small>
+    </div>
+
+  </div>
+
+  <div class="top-right">
+
+    <div class="user-chip">
+      <span class="user-avatar">
+        <%= safe(user && user.full_name).charAt(0).toUpperCase() %>
+      </span>
+      <%= safe(user && user.full_name) %>
+    </div>
+
+    <a href="/logout" class="logout">Logout</a>
+
+  </div>
+
+</header>
+
+<!-- MAIN CONTENT -->
+
+<main class="container">
+
+  <a href="/sis/dean" class="back-button">
+    <span>←</span>
+    Back to Dean Dashboard
+  </a>
+
+  <!-- HERO -->
+
+  <section class="hero">
+
+    <div class="hero-content">
+      <div class="hero-label">FACULTY ADMINISTRATION</div>
+
+      <h1>Faculty Profile</h1>
+
+      <p>
+        Manage your faculty's official identity, contact information,
+        institutional mission, vision and strategic objectives
+        from one central workspace.
+      </p>
+    </div>
+
+    <div class="hero-badge">
+      <small>FACULTY CODE</small>
+      <strong><%= safe(profile.code) || 'NOT SET' %></strong>
+    </div>
+
+  </section>
+
+  <!-- FLASH MESSAGES -->
+
+  <% if (typeof success !== 'undefined' && success && success.length) { %>
+    <div class="notice"><%= success[0] %></div>
+  <% } %>
+
+  <% if (typeof error !== 'undefined' && error && error.length) { %>
+    <div class="notice error"><%= error[0] %></div>
+  <% } %>
+
+  <div class="info-banner">
+    <span class="info-icon">ⓘ</span>
+    <div>
+      <strong>Profile management permissions</strong><br>
+      Faculty name, faculty code and Dean assignment are controlled
+      by the System Administrator. You can maintain the profile
+      information and institutional details below.
+    </div>
+  </div>
+
+  <form method="POST" action="/sis/dean/faculty-profile">
+
+    <!-- SECTION 1 -->
+
+    <section class="card">
+
+      <div class="card-header">
+        <div class="section-number">01</div>
+        <div>
+          <h2>Faculty Identity</h2>
+          <p>Official identification and general faculty information.</p>
+        </div>
+      </div>
+
+      <div class="card-body">
+
+        <div class="grid">
+
+          <div class="field">
+            <label>Faculty Name</label>
+            <input value="<%= safe(profile.name) %>" readonly>
+          </div>
+
+          <div class="field">
+            <label>Faculty Code</label>
+            <input value="<%= safe(profile.code) %>" readonly>
+          </div>
+
+          <div class="field full">
+            <label for="description">Faculty Description</label>
+            <textarea id="description" name="description"
+              maxlength="5000"
+              placeholder="Provide an overview of your faculty, its academic focus and areas of specialization."><%= safe(profile.description) %></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="logo_url">Faculty Logo URL</label>
+
+            <input type="url" id="logo_url" name="logo_url"
+              maxlength="2000"
+              value="<%= safe(profile.logo_url) %>"
+              placeholder="https://example.com/faculty-logo.png">
+
+            <span class="hint">
+              Enter a publicly accessible image URL to display the faculty logo.
+            </span>
+
+            <div class="logo-preview-area">
+
+              <div id="logoPlaceholder" class="logo-placeholder">✦</div>
+
+              <img id="logoPreview" class="logo-preview"
+                alt="Faculty logo preview"
+                style="display:none;">
+
+              <span>
+                Faculty logo preview<br>
+                The preview updates when you enter a valid image URL.
+              </span>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+
+    <section class="card">
+
+      <div class="card-header">
+        <div class="section-number">02</div>
+        <div>
+          <h2>Official Contact Information</h2>
+          <p>Faculty communication channels and location details.</p>
+        </div>
+      </div>
+
+      <div class="card-body">
+
+        <div class="grid">
+
+          <div class="field">
+            <label for="contact_email">Faculty Email Address</label>
+            <input type="email" id="contact_email"
+              name="contact_email" maxlength="255"
+              value="<%= safe(profile.contact_email) %>"
+              placeholder="faculty@university.edu">
+          </div>
+
+          <div class="field">
+            <label for="contact_phone">Telephone Number</label>
+            <input type="tel" id="contact_phone"
+              name="contact_phone" maxlength="50"
+              value="<%= safe(profile.contact_phone) %>"
+              placeholder="+90 ...">
+          </div>
+
+          <div class="field">
+            <label for="office_location">Office / Building Location</label>
+            <input id="office_location" name="office_location"
+              maxlength="500"
+              value="<%= safe(profile.office_location) %>"
+              placeholder="Building and office number">
+          </div>
+
+          <div class="field">
+            <label for="website">Faculty Website</label>
+            <input type="url" id="website" name="website"
+              maxlength="255"
+              value="<%= safe(profile.website) %>"
+              placeholder="https://...">
+          </div>
+
+          <div class="field">
+            <label for="office_hours">Office Working Hours</label>
+            <input id="office_hours" name="office_hours"
+              maxlength="255"
+              value="<%= safe(profile.office_hours) %>"
+              placeholder="Monday–Friday, 08:30–17:00">
+          </div>
+
+          <div class="field">
+            <label for="established_year">Year Established</label>
+            <input type="number" id="established_year"
+              name="established_year"
+              min="1800"
+              max="<%= new Date().getFullYear() %>"
+              value="<%= safe(profile.established_year) %>"
+              placeholder="e.g. 2005">
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+
+    <section class="card">
+
+      <div class="card-header">
+        <div class="section-number">03</div>
+        <div>
+          <h2>Mission, Vision & Strategic Objectives</h2>
+          <p>Define the faculty's institutional purpose and direction.</p>
+        </div>
+      </div>
+
+      <div class="card-body">
+
+        <div class="grid">
+
+          <div class="field full">
+            <label for="mission">Faculty Mission</label>
+            <textarea id="mission" name="mission"
+              maxlength="5000"
+              placeholder="Explain the faculty's core purpose, academic responsibilities and contribution to society."><%= safe(profile.mission) %></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="vision">Faculty Vision</label>
+            <textarea id="vision" name="vision"
+              maxlength="5000"
+              placeholder="Describe the faculty's long-term academic and institutional aspirations."><%= safe(profile.vision) %></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="objectives">Strategic Objectives</label>
+            <textarea id="objectives" name="objectives"
+              maxlength="5000"
+              placeholder="Describe the faculty's main academic, research and development objectives."><%= safe(profile.objectives) %></textarea>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SAVE ACTIONS -->
+
+    <div class="save-bar">
+
+      <div class="save-note">
+        <strong>Faculty Profile</strong><br>
+        Save your changes to update the faculty record.
+      </div>
+
+      <div class="buttons">
+
+        <a href="/sis/dean" class="btn btn-secondary">
+          Cancel
+        </a>
+
+        <button type="submit" class="btn btn-primary">
+          Save Changes
+        </button>
+
+      </div>
+
+    </div>
+
+  </form>
+
+</main>
+
+<script>
+// HAMBURGER MENU
+const menuToggle = document.getElementById('menuToggle');
+const navigationDrawer = document.getElementById('navigationDrawer');
+const menuOverlay = document.getElementById('menuOverlay');
+const drawerClose = document.getElementById('drawerClose');
+
+function openMenu() {
+  navigationDrawer.classList.add('open');
+  menuOverlay.classList.add('open');
+  menuToggle.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMenu() {
+  navigationDrawer.classList.remove('open');
+  menuOverlay.classList.remove('open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+menuToggle.addEventListener('click', openMenu);
+drawerClose.addEventListener('click', closeMenu);
+menuOverlay.addEventListener('click', closeMenu);
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') closeMenu();
+});
+
+// Close the drawer after choosing a navigation link.
+document.querySelectorAll('.drawer-link').forEach(function(link) {
+  link.addEventListener('click', closeMenu);
+});
+
+// FACULTY LOGO PREVIEW
+const logoInput = document.getElementById('logo_url');
+const logoPreview = document.getElementById('logoPreview');
+const logoPlaceholder = document.getElementById('logoPlaceholder');
+
+function updateLogoPreview() {
+  const url = logoInput.value.trim();
+
+  if (!url) {
+    logoPreview.style.display = 'none';
+    logoPlaceholder.style.display = 'grid';
+    logoPreview.removeAttribute('src');
+    return;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new Error('Invalid image URL');
+    }
+
+    logoPreview.onload = function() {
+      logoPreview.style.display = 'block';
+      logoPlaceholder.style.display = 'none';
+    };
+
+    logoPreview.onerror = function() {
+      logoPreview.style.display = 'none';
+      logoPlaceholder.style.display = 'grid';
+    };
+
+    logoPreview.src = parsed.href;
+
+  } catch (error) {
+    logoPreview.style.display = 'none';
+    logoPlaceholder.style.display = 'grid';
+  }
+}
+
+logoInput.addEventListener('input', updateLogoPreview);
+updateLogoPreview();
+</script>
+
+</body>
+</html>

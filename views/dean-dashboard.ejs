@@ -137,11 +137,34 @@ navGroups.forEach(group => group.items.forEach(item => moduleDescriptions[item[0
       <div class="nav-group">
         <div class="nav-label"><%= group.title %></div>
         <nav class="nav" aria-label="<%= group.title %>">
-          <% group.items.forEach(item => { %>
-            <button type="button" class="nav-link <%= item[0] === 'overview' ? 'active' : '' %>" data-view="<%= item[0] %>" title="<%= item[3] %>">
-              <span class="nav-icon"><%= item[1] %></span><span><%= item[2] %></span>
-            </button>
-          <% }) %>
+         
+<% group.items.forEach(item => { %>
+
+  <% if (item[0] === 'faculty-profile') { %>
+
+    <!-- Faculty Profile: open the actual page -->
+    <a href="/sis/dean/faculty-profile"
+       class="nav-link"
+       title="<%= item[3] %>">
+      <span class="nav-icon"><%= item[1] %></span>
+      <span><%= item[2] %></span>
+    </a>
+
+  <% } else { %>
+
+    <!-- Other Dean Workspace navigation items -->
+    <button type="button"
+            class="nav-link <%= item[0] === 'overview' ? 'active' : '' %>"
+            data-view="<%= item[0] %>"
+            title="<%= item[3] %>">
+      <span class="nav-icon"><%= item[1] %></span>
+      <span><%= item[2] %></span>
+    </button>
+
+  <% } %>
+
+<% }) %>
+
         </nav>
       </div>
     <% }) %>

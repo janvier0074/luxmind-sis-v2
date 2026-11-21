@@ -1,0 +1,331 @@
+<%
+const dean = user || {};
+const facultyInfo = faculty || {};
+const departmentList = departments || [];
+const staffList = candidates || [];
+const successMessages = success || [];
+const errorMessages = error || [];
+
+const assignedCount = departmentList.filter(d => d.head_id).length;
+const unassignedCount = departmentList.length - assignedCount;
+
+const safe = value => value == null ? '' : String(value);
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Department Heads | LuxMind SIS</title>
+
+<style>
+:root {
+  --green:#0e9f6e;
+  --dark:#087f59;
+  --light:#e9f7f0;
+  --ink:#172b25;
+  --muted:#718078;
+  --border:#e5ece8;
+  --bg:#f4f7f5;
+  --white:#fff;
+  --shadow:0 8px 28px rgba(20,55,38,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif}
+button,input,select{font:inherit}
+.topbar{height:72px;background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:10}
+.brand{font-size:21px;font-weight:850;color:var(--dark)}
+.brand small{display:block;font-size:9px;letter-spacing:1.5px;color:var(--muted);margin-top:3px}
+.top-right{display:flex;align-items:center;gap:14px}
+.user-chip{background:#f5f8f6;border:1px solid var(--border);padding:9px 14px;border-radius:30px;font-size:12px;font-weight:700}
+.logout{background:var(--green);color:white;text-decoration:none;padding:10px 15px;border-radius:8px;font-size:12px;font-weight:800}
+.layout{display:flex;min-height:calc(100vh - 72px)}
+.sidebar{width:250px;background:white;border-right:1px solid var(--border);padding:25px 16px;flex-shrink:0}
+.side-label{font-size:10px;color:#9aa79f;font-weight:800;letter-spacing:1.3px;padding:10px 12px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:12px 13px;margin:4px 0;border-radius:9px;text-decoration:none;color:#53645b;font-size:13px;font-weight:650}
+.nav-link:hover,.nav-link.active{background:var(--light);color:var(--dark)}
+.nav-icon{width:22px;text-align:center;font-size:16px}
+.main{flex:1;padding:32px;min-width:0;max-width:1500px;margin:0 auto}
+.page-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}
+.eyebrow{font-size:11px;font-weight:800;color:var(--green);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px}
+h1{font-size:27px;margin:0 0 8px;letter-spacing:-.7px}
+.subtitle{font-size:13px;color:var(--muted);line-height:1.6}
+.faculty-tag{background:white;border:1px solid var(--border);padding:10px 14px;border-radius:10px;font-size:12px;font-weight:750}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:25px}
+.stat{background:white;border:1px solid var(--border);border-radius:13px;padding:19px;box-shadow:var(--shadow)}
+.stat-label{font-size:12px;color:var(--muted);font-weight:650}
+.stat-number{font-size:27px;font-weight:850;margin-top:8px}
+.stat-note{font-size:11px;color:var(--muted);margin-top:5px}
+.panel{background:white;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.panel-head{padding:21px 23px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.panel-title{font-size:16px;font-weight:800}
+.panel-subtitle{font-size:12px;color:var(--muted);margin-top:5px}
+.search{width:260px;max-width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;outline:none;font-size:12px}
+.search:focus,select:focus{border-color:var(--green)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{text-align:left;background:#f9fbfa;color:#718078;font-size:10px;text-transform:uppercase;letter-spacing:.8px;padding:14px 20px}
+td{padding:17px 20px;border-top:1px solid #edf1ee;font-size:12px;vertical-align:middle}
+.dept-name{font-weight:800;font-size:13px}
+.dept-code{font-size:11px;color:var(--muted);margin-top:5px}
+.head-name{font-weight:750}
+.head-username{font-size:11px;color:var(--muted);margin-top:4px}
+.status{display:inline-block;padding:6px 9px;border-radius:20px;font-size:10px;font-weight:800}
+.status.assigned{background:#e7f7ef;color:#087f59}
+.status.unassigned{background:#fff4df;color:#996500}
+.assign-form{display:flex;gap:7px;min-width:260px}
+.assign-form select{flex:1;min-width:0;padding:9px;border:1px solid var(--border);border-radius:7px;background:white;font-size:11px;outline:none}
+.btn{border:0;background:var(--green);color:white;padding:9px 12px;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--dark)}
+.notice{padding:13px 16px;border-radius:9px;margin-bottom:17px;font-size:12px;font-weight:650}
+.notice.success{background:#e8f7ef;color:#087f59}
+.notice.error{background:#fff0ef;color:#b42318}
+.empty{text-align:center;padding:45px 20px;color:var(--muted);font-size:13px}
+.footer{text-align:center;color:#9aa79f;font-size:10px;padding:25px}
+@media(max-width:850px){
+ .sidebar{width:210px}
+ .main{padding:22px}
+ .stats{grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+ .sidebar{display:none}
+ .topbar{padding:0 16px}
+ .main{padding:18px 12px}
+ .page-heading{display:block}
+ .faculty-tag{display:inline-block;margin-top:15px}
+ .stats{grid-template-columns:1fr}
+ .panel-head{align-items:stretch}
+ .search{width:100%}
+ .user-chip{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    LuxMind
+    <small>STUDENT INFORMATION SYSTEM</small>
+  </div>
+
+  <div class="top-right">
+    <div class="user-chip">
+      <%= safe(dean.full_name) %> · Dean
+    </div>
+    <a href="/logout" class="logout">Logout</a>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="side-label">DEAN WORKSPACE</div>
+
+    <a class="nav-link" href="/sis/dean">
+      <span class="nav-icon">▦</span> Dashboard
+    </a>
+
+    <a class="nav-link" href="/sis/dean/faculty-profile">
+      <span class="nav-icon">🏛</span> Faculty Profile
+    </a>
+
+    <a class="nav-link" href="/sis/dean/departments">
+      <span class="nav-icon">▤</span> Departments
+    </a>
+
+    <a class="nav-link active" href="/sis/dean/department-heads">
+      <span class="nav-icon">♙</span> Department Heads
+    </a>
+
+    <div class="side-label">ACADEMIC MANAGEMENT</div>
+
+    <a class="nav-link" href="/sis/dean">
+      <span class="nav-icon">♧</span> Faculty Overview
+    </a>
+  </aside>
+
+  <main class="main">
+
+    <div class="page-heading">
+      <div>
+        <div class="eyebrow">Dean Administration</div>
+        <h1>Department Heads</h1>
+        <div class="subtitle">
+          Manage department leadership and assign staff members to head each department.
+        </div>
+      </div>
+
+      <div class="faculty-tag">
+        Faculty: <%= safe(facultyInfo.name) %>
+        <% if (facultyInfo.code) { %>
+          · <%= safe(facultyInfo.code) %>
+        <% } %>
+      </div>
+    </div>
+
+    <% successMessages.forEach(message => { %>
+      <div class="notice success"><%= message %></div>
+    <% }) %>
+
+    <% errorMessages.forEach(message => { %>
+      <div class="notice error"><%= message %></div>
+    <% }) %>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Total Departments</div>
+        <div class="stat-number"><%= departmentList.length %></div>
+        <div class="stat-note">Departments in this faculty</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Assigned Department Heads</div>
+        <div class="stat-number"><%= assignedCount %></div>
+        <div class="stat-note">Departments with leadership assigned</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Without Department Heads</div>
+        <div class="stat-number"><%= unassignedCount %></div>
+        <div class="stat-note">Departments requiring assignment</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Department Leadership Directory</div>
+          <div class="panel-subtitle">
+            Assign or update the head responsible for each department.
+          </div>
+        </div>
+
+        <input
+          type="search"
+          id="departmentSearch"
+          class="search"
+          placeholder="Search department or head..."
+          aria-label="Search departments"
+        >
+      </div>
+
+      <% if (departmentList.length === 0) { %>
+        <div class="empty">
+          No departments have been registered under this faculty yet.
+          <br><br>
+          <a href="/sis/dean/departments">Go to Department Management</a>
+        </div>
+      <% } else { %>
+
+        <div class="table-wrap">
+          <table id="departmentTable">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Current Department Head</th>
+                <th>Assignment Status</th>
+                <th>Assign / Change Head</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <% departmentList.forEach(department => { %>
+                <tr>
+                  <td>
+                    <div class="dept-name"><%= safe(department.name) %></div>
+                    <div class="dept-code">
+                      <%= safe(department.code) || 'No department code' %>
+                    </div>
+                  </td>
+
+                  <td>
+                    <% if (department.head_id) { %>
+                      <div class="head-name"><%= safe(department.head_name) %></div>
+                      <div class="head-username">
+                        @<%= safe(department.head_username) %>
+                      </div>
+                    <% } else { %>
+                      <span style="color:#9aa79f">No head assigned</span>
+                    <% } %>
+                  </td>
+
+                  <td>
+                    <% if (department.head_id) { %>
+                      <span class="status assigned">Assigned</span>
+                    <% } else { %>
+                      <span class="status unassigned">Unassigned</span>
+                    <% } %>
+                  </td>
+
+                  <td>
+                    <form
+                      class="assign-form"
+                      method="POST"
+                      action="/sis/dean/departments/<%= department.id %>/assign-head"
+                    >
+                      <select name="head_id" required>
+                        <option value="">Select staff member</option>
+
+                        <% staffList.forEach(member => { %>
+                          <option
+                            value="<%= member.id %>"
+                            <%= Number(department.head_id) === Number(member.id) ? 'selected' : '' %>
+                          >
+                            <%= safe(member.full_name) %> (@<%= safe(member.username) %>)
+                          </option>
+                        <% }) %>
+                      </select>
+
+                      <button type="submit" class="btn">
+                        <%= department.head_id ? 'Update' : 'Assign' %>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="noSearchResults" class="empty" style="display:none">
+          No departments match your search.
+        </div>
+
+      <% } %>
+    </section>
+
+    <div class="footer">
+      LuxMind SIS · Faculty Administration Workspace
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  const search = document.getElementById('departmentSearch');
+  const table = document.getElementById('departmentTable');
+  const noResults = document.getElementById('noSearchResults');
+
+  if (!search || !table) return;
+
+  search.addEventListener('input', function () {
+    const query = this.value.toLowerCase().trim();
+    const rows = table.querySelectorAll('tbody tr');
+    let visible = 0;
+
+    rows.forEach(row => {
+      const matches = row.textContent.toLowerCase().includes(query);
+      row.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    });
+
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+    table.style.display = visible === 0 ? 'none' : 'table';
+  });
+})();
+</script>
+
+</body>
+</html>

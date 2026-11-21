@@ -1688,6 +1688,66 @@ app.post('/sis/dean/faculty-profile', requireRole('dean'), async (req, res) => {
     return res.redirect('/sis/dean/faculty-profile');
   }
 });
+
+
+
+
+// ============================================
+// --- DEAN DEPARTMENT HEADS PAGE ---
+// ============================================
+
+app.get('/sis/dean/department-heads', requireRole('dean'), async (req, res) => {
+  try {
+    const facultyResult = await pool.query(`
+      SELECT id, name, code
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (!facultyResult.rows.length) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const faculty = facultyResult.rows[0];
+
+    const departmentsResult = await pool.query(`
+      SELECT
+        d.id,
+        d.name,
+        d.code,
+        d.head_id,
+        u.full_name AS head_name,
+        u.username AS head_username
+      FROM departments d
+      LEFT JOIN users u ON u.id = d.head_id
+      WHERE d.faculty_id = $1
+      ORDER BY d.name
+    `, [faculty.id]);
+
+    const candidatesResult = await pool.query(`
+      SELECT id, full_name, username, role, department_id
+      FROM users
+      WHERE faculty_id = $1
+        AND role IN ('teacher', 'advisor', 'department_head')
+      ORDER BY full_name
+    `, [faculty.id]);
+
+    res.render('dean-department-heads', {
+      user: req.session.user,
+      faculty,
+      departments: departmentsResult.rows,
+      candidates: candidatesResult.rows,
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+
+  } catch (err) {
+    console.error('Dean Department Heads Error:', err);
+    res.status(500).send('Department Heads Error: ' + err.message);
+  }
+});
 // ============================================
 // --- DEAN DEPARTMENT MANAGEMENT ---
 // ============================================

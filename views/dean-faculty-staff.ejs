@@ -4,18 +4,10 @@ const dean = user || {};
 const facultyInfo = faculty || {};
 const staffList = staff || [];
 const departmentList = departments || [];
-const totals = stats || {
-  total: 0,
-  teachers: 0,
-  advisors: 0,
-  departmentHeads: 0
-};
+const totals = stats || { total: 0, teachers: 0, advisors: 0, departmentHeads: 0 };
 
 const safe = value => value == null ? '' : String(value);
-const initials = value => {
-  const parts = safe(value).trim().split(/\s+/).filter(Boolean);
-  return parts.slice(0, 2).map(part => part[0].toUpperCase()).join('') || 'S';
-};
+const initials = value => safe(value).trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('') || 'S';
 
 const roleLabel = role => ({
   teacher: 'Teacher',
@@ -42,19 +34,19 @@ const errorMessages = error || [];
 :root {
   --green: #0e9f6e;
   --green-dark: #087f5b;
+  --sidebar: #103d31;
+  --sidebar-hover: #1b5141;
+  --sidebar-active: #24634e;
   --green-light: #e8f7f1;
   --ink: #172b25;
   --muted: #718078;
   --border: #e7eee9;
-  --surface: #ffffff;
-  --background: #f5f8f6;
-  --danger: #dc4444;
-  --shadow: 0 8px 28px rgba(20, 50, 36, .055);
+  --background: #f4f7f5;
+  --white: #fff;
+  --shadow: 0 8px 28px rgba(20,50,36,.055);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -63,97 +55,142 @@ body {
   background: var(--background);
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+a { text-decoration: none; color: inherit; }
 
 .layout {
-  min-height: 100vh;
   display: flex;
+  min-height: 100vh;
 }
 
+/* FIXED SIDEBAR */
+
 .sidebar {
-  width: 250px;
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 258px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid var(--border);
-  padding: 27px 17px;
+  background: var(--sidebar);
+  color: white;
+  padding: 25px 17px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 5px 0 22px rgba(0,0,0,.08);
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.2);
+  border-radius: 10px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 0 9px 29px;
-  font-size: 21px;
+  padding: 0 9px 30px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -.8px;
 }
 
 .brand-mark {
-  width: 37px;
-  height: 37px;
+  width: 39px;
+  height: 39px;
   display: grid;
   place-items: center;
-  color: white;
-  background: var(--green);
+  color: var(--sidebar);
+  background: #fff;
   border-radius: 11px;
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .side-label {
-  padding: 12px 10px 9px;
-  color: #9aa79f;
+  padding: 13px 11px 10px;
+  color: #a3c1b4;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1.1px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .side-link {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 12px 11px;
-  margin: 4px 0;
+  gap: 12px;
+  padding: 12px 13px;
   border-radius: 9px;
-  color: #627168;
-  font-size: 13px;
+  color: #d1e3da;
+  font-size: 12px;
   font-weight: 600;
-  transition: .2s;
+  transition: background .2s, color .2s, transform .2s;
 }
 
 .side-link:hover {
-  background: #f2f8f4;
-  color: var(--green-dark);
+  background: var(--sidebar-hover);
+  color: #fff;
+  transform: translateX(2px);
 }
 
 .side-link.active {
-  color: var(--green-dark);
-  background: var(--green-light);
+  background: var(--sidebar-active);
+  color: #fff;
+  box-shadow: inset 3px 0 #55d6a2;
 }
 
 .side-icon {
-  width: 20px;
+  width: 21px;
   text-align: center;
-  font-size: 17px;
+  font-size: 18px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 25px;
 }
 
 .sidebar-footer {
-  margin-top: 35px;
-  padding: 15px 10px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.7;
+  padding: 16px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,.055);
+  color: #c1d9ce;
+  font-size: 10px;
+  line-height: 1.8;
 }
 
-.main {
-  flex: 1;
-  min-width: 0;
-  padding: 30px 35px 45px;
+.sidebar-footer strong {
+  color: white;
+  font-size: 12px;
 }
+
+/* MAIN CONTENT SCROLLS INDEPENDENTLY */
+
+.main {
+  width: calc(100% - 258px);
+  height: 100vh;
+  margin-left: 258px;
+  padding: 28px 34px 45px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.main::-webkit-scrollbar { width: 7px; }
+.main::-webkit-scrollbar-thumb {
+  background: #cbd8cf;
+  border-radius: 10px;
+}
+.main::-webkit-scrollbar-thumb:hover { background: #9eafa3; }
 
 .topbar {
   display: flex;
@@ -165,12 +202,10 @@ a {
 
 .breadcrumb {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
-.breadcrumb strong {
-  color: var(--ink);
-}
+.breadcrumb strong { color: var(--ink); }
 
 .profile-chip {
   display: flex;
@@ -179,20 +214,21 @@ a {
   background: white;
   border: 1px solid var(--border);
   border-radius: 30px;
-  padding: 7px 13px 7px 7px;
-  font-size: 12px;
+  padding: 6px 13px 6px 6px;
+  font-size: 11px;
   font-weight: 700;
+  box-shadow: 0 3px 12px rgba(0,0,0,.025);
 }
 
 .avatar {
-  width: 35px;
-  height: 35px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--green-light);
   color: var(--green-dark);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   flex-shrink: 0;
 }
@@ -202,42 +238,42 @@ a {
   justify-content: space-between;
   align-items: flex-start;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 25px;
 }
 
 .eyebrow {
   color: var(--green);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1.1px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   margin-bottom: 9px;
 }
 
 h1 {
   margin: 0;
-  font-size: 27px;
-  letter-spacing: -.9px;
+  font-size: 28px;
+  letter-spacing: -1px;
 }
 
 .subtitle {
   margin-top: 8px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 .faculty-code {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-top: 12px;
-  padding: 7px 10px;
-  border-radius: 7px;
+  gap: 8px;
+  margin-top: 13px;
+  padding: 8px 11px;
+  border-radius: 8px;
   background: white;
   border: 1px solid var(--border);
   color: #66756c;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .actions {
@@ -254,7 +290,7 @@ h1 {
   padding: 11px 14px;
   border-radius: 9px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   border: 1px solid var(--border);
   background: white;
@@ -264,8 +300,9 @@ h1 {
 }
 
 .btn:hover {
-  border-color: #b9dcca;
+  border-color: #a9d5bf;
   color: var(--green-dark);
+  transform: translateY(-1px);
 }
 
 .btn-primary {
@@ -279,19 +316,28 @@ h1 {
   background: var(--green-dark);
 }
 
+/* STATISTICS */
+
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0,1fr));
   gap: 15px;
   margin-bottom: 23px;
 }
 
 .stat-card {
+  position: relative;
   background: white;
   border: 1px solid var(--border);
   border-radius: 13px;
   padding: 19px;
   box-shadow: var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(20,50,36,.09);
 }
 
 .stat-top {
@@ -299,13 +345,13 @@ h1 {
   align-items: center;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .stat-icon {
-  width: 34px;
-  height: 34px;
+  width: 35px;
+  height: 35px;
   display: grid;
   place-items: center;
   border-radius: 10px;
@@ -315,8 +361,8 @@ h1 {
 }
 
 .stat-number {
-  margin-top: 15px;
-  font-size: 27px;
+  margin-top: 14px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -.8px;
 }
@@ -326,6 +372,8 @@ h1 {
   color: #95a198;
   font-size: 10px;
 }
+
+/* DIRECTORY */
 
 .panel {
   background: white;
@@ -353,7 +401,7 @@ h1 {
 .panel-heading p {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .result-count {
@@ -361,16 +409,16 @@ h1 {
   border-radius: 7px;
   background: var(--green-light);
   color: var(--green-dark);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .filters {
   display: grid;
-  grid-template-columns: minmax(200px, 1.7fr) repeat(2, minmax(145px, 1fr));
-  gap: 11px;
-  padding: 17px 22px;
+  grid-template-columns: minmax(200px,1.7fr) repeat(2,minmax(145px,1fr)) auto;
+  gap: 10px;
+  padding: 16px 22px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -385,7 +433,8 @@ h1 {
   background: #fff;
   color: var(--ink);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
+  transition: .2s;
 }
 
 .field:focus {
@@ -393,13 +442,8 @@ h1 {
   box-shadow: 0 0 0 3px rgba(14,159,110,.09);
 }
 
-.search-wrap {
-  position: relative;
-}
-
-.search-wrap input {
-  padding-left: 35px;
-}
+.search-wrap { position: relative; }
+.search-wrap input { padding-left: 35px; }
 
 .search-symbol {
   position: absolute;
@@ -407,7 +451,28 @@ h1 {
   top: 12px;
   color: #96a49b;
   font-size: 13px;
+  pointer-events: none;
 }
+
+.clear-btn {
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #63746a;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.clear-btn:hover {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+/* TABLE */
 
 .table-wrap {
   width: 100%;
@@ -417,15 +482,13 @@ h1 {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 750px;
 }
 
-thead {
-  background: #fafcfb;
-}
+thead { background: #f9fbfa; }
 
 th {
-  padding: 13px 18px;
+  padding: 14px 17px;
   text-align: left;
   color: #849188;
   font-size: 9px;
@@ -436,15 +499,18 @@ th {
 }
 
 td {
-  padding: 15px 18px;
+  padding: 14px 17px;
   border-top: 1px solid #eff3f0;
-  font-size: 11px;
+  font-size: 10px;
   vertical-align: middle;
 }
 
-tbody tr:hover {
-  background: #fbfdfb;
+tbody tr {
+  cursor: pointer;
+  transition: background .15s;
 }
+
+tbody tr:hover { background: #f3faf6; }
 
 .staff-person {
   display: flex;
@@ -453,13 +519,10 @@ tbody tr:hover {
   min-width: 185px;
 }
 
-.staff-person .avatar {
-  width: 36px;
-  height: 36px;
-}
+.staff-person .avatar { width: 37px; height: 37px; }
 
 .person-name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   color: #263a30;
 }
@@ -467,7 +530,7 @@ tbody tr:hover {
 .person-username {
   margin-top: 4px;
   color: #98a49c;
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .email {
@@ -485,20 +548,9 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-.role-teacher {
-  color: #2463a0;
-  background: #edf5ff;
-}
-
-.role-advisor {
-  color: #8155a6;
-  background: #f5effb;
-}
-
-.role-head {
-  color: #087f5b;
-  background: #e8f7f1;
-}
+.role-teacher { color: #2463a0; background: #edf5ff; }
+.role-advisor { color: #8155a6; background: #f5effb; }
+.role-head { color: #087f5b; background: #e8f7f1; }
 
 .department {
   color: #64736a;
@@ -510,7 +562,7 @@ tbody tr:hover {
   align-items: center;
   gap: 6px;
   color: #16865e;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 }
 
@@ -521,6 +573,13 @@ tbody tr:hover {
   background: #20b477;
 }
 
+.view-hint {
+  color: #a2aea5;
+  font-size: 9px;
+}
+
+/* EMPTY STATE */
+
 .empty-state {
   display: none;
   padding: 55px 20px;
@@ -528,10 +587,7 @@ tbody tr:hover {
   color: var(--muted);
 }
 
-.empty-icon {
-  font-size: 29px;
-  margin-bottom: 12px;
-}
+.empty-icon { font-size: 30px; margin-bottom: 12px; }
 
 .empty-state strong {
   display: block;
@@ -540,116 +596,182 @@ tbody tr:hover {
   margin-bottom: 7px;
 }
 
-.empty-state p {
-  font-size: 11px;
-}
+.empty-state p { font-size: 10px; }
+
+/* ALERTS */
 
 .alert {
   padding: 12px 15px;
   border-radius: 9px;
   margin-bottom: 15px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
-.alert-success {
-  background: #e9f8f0;
-  color: #087f5b;
-}
-
-.alert-error {
-  background: #fff0f0;
-  color: #b72e2e;
-}
+.alert-success { background: #e9f8f0; color: #087f5b; }
+.alert-error { background: #fff0f0; color: #b72e2e; }
 
 .footer-note {
   margin-top: 22px;
   color: #9aa69e;
-  font-size: 10px;
+  font-size: 9px;
   text-align: center;
 }
 
-@media(max-width: 1050px) {
-  .sidebar {
-    width: 215px;
-  }
+/* STAFF DETAILS MODAL */
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(12,31,24,.55);
+  backdrop-filter: blur(3px);
+}
+
+.modal-backdrop.show { display: flex; }
+
+.modal {
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 25px 70px rgba(0,0,0,.2);
+  animation: modalIn .2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 { margin: 0; font-size: 16px; }
+
+.close-modal {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #f0f4f1;
+  color: #53645a;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.modal-person {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 15px;
+}
+
+.modal-person .avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 15px;
+}
+
+.modal-person strong { display: block; font-size: 13px; }
+.modal-person span { color: var(--muted); font-size: 10px; }
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f3f1;
+  font-size: 11px;
+}
+
+.detail-row span:first-child { color: var(--muted); }
+.detail-row strong { text-align: right; overflow-wrap: anywhere; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width: 1100px) {
+  .sidebar { width: 230px; }
   .main {
-    padding: 25px 22px;
+    width: calc(100% - 230px);
+    margin-left: 230px;
+    padding: 25px 22px 40px;
   }
-
-  .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .filters { grid-template-columns: 1fr 1fr; }
 }
 
 @media(max-width: 720px) {
-  .layout {
-    display: block;
-  }
+  .layout { display: block; }
 
   .sidebar {
+    position: relative;
     width: 100%;
+    height: auto;
+    max-height: none;
     padding: 13px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    overflow: visible;
   }
 
-  .brand {
-    padding: 0 7px 10px;
-  }
+  .brand { padding: 0 7px 12px; }
 
-  .side-label,
-  .sidebar-footer {
-    display: none;
-  }
+  .side-label, .sidebar-bottom { display: none; }
 
   .sidebar nav {
-    display: flex;
+    flex-direction: row;
     gap: 5px;
     overflow-x: auto;
+    padding-bottom: 3px;
   }
 
   .side-link {
+    flex-shrink: 0;
     white-space: nowrap;
-    padding: 9px 10px;
+    padding: 10px;
   }
+
+  .side-link:hover { transform: none; }
 
   .main {
+    width: 100%;
+    height: auto;
+    min-height: calc(100vh - 100px);
+    margin-left: 0;
     padding: 20px 14px 35px;
+    overflow: visible;
   }
 
-  .page-heading {
-    display: block;
-  }
+  .page-heading { display: block; }
+  .actions { margin-top: 16px; }
+  .stats { gap: 9px; }
+  .stat-card { padding: 14px; }
+  .stat-number { font-size: 23px; }
+  .filters { grid-template-columns: 1fr; padding: 14px; }
+  .clear-btn { height: 38px; }
+  .panel-heading { padding: 17px 14px; }
+  .topbar { margin-bottom: 22px; }
+}
 
-  .actions {
-    margin-top: 16px;
-  }
-
-  .stats {
-    gap: 9px;
-  }
-
-  .stat-card {
-    padding: 14px;
-  }
-
-  .stat-number {
-    font-size: 23px;
-  }
-
-  .filters {
-    grid-template-columns: 1fr;
-    padding: 14px;
-  }
-
-  .panel-heading {
-    padding: 17px 14px;
-  }
-
-  .topbar {
-    margin-bottom: 22px;
-  }
+@media(max-width: 390px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  h1 { font-size: 24px; }
+  .breadcrumb { font-size: 9px; }
 }
 </style>
 </head>
@@ -687,9 +809,12 @@ tbody tr:hover {
       </a>
     </nav>
 
-    <div class="sidebar-footer">
-      <strong>LuxMind SIS</strong><br>
-      Faculty Administration Portal
+    <div class="sidebar-bottom">
+      <div class="sidebar-footer">
+        <strong>LuxMind SIS</strong><br>
+        Faculty Administration Portal<br>
+        Academic Management Workspace
+      </div>
     </div>
   </aside>
 
@@ -734,9 +859,7 @@ tbody tr:hover {
       </div>
 
       <div class="actions">
-        <a class="btn" href="/sis/dean/departments">
-          ▤ Departments
-        </a>
+        <a class="btn" href="/sis/dean/departments">▤ Departments</a>
         <a class="btn btn-primary" href="/sis/dean/department-heads">
           ♙ Manage Department Heads
         </a>
@@ -744,68 +867,44 @@ tbody tr:hover {
     </section>
 
     <section class="stats">
-
       <div class="stat-card">
-        <div class="stat-top">
-          Total Faculty Staff
-          <span class="stat-icon">♧</span>
-        </div>
+        <div class="stat-top">Total Faculty Staff <span class="stat-icon">♧</span></div>
         <div class="stat-number"><%= totals.total %></div>
         <div class="stat-note">Academic staff in this faculty</div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-top">
-          Teachers
-          <span class="stat-icon">▣</span>
-        </div>
+        <div class="stat-top">Teachers <span class="stat-icon">▣</span></div>
         <div class="stat-number"><%= totals.teachers %></div>
         <div class="stat-note">Teaching personnel</div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-top">
-          Advisors
-          <span class="stat-icon">♙</span>
-        </div>
+        <div class="stat-top">Advisors <span class="stat-icon">♙</span></div>
         <div class="stat-number"><%= totals.advisors %></div>
         <div class="stat-note">Academic advising personnel</div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-top">
-          Department Heads
-          <span class="stat-icon">⌘</span>
-        </div>
+        <div class="stat-top">Department Heads <span class="stat-icon">⌘</span></div>
         <div class="stat-number"><%= totals.departmentHeads %></div>
         <div class="stat-note">Staff with department head role</div>
       </div>
-
     </section>
 
     <section class="panel">
-
       <div class="panel-heading">
         <div>
           <h2>Staff Directory</h2>
-          <p>Academic personnel registered under your faculty.</p>
+          <p>Academic personnel registered under your faculty. Select a staff member to view details.</p>
         </div>
-
-        <div class="result-count" id="resultCount">
-          <%= staffList.length %> Members
-        </div>
+        <div class="result-count" id="resultCount"><%= staffList.length %> Members</div>
       </div>
 
       <div class="filters">
-
         <div class="search-wrap">
           <span class="search-symbol">⌕</span>
-          <input
-            class="field"
-            type="search"
-            id="staffSearch"
-            placeholder="Search name, username or email..."
-          >
+          <input class="field" type="search" id="staffSearch" placeholder="Search name, username or email...">
         </div>
 
         <select class="field" id="roleFilter">
@@ -818,12 +917,11 @@ tbody tr:hover {
         <select class="field" id="departmentFilter">
           <option value="">All departments</option>
           <% departmentList.forEach(department => { %>
-            <option value="<%= department.id %>">
-              <%= safe(department.name) %>
-            </option>
+            <option value="<%= department.id %>"><%= safe(department.name) %></option>
           <% }); %>
         </select>
 
+        <button class="clear-btn" type="button" id="clearFilters">Clear filters</button>
       </div>
 
       <div class="table-wrap">
@@ -835,73 +933,53 @@ tbody tr:hover {
               <th>Role</th>
               <th>Department</th>
               <th>Account</th>
+              <th>Details</th>
             </tr>
           </thead>
 
           <tbody id="staffTableBody">
-
             <% staffList.forEach(member => {
-              const roleClass =
-                member.role === 'department_head'
-                  ? 'role-head'
-                  : member.role === 'advisor'
-                    ? 'role-advisor'
-                    : 'role-teacher';
+              const roleClass = member.role === 'department_head'
+                ? 'role-head'
+                : member.role === 'advisor'
+                  ? 'role-advisor'
+                  : 'role-teacher';
             %>
-
-              <tr
-                class="staff-row"
-                data-search="<%= safe([member.full_name, member.username, member.email].join(' ')).toLowerCase() %>"
-                data-role="<%= safe(member.role) %>"
-                data-department="<%= safe(member.department_id) %>"
-              >
+              <tr class="staff-row"
+                  tabindex="0"
+                  role="button"
+                  aria-label="View details for <%= safe(member.full_name || member.username) %>"
+                  data-name="<%= safe(member.full_name || 'Name not provided') %>"
+                  data-username="<%= safe(member.username) %>"
+                  data-email="<%= safe(member.email || 'Not provided') %>"
+                  data-role="<%= safe(member.role) %>"
+                  data-department-name="<%= safe(member.department_name || 'Not assigned') %>"
+                  data-search="<%= safe([member.full_name, member.username, member.email].join(' ')).toLowerCase() %>"
+                  data-department="<%= safe(member.department_id) %>">
 
                 <td>
                   <div class="staff-person">
-                    <span class="avatar">
-                      <%= initials(member.full_name || member.username) %>
-                    </span>
-
+                    <span class="avatar"><%= initials(member.full_name || member.username) %></span>
                     <div>
-                      <div class="person-name">
-                        <%= safe(member.full_name || 'Name not provided') %>
-                      </div>
-                      <div class="person-username">
-                        @<%= safe(member.username) %>
-                      </div>
+                      <div class="person-name"><%= safe(member.full_name || 'Name not provided') %></div>
+                      <div class="person-username">@<%= safe(member.username) %></div>
                     </div>
                   </div>
                 </td>
 
-                <td>
-                  <span class="email">
-                    <%= safe(member.email || 'Not provided') %>
-                  </span>
-                </td>
+                <td><span class="email"><%= safe(member.email || 'Not provided') %></span></td>
+
+                <td><span class="role-badge <%= roleClass %>"><%= roleLabel(member.role) %></span></td>
+
+                <td><span class="department"><%= safe(member.department_name || 'Not assigned') %></span></td>
 
                 <td>
-                  <span class="role-badge <%= roleClass %>">
-                    <%= roleLabel(member.role) %>
-                  </span>
+                  <span class="status"><span class="status-dot"></span> Registered</span>
                 </td>
 
-                <td>
-                  <span class="department">
-                    <%= safe(member.department_name || 'Not assigned') %>
-                  </span>
-                </td>
-
-                <td>
-                  <span class="status">
-                    <span class="status-dot"></span>
-                    Registered
-                  </span>
-                </td>
-
+                <td><span class="view-hint">View details →</span></td>
               </tr>
-
             <% }); %>
-
           </tbody>
         </table>
       </div>
@@ -911,14 +989,54 @@ tbody tr:hover {
         <strong>No matching staff members</strong>
         <p>Try changing your search or filter selection.</p>
       </div>
-
     </section>
 
     <div class="footer-note">
       LuxMind Student Information System · Faculty Administration
     </div>
-
   </main>
+</div>
+
+<!-- STAFF DETAILS WINDOW -->
+<div class="modal-backdrop" id="staffModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h3 id="modalTitle">Staff Information</h3>
+      <button class="close-modal" type="button" id="closeModal" aria-label="Close">×</button>
+    </div>
+
+    <div class="modal-person">
+      <span class="avatar" id="modalAvatar">S</span>
+      <div>
+        <strong id="modalName">Staff name</strong>
+        <span id="modalUsername">@username</span>
+      </div>
+    </div>
+
+    <div class="detail-row">
+      <span>Email address</span>
+      <strong id="modalEmail">—</strong>
+    </div>
+
+    <div class="detail-row">
+      <span>Staff role</span>
+      <strong id="modalRole">—</strong>
+    </div>
+
+    <div class="detail-row">
+      <span>Department</span>
+      <strong id="modalDepartment">—</strong>
+    </div>
+
+    <div class="detail-row">
+      <span>Account</span>
+      <strong>Registered</strong>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" type="button" id="doneModal">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -926,10 +1044,14 @@ tbody tr:hover {
   const searchInput = document.getElementById('staffSearch');
   const roleFilter = document.getElementById('roleFilter');
   const departmentFilter = document.getElementById('departmentFilter');
+  const clearButton = document.getElementById('clearFilters');
+
   const rows = Array.from(document.querySelectorAll('.staff-row'));
   const resultCount = document.getElementById('resultCount');
   const emptyState = document.getElementById('emptyState');
   const tableBody = document.getElementById('staffTableBody');
+
+  const modal = document.getElementById('staffModal');
 
   function filterStaff() {
     const search = searchInput.value.trim().toLowerCase();
@@ -961,6 +1083,66 @@ tbody tr:hover {
   searchInput.addEventListener('input', filterStaff);
   roleFilter.addEventListener('change', filterStaff);
   departmentFilter.addEventListener('change', filterStaff);
+
+  clearButton.addEventListener('click', function () {
+    searchInput.value = '';
+    roleFilter.value = '';
+    departmentFilter.value = '';
+    filterStaff();
+    searchInput.focus();
+  });
+
+  function openStaffDetails(row) {
+    const name = row.dataset.name || 'Staff member';
+    const username = row.dataset.username || '';
+    const email = row.dataset.email || 'Not provided';
+    const role = row.dataset.role || '';
+    const department = row.dataset.departmentName || 'Not assigned';
+
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalUsername').textContent = '@' + username;
+    document.getElementById('modalEmail').textContent = email;
+    document.getElementById('modalRole').textContent =
+      role.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    document.getElementById('modalDepartment').textContent = department;
+    document.getElementById('modalAvatar').textContent =
+      name.trim().split(/\s+/).slice(0, 2).map(x => x[0].toUpperCase()).join('') || 'S';
+
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('closeModal').focus();
+  }
+
+  function closeStaffDetails() {
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  rows.forEach(row => {
+    row.addEventListener('click', () => openStaffDetails(row));
+
+    row.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openStaffDetails(row);
+      }
+    });
+  });
+
+  document.getElementById('closeModal').addEventListener('click', closeStaffDetails);
+  document.getElementById('doneModal').addEventListener('click', closeStaffDetails);
+
+  modal.addEventListener('click', event => {
+    if (event.target === modal) closeStaffDetails();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && modal.classList.contains('show')) {
+      closeStaffDetails();
+    }
+  });
+
+  filterStaff();
 })();
 </script>
 

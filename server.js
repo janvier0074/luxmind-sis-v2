@@ -1445,15 +1445,19 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
 });
 
 
+
 // ============================================
 // --- DEAN PORTAL ---
 // ============================================
 app.get('/sis/dean', requireRole('dean'), async (req, res) => {
   try {
-    const deanCheck = await pool.query(
-      `SELECT id, name, code, description FROM faculties WHERE dean_id = $1 LIMIT 1`,
-      [req.session.user.id]
-    );
+    // 1. Find the faculty assigned to the logged-in Dean.
+    const deanCheck = await pool.query(`
+      SELECT id, name, code, description
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
 
     if (deanCheck.rows.length === 0) {
       req.flash('error', 'You are not assigned as a Dean of any faculty.');
@@ -1462,187 +1466,440 @@ app.get('/sis/dean', requireRole('dean'), async (req, res) => {
 
     const faculty = deanCheck.rows[0];
 
+    // 2. Faculty statistics.
     const statsRes = await pool.query(`
       SELECT
-        (SELECT COUNT(*) FROM departments WHERE faculty_id = $1) AS dept_count,
-        (SELECT COUNT(*) FROM users WHERE faculty_id = $1 AND role = 'student') AS student_count,
-        (SELECT COUNT(*) FROM users WHERE faculty_id = $1 AND role IN ('teacher', 'advisor')) AS staff_count,
-        (SELECT COUNT(*) FROM courses WHERE faculty_id = $1) AS course_count,
-        (SELECT COUNT(*) FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE c.faculty_id = $1) AS section_count
+        (SELECT COUNT(*) FROM departments
+         WHERE faculty_id = $1) AS department_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE faculty_id = $1 AND role = 'student') AS student_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE faculty_id = $1
+         AND role IN ('teacher', 'advisor', 'department_head')) AS staff_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE faculty_id = $1 AND role = 'teacher') AS teacher_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE faculty_id = $1 AND role = 'advisor') AS advisor_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE faculty_id = $1 AND role = 'department_head') AS department_head_count,
+
+        (SELECT COUNT(*) FROM courses
+         WHERE faculty_id = $1) AS course_count
     `, [faculty.id]);
 
-    const stats = statsRes.rows[0];
-
+    // 3. Departments and their Department Heads.
     const departmentsRes = await pool.query(`
-      SELECT d.*, u.full_name AS head_name,
-        (SELECT COUNT(*) FROM users usr WHERE usr.department_id = d.id AND usr.role = 'student') AS student_count,
-        (SELECT COUNT(*) FROM users usr WHERE usr.department_id = d.id AND usr.role IN ('teacher', 'advisor')) AS staff_count
+      SELECT
+        d.id,
+        d.name,
+        d.code,
+        u.full_name AS head_name,
+        u.username AS head_username
       FROM departments d
       LEFT JOIN users u ON u.id = d.head_id
       WHERE d.faculty_id = $1
       ORDER BY d.name
     `, [faculty.id]);
 
-    const teachersRes = await pool.query(`
-      SELECT id, full_name FROM users
-      WHERE faculty_id = $1 AND role IN ('teacher', 'advisor')
+    // 4. Students belonging to this faculty.
+    const studentsRes = await pool.query(`
+      SELECT
+        id,
+        full_name,
+        username,
+        department_id
+      FROM users
+      WHERE faculty_id = $1 AND role = 'student'
       ORDER BY full_name
+      LIMIT 100
     `, [faculty.id]);
 
-    const requestsRes = await pool.query(`
-      SELECT fr.*, u.full_name AS reviewer_name
-      FROM faculty_requests fr
-      LEFT JOIN users u ON u.id = fr.reviewed_by
-      WHERE fr.submitted_by = $1
-      ORDER BY fr.submitted_at DESC
-      LIMIT 20
-    `, [req.session.user.id]);
+    // 5. Faculty staff.
+    const staffRes = await pool.query(`
+      SELECT
+        u.id,
+        u.full_name,
+        u.username,
+        u.role,
+        d.name AS department_name
+      FROM users u
+      LEFT JOIN departments d ON d.id = u.department_id
+      WHERE u.faculty_id = $1
+        AND u.role IN ('teacher', 'advisor', 'department_head')
+      ORDER BY u.full_name
+    `, [faculty.id]);
 
+    // 6. Faculty courses.
+    const coursesRes = await pool.query(`
+      SELECT code, title
+      FROM courses
+      WHERE faculty_id = $1
+      ORDER BY title
+    `, [faculty.id]);
+
+    // 7. Recent academic activity.
     const activityRes = await pool.query(`
-      SELECT g.letter_grade, c.code, c.title, u.full_name AS student_name, g.created_at
+      SELECT
+        CONCAT('Grade recorded: ', g.letter_grade) AS title,
+        CONCAT(u.full_name, ' - ', c.code, ' ', c.title) AS description,
+        g.created_at
       FROM grades g
       JOIN course_sections s ON s.id = g.section_id
       JOIN courses c ON c.id = s.course_id
       JOIN users u ON u.id = g.student_id
-      WHERE c.faculty_id = $1 AND g.letter_grade IS NOT NULL
+      WHERE c.faculty_id = $1
+        AND g.letter_grade IS NOT NULL
       ORDER BY g.created_at DESC
       LIMIT 10
     `, [faculty.id]);
 
-    const staffRes = await pool.query(`
-      SELECT u.id, u.full_name, u.username, u.role, d.name AS department_name
-      FROM users u
-      LEFT JOIN departments d ON d.id = u.department_id
-      WHERE u.faculty_id = $1 AND u.role IN ('teacher', 'advisor')
-      ORDER BY u.full_name
-    `, [faculty.id]);
+    // 8. Announcements placeholder.
+    const announcements = [];
 
+    // 9. Render the Dean dashboard.
     res.render('dean-dashboard', {
       user: req.session.user,
-      faculty: faculty,
-      stats: stats,
+      faculty,
+      stats: statsRes.rows[0],
       departments: departmentsRes.rows,
-      teachers: teachersRes.rows,
-      requests: requestsRes.rows,
+      students: studentsRes.rows,
+      staff: staffRes.rows,
+      courses: coursesRes.rows,
       activity: activityRes.rows,
-      staff: staffRes.rows
+      announcements
     });
 
   } catch (err) {
-    res.status(500).send("Dean Dashboard Error: " + err.message);
+    console.error('Dean Dashboard Error:', err);
+    res.status(500).send('Dean Dashboard Error: ' + err.message);
   }
 });
 
-
-
-
-
 // ============================================
-// --- DEAN FACULTY PROFILE ---
+// --- DEAN DEPARTMENT MANAGEMENT ---
 // ============================================
 
-// Display Faculty Profile
-app.get('/sis/dean/faculty-profile', requireRole('dean'), async (req, res) => {
+// Display Department Management
+app.get('/sis/dean/departments', requireRole('dean'), async (req, res) => {
   try {
-    const result = await pool.query(`
+    // Identify the faculty assigned to this Dean.
+    const facultyRes = await pool.query(
+      `SELECT id, name, code
+       FROM faculties
+       WHERE dean_id = $1
+       LIMIT 1`,
+      [req.session.user.id]
+    );
+
+    if (facultyRes.rows.length === 0) {
+      return res.status(403).send('No faculty is assigned to your Dean account.');
+    }
+
+    const faculty = facultyRes.rows[0];
+
+    // Load departments and their statistics.
+    const departmentsRes = await pool.query(`
       SELECT
-        id, name, code, description,
-        logo_url, contact_email, contact_phone,
-        office_location, website, established_year,
-        mission, vision, objectives, office_hours
-      FROM faculties
-      WHERE dean_id = $1
-      LIMIT 1
-    `, [req.session.user.id]);
+        d.id,
+        d.name,
+        d.code,
+        d.head_id,
+        u.full_name AS head_name,
+        u.username AS head_username,
 
-    if (result.rows.length === 0) {
-      return res.status(403).send(
-        'Access denied: No faculty is assigned to your Dean account.'
-      );
-    }
+        (SELECT COUNT(*)
+         FROM users s
+         WHERE s.department_id = d.id
+         AND s.role = 'student') AS student_count,
 
-    res.render('dean-faculty-profile', {
+        (SELECT COUNT(*)
+         FROM users st
+         WHERE st.department_id = d.id
+         AND st.role IN ('teacher', 'advisor', 'department_head')) AS staff_count
+
+      FROM departments d
+      LEFT JOIN users u ON u.id = d.head_id
+      WHERE d.faculty_id = $1
+      ORDER BY d.name
+    `, [faculty.id]);
+
+    // Only staff belonging to this faculty can become Department Heads.
+    const candidatesRes = await pool.query(`
+      SELECT id, full_name, username, role
+      FROM users
+      WHERE faculty_id = $1
+      AND role IN ('teacher', 'advisor', 'department_head')
+      ORDER BY full_name
+    `, [faculty.id]);
+
+    const departments = departmentsRes.rows;
+
+    const stats = {
+      total: departments.length,
+      assigned: departments.filter(d => d.head_id !== null).length,
+      unassigned: departments.filter(d => d.head_id === null).length,
+      students: departments.reduce((sum, d) => sum + Number(d.student_count), 0),
+      staff: departments.reduce((sum, d) => sum + Number(d.staff_count), 0)
+    };
+
+    res.render('dean-departments', {
       user: req.session.user,
-      faculty: result.rows[0]
+      faculty,
+      departments,
+      candidates: candidatesRes.rows,
+      stats
     });
 
   } catch (err) {
-    console.error('Faculty Profile Error:', err);
-    res.status(500).send('Unable to load Faculty Profile.');
+    console.error('Dean Departments Error:', err);
+    res.status(500).send('Unable to load Department Management.');
   }
 });
 
 
-// Save Faculty Profile
-app.post('/sis/dean/faculty-profile', requireRole('dean'), async (req, res) => {
+// Create a Department
+app.post('/sis/dean/departments/new', requireRole('dean'), async (req, res) => {
   try {
-    const {
-      description,
-      logo_url,
-      contact_email,
-      contact_phone,
-      office_location,
-      website,
-      established_year,
-      mission,
-      vision,
-      objectives,
-      office_hours
-    } = req.body;
+    const { name, code } = req.body;
 
-    const year = established_year
-      ? Number(established_year)
-      : null;
+    if (!name || !name.trim()) {
+      req.flash('error', 'Department name is required.');
+      return res.redirect('/sis/dean/departments');
+    }
 
-    if (year !== null && (!Number.isInteger(year) || year < 1800 || year > new Date().getFullYear())) {
-      return res.status(400).send('Invalid establishment year.');
+    const facultyRes = await pool.query(
+      `SELECT id FROM faculties WHERE dean_id = $1 LIMIT 1`,
+      [req.session.user.id]
+    );
+
+    if (facultyRes.rows.length === 0) {
+      return res.status(403).send('No faculty is assigned to your account.');
+    }
+
+    await pool.query(`
+      INSERT INTO departments (faculty_id, name, code)
+      VALUES ($1, $2, $3)
+    `, [
+      facultyRes.rows[0].id,
+      name.trim(),
+      code && code.trim() ? code.trim() : null
+    ]);
+
+    req.flash('success', 'Department created successfully.');
+    res.redirect('/sis/dean/departments');
+
+  } catch (err) {
+    console.error('Create Department Error:', err);
+    req.flash('error', 'Unable to create department: ' + err.message);
+    res.redirect('/sis/dean/departments');
+  }
+});
+
+
+// Edit Department Details
+app.post('/sis/dean/departments/:deptId/edit', requireRole('dean'), async (req, res) => {
+  try {
+    const { name, code } = req.body;
+    const departmentId = Number(req.params.deptId);
+
+    if (!Number.isInteger(departmentId) || departmentId <= 0) {
+      return res.status(400).send('Invalid department.');
+    }
+
+    if (!name || !name.trim()) {
+      req.flash('error', 'Department name is required.');
+      return res.redirect('/sis/dean/departments');
     }
 
     const result = await pool.query(`
-      UPDATE faculties
-      SET
-        description = $1,
-        logo_url = $2,
-        contact_email = $3,
-        contact_phone = $4,
-        office_location = $5,
-        website = $6,
-        established_year = $7,
-        mission = $8,
-        vision = $9,
-        objectives = $10,
-        office_hours = $11
-      WHERE dean_id = $12
-      RETURNING id
+      UPDATE departments d
+      SET name = $1, code = $2
+      FROM faculties f
+      WHERE d.id = $3
+      AND d.faculty_id = f.id
+      AND f.dean_id = $4
+      RETURNING d.id
     `, [
-      description || null,
-      logo_url || null,
-      contact_email || null,
-      contact_phone || null,
-      office_location || null,
-      website || null,
-      year,
-      mission || null,
-      vision || null,
-      objectives || null,
-      office_hours || null,
+      name.trim(),
+      code && code.trim() ? code.trim() : null,
+      departmentId,
       req.session.user.id
     ]);
 
     if (result.rows.length === 0) {
-      return res.status(403).send(
-        'Access denied: No faculty is assigned to your Dean account.'
-      );
+      return res.status(404).send('Department not found in your faculty.');
     }
 
-    req.flash('success', 'Faculty profile updated successfully.');
-    res.redirect('/sis/dean/faculty-profile');
+    req.flash('success', 'Department details updated successfully.');
+    res.redirect('/sis/dean/departments');
 
   } catch (err) {
-    console.error('Save Faculty Profile Error:', err);
-    res.status(500).send('Unable to save Faculty Profile.');
+    console.error('Edit Department Error:', err);
+    req.flash('error', 'Unable to update department: ' + err.message);
+    res.redirect('/sis/dean/departments');
   }
 });
+
+
+// Assign, Replace, or Remove a Department Head
+app.post(
+  '/sis/dean/departments/:deptId/assign-head',
+  requireRole('dean'),
+  async (req, res) => {
+
+    const client = await pool.connect();
+
+    try {
+      const departmentId = Number(req.params.deptId);
+      const newHeadId = req.body.head_id
+        ? Number(req.body.head_id)
+        : null;
+
+      if (!Number.isInteger(departmentId) || departmentId <= 0) {
+        throw new Error('Invalid department.');
+      }
+
+      await client.query('BEGIN');
+
+      // Lock the department and verify that it belongs to this Dean's faculty.
+      const departmentRes = await client.query(`
+        SELECT d.id, d.head_id
+        FROM departments d
+        JOIN faculties f ON f.id = d.faculty_id
+        WHERE d.id = $1
+        AND f.dean_id = $2
+        FOR UPDATE OF d
+      `, [departmentId, req.session.user.id]);
+
+      if (departmentRes.rows.length === 0) {
+        throw new Error('Department not found in your faculty.');
+      }
+
+      const oldHeadId = departmentRes.rows[0].head_id;
+
+      // Remove the current Department Head.
+      if (newHeadId === null) {
+        if (oldHeadId) {
+          await client.query(`
+            UPDATE users
+            SET role = COALESCE(department_head_previous_role, 'teacher'),
+                department_head_previous_role = NULL
+            WHERE id = $1 AND role = 'department_head'
+          `, [oldHeadId]);
+        }
+
+        await client.query(`
+          UPDATE departments
+          SET head_id = NULL
+          WHERE id = $1
+        `, [departmentId]);
+
+        await client.query('COMMIT');
+
+        req.flash('success', 'Department Head removed successfully.');
+        return res.redirect('/sis/dean/departments');
+      }
+
+      if (!Number.isInteger(newHeadId) || newHeadId <= 0) {
+        throw new Error('Invalid Department Head account.');
+      }
+
+      if (oldHeadId === newHeadId) {
+        await client.query('COMMIT');
+        req.flash('success', 'This person is already the Department Head.');
+        return res.redirect('/sis/dean/departments');
+      }
+
+      // Verify that the selected staff member belongs to this faculty.
+      const newUserRes = await client.query(`
+        SELECT id, role, department_head_previous_role
+        FROM users
+        WHERE id = $1
+        AND faculty_id = (
+          SELECT faculty_id
+          FROM departments
+          WHERE id = $2
+        )
+        FOR UPDATE
+      `, [newHeadId, departmentId]);
+
+      if (newUserRes.rows.length === 0) {
+        throw new Error('Selected user does not belong to your faculty.');
+      }
+
+      const newUser = newUserRes.rows[0];
+
+      if (!['teacher', 'advisor', 'department_head'].includes(newUser.role)) {
+        throw new Error('Only teachers or advisors can be appointed.');
+      }
+
+      // Prevent one person from heading multiple departments.
+      const existingAssignment = await client.query(`
+        SELECT id, name
+        FROM departments
+        WHERE head_id = $1
+        AND id <> $2
+        LIMIT 1
+      `, [newHeadId, departmentId]);
+
+      if (existingAssignment.rows.length > 0) {
+        throw new Error(
+          `This user already heads ${existingAssignment.rows[0].name}.`
+        );
+      }
+
+      // Restore the previous Department Head's original role.
+      if (oldHeadId) {
+        await client.query(`
+          UPDATE users
+          SET role = COALESCE(department_head_previous_role, 'teacher'),
+              department_head_previous_role = NULL
+          WHERE id = $1 AND role = 'department_head'
+        `, [oldHeadId]);
+      }
+
+      // Save the new head's previous role and promote their account.
+      await client.query(`
+        UPDATE users
+        SET department_head_previous_role =
+              CASE
+                WHEN role = 'department_head'
+                THEN department_head_previous_role
+                ELSE role
+              END,
+            role = 'department_head'
+        WHERE id = $1
+      `, [newHeadId]);
+
+      // Record the appointment.
+      await client.query(`
+        UPDATE departments
+        SET head_id = $1
+        WHERE id = $2
+      `, [newHeadId, departmentId]);
+
+      await client.query('COMMIT');
+
+      req.flash('success', 'Department Head appointed successfully.');
+      res.redirect('/sis/dean/departments');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+
+      console.error('Dean Department Head Assignment Error:', err);
+      req.flash('error', err.message);
+      res.redirect('/sis/dean/departments');
+
+    } finally {
+      client.release();
+    }
+  }
+);
 
 
 // ============================================

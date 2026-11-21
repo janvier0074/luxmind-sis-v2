@@ -1580,6 +1580,114 @@ app.get('/sis/dean', requireRole('dean'), async (req, res) => {
   }
 });
 
+
+
+// ============================================
+// --- DEAN FACULTY PROFILE ---
+// ============================================
+
+app.get('/sis/dean/faculty-profile', requireRole('dean'), async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id, name, code, description, logo_url,
+        contact_email, contact_phone, office_location,
+        website, established_year, mission, vision,
+        objectives, office_hours
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (result.rows.length === 0) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    res.render('dean-faculty-profile', {
+      user: req.session.user,
+      faculty: result.rows[0],
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+
+  } catch (err) {
+    console.error('Dean Faculty Profile Error:', err);
+    res.status(500).send('Faculty Profile Error: ' + err.message);
+  }
+});
+
+app.post('/sis/dean/faculty-profile', requireRole('dean'), async (req, res) => {
+  try {
+    const {
+      description,
+      logo_url,
+      contact_email,
+      contact_phone,
+      office_location,
+      website,
+      office_hours,
+      established_year,
+      mission,
+      vision,
+      objectives
+    } = req.body;
+
+    const year = established_year === '' || established_year == null
+      ? null
+      : Number(established_year);
+
+    if (year !== null &&
+        (!Number.isInteger(year) || year < 1 || year > new Date().getFullYear())) {
+      req.flash('error', 'Please enter a valid established year.');
+      return res.redirect('/sis/dean/faculty-profile');
+    }
+
+    const result = await pool.query(`
+      UPDATE faculties
+      SET
+        description = $1,
+        logo_url = $2,
+        contact_email = $3,
+        contact_phone = $4,
+        office_location = $5,
+        website = $6,
+        office_hours = $7,
+        established_year = $8,
+        mission = $9,
+        vision = $10,
+        objectives = $11
+      WHERE dean_id = $12
+      RETURNING id
+    `, [
+      description || null,
+      logo_url || null,
+      contact_email || null,
+      contact_phone || null,
+      office_location || null,
+      website || null,
+      office_hours || null,
+      year,
+      mission || null,
+      vision || null,
+      objectives || null,
+      req.session.user.id
+    ]);
+
+    if (result.rows.length === 0) {
+      req.flash('error', 'No assigned faculty was found. Nothing was saved.');
+      return res.redirect('/sis/dean/faculty-profile');
+    }
+
+    req.flash('success', 'Faculty profile updated successfully.');
+    return res.redirect('/sis/dean/faculty-profile');
+
+  } catch (err) {
+    console.error('Dean Faculty Profile Save Error:', err);
+    req.flash('error', 'Unable to save faculty profile: ' + err.message);
+    return res.redirect('/sis/dean/faculty-profile');
+  }
+});
 // ============================================
 // --- DEAN DEPARTMENT MANAGEMENT ---
 // ============================================

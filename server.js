@@ -243,6 +243,9 @@ app.post('/login', async (req, res) => {
       if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance');
       if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
       if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
+if (req.session.user.role === 'department_head') {
+  return res.redirect('/sis/department-head');
+}
       if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
       if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');
       if (deanFaculty) return res.redirect('/sis/dean');
@@ -1530,7 +1533,7 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
 // ============================================
 // --- DEPARTMENT HEAD PORTAL ---
 // ============================================
-app.get('/sis/department-head', requireLogin, async (req, res) => {
+app.get('/sis/department-head', requireRole('department_head'), async (req, res) => {
   try {
     // Find the department assigned to the logged-in user.
     const departmentRes = await pool.query(`
@@ -2022,7 +2025,12 @@ app.get('/sis/admin/faculties/:id', requireRole('admin'), async (req, res) => {
       WHERE d.faculty_id = $1 ORDER BY d.name
     `, [req.params.id]);
     
-    const teachersRes = await pool.query(`SELECT id, full_name FROM users WHERE role IN ('teacher', 'advisor') ORDER BY full_name`);
+    const teachersRes = await pool.query(`
+  SELECT id, full_name
+  FROM users
+  WHERE role IN ('teacher', 'advisor', 'department_head')
+  ORDER BY full_name
+`);
     
     res.render('admin-faculty-detail', {
       user: req.session.user,
@@ -2059,18 +2067,157 @@ app.post('/sis/admin/faculties/:id/departments/new', requireRole('admin'), async
   }
 });
 
-app.post('/sis/admin/faculties/:facultyId/departments/:deptId/assign-head', requireRole('admin'), async (req, res) => {
-  const { head_id } = req.body;
-  try {
-    await pool.query(`UPDATE departments SET head_id = $1 WHERE id = $2`, 
-      [head_id ? Number(head_id) : null, req.params.deptId]);
-    req.flash('success', 'Department head assigned successfully.');
-    res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
-  } catch (err) { 
-    req.flash('error', 'Error: ' + err.message);
-    res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
+
+app.post(
+  '/sis/admin/faculties/:facultyId/departments/:deptId/assign-head',
+  requireRole('admin'),
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const facultyId = Number(req.params.facultyId);
+      const departmentId = Number(req.params.deptId);
+      const newHeadId = req.body.head_id
+        ? Number(req.body.head_id)
+        : null;
+
+      await client.query('BEGIN');
+
+      // Confirm that this department belongs to the selected faculty.
+      const departmentRes = await client.query(
+        `SELECT id, head_id
+         FROM departments
+         WHERE id = $1 AND faculty_id = $2
+         FOR UPDATE`,
+        [departmentId, facultyId]
+      );
+
+      if (departmentRes.rows.length === 0) {
+        throw new Error('Department not found in this faculty.');
+      }
+
+      const oldHeadId = departmentRes.rows[0].head_id;
+
+      // If the administrator removes the Department Head.
+      if (!newHeadId) {
+        if (oldHeadId) {
+          await client.query(
+            `UPDATE users
+             SET role = COALESCE(department_head_previous_role, 'teacher'),
+                 department_head_previous_role = NULL
+             WHERE id = $1 AND role = 'department_head'`,
+            [oldHeadId]
+          );
+        }
+
+        await client.query(
+          `UPDATE departments
+           SET head_id = NULL
+           WHERE id = $1`,
+          [departmentId]
+        );
+
+        await client.query('COMMIT');
+
+        req.flash('success', 'Department Head removed successfully.');
+        return res.redirect(`/sis/admin/faculties/${facultyId}`);
+      }
+
+      if (!Number.isInteger(newHeadId)) {
+        throw new Error('Invalid Department Head account.');
+      }
+
+      // Do nothing if the selected person is already the head.
+      if (oldHeadId === newHeadId) {
+        await client.query('COMMIT');
+        req.flash('success', 'This person is already the Department Head.');
+        return res.redirect(`/sis/admin/faculties/${facultyId}`);
+      }
+
+      // Lock and validate the new Department Head account.
+      const newUserRes = await client.query(
+        `SELECT id, role, department_head_previous_role
+         FROM users
+         WHERE id = $1
+         FOR UPDATE`,
+        [newHeadId]
+      );
+
+      if (newUserRes.rows.length === 0) {
+        throw new Error('Selected user does not exist.');
+      }
+
+      const newUser = newUserRes.rows[0];
+
+      if (!['teacher', 'advisor', 'department_head'].includes(newUser.role)) {
+        throw new Error('Only teachers or advisors can be appointed.');
+      }
+
+      // A person cannot head two departments simultaneously.
+      const existingAssignment = await client.query(
+        `SELECT id, name
+         FROM departments
+         WHERE head_id = $1 AND id <> $2
+         LIMIT 1`,
+        [newHeadId, departmentId]
+      );
+
+      if (existingAssignment.rows.length > 0) {
+        throw new Error(
+          `This user already heads ${existingAssignment.rows[0].name}.`
+        );
+      }
+
+      // Restore the previous head's original role.
+      if (oldHeadId) {
+        await client.query(
+          `UPDATE users
+           SET role = COALESCE(department_head_previous_role, 'teacher'),
+               department_head_previous_role = NULL
+           WHERE id = $1 AND role = 'department_head'`,
+          [oldHeadId]
+        );
+      }
+
+      // Save the new head's previous role and promote their account.
+      await client.query(
+        `UPDATE users
+         SET department_head_previous_role =
+               CASE
+                 WHEN role = 'department_head'
+                 THEN department_head_previous_role
+                 ELSE role
+               END,
+             role = 'department_head'
+         WHERE id = $1`,
+        [newHeadId]
+      );
+
+      // Record the official appointment.
+      await client.query(
+        `UPDATE departments
+         SET head_id = $1
+         WHERE id = $2`,
+        [newHeadId, departmentId]
+      );
+
+      await client.query('COMMIT');
+
+      req.flash('success', 'Department Head appointed successfully.');
+      res.redirect(`/sis/admin/faculties/${facultyId}`);
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Department Head Assignment Error:', err);
+      req.flash('error', err.message);
+      res.redirect(`/sis/admin/faculties/${req.params.facultyId}`);
+
+    } finally {
+      client.release();
+    }
   }
-});
+);
+
 
 app.post('/sis/admin/faculties/:id/toggle', requireRole('admin'), async (req, res) => {
   try {

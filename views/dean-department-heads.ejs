@@ -48,148 +48,76 @@ button,input,select{font:inherit}
 a{color:inherit}
 
 .topbar{
-  height:76px;
-  position:fixed;
-  top:0;left:0;right:0;
-  z-index:100;
-  background:#fff;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 28px;
+  height:76px;position:fixed;top:0;left:0;right:0;z-index:100;
+  background:#fff;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;
 }
 .brand{display:flex;align-items:center;gap:12px}
 .brand-mark{
-  width:40px;height:40px;border-radius:12px;
-  display:grid;place-items:center;
-  background:var(--green);color:white;
-  font-size:20px;font-weight:900;
+  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:var(--green);color:white;font-size:20px;font-weight:900;
 }
 .brand-name{font-size:21px;font-weight:900;color:var(--green-dark);letter-spacing:-.6px}
-.brand small{
-  display:block;font-size:9px;letter-spacing:1.7px;
-  color:#7b8b83;font-weight:800;margin-top:3px
-}
+.brand small{display:block;font-size:9px;letter-spacing:1.7px;color:#7b8b83;font-weight:800;margin-top:3px}
 .top-right{display:flex;align-items:center;gap:13px}
 .user-chip{
-  display:flex;align-items:center;gap:9px;
-  background:#f5f8f6;border:1px solid var(--border);
-  padding:9px 14px;border-radius:30px;font-size:12px;font-weight:750
+  display:flex;align-items:center;gap:9px;background:#f5f8f6;
+  border:1px solid var(--border);padding:9px 14px;border-radius:30px;
+  font-size:12px;font-weight:750;
 }
 .user-avatar{
-  width:29px;height:29px;border-radius:50%;
-  display:grid;place-items:center;background:var(--green-light);
-  color:var(--green-dark);font-weight:900
+  width:29px;height:29px;border-radius:50%;display:grid;place-items:center;
+  background:var(--green-light);color:var(--green-dark);font-weight:900;
 }
 .logout{
   background:var(--green);color:white;text-decoration:none;
-  padding:11px 16px;border-radius:8px;font-size:12px;font-weight:800
+  padding:11px 16px;border-radius:8px;font-size:12px;font-weight:800;
 }
 .logout:hover{background:var(--green-dark)}
 
 .sidebar{
-  position:fixed;
-  top:76px;bottom:0;left:0;
-  width:258px;
-  background:var(--sidebar);
-  color:#d9e9e1;
-  padding:24px 15px 22px;
-  overflow-y:auto;
-  z-index:50;
-  display:flex;
-  flex-direction:column;
+  position:fixed;top:76px;bottom:0;left:0;width:258px;
+  background:var(--sidebar);color:#d9e9e1;padding:24px 15px 22px;
+  overflow-y:auto;z-index:50;display:flex;flex-direction:column;
 }
-.sidebar-brand{
-  padding:0 13px 23px;
-  border-bottom:1px solid rgba(255,255,255,.10);
-  margin-bottom:17px
-}
+.sidebar-brand{padding:0 13px 23px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:17px}
 .sidebar-brand strong{display:block;font-size:13px;color:white;letter-spacing:.3px}
 .sidebar-brand span{display:block;color:#8eb7a3;font-size:10px;margin-top:6px}
-.side-label{
-  font-size:9px;color:#83a99a;font-weight:900;
-  letter-spacing:1.5px;padding:15px 12px 8px
-}
+.side-label{font-size:9px;color:#83a99a;font-weight:900;letter-spacing:1.5px;padding:15px 12px 8px}
 .nav-link{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 13px;margin:3px 0;border-radius:9px;
-  text-decoration:none;color:#c5d9cf;
-  font-size:12px;font-weight:650;
-  transition:background .2s,color .2s
+  display:flex;align-items:center;gap:12px;padding:12px 13px;margin:3px 0;
+  border-radius:9px;text-decoration:none;color:#c5d9cf;font-size:12px;font-weight:650;
+  transition:background .2s,color .2s;
 }
 .nav-link:hover{background:var(--sidebar-light);color:white}
-.nav-link.active{
-  background:var(--green);color:white;
-  box-shadow:0 5px 15px rgba(0,0,0,.15)
-}
+.nav-link.active{background:var(--green);color:white;box-shadow:0 5px 15px rgba(0,0,0,.15)}
 .nav-icon{width:22px;text-align:center;font-size:16px}
 .sidebar-bottom{
-  margin-top:auto;padding:17px 12px 0;
-  border-top:1px solid rgba(255,255,255,.10);
-  color:#8eb7a3;font-size:10px;line-height:1.7
+  margin-top:auto;padding:17px 12px 0;border-top:1px solid rgba(255,255,255,.10);
+  color:#8eb7a3;font-size:10px;line-height:1.7;
 }
 .sidebar-bottom strong{color:#d9e9e1}
 
-.app-content{
-  margin-left:258px;
-  padding-top:76px;
-  height:100vh;
-  min-width:0;
-}
-.main-scroll{
-  height:calc(100vh - 76px);
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding:29px 32px 35px;
-  scroll-behavior:smooth
-}
+.app-content{margin-left:258px;padding-top:76px;height:100vh;min-width:0}
+.main-scroll{height:calc(100vh - 76px);overflow-y:auto;overflow-x:hidden;padding:29px 32px 35px;scroll-behavior:smooth}
 .content-inner{max-width:1450px;margin:0 auto}
-
-.breadcrumb{
-  font-size:11px;color:var(--muted);margin-bottom:20px
-}
+.breadcrumb{font-size:11px;color:var(--muted);margin-bottom:20px}
 .breadcrumb a{color:var(--green-dark);text-decoration:none;font-weight:750}
-.page-heading{
-  display:flex;justify-content:space-between;
-  align-items:flex-start;gap:20px;margin-bottom:25px
-}
-.eyebrow{
-  font-size:10px;font-weight:900;color:var(--green);
-  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px
-}
+.page-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:25px}
+.eyebrow{font-size:10px;font-weight:900;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
 h1{font-size:28px;margin:0 0 8px;letter-spacing:-.8px}
 .subtitle{font-size:13px;color:var(--muted);line-height:1.7;max-width:680px}
-.faculty-tag{
-  background:#fff;border:1px solid var(--border);
-  padding:12px 16px;border-radius:11px;
-  font-size:11px;font-weight:800;white-space:nowrap;
-  box-shadow:var(--shadow)
-}
+.faculty-tag{background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:11px;font-size:11px;font-weight:800;white-space:nowrap;box-shadow:var(--shadow)}
 
-.notice{
-  padding:13px 16px;border-radius:9px;
-  margin-bottom:13px;font-size:12px;font-weight:650
-}
+.notice{padding:13px 16px;border-radius:9px;margin-bottom:13px;font-size:12px;font-weight:650}
 .notice.success{background:#e8f7ef;color:#087f59;border:1px solid #ccebd9}
 .notice.error{background:#fff0ef;color:#b42318;border:1px solid #f4d0cc}
 
-.stats{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:15px;margin-bottom:20px
-}
-.stat{
-  background:white;border:1px solid var(--border);
-  border-radius:13px;padding:18px;
-  box-shadow:var(--shadow);min-width:0
-}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:20px}
+.stat{background:white;border:1px solid var(--border);border-radius:13px;padding:18px;box-shadow:var(--shadow);min-width:0}
 .stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .stat-label{font-size:11px;color:var(--muted);font-weight:750}
-.stat-icon{
-  width:34px;height:34px;border-radius:10px;
-  display:grid;place-items:center;font-size:16px
-}
+.stat-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px}
 .icon-green{background:#e5f6ed;color:#087f59}
 .icon-blue{background:#eaf2ff;color:#3765a5}
 .icon-orange{background:#fff3df;color:#a66b08}
@@ -197,299 +125,139 @@ h1{font-size:28px;margin:0 0 8px;letter-spacing:-.8px}
 .stat-number{font-size:27px;font-weight:900;margin-top:12px;letter-spacing:-.8px}
 .stat-note{font-size:10px;color:var(--muted);margin-top:5px}
 
-.coverage-panel{
-  background:white;border:1px solid var(--border);
-  border-radius:13px;padding:19px 21px;
-  box-shadow:var(--shadow);margin-bottom:23px
-}
+.coverage-panel{background:white;border:1px solid var(--border);border-radius:13px;padding:19px 21px;box-shadow:var(--shadow);margin-bottom:23px}
 .coverage-top{display:flex;justify-content:space-between;gap:15px;align-items:center}
 .coverage-title{font-size:13px;font-weight:850}
 .coverage-description{font-size:11px;color:var(--muted);margin-top:5px}
 .coverage-value{font-size:22px;font-weight:900;color:var(--green-dark)}
-.progress-track{
-  height:9px;background:#edf2ef;border-radius:20px;
-  overflow:hidden;margin-top:15px
-}
-.progress-fill{
-  height:100%;background:linear-gradient(90deg,#0e9f6e,#43c58e);
-  border-radius:20px;transition:width .3s
-}
+.progress-track{height:9px;background:#edf2ef;border-radius:20px;overflow:hidden;margin-top:15px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#0e9f6e,#43c58e);border-radius:20px;transition:width .3s}
 
-.section-heading{
-  display:flex;justify-content:space-between;
-  align-items:flex-end;gap:15px;margin:26px 0 14px
-}
+.section-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin:26px 0 14px}
 .section-heading h2{font-size:16px;margin:0;font-weight:850}
 .section-heading p{font-size:11px;color:var(--muted);margin:5px 0 0}
 
-/* NEW DEPARTMENT HEAD REGISTRATION */
 .registration-panel{
-  background:white;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:23px;
-  box-shadow:var(--shadow);
-  margin-bottom:25px;
+  background:white;border:1px solid var(--border);border-radius:14px;
+  padding:23px;box-shadow:var(--shadow);margin-bottom:25px;
 }
-.registration-heading{
-  display:flex;
-  align-items:flex-start;
-  gap:13px;
-  margin-bottom:20px;
-}
+.registration-heading{display:flex;align-items:flex-start;gap:13px;margin-bottom:20px}
 .registration-icon{
-  width:42px;height:42px;
-  flex-shrink:0;
-  display:grid;place-items:center;
-  border-radius:12px;
-  background:var(--green-light);
-  color:var(--green-dark);
-  font-size:20px;
+  width:42px;height:42px;flex-shrink:0;display:grid;place-items:center;
+  border-radius:12px;background:var(--green-light);color:var(--green-dark);font-size:20px;
 }
-.registration-heading h2{
-  font-size:16px;
-  margin:0;
-  font-weight:850;
+.registration-heading h2{font-size:16px;margin:0;font-weight:850}
+.registration-heading p{font-size:11px;color:var(--muted);line-height:1.6;margin:6px 0 0}
+.registration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.registration-group{display:flex;flex-direction:column;gap:8px}
+.registration-group label{font-size:11px;font-weight:800;color:#34483e}
+.registration-group input,.registration-group select{
+  width:100%;min-width:0;padding:12px 13px;border:1px solid #dce5df;
+  border-radius:9px;background:#fff;color:var(--ink);font-size:12px;outline:none;
 }
-.registration-heading p{
-  font-size:11px;
-  color:var(--muted);
-  line-height:1.6;
-  margin:6px 0 0;
-}
-.head-registration-form{
-  width:100%;
-}
-.registration-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:18px;
-}
-.registration-group{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.registration-group label{
-  font-size:11px;
-  font-weight:800;
-  color:#34483e;
-}
-.registration-group input,
-.registration-group select{
-  width:100%;
-  min-width:0;
-  padding:12px 13px;
-  border:1px solid #dce5df;
-  border-radius:9px;
-  background:#fff;
-  color:var(--ink);
-  font-size:12px;
-  outline:none;
-  transition:border-color .2s,box-shadow .2s;
-}
-.registration-group input:focus,
-.registration-group select:focus{
-  border-color:var(--green);
-  box-shadow:0 0 0 3px rgba(14,159,110,.09);
+.registration-group input:focus,.registration-group select:focus{
+  border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.09);
 }
 .password-notice{
-  display:flex;
-  align-items:flex-start;
-  gap:11px;
-  margin-top:19px;
-  padding:14px 15px;
-  background:#f0faf5;
-  border:1px solid #ccebd9;
-  border-radius:10px;
-  color:#176b46;
+  display:flex;align-items:flex-start;gap:11px;margin-top:19px;padding:14px 15px;
+  background:#f0faf5;border:1px solid #ccebd9;border-radius:10px;color:#176b46;
 }
-.password-notice-icon{
-  font-size:17px;
-  flex-shrink:0;
-}
-.password-notice strong{
-  display:block;
-  font-size:11px;
-}
-.password-notice p{
-  margin:5px 0 0;
-  font-size:10px;
-  line-height:1.6;
-  color:#567b68;
-}
-.registration-actions{
-  display:flex;
-  justify-content:flex-end;
-  margin-top:19px;
-}
+.password-notice-icon{font-size:17px;flex-shrink:0}
+.password-notice strong{display:block;font-size:11px}
+.password-notice p{margin:5px 0 0;font-size:10px;line-height:1.6;color:#567b68}
+.registration-actions{display:flex;justify-content:flex-end;margin-top:19px}
 .create-head-btn{
-  border:0;
-  background:var(--green);
-  color:white;
-  padding:13px 20px;
-  border-radius:9px;
-  font-size:11px;
-  font-weight:850;
-  cursor:pointer;
-  transition:background .2s,transform .2s;
+  border:0;background:var(--green);color:white;padding:13px 20px;
+  border-radius:9px;font-size:11px;font-weight:850;cursor:pointer;
 }
-.create-head-btn:hover{
-  background:var(--green-dark);
-  transform:translateY(-1px);
-}
+.create-head-btn:hover{background:var(--green-dark)}
 
-.quick-grid{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:14px;margin-bottom:23px
-}
+.quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:23px}
 .quick-card{
-  background:white;border:1px solid var(--border);
-  border-radius:12px;padding:17px;
-  text-decoration:none;display:block;
-  box-shadow:var(--shadow);transition:transform .18s,border-color .18s
+  background:white;border:1px solid var(--border);border-radius:12px;padding:17px;
+  text-decoration:none;display:block;box-shadow:var(--shadow);transition:transform .18s,border-color .18s;
 }
 .quick-card:hover{transform:translateY(-2px);border-color:#a8d9c1}
-.quick-icon{
-  width:38px;height:38px;border-radius:11px;
-  display:grid;place-items:center;background:var(--green-light);
-  color:var(--green-dark);font-size:18px;margin-bottom:12px
-}
+.quick-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--green-light);color:var(--green-dark);font-size:18px;margin-bottom:12px}
 .quick-card strong{display:block;font-size:12px;font-weight:850}
 .quick-card p{font-size:10px;color:var(--muted);line-height:1.6;margin:7px 0 0}
 .quick-arrow{display:block;color:var(--green-dark);font-size:10px;font-weight:850;margin-top:13px}
 
-.two-column{
-  display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,.85fr);
-  gap:17px;align-items:start
-}
-.panel{
-  background:white;border:1px solid var(--border);
-  border-radius:14px;box-shadow:var(--shadow);overflow:hidden;
-  min-width:0
-}
-.panel-head{
-  padding:19px 21px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  gap:15px;flex-wrap:wrap
-}
+.two-column{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,.85fr);gap:17px;align-items:start}
+.panel{background:white;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.panel-head{padding:19px 21px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
 .panel-title{font-size:14px;font-weight:850}
 .panel-subtitle{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5}
-.search{
-  width:250px;max-width:100%;padding:10px 12px;
-  border:1px solid var(--border);border-radius:8px;
-  outline:none;font-size:11px;background:#fff
-}
-.search:focus,.assign-form select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.08)}
+.search{width:250px;max-width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;outline:none;font-size:11px;background:#fff}
+.search:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.08)}
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:730px}
-th{
-  text-align:left;background:#f8fbf9;color:#718078;
-  font-size:9px;text-transform:uppercase;letter-spacing:.8px;
-  padding:14px 16px
-}
-td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;min-width:1050px}
+th{text-align:left;background:#f8fbf9;color:#718078;font-size:9px;text-transform:uppercase;letter-spacing:.8px;padding:14px 12px}
+td{padding:14px 12px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:middle}
 .dept-name{font-weight:850;font-size:12px}
 .dept-code{font-size:10px;color:var(--muted);margin-top:4px}
 .head-name{font-weight:800}
 .head-username{font-size:10px;color:var(--muted);margin-top:4px}
-.status{
-  display:inline-block;padding:6px 9px;border-radius:20px;
-  font-size:9px;font-weight:850;white-space:nowrap
-}
+.status{display:inline-block;padding:6px 9px;border-radius:20px;font-size:9px;font-weight:850;white-space:nowrap}
 .status.assigned{background:#e7f7ef;color:#087f59}
 .status.unassigned{background:#fff4df;color:#996500}
-.assign-form{display:flex;gap:6px;min-width:245px}
-.assign-form select{
-  flex:1;min-width:0;padding:9px 8px;
-  border:1px solid var(--border);border-radius:7px;
-  background:white;font-size:10px;outline:none
-}
-.btn{
-  border:0;background:var(--green);color:white;
-  padding:9px 11px;border-radius:7px;
-  font-size:10px;font-weight:850;cursor:pointer;white-space:nowrap
-}
+.assign-form{display:flex;gap:6px;min-width:220px}
+.assign-form select{flex:1;min-width:0;padding:9px 8px;border:1px solid var(--border);border-radius:7px;background:white;font-size:10px;outline:none}
+.assign-form select:focus{border-color:var(--green)}
+.btn{border:0;background:var(--green);color:white;padding:9px 11px;border-radius:7px;font-size:10px;font-weight:850;cursor:pointer;white-space:nowrap}
 .btn:hover{background:var(--green-dark)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
 .empty{text-align:center;padding:35px 18px;color:var(--muted);font-size:11px;line-height:1.7}
 .empty a{color:var(--green-dark);font-weight:800}
 
+.account-actions{min-width:190px}
+.account-edit{border:1px solid var(--border);border-radius:9px;padding:10px;background:#fbfdfc}
+.account-edit summary{cursor:pointer;color:var(--green-dark);font-size:10px;font-weight:850}
+.account-edit-form{display:grid;gap:8px;margin-top:12px}
+.account-edit-form input{
+  width:100%;min-width:0;padding:9px;border:1px solid var(--border);
+  border-radius:7px;font-size:10px;
+}
+.account-edit-form button{
+  border:0;padding:9px;border-radius:7px;background:var(--green);
+  color:white;font-size:10px;font-weight:800;cursor:pointer;
+}
+.account-edit-form button:hover{background:var(--green-dark)}
+.remove-note{color:var(--muted);font-size:9px;margin-top:7px;line-height:1.5}
+
 .attention-list{padding:5px 19px 14px}
-.attention-item{
-  display:flex;align-items:flex-start;gap:11px;
-  padding:13px 0;border-bottom:1px solid #edf1ee
-}
+.attention-item{display:flex;align-items:flex-start;gap:11px;padding:13px 0;border-bottom:1px solid #edf1ee}
 .attention-item:last-child{border-bottom:0}
-.attention-icon{
-  width:31px;height:31px;flex-shrink:0;
-  display:grid;place-items:center;border-radius:9px;
-  background:#fff3df;color:#a66b08;font-size:14px
-}
+.attention-icon{width:31px;height:31px;flex-shrink:0;display:grid;place-items:center;border-radius:9px;background:#fff3df;color:#a66b08;font-size:14px}
 .attention-item strong{display:block;font-size:11px;font-weight:800}
 .attention-item span{display:block;font-size:10px;color:var(--muted);margin-top:4px}
 .task-list{padding:5px 19px 15px}
-.task-item{
-  display:flex;gap:10px;align-items:flex-start;
-  padding:12px 0;border-bottom:1px solid #edf1ee
-}
+.task-item{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #edf1ee}
 .task-item:last-child{border-bottom:0}
-.task-check{
-  width:23px;height:23px;display:grid;place-items:center;
-  border-radius:7px;background:var(--green-light);
-  color:var(--green-dark);font-size:12px;flex-shrink:0
-}
+.task-check{width:23px;height:23px;display:grid;place-items:center;border-radius:7px;background:var(--green-light);color:var(--green-dark);font-size:12px;flex-shrink:0}
 .task-item strong{font-size:11px;display:block}
 .task-item span{font-size:10px;color:var(--muted);display:block;margin-top:4px;line-height:1.5}
 
-.guide{
-  margin-top:18px;padding:18px 20px;
-  border-radius:12px;background:#eaf6ef;
-  border:1px solid #d4ecde;display:flex;gap:13px;align-items:flex-start
-}
-.guide-icon{
-  width:36px;height:36px;flex-shrink:0;border-radius:10px;
-  background:white;color:var(--green-dark);
-  display:grid;place-items:center;font-size:17px
-}
+.guide{margin-top:18px;padding:18px 20px;border-radius:12px;background:#eaf6ef;border:1px solid #d4ecde;display:flex;gap:13px;align-items:flex-start}
+.guide-icon{width:36px;height:36px;flex-shrink:0;border-radius:10px;background:white;color:var(--green-dark);display:grid;place-items:center;font-size:17px}
 .guide strong{font-size:12px}
 .guide p{font-size:10px;color:#567066;line-height:1.7;margin:5px 0 0}
 .footer{text-align:center;color:#9aa79f;font-size:10px;padding:28px 10px 10px}
 
-@media(max-width:1100px){
-  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .two-column{grid-template-columns:1fr}
-}
-@media(max-width:850px){
-  .sidebar{width:220px}
-  .app-content{margin-left:220px}
-  .main-scroll{padding:24px 20px}
-  .quick-grid{grid-template-columns:1fr 1fr}
-}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.two-column{grid-template-columns:1fr}}
+@media(max-width:850px){.sidebar{width:220px}.app-content{margin-left:220px}.main-scroll{padding:24px 20px}.quick-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){
-  body{overflow:auto}
-  .topbar{height:66px;padding:0 13px}
-  .brand-mark{width:35px;height:35px}
-  .brand-name{font-size:18px}
-  .brand small{font-size:8px;letter-spacing:1px}
-  .user-chip{display:none}
-  .sidebar{display:none}
-  .app-content{margin-left:0;padding-top:66px;height:auto}
+  body{overflow:auto}.topbar{height:66px;padding:0 13px}
+  .brand-mark{width:35px;height:35px}.brand-name{font-size:18px}
+  .brand small{font-size:8px;letter-spacing:1px}.user-chip{display:none}
+  .sidebar{display:none}.app-content{margin-left:0;padding-top:66px;height:auto}
   .main-scroll{height:auto;min-height:calc(100vh - 66px);overflow:visible;padding:20px 13px}
-  .page-heading{display:block}
-  .faculty-tag{display:inline-block;margin-top:14px;white-space:normal}
-  .stats{grid-template-columns:1fr 1fr;gap:9px}
-  .stat{padding:13px}
-  .stat-number{font-size:23px}
-  .quick-grid{grid-template-columns:1fr}
-  .section-heading{align-items:flex-start}
-  .panel-head{align-items:stretch}
-  .search{width:100%}
-  h1{font-size:24px}
-  .registration-panel{padding:17px}
-  .registration-grid{grid-template-columns:1fr}
-  .registration-actions{justify-content:stretch}
-  .create-head-btn{width:100%}
+  .page-heading{display:block}.faculty-tag{display:inline-block;margin-top:14px;white-space:normal}
+  .stats{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:13px}
+  .stat-number{font-size:23px}.quick-grid{grid-template-columns:1fr}
+  .section-heading{align-items:flex-start}.panel-head{align-items:stretch}
+  .search{width:100%}h1{font-size:24px}
+  .registration-panel{padding:17px}.registration-grid{grid-template-columns:1fr}
+  .registration-actions{justify-content:stretch}.create-head-btn{width:100%}
 }
 </style>
 </head>
@@ -504,7 +272,6 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
       <small>STUDENT INFORMATION SYSTEM</small>
     </div>
   </div>
-
   <div class="top-right">
     <div class="user-chip">
       <span class="user-avatar"><%= safe(dean.full_name).charAt(0).toUpperCase() || 'D' %></span>
@@ -521,32 +288,14 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
   </div>
 
   <div class="side-label">MAIN MENU</div>
-
-  <a class="nav-link" href="/sis/dean">
-    <span class="nav-icon">▦</span> Dashboard
-  </a>
-
-  <a class="nav-link" href="/sis/dean/faculty-profile">
-    <span class="nav-icon">🏛</span> Faculty Profile
-  </a>
-
-  <a class="nav-link" href="/sis/dean/departments">
-    <span class="nav-icon">▤</span> Departments
-  </a>
-
-  <a class="nav-link active" href="/sis/dean/department-heads">
-    <span class="nav-icon">♙</span> Department Heads
-  </a>
+  <a class="nav-link" href="/sis/dean"><span class="nav-icon">▦</span> Dashboard</a>
+  <a class="nav-link" href="/sis/dean/faculty-profile"><span class="nav-icon">🏛</span> Faculty Profile</a>
+  <a class="nav-link" href="/sis/dean/departments"><span class="nav-icon">▤</span> Departments</a>
+  <a class="nav-link active" href="/sis/dean/department-heads"><span class="nav-icon">♙</span> Department Heads</a>
 
   <div class="side-label">ACADEMIC MANAGEMENT</div>
-
-  <a class="nav-link" href="/sis/dean">
-    <span class="nav-icon">♧</span> Faculty Overview
-  </a>
-
-  <a class="nav-link" href="/sis/dean/departments">
-    <span class="nav-icon">＋</span> Department Management
-  </a>
+  <a class="nav-link" href="/sis/dean"><span class="nav-icon">♧</span> Faculty Overview</a>
+  <a class="nav-link" href="/sis/dean/departments"><span class="nav-icon">＋</span> Department Management</a>
 
   <div class="sidebar-bottom">
     <strong>LuxMind SIS</strong><br>
@@ -568,60 +317,41 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
       <div class="eyebrow">Dean Administration</div>
       <h1>Department Heads</h1>
       <div class="subtitle">
-        Manage department leadership, appoint qualified staff members,
-        and monitor leadership assignments across your faculty.
+        Create Department Head accounts, replace existing leaders, edit account
+        details, remove appointments and monitor leadership across your faculty.
       </div>
     </div>
-
     <div class="faculty-tag">
       🏛 Faculty: <%= safe(facultyInfo.name) || 'Faculty not specified' %>
-      <% if (facultyInfo.code) { %>
-        · <%= safe(facultyInfo.code) %>
-      <% } %>
+      <% if (facultyInfo.code) { %> · <%= safe(facultyInfo.code) %><% } %>
     </div>
   </div>
 
   <% successMessages.forEach(message => { %>
     <div class="notice success">✓ <%= message %></div>
   <% }) %>
-
   <% errorMessages.forEach(message => { %>
     <div class="notice error">⚠ <%= message %></div>
   <% }) %>
 
   <section class="stats">
     <div class="stat">
-      <div class="stat-top">
-        <div class="stat-label">Total Departments</div>
-        <div class="stat-icon icon-blue">▤</div>
-      </div>
+      <div class="stat-top"><div class="stat-label">Total Departments</div><div class="stat-icon icon-blue">▤</div></div>
       <div class="stat-number"><%= totalDepartments %></div>
       <div class="stat-note">Registered in this faculty</div>
     </div>
-
     <div class="stat">
-      <div class="stat-top">
-        <div class="stat-label">Assigned Heads</div>
-        <div class="stat-icon icon-green">♙</div>
-      </div>
+      <div class="stat-top"><div class="stat-label">Assigned Heads</div><div class="stat-icon icon-green">♙</div></div>
       <div class="stat-number"><%= assignedCount %></div>
       <div class="stat-note">Departments with a leader</div>
     </div>
-
     <div class="stat">
-      <div class="stat-top">
-        <div class="stat-label">Awaiting Assignment</div>
-        <div class="stat-icon icon-orange">!</div>
-      </div>
+      <div class="stat-top"><div class="stat-label">Awaiting Assignment</div><div class="stat-icon icon-orange">!</div></div>
       <div class="stat-number"><%= unassignedCount %></div>
       <div class="stat-note">Departments needing attention</div>
     </div>
-
     <div class="stat">
-      <div class="stat-top">
-        <div class="stat-label">Eligible Staff</div>
-        <div class="stat-icon icon-purple">♧</div>
-      </div>
+      <div class="stat-top"><div class="stat-label">Eligible Staff</div><div class="stat-icon icon-purple">♧</div></div>
       <div class="stat-number"><%= staffList.length %></div>
       <div class="stat-note">Available assignment candidates</div>
     </div>
@@ -631,9 +361,7 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
     <div class="coverage-top">
       <div>
         <div class="coverage-title">Department Leadership Coverage</div>
-        <div class="coverage-description">
-          Percentage of departments with an assigned department head
-        </div>
+        <div class="coverage-description">Percentage of departments with an assigned department head</div>
       </div>
       <div class="coverage-value"><%= coverage %>%</div>
     </div>
@@ -642,108 +370,59 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
     </div>
   </section>
 
-  <!-- NEW: REGISTER DEPARTMENT HEAD ACCOUNT -->
   <section class="registration-panel">
-
     <div class="registration-heading">
       <div class="registration-icon">♙</div>
       <div>
         <h2>Register New Department Head</h2>
-        <p>
-          Create a completely new Department Head login account and
-          assign it directly to a department in your faculty.
-        </p>
+        <p>Create a new Department Head login account and assign it to any department in your faculty. Selecting a department that already has a head will replace its current appointment.</p>
       </div>
     </div>
 
-    <form
-      action="/sis/dean/department-heads/create"
-      method="POST"
-      class="head-registration-form"
-    >
-
+    <form action="/sis/dean/department-heads/create" method="POST" class="head-registration-form">
       <div class="registration-grid">
-
         <div class="registration-group">
           <label for="head-full-name">Full Name *</label>
-          <input
-            type="text"
-            id="head-full-name"
-            name="full_name"
-            placeholder="Enter Department Head's full name"
-            autocomplete="name"
-            required
-          >
+          <input type="text" id="head-full-name" name="full_name" placeholder="Enter Department Head's full name" autocomplete="name" required>
         </div>
 
         <div class="registration-group">
           <label for="head-username">Username *</label>
-          <input
-            type="text"
-            id="head-username"
-            name="username"
-            placeholder="Create a unique username"
-            minlength="3"
-            autocomplete="username"
-            required
-          >
+          <input type="text" id="head-username" name="username" placeholder="Create a unique username" minlength="3" autocomplete="username" required>
         </div>
 
         <div class="registration-group">
           <label for="head-email">Email Address</label>
-          <input
-            type="email"
-            id="head-email"
-            name="email"
-            placeholder="Enter email address"
-            autocomplete="email"
-          >
+          <input type="email" id="head-email" name="email" placeholder="Enter email address" autocomplete="email">
         </div>
 
         <div class="registration-group">
           <label for="head-department">Assign Department *</label>
-          <select
-            id="head-department"
-            name="department_id"
-            required
-          >
+          <select id="head-department" name="department_id" required>
             <option value="">Select a department</option>
-
             <% departmentList.forEach(department => { %>
-              <% if (!department.head_id) { %>
-                <option value="<%= department.id %>">
-                  <%= safe(department.name) %>
-                  <% if (department.code) { %>
-                    — <%= safe(department.code) %>
-                  <% } %>
-                </option>
-              <% } %>
+              <option value="<%= department.id %>">
+                <%= safe(department.name) %>
+                <%= department.head_id ? ' — Replace current head' : ' — No head assigned' %>
+              </option>
             <% }) %>
           </select>
         </div>
-
       </div>
 
       <div class="password-notice">
         <div class="password-notice-icon">🔐</div>
         <div>
           <strong>Temporary Login Password: password123</strong>
-          <p>
-            This password will be assigned to the new account.
-            The Department Head should change it after the first login.
-          </p>
+          <p>This is the temporary password used by the current creation route. Arrange a secure password change before production use.</p>
         </div>
       </div>
 
       <div class="registration-actions">
-        <button type="submit" class="create-head-btn">
-          + Create Department Head Account
-        </button>
+        <button type="submit" class="create-head-btn">+ Create Department Head Account</button>
       </div>
-
     </form>
   </section>
-  <!-- END NEW REGISTRATION SECTION -->
 
   <div class="section-heading">
     <div>
@@ -759,14 +438,12 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
       <p>Review department records and maintain your faculty's department structure.</p>
       <span class="quick-arrow">OPEN DEPARTMENT MANAGEMENT →</span>
     </a>
-
     <a class="quick-card" href="#leadership-directory">
       <div class="quick-icon">♙</div>
-      <strong>Assign Department Heads</strong>
-      <p>Appoint a staff member or update the leadership of an existing department.</p>
+      <strong>Manage Department Heads</strong>
+      <p>Assign, replace, edit or remove department leadership appointments.</p>
       <span class="quick-arrow">VIEW ASSIGNMENTS →</span>
     </a>
-
     <a class="quick-card" href="/sis/dean/faculty-profile">
       <div class="quick-icon">🏛</div>
       <strong>Faculty Information</strong>
@@ -778,28 +455,18 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
   <div class="section-heading" id="leadership-directory">
     <div>
       <h2>Leadership Management</h2>
-      <p>Monitor assignments and manage department leadership.</p>
+      <p>Manage appointments and account details for department leaders.</p>
     </div>
   </div>
 
   <div class="two-column">
-
     <section class="panel">
       <div class="panel-head">
         <div>
           <div class="panel-title">Department Leadership Directory</div>
-          <div class="panel-subtitle">
-            Assign or update the staff member responsible for each department.
-          </div>
+          <div class="panel-subtitle">Assign, replace or remove a head and edit the current head's account.</div>
         </div>
-
-        <input
-          type="search"
-          id="departmentSearch"
-          class="search"
-          placeholder="Search department or head..."
-          aria-label="Search departments"
-        >
+        <input type="search" id="departmentSearch" class="search" placeholder="Search department or head..." aria-label="Search departments">
       </div>
 
       <% if (departmentList.length === 0) { %>
@@ -809,7 +476,6 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
           <a href="/sis/dean/departments">Open Department Management</a>
         </div>
       <% } else { %>
-
         <div class="table-wrap">
           <table id="departmentTable">
             <thead>
@@ -817,26 +483,22 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
                 <th>Department</th>
                 <th>Current Head</th>
                 <th>Status</th>
-                <th>Assign / Change</th>
+                <th>Assign / Remove</th>
+                <th>Account Management</th>
               </tr>
             </thead>
-
             <tbody>
               <% departmentList.forEach(department => { %>
                 <tr>
                   <td>
                     <div class="dept-name"><%= safe(department.name) %></div>
-                    <div class="dept-code">
-                      <%= safe(department.code) || 'No department code' %>
-                    </div>
+                    <div class="dept-code"><%= safe(department.code) || 'No department code' %></div>
                   </td>
 
                   <td>
                     <% if (department.head_id) { %>
                       <div class="head-name"><%= safe(department.head_name) %></div>
-                      <div class="head-username">
-                        @<%= safe(department.head_username) %>
-                      </div>
+                      <div class="head-username">@<%= safe(department.head_username) %></div>
                     <% } else { %>
                       <span style="color:#9aa79f">No head assigned</span>
                     <% } %>
@@ -851,32 +513,34 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
                   </td>
 
                   <td>
-                    <form
-                      class="assign-form"
-                      method="POST"
-                      action="/sis/dean/departments/<%= department.id %>/assign-head"
-                    >
-                      <select name="head_id" required aria-label="Select department head">
-                        <option value="">Select staff member</option>
-
+                    <form class="assign-form" method="POST" action="/sis/dean/departments/<%= department.id %>/assign-head">
+                      <select name="head_id" aria-label="Select department head">
+                        <option value="">No Department Head</option>
                         <% staffList.forEach(member => { %>
-                          <option
-                            value="<%= member.id %>"
-                            <%= Number(department.head_id) === Number(member.id) ? 'selected' : '' %>
-                          >
+                          <option value="<%= member.id %>" <%= Number(department.head_id) === Number(member.id) ? 'selected' : '' %>>
                             <%= safe(member.full_name) %> (@<%= safe(member.username) %>)
                           </option>
                         <% }) %>
                       </select>
-
-                      <button
-                        type="submit"
-                        class="btn"
-                        <%= staffList.length === 0 ? 'disabled' : '' %>
-                      >
-                        <%= department.head_id ? 'Update' : 'Assign' %>
-                      </button>
+                      <button type="submit" class="btn">Save</button>
                     </form>
+                    <div class="remove-note">Select "No Department Head" to remove the appointment without deleting the account.</div>
+                  </td>
+
+                  <td class="account-actions">
+                    <% if (department.head_id) { %>
+                      <details class="account-edit">
+                        <summary>Edit Head Account</summary>
+                        <form class="account-edit-form" method="POST" action="/sis/dean/department-heads/<%= department.head_id %>/edit">
+                          <input type="text" name="full_name" value="<%= safe(department.head_name) %>" placeholder="Full name" required>
+                          <input type="text" name="username" value="<%= safe(department.head_username) %>" placeholder="Username" minlength="3" required>
+                          <input type="email" name="email" value="<%= safe(department.head_email) %>" placeholder="Email address" required>
+                          <button type="submit">Save Account Changes</button>
+                        </form>
+                      </details>
+                    <% } else { %>
+                      <span style="color:#9aa79f;font-size:10px">No account assigned</span>
+                    <% } %>
                   </td>
                 </tr>
               <% }) %>
@@ -884,31 +548,23 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
           </table>
         </div>
 
-        <div id="noSearchResults" class="empty" style="display:none">
-          No departments match your search.
-        </div>
-
+        <div id="noSearchResults" class="empty" style="display:none">No departments match your search.</div>
       <% } %>
     </section>
 
     <div>
-
       <section class="panel">
         <div class="panel-head">
           <div>
             <div class="panel-title">Departments Requiring Attention</div>
-            <div class="panel-subtitle">
-              Departments without an assigned leader.
-            </div>
+            <div class="panel-subtitle">Departments without an assigned leader.</div>
           </div>
           <span class="status unassigned"><%= unassignedCount %> Pending</span>
         </div>
 
         <div class="attention-list">
           <% if (unassignedDepartments.length === 0) { %>
-            <div class="empty">
-              ✓ All departments currently have an assigned head.
-            </div>
+            <div class="empty">✓ All departments currently have an assigned head.</div>
           <% } else { %>
             <% unassignedDepartments.slice(0, 6).forEach(department => { %>
               <div class="attention-item">
@@ -920,9 +576,7 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
               </div>
             <% }) %>
             <% if (unassignedCount > 6) { %>
-              <div class="empty">
-                And <%= unassignedCount - 6 %> more departments need attention.
-              </div>
+              <div class="empty">And <%= unassignedCount - 6 %> more departments need attention.</div>
             <% } %>
           <% } %>
         </div>
@@ -935,55 +589,37 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
             <div class="panel-subtitle">Recommended management activities.</div>
           </div>
         </div>
-
         <div class="task-list">
           <div class="task-item">
             <div class="task-check">1</div>
-            <div>
-              <strong>Review department assignments</strong>
-              <span>Check that each department has an appropriate leader.</span>
-            </div>
+            <div><strong>Review department assignments</strong><span>Check that each department has an appropriate leader.</span></div>
           </div>
-
           <div class="task-item">
             <div class="task-check">2</div>
-            <div>
-              <strong>Verify staff eligibility</strong>
-              <span>Confirm the selected staff members are suitable for their roles.</span>
-            </div>
+            <div><strong>Verify staff eligibility</strong><span>Confirm selected staff members are suitable for their roles.</span></div>
           </div>
-
           <div class="task-item">
             <div class="task-check">3</div>
-            <div>
-              <strong>Update leadership records</strong>
-              <span>Keep department leadership information accurate and current.</span>
-            </div>
+            <div><strong>Update leadership records</strong><span>Keep department leadership information accurate and current.</span></div>
           </div>
-
           <div class="task-item">
             <div class="task-check">4</div>
-            <div>
-              <strong>Monitor faculty structure</strong>
-              <span>Review department organization through Department Management.</span>
-            </div>
+            <div><strong>Monitor faculty structure</strong><span>Review department organization through Department Management.</span></div>
           </div>
         </div>
       </section>
-
     </div>
   </div>
 
   <section class="guide">
     <div class="guide-icon">ⓘ</div>
     <div>
-      <strong>Department Head Assignment Guide</strong>
+      <strong>Department Head Management Guide</strong>
       <p>
-        You can create a completely new Department Head account using
-        the registration form above. Alternatively, select an eligible
-        existing staff member from the assignment list and click Assign
-        or Update. Review the leadership directory after submission
-        to confirm the updated record.
+        Create a new account using the registration form. Selecting a department
+        that already has a head replaces the appointment. Use the directory to
+        edit the current head's account or remove an appointment. Removing an
+        appointment does not delete the user account.
       </p>
     </div>
   </section>

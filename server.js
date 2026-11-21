@@ -520,18 +520,25 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
 });
 
 // ============================================
-// --- STUDENT: TIMETABLE (CIU STYLE) ---
+// --- STUDENT: TIMETABLE ---
 // ============================================
 app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
   try {
     const scheduleRes = await pool.query(`
-      SELECT c.code, c.title, c.credits, s.group_name, s.day_of_week, 
-             s.start_time, s.end_time, s.room, u.full_name AS teacher_name
+      SELECT 
+        c.code, c.title, c.credits, 
+        COALESCE(s.group_name, 'TBA') AS group_name,
+        s.day_of_week,
+        s.start_time,
+        s.end_time,
+        COALESCE(s.room, 'TBA') AS room,
+        u.full_name AS teacher_name,
+        s.id AS section_id
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
       LEFT JOIN course_sections s ON s.id = e.section_id
       LEFT JOIN users u ON u.id = s.teacher_id
-      WHERE e.user_id = $1 AND s.day_of_week IS NOT NULL
+      WHERE e.user_id = $1
       ORDER BY c.code ASC
     `, [req.session.user.id]);
 
@@ -540,13 +547,16 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
       FROM student_profiles sp WHERE sp.user_id = $1
     `, [req.session.user.id]);
 
-    const classes = scheduleRes.rows;
+    const allClasses = scheduleRes.rows;
     const profile = profileRes.rows[0] || {};
-    
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
-    const colorPalette = ['#1e88e5', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00acc1', '#3949ab', '#d81b60'];
+    const classes = allClasses.filter(c => c.day_of_week && c.start_time);
+    const missingSchedule = allClasses.filter(c => !c.day_of_week || !c.start_time);
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const timeSlots = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];
+
+    const colorPalette = ['#1e88e5','#43a047','#e53935','#8e24aa','#fb8c00','#00acc1','#3949ab','#d81b60'];
     const colorMap = {};
     let colorIndex = 0;
     classes.forEach(cls => {
@@ -563,20 +573,32 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
     });
 
     classes.forEach(cls => {
-      if (!cls.start_time) return;
       const start = cls.start_time.slice(0, 5);
       const end = cls.end_time ? cls.end_time.slice(0, 5) : '';
-      
       if (grid[cls.day_of_week] && grid[cls.day_of_week][start] !== undefined) {
-        grid[cls.day_of_week][start] = { ...cls, start_time: start, end_time: end, color: colorMap[cls.code] };
+        grid[cls.day_of_week][start] = {
+          ...cls,
+          start_time: start,
+          end_time: end,
+          color: colorMap[cls.code]
+        };
       }
     });
 
     const totalCredits = classes.reduce((sum, c) => sum + Number(c.credits), 0);
 
-    res.render('timetable', { user: req.session.user, profile, totalCredits, grid, days, timeSlots, courses: classes });
-  } catch (err) { 
-    res.status(500).send("Timetable Error: " + err.message); 
+    res.render('timetable', {
+      user: req.session.user,
+      profile,
+      totalCredits,
+      grid,
+      days,
+      timeSlots,
+      courses: classes,
+      missingSchedule
+    });
+  } catch (err) {
+    res.status(500).send("Timetable Error: " + err.message);
   }
 });
 app.get('/sis/my/attendance', requireRole('student'), async (req, res) => {
@@ -1415,6 +1437,7 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
   } catch (err) { res.status(500).send("Error approving: " + err.message); }
 });
 
+
 // ============================================
 // --- DEAN PORTAL ---
 // ============================================
@@ -1424,12 +1447,12 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       `SELECT id, name, code, description FROM faculties WHERE dean_id = $1 LIMIT 1`,
       [req.session.user.id]
     );
-    
+
     if (deanCheck.rows.length === 0) {
       req.flash('error', 'You are not assigned as a Dean of any faculty.');
       return res.redirect('/sis/faculty');
     }
-    
+
     const faculty = deanCheck.rows[0];
 
     const statsRes = await pool.query(`
@@ -1440,6 +1463,7 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
         (SELECT COUNT(*) FROM courses WHERE faculty_id = $1) AS course_count,
         (SELECT COUNT(*) FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE c.faculty_id = $1) AS section_count
     `, [faculty.id]);
+
     const stats = statsRes.rows[0];
 
     const departmentsRes = await pool.query(`
@@ -1453,7 +1477,7 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
     `, [faculty.id]);
 
     const teachersRes = await pool.query(`
-      SELECT id, full_name FROM users 
+      SELECT id, full_name FROM users
       WHERE faculty_id = $1 AND role IN ('teacher', 'advisor')
       ORDER BY full_name
     `, [faculty.id]);
@@ -1496,10 +1520,112 @@ app.get('/sis/dean', requireRole('teacher', 'advisor'), async (req, res) => {
       activity: activityRes.rows,
       staff: staffRes.rows
     });
+
   } catch (err) {
     res.status(500).send("Dean Dashboard Error: " + err.message);
   }
 });
+
+
+// ============================================
+// --- DEPARTMENT HEAD PORTAL ---
+// ============================================
+app.get('/sis/department-head', requireLogin, async (req, res) => {
+  try {
+    // Find the department assigned to the logged-in user.
+    const departmentRes = await pool.query(`
+      SELECT
+        d.id,
+        d.name,
+        d.code,
+        f.name AS faculty_name
+      FROM departments d
+      JOIN faculties f ON f.id = d.faculty_id
+      WHERE d.head_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (departmentRes.rows.length === 0) {
+      return res.status(403).send(
+        'Access denied: You are not assigned as a Department Head.'
+      );
+    }
+
+    const department = departmentRes.rows[0];
+
+    // Department statistics.
+    const statsRes = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM users
+         WHERE department_id = $1 AND role = 'student') AS student_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE department_id = $1
+         AND role IN ('teacher', 'advisor')) AS staff_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE department_id = $1 AND role = 'teacher') AS teacher_count,
+
+        (SELECT COUNT(*) FROM users
+         WHERE department_id = $1 AND role = 'advisor') AS advisor_count
+    `, [department.id]);
+
+    // Department students.
+    const studentsRes = await pool.query(`
+      SELECT id, full_name, username
+      FROM users
+      WHERE department_id = $1 AND role = 'student'
+      ORDER BY full_name
+      LIMIT 10
+    `, [department.id]);
+
+    // Department teaching and advising staff.
+    const staffRes = await pool.query(`
+      SELECT id, full_name, username, role
+      FROM users
+      WHERE department_id = $1
+      AND role IN ('teacher', 'advisor')
+      ORDER BY full_name
+    `, [department.id]);
+
+    // Recent academic activity within this department.
+    const activityRes = await pool.query(`
+      SELECT
+        g.letter_grade,
+        c.code,
+        c.title,
+        u.full_name AS student_name,
+        g.created_at
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      JOIN users u ON u.id = g.student_id
+      WHERE u.department_id = $1
+      AND g.letter_grade IS NOT NULL
+      ORDER BY g.created_at DESC
+      LIMIT 10
+    `, [department.id]);
+
+    res.render('department-head-dashboard', {
+      user: req.session.user,
+      department: department,
+      stats: statsRes.rows[0],
+      students: studentsRes.rows,
+      staff: staffRes.rows,
+      activity: activityRes.rows
+    });
+
+  } catch (err) {
+    console.error('Department Head Dashboard Error:', err);
+    res.status(500).send('Department Head Dashboard Error: ' + err.message);
+  }
+});
+
+
+// ============================================
+// --- FACULTY ROUTES ---
+// ============================================
+
 
 // ============================================
 // --- FACULTY ROUTES ---

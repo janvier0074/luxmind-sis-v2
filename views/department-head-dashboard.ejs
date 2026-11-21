@@ -1,0 +1,1069 @@
+
+<%
+  const headName = user.full_name || user.name || user.username || 'Department Head';
+  const departmentName = department.name || 'My Department';
+  const studentCount = Number(stats.student_count || 0);
+  const staffCount = Number(stats.staff_count || 0);
+  const teacherCount = Number(stats.teacher_count || 0);
+  const advisorCount = Number(stats.advisor_count || 0);
+%>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Department Head Portal | LuxMind SIS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+  --green: #0e9f6e;
+  --green-dark: #087f59;
+  --green-light: #e8f7f0;
+  --background: #f5f7f9;
+  --white: #ffffff;
+  --text: #172b24;
+  --muted: #75827c;
+  --border: #e8eeeb;
+  --sidebar-width: 260px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--background);
+  color: var(--text);
+}
+
+button, a { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: #fff;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: transform .3s ease;
+}
+
+.brand {
+  height: 75px;
+  padding: 0 23px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--green);
+  color: white;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 19px;
+}
+
+.brand-name { font-size: 21px; font-weight: 800; }
+.brand-name span { color: var(--green); }
+
+.sidebar-label {
+  padding: 23px 22px 9px;
+  color: #a0aaa5;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.sidebar-nav {
+  padding: 0 12px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 13px;
+  border-radius: 9px;
+  color: #68766f;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  transition: .2s;
+}
+
+.nav-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.nav-link:hover {
+  background: #f0f8f4;
+  color: var(--green);
+}
+
+.nav-link.active {
+  background: var(--green-light);
+  color: var(--green-dark);
+  font-weight: 700;
+}
+
+.nav-link .soon {
+  margin-left: auto;
+  font-size: 9px;
+  color: #a2aaa6;
+  background: #f1f3f2;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+
+.sidebar-bottom {
+  padding: 15px;
+  border-top: 1px solid var(--border);
+}
+
+.department-mini {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f3faf6;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #587064;
+}
+
+.department-mini strong {
+  display: block;
+  color: var(--green-dark);
+  font-size: 12px;
+}
+
+.main {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  transition: margin-left .3s ease;
+}
+
+.topbar {
+  height: 75px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  position: sticky;
+  top: 0;
+  z-index: 500;
+}
+
+.top-left, .top-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 9px;
+  color: #53635b;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.icon-btn:hover {
+  color: var(--green);
+  background: var(--green-light);
+}
+
+.page-context {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.page-context strong {
+  color: var(--text);
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.profile-area { position: relative; }
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--green-light);
+  color: var(--green-dark);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.profile-name { font-size: 12px; font-weight: 700; }
+.profile-role { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+.profile-menu {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 210px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: 0 10px 30px #172b2415;
+  padding: 13px;
+  z-index: 1200;
+}
+
+.profile-menu.show { display: block; }
+
+.profile-menu p {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 3px 0;
+}
+
+.profile-menu small {
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.login-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-dark);
+  font-size: 10px;
+  margin-top: 12px;
+}
+
+.login-status i { font-size: 8px; }
+
+.content {
+  padding: 30px;
+  max-width: 1500px;
+  margin: auto;
+}
+
+.welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.welcome h1 {
+  font-size: 25px;
+  margin: 0 0 9px;
+  font-weight: 800;
+}
+
+.welcome p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.department-tag {
+  background: var(--green-light);
+  color: var(--green-dark);
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.faculty-line {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 27px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 19px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stat-number {
+  font-size: 27px;
+  font-weight: 800;
+  margin-top: 10px;
+}
+
+.stat-icon {
+  width: 43px;
+  height: 43px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 17px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 27px 0 14px;
+}
+
+.section-heading h2 {
+  font-size: 15px;
+  margin: 0;
+  font-weight: 800;
+}
+
+.section-heading span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 17px 19px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.panel-header i { color: var(--green); }
+
+.panel-body { padding: 5px 19px 14px; }
+
+.person-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f3f1;
+  gap: 10px;
+}
+
+.person-row:last-child { border-bottom: none; }
+
+.person-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.person-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #edf7f1;
+  color: var(--green-dark);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.person-name {
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.person-sub {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.role-pill {
+  font-size: 9px;
+  font-weight: 700;
+  background: #edf7f1;
+  color: var(--green-dark);
+  padding: 5px 8px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f3f1;
+}
+
+.activity-row:last-child { border: none; }
+
+.grade-badge {
+  background: #edf7f1;
+  color: var(--green-dark);
+  min-width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.activity-details { min-width: 0; flex: 1; }
+
+.activity-details strong {
+  display: block;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.activity-details small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.empty-state {
+  padding: 25px 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.empty-state i {
+  display: block;
+  font-size: 22px;
+  color: #b7c8bf;
+  margin-bottom: 9px;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.module-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  scroll-margin-top: 95px;
+}
+
+.module-card .module-icon {
+  width: 39px;
+  height: 39px;
+  background: var(--green-light);
+  color: var(--green);
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  margin-bottom: 13px;
+}
+
+.module-card h3 {
+  font-size: 12px;
+  margin: 0 0 7px;
+}
+
+.module-card p {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 13px;
+}
+
+.module-status {
+  font-size: 9px;
+  color: #9a7b39;
+  background: #fff8e8;
+  padding: 5px 8px;
+  border-radius: 5px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+.footer {
+  margin-top: 35px;
+  border-top: 1px solid var(--border);
+  padding: 20px 0;
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #172b244f;
+  z-index: 900;
+}
+
+@media(max-width: 1100px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .module-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media(max-width: 760px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .overlay.show { display: block; }
+  .main { margin-left: 0; }
+  .topbar { padding: 0 15px; }
+  .content { padding: 22px 15px; }
+  .panel-grid { grid-template-columns: 1fr; }
+  .welcome { flex-direction: column; }
+  .welcome h1 { font-size: 21px; }
+  .module-grid { grid-template-columns: 1fr; }
+  .profile-name, .profile-role { display: none; }
+  .footer { flex-direction: column; }
+}
+
+@media(max-width: 420px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .stat-card { padding: 13px; }
+  .stat-number { font-size: 22px; }
+  .stat-icon { width: 35px; height: 35px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="brand">
+    <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+    <div class="brand-name">Lux<span>Mind</span></div>
+  </div>
+
+  <div class="sidebar-label">DEPARTMENT MANAGEMENT</div>
+
+  <nav class="sidebar-nav">
+
+    <a href="#overview" class="nav-link active">
+      <i class="fas fa-chart-pie"></i> Overview
+    </a>
+
+    <a href="#my-department" class="nav-link">
+      <i class="fas fa-building"></i> My Department
+    </a>
+
+    <div class="sidebar-label">PEOPLE MANAGEMENT</div>
+
+    <a href="#students" class="nav-link">
+      <i class="fas fa-user-graduate"></i> Students
+    </a>
+
+    <a href="#academic-staff" class="nav-link">
+      <i class="fas fa-chalkboard-teacher"></i> Academic Staff
+    </a>
+
+    <a href="#academic-advisors" class="nav-link">
+      <i class="fas fa-user-tie"></i> Academic Advisors
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <div class="sidebar-label">ACADEMIC MANAGEMENT</div>
+
+    <a href="#courses" class="nav-link">
+      <i class="fas fa-book-open"></i> Courses & Sections
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#semesters" class="nav-link">
+      <i class="fas fa-calendar-alt"></i> Academic Semesters
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#registrations" class="nav-link">
+      <i class="fas fa-clipboard-check"></i> Registration Approvals
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#attendance" class="nav-link">
+      <i class="fas fa-calendar-check"></i> Attendance Overview
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#performance" class="nav-link">
+      <i class="fas fa-chart-line"></i> Academic Performance
+    </a>
+
+    <div class="sidebar-label">DEPARTMENT SERVICES</div>
+
+    <a href="#reports" class="nav-link">
+      <i class="fas fa-file-alt"></i> Department Reports
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#announcements" class="nav-link">
+      <i class="fas fa-bullhorn"></i> Announcements
+      <span class="soon">PLANNED</span>
+    </a>
+
+    <a href="#settings" class="nav-link">
+      <i class="fas fa-cog"></i> Department Settings
+      <span class="soon">PLANNED</span>
+    </a>
+
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="department-mini">
+      <strong><i class="fas fa-university"></i> Assigned Department</strong>
+      <%= departmentName %>
+    </div>
+  </div>
+
+</aside>
+
+<!-- MAIN AREA -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+
+    <div class="top-left">
+      <button class="icon-btn" onclick="toggleSidebar()" title="Open menu">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <button class="icon-btn" onclick="goBack()" title="Go back">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+
+      <div class="page-context">
+        <strong>Department Head Portal</strong>
+        LuxMind SIS / Department
+      </div>
+    </div>
+
+    <div class="top-right">
+
+      <div class="profile-area">
+        <button class="profile-button" onclick="toggleProfile()">
+          <div class="avatar">
+            <%= headName.charAt(0).toUpperCase() %>
+          </div>
+
+          <div>
+            <div class="profile-name"><%= headName %></div>
+            <div class="profile-role">Department Head</div>
+          </div>
+
+          <i class="fas fa-chevron-down" style="font-size:10px;color:#89958e"></i>
+        </button>
+
+        <div class="profile-menu" id="profileMenu">
+          <p><%= headName %></p>
+          <small><%= user.username || '' %></small>
+          <div class="login-status">
+            <i class="fas fa-circle"></i> Logged in
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- DASHBOARD CONTENT -->
+  <main class="content" id="overview">
+
+    <div class="welcome">
+      <div>
+        <h1>Department Overview</h1>
+        <p>Welcome, <strong><%= headName %></strong>. Here is the academic overview of your department.</p>
+        <div class="faculty-line">
+          <i class="fas fa-university"></i>
+          Faculty: <strong><%= department.faculty_name || 'Not specified' %></strong>
+        </div>
+      </div>
+
+      <div class="department-tag">
+        <i class="fas fa-building"></i>
+        <%= departmentName %>
+      </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div class="stats-grid">
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-number"><%= studentCount %></div>
+        </div>
+        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Academic Staff</div>
+          <div class="stat-number"><%= staffCount %></div>
+        </div>
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Teachers</div>
+          <div class="stat-number"><%= teacherCount %></div>
+        </div>
+        <div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Academic Advisors</div>
+          <div class="stat-number"><%= advisorCount %></div>
+        </div>
+        <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+      </div>
+
+    </div>
+
+    <!-- DEPARTMENT INFORMATION -->
+    <section id="my-department">
+      <div class="section-heading">
+        <h2>My Department</h2>
+        <span>Department information</span>
+      </div>
+
+      <div class="panel">
+        <div class="panel-body" style="padding-top:16px">
+          <div class="person-row">
+            <div class="person-info">
+              <div class="person-avatar"><i class="fas fa-building"></i></div>
+              <div>
+                <div class="person-name">Department Name</div>
+                <div class="person-sub"><%= departmentName %></div>
+              </div>
+            </div>
+            <span class="role-pill">Assigned</span>
+          </div>
+
+          <div class="person-row">
+            <div class="person-info">
+              <div class="person-avatar"><i class="fas fa-code"></i></div>
+              <div>
+                <div class="person-name">Department Code</div>
+                <div class="person-sub"><%= department.code || 'Not available' %></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="person-row">
+            <div class="person-info">
+              <div class="person-avatar"><i class="fas fa-university"></i></div>
+              <div>
+                <div class="person-name">Faculty</div>
+                <div class="person-sub"><%= department.faculty_name || 'Not available' %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENTS AND STAFF -->
+    <div class="section-heading" id="students">
+      <h2>People in Your Department</h2>
+      <span>Department-level information</span>
+    </div>
+
+    <div class="panel-grid">
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3><i class="fas fa-user-graduate"></i> Recent Students</h3>
+          <span><%= studentCount %> total</span>
+        </div>
+
+        <div class="panel-body">
+          <% if (students && students.length > 0) { %>
+            <% students.forEach(student => { %>
+              <div class="person-row">
+                <div class="person-info">
+                  <div class="person-avatar">
+                    <%= (student.full_name || student.username || 'S').charAt(0).toUpperCase() %>
+                  </div>
+                  <div>
+                    <div class="person-name"><%= student.full_name || student.username %></div>
+                    <div class="person-sub"><%= student.username %></div>
+                  </div>
+                </div>
+                <span class="role-pill">Student</span>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <i class="fas fa-users"></i>
+              No students found in this department.
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+      <section class="panel" id="academic-staff">
+        <div class="panel-header">
+          <h3><i class="fas fa-chalkboard-teacher"></i> Academic Staff</h3>
+          <span><%= staffCount %> total</span>
+        </div>
+
+        <div class="panel-body">
+          <% if (staff && staff.length > 0) { %>
+            <% staff.forEach(member => { %>
+              <div class="person-row">
+                <div class="person-info">
+                  <div class="person-avatar">
+                    <%= (member.full_name || member.username || 'S').charAt(0).toUpperCase() %>
+                  </div>
+                  <div>
+                    <div class="person-name"><%= member.full_name || member.username %></div>
+                    <div class="person-sub"><%= member.username %></div>
+                  </div>
+                </div>
+                <span class="role-pill"><%= member.role %></span>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <i class="fas fa-user-tie"></i>
+              No academic staff found.
+            </div>
+          <% } %>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ACADEMIC PERFORMANCE -->
+    <section id="performance">
+      <div class="section-heading">
+        <h2>Recent Academic Activity</h2>
+        <span>Latest recorded grades</span>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3><i class="fas fa-chart-line"></i> Recent Grade Records</h3>
+          <span>Latest 10 records</span>
+        </div>
+
+        <div class="panel-body">
+          <% if (activity && activity.length > 0) { %>
+            <% activity.forEach(record => { %>
+              <div class="activity-row">
+                <div class="grade-badge"><%= record.letter_grade %></div>
+                <div class="activity-details">
+                  <strong><%= record.student_name %></strong>
+                  <small><%= record.code %> — <%= record.title %></small>
+                </div>
+                <small style="color:#89958e;font-size:10px;white-space:nowrap">
+                  <%= record.created_at ? new Date(record.created_at).toLocaleDateString() : '' %>
+                </small>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <i class="fas fa-chart-bar"></i>
+              No recent academic activity available.
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPARTMENT MODULES -->
+    <div class="section-heading">
+      <h2>Department Management Modules</h2>
+      <span>Additional portal functions</span>
+    </div>
+
+    <div class="module-grid">
+
+      <div class="module-card" id="courses">
+        <div class="module-icon"><i class="fas fa-book-open"></i></div>
+        <h3>Courses & Sections</h3>
+        <p>Review departmental courses, sections, enrollment and teaching assignments.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="semesters">
+        <div class="module-icon"><i class="fas fa-calendar-alt"></i></div>
+        <h3>Academic Semesters</h3>
+        <p>Review semester organization and academic periods for your department.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="academic-advisors">
+        <div class="module-icon"><i class="fas fa-user-tie"></i></div>
+        <h3>Academic Advisors</h3>
+        <p>Review advisor assignments and student advising responsibilities.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="registrations">
+        <div class="module-icon"><i class="fas fa-clipboard-check"></i></div>
+        <h3>Registration Approvals</h3>
+        <p>Review student course registration requests requiring departmental approval.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="attendance">
+        <div class="module-icon"><i class="fas fa-calendar-check"></i></div>
+        <h3>Attendance Overview</h3>
+        <p>Monitor attendance summaries across departmental courses.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="reports">
+        <div class="module-icon"><i class="fas fa-file-alt"></i></div>
+        <h3>Department Reports</h3>
+        <p>Prepare academic and departmental performance reports.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="announcements">
+        <div class="module-icon"><i class="fas fa-bullhorn"></i></div>
+        <h3>Announcements</h3>
+        <p>Publish departmental notices for students and academic staff.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+      <div class="module-card" id="settings">
+        <div class="module-icon"><i class="fas fa-cog"></i></div>
+        <h3>Department Settings</h3>
+        <p>View permitted department-level information and configuration.</p>
+        <span class="module-status">Module not implemented</span>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <span>© <%= new Date().getFullYear() %> LuxMind SIS</span>
+      <span>Department Head Portal · Academic Management</span>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '/sis/faculty';
+  }
+}
+
+function toggleProfile() {
+  document.getElementById('profileMenu').classList.toggle('show');
+}
+
+document.addEventListener('click', function(event) {
+  const profile = document.querySelector('.profile-area');
+
+  if (profile && !profile.contains(event.target)) {
+    document.getElementById('profileMenu').classList.remove('show');
+  }
+});
+
+// Close the mobile sidebar after selecting a menu item.
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', function() {
+    document.querySelectorAll('.nav-link').forEach(item => item.classList.remove('active'));
+    this.classList.add('active');
+
+    if (window.innerWidth <= 760) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

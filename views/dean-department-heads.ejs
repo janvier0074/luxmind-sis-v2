@@ -222,6 +222,123 @@ h1{font-size:28px;margin:0 0 8px;letter-spacing:-.8px}
 .section-heading h2{font-size:16px;margin:0;font-weight:850}
 .section-heading p{font-size:11px;color:var(--muted);margin:5px 0 0}
 
+/* NEW DEPARTMENT HEAD REGISTRATION */
+.registration-panel{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:23px;
+  box-shadow:var(--shadow);
+  margin-bottom:25px;
+}
+.registration-heading{
+  display:flex;
+  align-items:flex-start;
+  gap:13px;
+  margin-bottom:20px;
+}
+.registration-icon{
+  width:42px;height:42px;
+  flex-shrink:0;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:var(--green-light);
+  color:var(--green-dark);
+  font-size:20px;
+}
+.registration-heading h2{
+  font-size:16px;
+  margin:0;
+  font-weight:850;
+}
+.registration-heading p{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.6;
+  margin:6px 0 0;
+}
+.head-registration-form{
+  width:100%;
+}
+.registration-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+.registration-group{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.registration-group label{
+  font-size:11px;
+  font-weight:800;
+  color:#34483e;
+}
+.registration-group input,
+.registration-group select{
+  width:100%;
+  min-width:0;
+  padding:12px 13px;
+  border:1px solid #dce5df;
+  border-radius:9px;
+  background:#fff;
+  color:var(--ink);
+  font-size:12px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.registration-group input:focus,
+.registration-group select:focus{
+  border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(14,159,110,.09);
+}
+.password-notice{
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  margin-top:19px;
+  padding:14px 15px;
+  background:#f0faf5;
+  border:1px solid #ccebd9;
+  border-radius:10px;
+  color:#176b46;
+}
+.password-notice-icon{
+  font-size:17px;
+  flex-shrink:0;
+}
+.password-notice strong{
+  display:block;
+  font-size:11px;
+}
+.password-notice p{
+  margin:5px 0 0;
+  font-size:10px;
+  line-height:1.6;
+  color:#567b68;
+}
+.registration-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:19px;
+}
+.create-head-btn{
+  border:0;
+  background:var(--green);
+  color:white;
+  padding:13px 20px;
+  border-radius:9px;
+  font-size:11px;
+  font-weight:850;
+  cursor:pointer;
+  transition:background .2s,transform .2s;
+}
+.create-head-btn:hover{
+  background:var(--green-dark);
+  transform:translateY(-1px);
+}
+
 .quick-grid{
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:14px;margin-bottom:23px
@@ -369,6 +486,10 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
   .panel-head{align-items:stretch}
   .search{width:100%}
   h1{font-size:24px}
+  .registration-panel{padding:17px}
+  .registration-grid{grid-template-columns:1fr}
+  .registration-actions{justify-content:stretch}
+  .create-head-btn{width:100%}
 }
 </style>
 </head>
@@ -520,6 +641,109 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
       <div class="progress-fill" style="width:<%= coverage %>%"></div>
     </div>
   </section>
+
+  <!-- NEW: REGISTER DEPARTMENT HEAD ACCOUNT -->
+  <section class="registration-panel">
+
+    <div class="registration-heading">
+      <div class="registration-icon">♙</div>
+      <div>
+        <h2>Register New Department Head</h2>
+        <p>
+          Create a completely new Department Head login account and
+          assign it directly to a department in your faculty.
+        </p>
+      </div>
+    </div>
+
+    <form
+      action="/sis/dean/department-heads/create"
+      method="POST"
+      class="head-registration-form"
+    >
+
+      <div class="registration-grid">
+
+        <div class="registration-group">
+          <label for="head-full-name">Full Name *</label>
+          <input
+            type="text"
+            id="head-full-name"
+            name="full_name"
+            placeholder="Enter Department Head's full name"
+            autocomplete="name"
+            required
+          >
+        </div>
+
+        <div class="registration-group">
+          <label for="head-username">Username *</label>
+          <input
+            type="text"
+            id="head-username"
+            name="username"
+            placeholder="Create a unique username"
+            minlength="3"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="registration-group">
+          <label for="head-email">Email Address</label>
+          <input
+            type="email"
+            id="head-email"
+            name="email"
+            placeholder="Enter email address"
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="registration-group">
+          <label for="head-department">Assign Department *</label>
+          <select
+            id="head-department"
+            name="department_id"
+            required
+          >
+            <option value="">Select a department</option>
+
+            <% departmentList.forEach(department => { %>
+              <% if (!department.head_id) { %>
+                <option value="<%= department.id %>">
+                  <%= safe(department.name) %>
+                  <% if (department.code) { %>
+                    — <%= safe(department.code) %>
+                  <% } %>
+                </option>
+              <% } %>
+            <% }) %>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="password-notice">
+        <div class="password-notice-icon">🔐</div>
+        <div>
+          <strong>Temporary Login Password: password123</strong>
+          <p>
+            This password will be assigned to the new account.
+            The Department Head should change it after the first login.
+          </p>
+        </div>
+      </div>
+
+      <div class="registration-actions">
+        <button type="submit" class="create-head-btn">
+          + Create Department Head Account
+        </button>
+      </div>
+
+    </form>
+  </section>
+  <!-- END NEW REGISTRATION SECTION -->
 
   <div class="section-heading">
     <div>
@@ -755,10 +979,11 @@ td{padding:15px 16px;border-top:1px solid #edf1ee;font-size:11px;vertical-align:
     <div>
       <strong>Department Head Assignment Guide</strong>
       <p>
-        Select an eligible staff member from the assignment list and click
-        Assign or Update. The assignment is submitted to the existing
-        department-head management route. Review the leadership directory
-        after submission to confirm the updated record.
+        You can create a completely new Department Head account using
+        the registration form above. Alternatively, select an eligible
+        existing staff member from the assignment list and click Assign
+        or Update. Review the leadership directory after submission
+        to confirm the updated record.
       </p>
     </div>
   </section>

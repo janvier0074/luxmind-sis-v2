@@ -1913,6 +1913,120 @@ app.post('/sis/dean/departments/:deptId/edit', requireRole('dean'), async (req, 
   }
 });
 
+// ============================================
+// DEAN: CREATE A NEW DEPARTMENT HEAD ACCOUNT
+// ============================================
+app.post(
+  '/sis/dean/department-heads/create',
+  requireRole('dean'),
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const fullName = String(req.body.full_name || '').trim();
+      const username = String(req.body.username || '').trim();
+      const email = String(req.body.email || '').trim().toLowerCase();
+      const departmentId = Number(req.body.department_id);
+      const defaultPassword = 'password123';
+
+      if (!fullName || !username || !Number.isInteger(departmentId) || departmentId <= 0) {
+        throw new Error('Enter the full name, username, and department.');
+      }
+
+      if (username.length < 3) {
+        throw new Error('Username must contain at least 3 characters.');
+      }
+
+      const accountEmail = email || `${username}@luxmind.edu`;
+
+      await client.query('BEGIN');
+
+      // Verify department belongs to this Dean and lock it.
+      const departmentResult = await client.query(`
+        SELECT d.id, d.name, d.faculty_id, d.head_id
+        FROM departments d
+        JOIN faculties f ON f.id = d.faculty_id
+        WHERE d.id = $1
+          AND f.dean_id = $2
+        FOR UPDATE OF d
+      `, [departmentId, req.session.user.id]);
+
+      if (departmentResult.rows.length === 0) {
+        throw new Error('Department not found in your faculty.');
+      }
+
+      const department = departmentResult.rows[0];
+
+      if (department.head_id) {
+        throw new Error('This department already has a Department Head. Remove or replace the current assignment first.');
+      }
+
+      // Prevent duplicate usernames and email addresses.
+      const duplicateResult = await client.query(`
+        SELECT id
+        FROM users
+        WHERE LOWER(username) = LOWER($1)
+           OR LOWER(email) = LOWER($2)
+        LIMIT 1
+      `, [username, accountEmail]);
+
+      if (duplicateResult.rows.length > 0) {
+        throw new Error('That username or email is already registered.');
+      }
+
+      // Create a completely new Department Head login.
+      const userResult = await client.query(`
+        INSERT INTO users (
+          full_name,
+          username,
+          email,
+          password,
+          role,
+          faculty_id,
+          department_id
+        )
+        VALUES ($1, $2, $3, $4, 'department_head', $5, $6)
+        RETURNING id
+      `, [
+        fullName,
+        username,
+        accountEmail,
+        defaultPassword,
+        department.faculty_id,
+        department.id
+      ]);
+
+      const newHeadId = userResult.rows[0].id;
+
+      // Assign the new account as the department's head.
+      await client.query(`
+        UPDATE departments
+        SET head_id = $1
+        WHERE id = $2
+      `, [newHeadId, department.id]);
+
+      await client.query('COMMIT');
+
+      req.flash(
+        'success',
+        `Department Head account created for ${fullName}. Username: ${username}. Temporary password: ${defaultPassword}`
+      );
+
+      return res.redirect('/sis/dean/department-heads');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+
+      req.flash('error', 'Unable to create Department Head: ' + err.message);
+
+      return res.redirect('/sis/dean/department-heads');
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
 
 // Assign, Replace, or Remove a Department Head
 app.post(

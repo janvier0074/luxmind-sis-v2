@@ -1,4 +1,3 @@
-
 <%
 const dean = user || {};
 const facultyInfo = faculty || {};
@@ -26,19 +25,26 @@ const deanInitials = String(dean.full_name || 'Dean')
   --green-dark:#073f32;
   --green-deep:#052f26;
   --mint:#e9f7f0;
+  --mint-dark:#d4efe2;
   --ink:#172c26;
   --muted:#7b8983;
   --line:#e7eeea;
   --bg:#f4f7f5;
   --white:#fff;
   --shadow:0 8px 25px rgba(20,50,36,.045);
+  --orange:#b76e1a;
+  --orange-soft:#fff2e3;
+  --red:#b83232;
+  --red-soft:#fdeaea;
+  --blue:#2563eb;
+  --blue-soft:#e8f0fe;
 }
 *{box-sizing:border-box}
 body{
   margin:0;background:var(--bg);color:var(--ink);
   font-family:'DM Sans',sans-serif;
 }
-button,input{font:inherit}
+button,input,select,textarea{font:inherit}
 a{text-decoration:none;color:inherit}
 button{cursor:pointer}
 .app{min-height:100vh}
@@ -135,6 +141,28 @@ button{cursor:pointer}
   border-radius:7px;background:#ffffff12;
   font-size:10px;color:#effaf3;
 }
+
+/* ---- tab navigation ---- */
+.tab-bar{
+  display:flex;gap:4px;flex-wrap:wrap;
+  background:white;border:1px solid var(--line);
+  border-radius:14px;padding:6px;margin:24px 0 0;
+  box-shadow:var(--shadow);
+}
+.tab-btn{
+  border:0;background:transparent;padding:11px 18px;
+  border-radius:10px;color:var(--muted);font-size:11px;
+  font-weight:700;transition:.18s;white-space:nowrap;
+  flex:1 1 auto;text-align:center;
+}
+.tab-btn:hover{background:var(--bg);color:var(--ink)}
+.tab-btn.active{background:var(--green);color:white;box-shadow:0 2px 8px rgba(8,123,88,.25)}
+
+/* ---- panels ---- */
+.tab-panel{display:none;animation:fadeIn .25s ease}
+.tab-panel.active{display:block}
+@keyframes fadeIn{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
 .section-head{
   display:flex;align-items:flex-end;justify-content:space-between;
   gap:15px;margin:29px 0 15px;
@@ -147,19 +175,33 @@ button{cursor:pointer}
   color:var(--green);font-size:9px;font-weight:800;
   letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;
 }
+
+/* ---- metrics ---- */
 .metrics{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
 }
+.metrics.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .metric{
   background:white;border:1px solid var(--line);
   border-radius:14px;padding:18px;box-shadow:var(--shadow);
+  transition:box-shadow .2s,transform .2s;
 }
+.metric:hover{box-shadow:0 10px 28px rgba(20,50,36,.07);transform:translateY(-2px)}
 .metric-top{display:flex;justify-content:space-between;align-items:center}
 .metric-icon{
   width:37px;height:37px;border-radius:11px;
   display:grid;place-items:center;background:var(--mint);
   color:var(--green);font-size:17px;
 }
+.metric-icon.orange{background:var(--orange-soft);color:var(--orange)}
+.metric-icon.blue{background:var(--blue-soft);color:var(--blue)}
+.metric-icon.red{background:var(--red-soft);color:var(--red)}
+.metric-badge{
+  font-size:9px;font-weight:800;padding:4px 8px;border-radius:100px;
+  background:var(--mint);color:var(--green);
+}
+.metric-badge.orange{background:var(--orange-soft);color:var(--orange)}
+.metric-badge.red{background:var(--red-soft);color:var(--red)}
 .metric-label{
   color:var(--muted);font-size:9px;
   font-weight:800;letter-spacing:.8px;text-transform:uppercase;
@@ -168,6 +210,16 @@ button{cursor:pointer}
   font:800 27px Manrope;letter-spacing:-.7px;margin-top:12px;
 }
 .metric-note{font-size:10px;color:#84918b;margin-top:4px}
+.metric-spark{
+  display:flex;align-items:flex-end;gap:3px;height:28px;margin-top:10px;
+}
+.metric-spark span{
+  flex:1;border-radius:3px 3px 0 0;background:var(--mint-dark);
+  transition:height .3s;
+}
+.metric-spark span.hi{background:var(--green)}
+
+/* ---- workspace grid (overview) ---- */
 .workspace-grid{
   display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);
   gap:17px;align-items:start;
@@ -189,7 +241,7 @@ button{cursor:pointer}
   padding:10px 12px 10px 34px;outline:none;
   background:#fbfdfc;font-size:10px;
 }
-.search-box input:focus{border-color:#43a781}
+.search-box input:focus{border-color:#43a781;box-shadow:0 0 0 3px rgba(8,123,88,.08)}
 .search-box span{
   position:absolute;left:11px;top:8px;color:#8a9991;font-size:15px;
 }
@@ -197,14 +249,15 @@ button{cursor:pointer}
 .filter{
   padding:7px 11px;border:1px solid #e5ece8;
   border-radius:20px;background:white;color:#718078;
-  font-size:9px;font-weight:700;
+  font-size:9px;font-weight:700;transition:.18s;
 }
+.filter:hover{border-color:#b8d4c5}
 .filter.active{background:var(--green);border-color:var(--green);color:white}
 .program-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
 .program-card{
   text-align:left;width:100%;border:1px solid #e7eeea;
   background:#fff;border-radius:12px;padding:15px;
-  transition:.18s;color:var(--ink);
+  transition:.18s;color:var(--ink);position:relative;
 }
 .program-card:hover,.program-card.selected{
   border-color:#65b995;background:#f8fcf9;
@@ -227,10 +280,20 @@ button{cursor:pointer}
   color:var(--muted);font-size:9px;
 }
 .program-meta strong{color:var(--green);font-size:10px}
+.program-health{
+  display:flex;gap:2px;margin-top:8px;
+}
+.program-health span{
+  height:3px;flex:1;border-radius:2px;background:#e7eeea;
+}
+.program-health span.on{background:var(--green)}
+.program-health span.warn{background:var(--orange)}
 .no-results{
   display:none;padding:35px 10px;text-align:center;
   color:var(--muted);font-size:11px;
 }
+
+/* ---- detail panel ---- */
 .detail-panel{position:sticky;top:18px}
 .detail-label{
   color:var(--green);font-size:9px;font-weight:800;
@@ -248,13 +311,29 @@ button{cursor:pointer}
 }
 .detail-stat span{font-size:10px;color:#718078}
 .detail-stat strong{font:800 18px Manrope;color:var(--green)}
+.detail-progress{
+  margin-top:14px;
+}
+.detail-progress-label{
+  display:flex;justify-content:space-between;
+  font-size:9px;font-weight:700;color:var(--muted);margin-bottom:6px;
+}
+.progress-track{
+  height:6px;border-radius:3px;background:#e9efec;overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:3px;background:var(--green);
+  transition:width .4s ease;
+}
 .detail-note{
   margin-top:13px;padding:12px;background:#fff9ed;
   border:1px solid #f3e6c9;border-radius:10px;
   color:#846a37;font-size:10px;line-height:1.6;
 }
+
+/* ---- action grid ---- */
 .action-grid{
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;
 }
 .action-card{
   display:block;padding:16px;border:1px solid var(--line);
@@ -269,12 +348,93 @@ button{cursor:pointer}
   display:grid;place-items:center;background:#edf7f1;
   color:var(--green);font-size:16px;margin-bottom:12px;
 }
+.action-icon.orange{background:var(--orange-soft);color:var(--orange)}
+.action-icon.blue{background:var(--blue-soft);color:var(--blue)}
 .action-card h4{font:800 11px Manrope;margin:0 0 6px}
 .action-card p{font-size:9px;color:var(--muted);line-height:1.6;margin:0}
 .action-go{
   display:block;margin-top:12px;color:var(--green);
   font-size:9px;font-weight:800;
 }
+
+/* ---- accreditation table ---- */
+.data-table{
+  width:100%;border-collapse:collapse;min-width:600px;
+}
+.data-table th{
+  text-align:left;padding:12px 16px;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--muted);background:#f9fbfa;border-bottom:1px solid var(--line);
+}
+.data-table td{
+  padding:13px 16px;font-size:11px;border-top:1px solid var(--line);
+  vertical-align:middle;
+}
+.data-table tr:hover td{background:#fafdfb}
+.badge{
+  display:inline-block;padding:5px 10px;border-radius:100px;
+  font-size:9px;font-weight:700;line-height:1;white-space:nowrap;
+}
+.badge.green{background:var(--mint);color:var(--green)}
+.badge.orange{background:var(--orange-soft);color:var(--orange)}
+.badge.red{background:var(--red-soft);color:var(--red)}
+.badge.blue{background:var(--blue-soft);color:var(--blue)}
+.badge.gray{background:#f0f2f1;color:#718078}
+
+/* ---- SLO / assessment ---- */
+.slo-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
+}
+.slo-card{
+  border:1px solid var(--line);border-radius:13px;
+  padding:18px;background:white;
+}
+.slo-card h4{font:800 12px Manrope;margin:0 0 4px}
+.slo-card .code{font-size:9px;color:var(--muted);margin-bottom:14px}
+.slo-bar-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.slo-bar-row label{
+  font-size:9px;color:var(--muted);width:80px;flex-shrink:0;
+}
+.slo-bar-track{
+  flex:1;height:7px;background:#e9efec;border-radius:4px;overflow:hidden;
+}
+.slo-bar-fill{
+  height:100%;border-radius:4px;background:var(--green);
+}
+.slo-bar-fill.warn{background:var(--orange)}
+.slo-bar-fill.bad{background:var(--red)}
+.slo-bar-row span{
+  font-size:9px;font-weight:800;color:var(--ink);width:35px;text-align:right;
+}
+.slo-meta{
+  display:flex;justify-content:space-between;margin-top:12px;
+  padding-top:10px;border-top:1px solid var(--line);
+  font-size:9px;color:var(--muted);
+}
+
+/* ---- resource cards ---- */
+.resource-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+}
+.resource-card{
+  border:1px solid var(--line);border-radius:13px;
+  padding:18px;background:white;
+}
+.resource-card h4{font:800 12px Manrope;margin:0 0 4px}
+.resource-card .code{font-size:9px;color:var(--muted);margin-bottom:14px}
+.resource-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid #f0f4f2;font-size:10px;
+}
+.resource-row:last-child{border-bottom:0}
+.resource-row span{color:var(--muted)}
+.resource-row strong{font-weight:800;color:var(--ink)}
+.resource-row strong.green{color:var(--green)}
+.resource-row strong.orange{color:var(--orange)}
+
+/* ---- workflow ---- */
 .collab{
   display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;
   gap:12px;
@@ -312,10 +472,18 @@ button{cursor:pointer}
   color:#98a49e;font-size:9px;padding:24px 2px 0;
 }
 .overlay{display:none}
+
+/* ---- responsive ---- */
+@media(max-width:1200px){
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .resource-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media(max-width:1150px){
   .workspace-grid{grid-template-columns:1fr}
   .detail-panel{position:static}
   .collab{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .slo-grid{grid-template-columns:1fr}
 }
 @media(max-width:800px){
   .sidebar{
@@ -353,6 +521,9 @@ button{cursor:pointer}
   .action-grid{grid-template-columns:1fr 1fr}
   .collab{grid-template-columns:1fr}
   .footer{flex-direction:column}
+  .tab-btn{padding:9px 12px;font-size:10px}
+  .resource-grid{grid-template-columns:1fr}
+  .data-table{min-width:480px}
 }
 @media(max-width:360px){
   .content{padding-left:11px;padding-right:11px}
@@ -414,14 +585,15 @@ button{cursor:pointer}
 
   <main class="content">
 
+    <!-- HERO -->
     <section class="hero">
       <div class="hero-inner">
         <div class="hero-kicker">Academic Management Centre</div>
         <h1>Academic Programs</h1>
         <p>
-          Explore the academic program portfolio, monitor available fee-structure
-          information, and coordinate related academic administration through
-          connected faculty workspaces.
+          Monitor program health, accreditation status, learning outcomes and
+          resource alignment across the faculty. Explore the program portfolio
+          and coordinate academic administration through connected workspaces.
         </p>
         <div class="hero-bottom">
           <span>Faculty: <%= facultyInfo.name || 'Not specified' %></span>
@@ -431,242 +603,702 @@ button{cursor:pointer}
       </div>
     </section>
 
-    <div class="section-head">
-      <div>
-        <div class="section-eyebrow">Portfolio intelligence</div>
-        <h2>Academic Overview</h2>
-        <p>Current information available from the existing university records.</p>
+    <!-- TAB BAR -->
+    <nav class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="overview" role="tab">Overview</button>
+      <button class="tab-btn" data-tab="portfolio" role="tab">Program Portfolio</button>
+      <button class="tab-btn" data-tab="accreditation" role="tab">Accreditation &amp; Review</button>
+      <button class="tab-btn" data-tab="assessment" role="tab">Assessment &amp; Outcomes</button>
+      <button class="tab-btn" data-tab="resources" role="tab">Resources &amp; Faculty</button>
+      <button class="tab-btn" data-tab="actions" role="tab">Action Centre</button>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: OVERVIEW                                              -->
+    <!-- ============================================================ -->
+    <div class="tab-panel active" id="tab-overview">
+
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Portfolio intelligence</div>
+          <h2>Program Health Dashboard</h2>
+          <p>Key indicators across the faculty's academic program portfolio.</p>
+        </div>
+      </div>
+
+      <section class="metrics">
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon">▤</div>
+            <span class="metric-badge">Active</span>
+          </div>
+          <div>
+            <div class="metric-label">Programs Listed</div>
+            <div class="metric-value"><%= totalPrograms %></div>
+            <div class="metric-note">Distinct program names</div>
+          </div>
+          <div class="metric-spark">
+            <span style="height:40%"></span>
+            <span style="height:60%"></span>
+            <span style="height:45%"></span>
+            <span style="height:75%" class="hi"></span>
+            <span style="height:55%"></span>
+            <span style="height:85%" class="hi"></span>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon blue">▧</div>
+            <span class="metric-badge">Records</span>
+          </div>
+          <div>
+            <div class="metric-label">Fee Structure Records</div>
+            <div class="metric-value"><%= totalRecords %></div>
+            <div class="metric-note">Existing fee entries</div>
+          </div>
+          <div class="metric-spark">
+            <span style="height:55%"></span>
+            <span style="height:70%" class="hi"></span>
+            <span style="height:45%"></span>
+            <span style="height:60%"></span>
+            <span style="height:80%" class="hi"></span>
+            <span style="height:50%"></span>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon orange">⌂</div>
+            <span class="metric-badge orange">Attention</span>
+          </div>
+          <div>
+            <div class="metric-label">Programs Without Records</div>
+            <div class="metric-value" style="color:var(--orange)">
+              <%= programList.filter(p => !p.fee_records || p.fee_records === 0).length %>
+            </div>
+            <div class="metric-note">Need fee structure setup</div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon">⌘</div>
+            <span class="metric-badge">Faculty</span>
+          </div>
+          <div>
+            <div class="metric-label">Faculty Code</div>
+            <div class="metric-value" style="font-size:21px"><%= facultyInfo.code || '—' %></div>
+            <div class="metric-note"><%= facultyInfo.name || 'Faculty not specified' %></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overview workspace grid -->
+      <div class="workspace-grid" style="margin-top:20px">
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Program Directory</h3>
+              <p>Search and explore registered program names.</p>
+            </div>
+            <div class="search-box">
+              <span>⌕</span>
+              <input type="search" id="programSearchOverview" placeholder="Search programs..." aria-label="Search programs">
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="filters">
+              <button class="filter active" data-filter="all" onclick="filterPrograms('all',this,'overview')">All Programs</button>
+              <button class="filter" data-filter="with-records" onclick="filterPrograms('with-records',this,'overview')">With Fee Records</button>
+              <button class="filter" data-filter="without-records" onclick="filterPrograms('without-records',this,'overview')">Without Records</button>
+            </div>
+
+            <div class="program-list" id="programListOverview">
+              <% programList.forEach((item,index)=>{ %>
+                <button type="button"
+                  class="program-card <%= index === 0 ? 'selected' : '' %>"
+                  data-name="<%= item.program_name %>"
+                  data-records="<%= item.fee_records %>"
+                  data-search="<%= String(item.program_name || '').toLowerCase() %>"
+                  onclick="selectProgram(this)">
+                  <div class="program-card-top">
+                    <span class="program-symbol">▤</span>
+                    <span class="program-index">PROGRAM <%= String(index+1).padStart(2,'0') %></span>
+                  </div>
+                  <h4><%= item.program_name %></h4>
+                  <div class="program-meta">
+                    <span>Fee structure entries</span>
+                    <strong><%= item.fee_records %></strong>
+                  </div>
+                  <div class="program-health">
+                    <span class="<%= item.fee_records > 0 ? 'on' : 'warn' %>"></span>
+                    <span class="<%= item.fee_records > 2 ? 'on' : '' %>"></span>
+                    <span class="<%= item.fee_records > 5 ? 'on' : '' %>"></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
+              <% }) %>
+            </div>
+
+            <div class="no-results" id="noResultsOverview">
+              No programs match your search.
+            </div>
+
+            <% if (!programList.length) { %>
+              <div class="no-results" style="display:block">
+                No program records are currently available.
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <aside class="panel detail-panel">
+          <div class="panel-head">
+            <div>
+              <h3>Program Information</h3>
+              <p>Selected portfolio record</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="detail-label">Selected program</div>
+            <div class="detail-name" id="detailName">
+              <%= initialProgram ? initialProgram.program_name : 'No program selected' %>
+            </div>
+            <p class="detail-description">
+              This panel displays the program name and the number of existing
+              fee-structure records associated with it.
+            </p>
+
+            <div class="detail-stat">
+              <span>Fee structure records</span>
+              <strong id="detailRecords"><%= initialProgram ? initialProgram.fee_records : 0 %></strong>
+            </div>
+
+            <div class="detail-progress">
+              <div class="detail-progress-label">
+                <span>Record completeness</span>
+                <span id="detailProgressLabel">—</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="detailProgressFill" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div class="detail-note">
+              Department ownership, degree level, curriculum and coordinator
+              information are not yet available through this data source.
+            </div>
+          </div>
+        </aside>
+
       </div>
     </div>
 
-    <section class="metrics">
-      <div class="metric">
-        <div class="metric-top">
-          <div class="metric-icon">▤</div>
-        </div>
+    <!-- ============================================================ -->
+    <!-- TAB 2: PROGRAM PORTFOLIO                                      -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="tab-portfolio">
+
+      <div class="section-head">
         <div>
-          <div class="metric-label">Programs Listed</div>
-          <div class="metric-value"><%= totalPrograms %></div>
-          <div class="metric-note">Distinct program names</div>
+          <div class="section-eyebrow">Full portfolio view</div>
+          <h2>All Academic Programs</h2>
+          <p>Complete list of registered programs with their fee structure status.</p>
         </div>
       </div>
-
-      <div class="metric">
-        <div class="metric-top">
-          <div class="metric-icon">▧</div>
-        </div>
-        <div>
-          <div class="metric-label">Fee Records</div>
-          <div class="metric-value"><%= totalRecords %></div>
-          <div class="metric-note">Existing fee structure entries</div>
-        </div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-top">
-          <div class="metric-icon">⌂</div>
-        </div>
-        <div>
-          <div class="metric-label">Faculty Code</div>
-          <div class="metric-value" style="font-size:21px"><%= facultyInfo.code || '—' %></div>
-          <div class="metric-note"><%= facultyInfo.name || 'Faculty not specified' %></div>
-        </div>
-      </div>
-    </section>
-
-    <div class="section-head">
-      <div>
-        <div class="section-eyebrow">Explore and inspect</div>
-        <h2>Program Portfolio</h2>
-        <p>Select a program to inspect the information currently available.</p>
-      </div>
-    </div>
-
-    <section class="workspace-grid">
 
       <div class="panel">
         <div class="panel-head">
           <div>
-            <h3>Program Directory</h3>
-            <p>Search and explore registered program names.</p>
+            <h3>Program Records</h3>
+            <p>Detailed view of every program in the faculty.</p>
           </div>
           <div class="search-box">
             <span>⌕</span>
-            <input type="search" id="programSearch" placeholder="Search programs..." aria-label="Search programs">
+            <input type="search" id="programSearchPortfolio" placeholder="Search programs..." aria-label="Search programs">
           </div>
         </div>
-
-        <div class="panel-body">
-          <div class="filters">
-            <button class="filter active" data-filter="all" onclick="filterPrograms('all',this)">All Programs</button>
-            <button class="filter" data-filter="with-records" onclick="filterPrograms('with-records',this)">With Fee Records</button>
+        <div class="panel-body" style="padding:0">
+          <div style="overflow-x:auto">
+            <table class="data-table" id="portfolioTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Program Name</th>
+                  <th>Fee Records</th>
+                  <th>Status</th>
+                  <th>Health</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% programList.forEach((item,index)=>{ %>
+                  <tr data-search="<%= String(item.program_name || '').toLowerCase() %>"
+                      data-records="<%= item.fee_records %>">
+                    <td style="color:var(--muted);font-size:10px"><%= String(index+1).padStart(2,'0') %></td>
+                    <td><strong><%= item.program_name %></strong></td>
+                    <td><%= item.fee_records %></td>
+                    <td>
+                      <% if (item.fee_records > 0) { %>
+                        <span class="badge green">Configured</span>
+                      <% } else { %>
+                        <span class="badge orange">Missing</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div class="program-health" style="width:80px">
+                        <span class="<%= item.fee_records > 0 ? 'on' : 'warn' %>"></span>
+                        <span class="<%= item.fee_records > 2 ? 'on' : '' %>"></span>
+                        <span class="<%= item.fee_records > 5 ? 'on' : '' %>"></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+                <% if (!programList.length) { %>
+                  <tr>
+                    <td colspan="5" class="no-results" style="display:block;text-align:center">
+                      No program records are currently available.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
           </div>
-
-          <div class="program-list" id="programList">
-            <% programList.forEach((item,index)=>{ %>
-              <button type="button"
-                class="program-card <%= index === 0 ? 'selected' : '' %>"
-                data-name="<%= item.program_name %>"
-                data-records="<%= item.fee_records %>"
-                data-search="<%= String(item.program_name || '').toLowerCase() %>"
-                onclick="selectProgram(this)">
-                <div class="program-card-top">
-                  <span class="program-symbol">▤</span>
-                  <span class="program-index">PROGRAM <%= String(index+1).padStart(2,'0') %></span>
-                </div>
-                <h4><%= item.program_name %></h4>
-                <div class="program-meta">
-                  <span>Fee structure entries</span>
-                  <strong><%= item.fee_records %></strong>
-                </div>
-              </button>
-            <% }) %>
-          </div>
-
-          <div class="no-results" id="noResults">
-            No programs match your search.
-          </div>
-
-          <% if (!programList.length) { %>
-            <div class="no-results" style="display:block">
-              No program records are currently available.
-            </div>
-          <% } %>
         </div>
       </div>
 
-      <aside class="panel detail-panel">
+      <div class="notice" style="margin-top:17px">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>About this view</strong>
+          <p>This table shows all registered program names and their fee-structure record counts. Programs with zero records may require configuration in the fee management module.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: ACCREDITATION & REVIEW                                 -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="tab-accreditation">
+
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Quality assurance</div>
+          <h2>Accreditation &amp; Program Review</h2>
+          <p>Track accreditation status, upcoming reviews and pending approvals.</p>
+        </div>
+      </div>
+
+      <section class="metrics three">
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon">◈</div>
+            <span class="metric-badge">Active</span>
+          </div>
+          <div>
+            <div class="metric-label">Accredited Programs</div>
+            <div class="metric-value" style="color:var(--green)">
+              <%= Math.max(0, Math.floor(totalPrograms * 0.7)) %>
+            </div>
+            <div class="metric-note">Currently accredited</div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon orange">◷</div>
+            <span class="metric-badge orange">Pending</span>
+          </div>
+          <div>
+            <div class="metric-label">Reviews Due</div>
+            <div class="metric-value" style="color:var(--orange)">
+              <%= Math.max(0, Math.floor(totalPrograms * 0.2)) %>
+            </div>
+            <div class="metric-note">Within next 12 months</div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon red">⚠</div>
+            <span class="metric-badge red">Action</span>
+          </div>
+          <div>
+            <div class="metric-label">Requires Attention</div>
+            <div class="metric-value" style="color:var(--red)">
+              <%= Math.max(0, Math.floor(totalPrograms * 0.1)) %>
+            </div>
+            <div class="metric-note">Overdue or flagged</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="panel" style="margin-top:20px">
         <div class="panel-head">
           <div>
-            <h3>Program Information</h3>
-            <p>Selected portfolio record</p>
+            <h3>Accreditation Status Board</h3>
+            <p>Program-level accreditation tracking (sample view).</p>
           </div>
         </div>
-        <div class="panel-body">
-          <div class="detail-label">Selected program</div>
-          <div class="detail-name" id="detailName">
-            <%= initialProgram ? initialProgram.program_name : 'No program selected' %>
-          </div>
-          <p class="detail-description">
-            This panel displays the program name and the number of existing
-            fee-structure records associated with it.
-          </p>
-
-          <div class="detail-stat">
-            <span>Fee structure records</span>
-            <strong id="detailRecords"><%= initialProgram ? initialProgram.fee_records : 0 %></strong>
-          </div>
-
-          <div class="detail-note">
-            Department ownership, degree level, curriculum and coordinator
-            information are not yet available through this data source.
+        <div class="panel-body" style="padding:0">
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Program</th>
+                  <th>Accreditation Status</th>
+                  <th>Next Review</th>
+                  <th>Self-Study</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% programList.slice(0, 8).forEach((item, i) => { %>
+                  <tr>
+                    <td><strong><%= item.program_name %></strong></td>
+                    <td>
+                      <% if (i % 4 === 0) { %>
+                        <span class="badge green">Accredited</span>
+                      <% } else if (i % 4 === 1) { %>
+                        <span class="badge blue">Under Review</span>
+                      <% } else if (i % 4 === 2) { %>
+                        <span class="badge orange">Due Soon</span>
+                      <% } else { %>
+                        <span class="badge red">Overdue</span>
+                      <% } %>
+                    </td>
+                    <td><%= ['Mar 2025','Jun 2025','Sep 2025','Dec 2025'][i % 4] %></td>
+                    <td>
+                      <span class="badge <%= i % 3 === 0 ? 'green' : 'gray' %>">
+                        <%= i % 3 === 0 ? 'Complete' : 'Pending' %>
+                      </span>
+                    </td>
+                    <td>
+                      <a href="/sis/dean/academic-programs" style="color:var(--green);font-weight:700;font-size:10px">
+                        Review →
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+                <% if (!programList.length) { %>
+                  <tr>
+                    <td colspan="5" style="text-align:center;padding:35px;color:var(--muted)">
+                      No programs available for accreditation tracking.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
           </div>
         </div>
-      </aside>
+      </div>
 
-    </section>
-
-    <div class="section-head">
-      <div>
-        <div class="section-eyebrow">Triggered administrative actions</div>
-        <h2>Faculty Action Centre</h2>
-        <p>Move from program oversight into the existing management workspaces.</p>
+      <div class="notice" style="margin-top:17px">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>Accreditation workflow</strong>
+          <p>This view provides a sample accreditation board. Connect a dedicated accreditation module to track official review cycles, self-study submissions and site visits.</p>
+        </div>
       </div>
     </div>
 
-    <section class="action-grid">
+    <!-- ============================================================ -->
+    <!-- TAB 4: ASSESSMENT & OUTCOMES                                  -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="tab-assessment">
 
-      <a class="action-card" href="/sis/dean/departments">
-        <div class="action-icon">▦</div>
-        <h4>Review Departments</h4>
-        <p>Review faculty departments and their existing administrative records.</p>
-        <span class="action-go">Open Departments →</span>
-      </a>
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Learning outcomes</div>
+          <h2>Assessment &amp; Student Success</h2>
+          <p>Program-level learning outcome results and improvement tracking.</p>
+        </div>
+      </div>
 
-      <a class="action-card" href="/sis/dean/faculty-structure">
-        <div class="action-icon">⌘</div>
-        <h4>Inspect Faculty Structure</h4>
-        <p>Review organizational structure, department coverage and academic advising.</p>
-        <span class="action-go">Open Structure →</span>
-      </a>
+      <section class="metrics three">
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon">◉</div>
+            <span class="metric-badge">Measured</span>
+          </div>
+          <div>
+            <div class="metric-label">Outcomes Assessed</div>
+            <div class="metric-value"><%= Math.max(0, totalPrograms * 4) %></div>
+            <div class="metric-note">Across all programs</div>
+          </div>
+        </div>
 
-      <a class="action-card" href="/sis/dean/faculty-staff">
-        <div class="action-icon">♧</div>
-        <h4>Coordinate Faculty Staff</h4>
-        <p>Review existing staff records and faculty staffing information.</p>
-        <span class="action-go">Open Faculty Staff →</span>
-      </a>
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon">◐</div>
+            <span class="metric-badge">Met</span>
+          </div>
+          <div>
+            <div class="metric-label">Targets Met</div>
+            <div class="metric-value" style="color:var(--green)">78%</div>
+            <div class="metric-note">Above performance threshold</div>
+          </div>
+        </div>
 
-      <a class="action-card" href="/sis/dean/staff-assignments">
-        <div class="action-icon">▥</div>
-        <h4>Review Staff Assignments</h4>
-        <p>Inspect existing semester advisor assignments and allocation records.</p>
-        <span class="action-go">Open Assignments →</span>
-      </a>
+        <div class="metric">
+          <div class="metric-top">
+            <div class="metric-icon orange">◔</div>
+            <span class="metric-badge orange">Review</span>
+          </div>
+          <div>
+            <div class="metric-label">Improvement Plans</div>
+            <div class="metric-value" style="color:var(--orange)"><%= Math.max(1, Math.floor(totalPrograms * 0.3)) %></div>
+            <div class="metric-note">Active plans</div>
+          </div>
+        </div>
+      </section>
 
-      <a class="action-card" href="/sis/dean/department-heads">
-        <div class="action-icon">♙</div>
-        <h4>Coordinate Department Heads</h4>
-        <p>Review department leadership and existing head assignments.</p>
-        <span class="action-go">Open Department Heads →</span>
-      </a>
+      <div class="slo-grid" style="margin-top:20px">
+        <% programList.slice(0, 4).forEach((item, idx) => { 
+           const scores = [85, 72, 91, 68, 78, 64];
+           const score1 = scores[idx % 6];
+           const score2 = scores[(idx + 1) % 6];
+           const score3 = scores[(idx + 2) % 6];
+        %>
+          <div class="slo-card">
+            <h4><%= item.program_name %></h4>
+            <div class="code">Program Learning Outcomes · Assessment Cycle 2024–25</div>
 
-      <a class="action-card" href="/sis/dean/faculty-profile">
-        <div class="action-icon">▣</div>
-        <h4>Review Faculty Profile</h4>
-        <p>Access the faculty information and its existing administrative profile.</p>
-        <span class="action-go">Open Faculty Profile →</span>
-      </a>
+            <div class="slo-bar-row">
+              <label>SLO 1</label>
+              <div class="slo-bar-track">
+                <div class="slo-bar-fill <%= score1 >= 80 ? '' : score1 >= 70 ? 'warn' : 'bad' %>" style="width:<%= score1 %>%"></div>
+              </div>
+              <span><%= score1 %>%</span>
+            </div>
+            <div class="slo-bar-row">
+              <label>SLO 2</label>
+              <div class="slo-bar-track">
+                <div class="slo-bar-fill <%= score2 >= 80 ? '' : score2 >= 70 ? 'warn' : 'bad' %>" style="width:<%= score2 %>%"></div>
+              </div>
+              <span><%= score2 %>%</span>
+            </div>
+            <div class="slo-bar-row">
+              <label>SLO 3</label>
+              <div class="slo-bar-track">
+                <div class="slo-bar-fill <%= score3 >= 80 ? '' : score3 >= 70 ? 'warn' : 'bad' %>" style="width:<%= score3 %>%"></div>
+              </div>
+              <span><%= score3 %>%</span>
+            </div>
 
-    </section>
+            <div class="slo-meta">
+              <span>Improvement plan: <%= score1 < 75 ? 'Active' : 'Not required' %></span>
+              <a href="/sis/dean/academic-programs" style="color:var(--green);font-weight:700">Details →</a>
+            </div>
+          </div>
+        <% }) %>
+        <% if (!programList.length) { %>
+          <div class="slo-card" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:35px">
+            No assessment data available for the current program portfolio.
+          </div>
+        <% } %>
+      </div>
 
-    <div class="section-head">
-      <div>
-        <div class="section-eyebrow">Cross-workspace coordination</div>
-        <h2>Collaborative Academic Workflow</h2>
-        <p>Connected administrative responsibilities across the faculty.</p>
+      <div class="notice" style="margin-top:17px">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>Assessment data</strong>
+          <p>Learning outcome scores shown are sample indicators. Connect the institutional assessment module to populate real SLO results, course maps and improvement plans.</p>
+        </div>
       </div>
     </div>
 
-    <section class="collab">
-      <article class="collab-card collab-intro">
-        <div class="step">FACULTY WORKFLOW</div>
-        <h4>Coordinate academic administration</h4>
-        <p>Use the connected workspaces to review related responsibilities across the faculty.</p>
-      </article>
+    <!-- ============================================================ -->
+    <!-- TAB 5: RESOURCES & FACULTY                                    -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="tab-resources">
 
-      <article class="collab-card">
-        <div class="step">01 · DEPARTMENTS</div>
-        <h4>Department review</h4>
-        <p>Review department records before coordinating academic responsibilities.</p>
-        <a href="/sis/dean/departments">Review departments →</a>
-      </article>
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Resource alignment</div>
+          <h2>Resources &amp; Faculty Alignment</h2>
+          <p>Faculty workload distribution and program resource indicators.</p>
+        </div>
+      </div>
 
-      <article class="collab-card">
-        <div class="step">02 · LEADERSHIP</div>
-        <h4>Leadership coordination</h4>
-        <p>Access department head assignments and faculty leadership records.</p>
-        <a href="/sis/dean/department-heads">Coordinate heads →</a>
-      </article>
+      <div class="resource-grid">
+        <div class="resource-card">
+          <h4>Teaching Load</h4>
+          <div class="code">Faculty distribution by program</div>
+          <div class="resource-row">
+            <span>Programs with adequate staffing</span>
+            <strong class="green"><%= Math.max(0, totalPrograms - 2) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Programs needing additional staff</span>
+            <strong class="orange"><%= Math.min(2, totalPrograms) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Average sections per program</span>
+            <strong>4.2</strong>
+          </div>
+        </div>
 
-      <article class="collab-card">
-        <div class="step">03 · STAFF</div>
-        <h4>Staff coordination</h4>
-        <p>Review staff information and semester advisor assignments.</p>
-        <a href="/sis/dean/staff-assignments">Review assignments →</a>
-      </article>
-    </section>
+        <div class="resource-card">
+          <h4>Program Resources</h4>
+          <div class="code">Budget and equipment alignment</div>
+          <div class="resource-row">
+            <span>Budget requests pending</span>
+            <strong class="orange"><%= Math.max(1, Math.floor(totalPrograms * 0.3)) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Equipment requests</span>
+            <strong><%= Math.max(1, Math.floor(totalPrograms * 0.2)) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Approved this cycle</span>
+            <strong class="green"><%= Math.max(1, Math.floor(totalPrograms * 0.5)) %></strong>
+          </div>
+        </div>
 
+        <div class="resource-card">
+          <h4>Advising Coverage</h4>
+          <div class="code">Program-level advisor assignment</div>
+          <div class="resource-row">
+            <span>Programs with assigned advisors</span>
+            <strong class="green"><%= Math.max(0, totalPrograms - 1) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Programs without advisors</span>
+            <strong class="orange"><%= Math.min(1, totalPrograms) %></strong>
+          </div>
+          <div class="resource-row">
+            <span>Average students per advisor</span>
+            <strong>24</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="notice" style="margin-top:17px">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>Resource indicators</strong>
+          <p>These resource metrics are illustrative. Connect budget, HR and advising modules to reflect actual faculty workload, staffing gaps and resource allocation per program.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 6: ACTION CENTRE                                          -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="tab-actions">
+
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Triggered administrative actions</div>
+          <h2>Faculty Action Centre</h2>
+          <p>Move from program oversight into the existing management workspaces.</p>
+        </div>
+      </div>
+
+      <section class="action-grid">
+
+        <a class="action-card" href="/sis/dean/departments">
+          <div class="action-icon">▦</div>
+          <h4>Review Departments</h4>
+          <p>Review faculty departments and their existing administrative records.</p>
+          <span class="action-go">Open Departments →</span>
+        </a>
+
+        <a class="action-card" href="/sis/dean/faculty-structure">
+          <div class="action-icon">⌘</div>
+          <h4>Inspect Faculty Structure</h4>
+          <p>Review organizational structure, department coverage and academic advising.</p>
+          <span class="action-go">Open Structure →</span>
+        </a>
+
+        <a class="action-card" href="/sis/dean/faculty-staff">
+          <div class="action-icon">♧</div>
+          <h4>Coordinate Faculty Staff</h4>
+          <p>Review existing staff records and faculty staffing information.</p>
+          <span class="action-go">Open Faculty Staff →</span>
+        </a>
+
+        <a class="action-card" href="/sis/dean/staff-assignments">
+          <div class="action-icon">▥</div>
+          <h4>Review Staff Assignments</h4>
+          <p>Inspect existing semester advisor assignments and allocation records.</p>
+          <span class="action-go">Open Assignments →</span>
+        </a>
+
+        <a class="action-card" href="/sis/dean/department-heads">
+          <div class="action-icon">♙</div>
+          <h4>Coordinate Department Heads</h4>
+          <p>Review department leadership and existing head assignments.</p>
+          <span class="action-go">Open Department Heads →</span>
+        </a>
+
+        <a class="action-card" href="/sis/dean/faculty-profile">
+          <div class="action-icon">▣</div>
+          <h4>Review Faculty Profile</h4>
+          <p>Access the faculty information and its existing administrative profile.</p>
+          <span class="action-go">Open Faculty Profile →</span>
+        </a>
+
+      </section>
+
+      <!-- Collaborative workflow -->
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Cross-workspace coordination</div>
+          <h2>Collaborative Academic Workflow</h2>
+          <p>Connected administrative responsibilities across the faculty.</p>
+        </div>
+      </div>
+
+      <section class="collab">
+        <article class="collab-card collab-intro">
+          <div class="step">FACULTY WORKFLOW</div>
+          <h4>Coordinate academic administration</h4>
+          <p>Use the connected workspaces to review related responsibilities across the faculty.</p>
+        </article>
+
+        <article class="collab-card">
+          <div class="step">01 · DEPARTMENTS</div>
+          <h4>Department review</h4>
+          <p>Review department records before coordinating academic responsibilities.</p>
+          <a href="/sis/dean/departments">Review departments →</a>
+        </article>
+
+        <article class="collab-card">
+          <div class="step">02 · LEADERSHIP</div>
+          <h4>Leadership coordination</h4>
+          <p>Access department head assignments and faculty leadership records.</p>
+          <a href="/sis/dean/department-heads">Coordinate heads →</a>
+        </article>
+
+        <article class="collab-card">
+          <div class="step">03 · STAFF</div>
+          <h4>Staff coordination</h4>
+          <p>Review staff information and semester advisor assignments.</p>
+          <a href="/sis/dean/staff-assignments">Review assignments →</a>
+        </article>
+      </section>
+
+    </div>
+
+    <!-- GLOBAL NOTICE -->
     <section class="notice">
       <div class="notice-icon">i</div>
       <div>
         <strong>Data integrity and collaboration</strong>
         <p>
           Program names and fee-record counts are read from the existing
-          <code>fee_structure</code> source. The actions above open existing
-          faculty workspaces; they do not create duplicate records or claim
-          that a task has been assigned or completed. Persistent collaborative
-          task tracking can be connected as a separate backend feature.
+          <code>fee_structure</code> source. Accreditation, assessment and
+          resource indicators are illustrative placeholders designed to show
+          the intended structure. The actions above open existing faculty
+          workspaces; they do not create duplicate records or claim that a
+          task has been assigned or completed.
         </p>
       </div>
     </section>
@@ -686,52 +1318,104 @@ function toggleSidebar(){
   document.getElementById('sidebarOverlay').classList.toggle('show');
 }
 
+/* ---- tab switching ---- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const target = document.getElementById('tab-' + btn.dataset.tab);
+    if (target) target.classList.add('active');
+  });
+});
+
+/* ---- program selection ---- */
 function selectProgram(card){
-  document.querySelectorAll('.program-card').forEach(item=>{
+  document.querySelectorAll('.program-card').forEach(item => {
     item.classList.remove('selected');
   });
-
   card.classList.add('selected');
-  document.getElementById('detailName').textContent = card.dataset.name || '';
-  document.getElementById('detailRecords').textContent = card.dataset.records || '0';
+
+  const name = card.dataset.name || '';
+  const records = Number(card.dataset.records || 0);
+
+  document.getElementById('detailName').textContent = name;
+  document.getElementById('detailRecords').textContent = records;
+
+  // progress bar
+  const maxRecords = 10;
+  const pct = Math.min(100, Math.round((records / maxRecords) * 100));
+  const fill = document.getElementById('detailProgressFill');
+  const label = document.getElementById('detailProgressLabel');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = pct + '% complete';
 }
 
-function filterPrograms(type,button){
-  document.querySelectorAll('.filter').forEach(item=>{
-    item.classList.remove('active');
-  });
+/* ---- filtering (overview) ---- */
+function filterPrograms(type, button, scope){
+  const container = scope || 'overview';
+  const filterGroup = button.parentElement;
+  filterGroup.querySelectorAll('.filter').forEach(item => item.classList.remove('active'));
   button.classList.add('active');
-  applyProgramFilters();
+  applyProgramFilters(container);
 }
 
-function applyProgramFilters(){
-  const query = document.getElementById('programSearch').value.trim().toLowerCase();
-  const activeFilter = document.querySelector('.filter.active');
-  const filter = activeFilter ? activeFilter.dataset.filter : 'all';
-  const cards = document.querySelectorAll('.program-card');
+function applyProgramFilters(scope){
+  const prefix = scope === 'overview' ? 'Overview' : '';
+  const searchInput = document.getElementById('programSearch' + prefix);
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const listContainer = document.getElementById('programList' + prefix);
+  if (!listContainer) return;
+
+  const activeFilterEl = listContainer.closest('.panel-body').querySelector('.filter.active');
+  const filter = activeFilterEl ? activeFilterEl.dataset.filter : 'all';
+  const cards = listContainer.querySelectorAll('.program-card');
   let visible = 0;
 
-  cards.forEach(card=>{
+  cards.forEach(card => {
     const matchesText = (card.dataset.search || '').includes(query);
     const records = Number(card.dataset.records || 0);
-    const matchesFilter = filter === 'all' || records > 0;
+    let matchesFilter = true;
+    if (filter === 'with-records') matchesFilter = records > 0;
+    if (filter === 'without-records') matchesFilter = records === 0;
     const show = matchesText && matchesFilter;
-
     card.style.display = show ? '' : 'none';
-    if(show) visible++;
+    if (show) visible++;
   });
 
-  document.getElementById('noResults').style.display =
-    cards.length && visible === 0 ? 'block' : 'none';
+  const noResults = document.getElementById('noResults' + prefix);
+  if (noResults) {
+    noResults.style.display = (cards.length && visible === 0) ? 'block' : 'none';
+  }
 }
 
-document.getElementById('programSearch').addEventListener('input',applyProgramFilters);
+/* ---- search listeners ---- */
+const overviewSearch = document.getElementById('programSearchOverview');
+if (overviewSearch) overviewSearch.addEventListener('input', () => applyProgramFilters('overview'));
 
-document.querySelectorAll('.sidebar .nav-link').forEach(link=>{
-  link.addEventListener('click',()=>{
+const portfolioSearch = document.getElementById('programSearchPortfolio');
+if (portfolioSearch) {
+  portfolioSearch.addEventListener('input', () => {
+    const q = portfolioSearch.value.trim().toLowerCase();
+    document.querySelectorAll('#portfolioTable tbody tr').forEach(row => {
+      const txt = (row.dataset.search || '').toLowerCase();
+      row.style.display = (q === '' || txt.includes(q)) ? '' : 'none';
+    });
+  });
+}
+
+/* ---- sidebar link close ---- */
+document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+  link.addEventListener('click', () => {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('show');
   });
+});
+
+/* ---- initialise progress on load ---- */
+document.addEventListener('DOMContentLoaded', () => {
+  const selected = document.querySelector('.program-card.selected');
+  if (selected) selectProgram(selected);
 });
 </script>
 </body>

@@ -47,6 +47,8 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Serve static files (images, videos, CSS, JavaScript)
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({ 

@@ -4,29 +4,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LuxMind SIS | Secure Login</title>
+  <title>LuxMind SIS | Login</title>
 
   <style>
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', sans-serif;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
     }
 
     body {
       min-height: 100vh;
+      min-height: 100svh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
       position: relative;
       isolation: isolate;
       overflow-x: hidden;
+      padding: 35px 16px;
       background: #071b2c;
+      color: white;
     }
 
-    /* BACKGROUND VIDEO */
+    /* CAMPUS VIDEO BACKGROUND */
     .background-video {
       position: fixed;
       inset: 0;
@@ -34,240 +42,236 @@
       height: 100%;
       object-fit: cover;
       z-index: -2;
+      pointer-events: none;
+      background: #071b2c;
     }
 
-    /* DARK VIDEO OVERLAY */
     .video-overlay {
       position: fixed;
       inset: 0;
-      background: linear-gradient(
-        135deg,
-        rgba(3, 15, 28, 0.68),
-        rgba(3, 25, 35, 0.42)
-      );
       z-index: -1;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(3, 18, 32, 0.78),
+          rgba(4, 32, 49, 0.58),
+          rgba(2, 15, 28, 0.82)
+        );
     }
 
-    /* GLASS LOGIN PANEL */
+    /* LOGIN PANEL */
     .login-box {
       position: relative;
       z-index: 2;
       width: 100%;
       max-width: 420px;
-      padding: 38px 34px 28px;
-      text-align: center;
-
-      background: rgba(255, 255, 255, 0.16);
+      padding: 38px 34px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-
-      border: 1px solid rgba(255, 255, 255, 0.32);
-      border-radius: 18px;
-
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-
-      animation: appear 0.8s ease;
     }
 
-    @keyframes appear {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* BRAND */
     .brand {
-      color: #ffffff;
-      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .brand h1 {
+      font-size: 32px;
       font-weight: 800;
-      letter-spacing: -0.8px;
+      letter-spacing: 1px;
+    }
+
+    .brand h1 span {
+      color: #34d399;
+    }
+
+    .brand p {
+      margin-top: 8px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .welcome h2 {
+      font-size: 21px;
       margin-bottom: 7px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.25);
     }
 
-    .brand span {
-      color: #35e0a0;
+    .welcome p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.78);
     }
 
-    .subtitle {
-      color: rgba(255,255,255,0.86);
-      font-size: 0.9rem;
-      margin-bottom: 28px;
-    }
-
-    /* INPUTS */
     .form-group {
-      margin-bottom: 15px;
-      text-align: left;
+      margin-bottom: 19px;
     }
 
     .form-group label {
       display: block;
-      color: #ffffff;
-      font-size: 0.82rem;
+      margin-bottom: 8px;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 7px;
+      color: white;
     }
 
-    input {
+    .form-group input {
       width: 100%;
-      padding: 14px;
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.91);
-      color: #102b3d;
-      font-size: 0.95rem;
+      height: 47px;
+      padding: 0 14px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
       outline: none;
-      transition: 0.2s;
+      background: rgba(0, 0, 0, 0.22);
+      color: white;
+      font-size: 14px;
+      transition: border 0.2s, background 0.2s;
     }
 
-    input:focus {
-      border-color: #35e0a0;
-      box-shadow: 0 0 0 3px rgba(53,224,160,0.18);
+    .form-group input::placeholder {
+      color: rgba(255, 255, 255, 0.62);
     }
 
-    input::placeholder {
-      color: #82909b;
+    .form-group input:focus {
+      border-color: #34d399;
+      background: rgba(0, 0, 0, 0.32);
     }
 
     /* CAPTCHA */
-    .captcha-section {
-      margin: 20px 0;
-      text-align: left;
-    }
-
     .captcha-label {
       display: block;
-      color: #ffffff;
-      font-size: 0.82rem;
-      font-weight: 600;
       margin-bottom: 9px;
+      font-size: 13px;
+      font-weight: 600;
     }
 
-    .captcha-row {
+    .captcha-display {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      border: 1px dashed rgba(255, 255, 255, 0.55);
+      background: rgba(0, 0, 0, 0.32);
     }
 
-    .captcha-question {
-      flex: 1;
-      min-height: 45px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px dashed rgba(255,255,255,0.65);
-      border-radius: 8px;
-      background: rgba(0,0,0,0.20);
-      color: #ffffff;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 2px;
+    #captchaQuestion {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: 7px;
+      color: #6ee7b7;
+      user-select: none;
+      font-family: monospace;
     }
 
     .refresh-captcha {
-      width: 45px;
-      height: 45px;
-      flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.4);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.15);
-      color: #ffffff;
-      font-size: 1.3rem;
+      border: none;
+      border-radius: 7px;
+      padding: 9px 12px;
+      background: rgba(52, 211, 153, 0.2);
+      color: white;
+      font-size: 19px;
       cursor: pointer;
     }
 
     .refresh-captcha:hover {
-      background: rgba(255,255,255,0.28);
-    }
-
-    .captcha-input {
-      width: 100%;
+      background: rgba(52, 211, 153, 0.4);
     }
 
     .captcha-error {
       display: none;
-      color: #ffd0ca;
-      font-size: 0.8rem;
-      margin-top: 7px;
-    }
-
-    /* SIGN IN BUTTON */
-    .login-button {
-      width: 100%;
-      padding: 14px;
-      background: #0eae78;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.25s;
-    }
-
-    .login-button:hover {
-      background: #07865b;
-      transform: translateY(-1px);
+      color: #fecaca;
+      font-size: 12px;
+      margin-top: 8px;
     }
 
     /* SERVER ERROR */
     .error {
-      background: rgba(180, 40, 35, 0.85);
-      color: #ffffff;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 11px;
       margin-bottom: 17px;
-      font-size: 0.88rem;
-      text-align: left;
+      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.25);
+      border: 1px solid rgba(248, 113, 113, 0.6);
+      color: #fee2e2;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .login-button {
+      width: 100%;
+      height: 49px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, filter 0.2s;
+    }
+
+    .login-button:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
+    }
+
+    .security-note {
+      margin-top: 18px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 11px;
     }
 
     /* FOOTER */
     .footer {
-      border-top: 1px solid rgba(255,255,255,0.23);
-      margin-top: 26px;
-      padding-top: 18px;
-      color: rgba(255,255,255,0.75);
-      font-size: 0.75rem;
+      position: relative;
+      z-index: 2;
+      margin-top: 25px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
       line-height: 1.8;
     }
 
     .developer-credit {
-      color: #ffffff;
-      font-weight: 600;
+      margin-top: 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.65);
     }
 
     .developer-credit span {
-      color: #35e0a0;
+      color: #6ee7b7;
+      font-weight: 600;
     }
 
     @media (max-width: 480px) {
-      body {
-        padding: 15px;
-      }
-
       .login-box {
-        padding: 30px 22px 23px;
+        padding: 30px 23px;
       }
 
-      .brand {
-        font-size: 1.7rem;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .login-box {
-        animation: none;
+      .brand h1 {
+        font-size: 28px;
       }
 
-      .background-video {
-        display: none;
+      #captchaQuestion {
+        font-size: 20px;
+        letter-spacing: 5px;
       }
     }
   </style>
@@ -275,34 +279,40 @@
 
 <body>
 
-  <!-- CAMPUS BACKGROUND VIDEO -->
-  <video class="background-video"
-         autoplay
-         muted
-         loop
-         playsinline
-         preload="metadata">
+  <!-- VIDEO FILE: public/videos/campus-background.mp4 -->
+  <video
+    class="background-video"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+    aria-hidden="true"
+  >
     <source src="/videos/campus-background.mp4" type="video/mp4">
   </video>
 
   <div class="video-overlay"></div>
 
-  <!-- LOGIN PANEL -->
   <main class="login-box">
 
-    <div class="brand">LuxMind <span>SIS</span></div>
+    <div class="brand">
+      <h1>Lux<span>Mind</span> SIS</h1>
+      <p>Student Information System</p>
+    </div>
 
-    <p class="subtitle">
-      Student Information System
-      <br>
-      Sign in to access your portal
-    </p>
+    <div class="welcome">
+      <h2>Welcome Back</h2>
+      <p>Sign in to access your academic portal</p>
+    </div>
 
     <% if (error && error.length > 0) { %>
-      <div class="error"><%= error[0] %></div>
+      <div class="error">
+        <%= error[0] %>
+      </div>
     <% } %>
 
-    <form id="loginForm" method="POST" action="/login">
+    <form id="loginForm" action="/login" method="POST">
 
       <div class="form-group">
         <label for="username">Username</label>
@@ -312,7 +322,8 @@
           name="username"
           placeholder="Enter your username"
           autocomplete="username"
-          required>
+          required
+        >
       </div>
 
       <div class="form-group">
@@ -323,41 +334,41 @@
           name="password"
           placeholder="Enter your password"
           autocomplete="current-password"
-          required>
+          required
+        >
       </div>
 
-      <!-- CAPTCHA -->
-      <div class="captcha-section">
-
-        <label class="captcha-label">
-          Human Verification
+      <div class="form-group">
+        <label class="captcha-label" for="captchaAnswer">
+          Security Verification
         </label>
 
-        <div class="captcha-row">
-          <div class="captcha-question" id="captchaQuestion">
-            Loading...
-          </div>
+        <div class="captcha-display">
+          <span id="captchaQuestion" aria-label="CAPTCHA code"></span>
 
           <button
             type="button"
             class="refresh-captcha"
             id="refreshCaptcha"
-            aria-label="Generate a new verification question">
-            ↻
-          </button>
+            aria-label="Generate a new CAPTCHA"
+            title="Generate a new code"
+          >↻</button>
         </div>
 
         <input
-          type="number"
+          type="text"
           id="captchaAnswer"
-          class="captcha-input"
-          placeholder="Enter the answer"
-          required>
+          placeholder="Enter the letters and numbers"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          maxlength="6"
+          required
+        >
 
         <div class="captcha-error" id="captchaError">
-          Incorrect answer. Please try again.
+          Incorrect verification code. Please try again.
         </div>
-
       </div>
 
       <button type="submit" class="login-button">
@@ -366,18 +377,21 @@
 
     </form>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-      © <%= new Date().getFullYear() %> LuxMind SIS
-      <br>
-      Student Information System
-
-      <div class="developer-credit">
-        Developed by <span>Janvier Harerimana</span>
-      </div>
-    </footer>
+    <div class="security-note">
+      Authorized users only · Secure academic access
+    </div>
 
   </main>
+
+  <footer class="footer">
+    © <%= new Date().getFullYear() %> LuxMind SIS
+    <br>
+    Student Information System
+
+    <div class="developer-credit">
+      Developed by <span>Janvier Harerimana</span>
+    </div>
+  </footer>
 
   <script>
     (function () {
@@ -387,27 +401,36 @@
       const error = document.getElementById('captchaError');
       const refresh = document.getElementById('refreshCaptcha');
 
-      let correctAnswer = 0;
+      const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let correctCode = '';
 
       function generateCaptcha() {
-        const first = Math.floor(Math.random() * 9) + 1;
-        const second = Math.floor(Math.random() * 9) + 1;
+        correctCode = '';
 
-        correctAnswer = first + second;
+        for (let i = 0; i < 6; i++) {
+          correctCode += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+          );
+        }
 
-        question.textContent = first + ' + ' + second + ' = ?';
+        question.textContent = correctCode;
         answer.value = '';
         error.style.display = 'none';
       }
 
       refresh.addEventListener('click', generateCaptcha);
 
-      form.addEventListener('submit', function (event) {
-        if (Number(answer.value) !== correctAnswer) {
-          event.preventDefault();
+      answer.addEventListener('input', function () {
+        answer.value = answer.value.toUpperCase();
+        error.style.display = 'none';
+      });
 
+      form.addEventListener('submit', function (event) {
+        const enteredCode = answer.value.trim().toUpperCase();
+
+        if (enteredCode !== correctCode) {
+          event.preventDefault();
           error.style.display = 'block';
-          answer.value = '';
           generateCaptcha();
           answer.focus();
         }

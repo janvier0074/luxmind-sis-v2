@@ -4096,6 +4096,205 @@ app.get('/sis/dean/examinations', requireRole('dean'), async (req, res) => {
 });
 
 
+// ============================================================
+// DEAN — GRADES & RESULTS
+// Faculty-level academic results oversight (READ ONLY)
+// ============================================================
+
+app.get('/sis/dean/grades-results', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+
+    if (!faculty) {
+      return res.status(404).send('No faculty is assigned to this Dean account.');
+    }
+
+    const facultyId = faculty.id;
+
+    // 1. Faculty-wide results overview
+    const overviewResult = await pool.query(`
+      WITH section_stats AS (
+        SELECT
+          cs.id AS section_id,
+          d.id AS department_id,
+          COUNT(g.id)::int AS grade_count,
+          COUNT(g.id) FILTER (
+            WHERE g.is_published IS TRUE
+          )::int AS published_count,
+          COUNT(g.id) FILTER (
+            WHERE g.is_published IS NOT TRUE
+          )::int AS unpublished_count,
+          SUM(g.gpa_points) AS total_gpa_points,
+          COUNT(g.gpa_points)::int AS gpa_count
+        FROM course_sections cs
+        JOIN courses c ON c.id = cs.course_id
+        LEFT JOIN departments d ON d.id = c.department_id
+        LEFT JOIN grades g ON g.section_id = cs.id
+        WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+        GROUP BY cs.id, d.id
+      )
+      SELECT
+        COALESCE(SUM(grade_count), 0)::int AS total_grade_records,
+        COALESCE(SUM(published_count), 0)::int AS published_results,
+        COALESCE(SUM(unpublished_count), 0)::int AS unpublished_results,
+        COUNT(*) FILTER (WHERE grade_count = 0)::int
+          AS sections_without_grades,
+        COUNT(DISTINCT department_id)::int AS departments_involved,
+        ROUND(
+          SUM(total_gpa_points) /
+          NULLIF(SUM(gpa_count), 0),
+          2
+        ) AS faculty_average_gpa
+      FROM section_stats
+    `, [facultyId]);
+
+    // 2. Department performance overview
+    const departmentsResult = await pool.query(`
+      SELECT
+        d.id AS department_id,
+        d.name AS department_name,
+        d.code AS department_code,
+        head.full_name AS department_head,
+
+        COUNT(DISTINCT cs.id)::int AS total_sections,
+
+        COUNT(DISTINCT g.id)::int AS total_grade_records,
+
+        COUNT(DISTINCT g.id) FILTER (
+          WHERE g.is_published IS TRUE
+        )::int AS published_results,
+
+        COUNT(DISTINCT g.id) FILTER (
+          WHERE g.is_published IS NOT TRUE
+        )::int AS unpublished_results,
+
+        COUNT(DISTINCT cs.id) FILTER (
+          WHERE cs.id IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM grades gx
+            WHERE gx.section_id = cs.id
+          )
+        )::int AS sections_without_grades,
+
+        ROUND(AVG(g.gpa_points), 2) AS average_gpa
+
+      FROM departments d
+      LEFT JOIN users head ON head.id = d.head_id
+      LEFT JOIN courses c ON c.department_id = d.id
+      LEFT JOIN course_sections cs ON cs.course_id = c.id
+      LEFT JOIN grades g ON g.section_id = cs.id
+
+      WHERE d.faculty_id = $1
+      GROUP BY d.id, d.name, d.code, head.full_name
+      ORDER BY d.name
+    `, [facultyId]);
+
+    // 3. Individual grade records
+    const gradesResult = await pool.query(`
+      SELECT
+        g.id AS grade_id,
+        g.midterm_grade,
+        g.final_grade,
+        g.letter_grade,
+        g.gpa_points,
+        g.is_published,
+        g.published_at,
+        g.created_at AS grade_created_at,
+
+        COALESCE(
+          NULLIF(student.full_name, ''),
+          student.username,
+          'Unknown student'
+        ) AS student_name,
+
+        c.id AS course_id,
+        c.title AS course_title,
+        c.code AS course_code,
+        c.credits,
+
+        d.name AS department_name,
+
+        cs.id AS section_id,
+        cs.group_name,
+
+        COALESCE(
+          NULLIF(teacher.full_name, ''),
+          teacher.username,
+          'Not assigned'
+        ) AS lecturer_name,
+
+        ap.academic_year,
+        ap.term
+
+      FROM grades g
+      JOIN course_sections cs ON cs.id = g.section_id
+      JOIN courses c ON c.id = cs.course_id
+      LEFT JOIN departments d ON d.id = c.department_id
+      LEFT JOIN users student ON student.id = g.student_id
+      LEFT JOIN users teacher
+        ON teacher.id = COALESCE(cs.teacher_id, c.teacher_id)
+      LEFT JOIN academic_periods ap
+        ON ap.id = cs.academic_period_id
+
+      WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+      ORDER BY g.created_at DESC
+      LIMIT 300
+    `, [facultyId]);
+
+    // 4. Results grouped by course and academic period
+    const coursesResult = await pool.query(`
+      SELECT
+        c.id AS course_id,
+        c.title AS course_title,
+        c.code AS course_code,
+        d.name AS department_name,
+        cs.group_name,
+        ap.academic_year,
+        ap.term,
+
+        COUNT(g.id)::int AS total_grade_records,
+
+        COUNT(g.id) FILTER (
+          WHERE g.is_published IS TRUE
+        )::int AS published_results,
+
+        COUNT(g.id) FILTER (
+          WHERE g.is_published IS NOT TRUE
+        )::int AS unpublished_results,
+
+        ROUND(AVG(g.gpa_points), 2) AS average_gpa
+
+      FROM course_sections cs
+      JOIN courses c ON c.id = cs.course_id
+      LEFT JOIN departments d ON d.id = c.department_id
+      LEFT JOIN academic_periods ap
+        ON ap.id = cs.academic_period_id
+      LEFT JOIN grades g ON g.section_id = cs.id
+
+      WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+      GROUP BY
+        c.id, c.title, c.code,
+        d.name, cs.id, cs.group_name,
+        ap.academic_year, ap.term
+      ORDER BY ap.academic_year DESC, c.title, cs.group_name
+    `, [facultyId]);
+
+    res.render('dean-grades-results', {
+      user: req.session.user,
+      faculty,
+      overview: overviewResult.rows[0],
+      departments: departmentsResult.rows,
+      grades: gradesResult.rows,
+      courses: coursesResult.rows
+    });
+
+  } catch (err) {
+    console.error('Dean Grades & Results Error:', err);
+    res.status(500).send('Grades & Results Error: ' + err.message);
+  }
+});
+
 
 // ============================================================
 // DEAN — COURSE ALLOCATION EVALUATION (READ ONLY)

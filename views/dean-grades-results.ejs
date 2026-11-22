@@ -1,0 +1,381 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grades & Results | LuxMind SIS</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #f5f7fa;
+      color: #172033;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 1450px;
+      margin: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .muted { color: #718096; font-size: 13px; }
+
+    .faculty {
+      background: #e8f5ef;
+      color: #08784d;
+      padding: 9px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    .metric, .panel {
+      background: white;
+      border: 1px solid #e7ebf0;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .metric-label {
+      color: #718096;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-size: 27px;
+      font-weight: bold;
+    }
+
+    .panel { margin-bottom: 22px; }
+
+    .panel h2 {
+      font-size: 17px;
+      margin: 0 0 18px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 850px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 13px 12px;
+      border-bottom: 1px solid #edf0f4;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    th {
+      color: #64748b;
+      background: #f8fafc;
+      font-weight: 600;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .published {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .unpublished {
+      background: #fff1d6;
+      color: #925b00;
+    }
+
+    .search {
+      width: 100%;
+      max-width: 380px;
+      padding: 11px 13px;
+      border: 1px solid #dce2e9;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 25px;
+      color: #718096;
+    }
+
+    @media(max-width: 650px) {
+      body { padding: 16px; }
+      .metric { padding: 15px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <header class="header">
+    <div>
+      <h1>Grades & Results</h1>
+      <div class="muted">
+        Faculty-level academic results and performance oversight
+      </div>
+    </div>
+
+    <div class="faculty">
+      <%= faculty.name %>
+    </div>
+  </header>
+
+  <!-- FACULTY OVERVIEW -->
+  <section class="metrics">
+
+    <div class="metric">
+      <div class="metric-label">Total Grade Records</div>
+      <div class="metric-value">
+        <%= overview.total_grade_records %>
+      </div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">Published Results</div>
+      <div class="metric-value">
+        <%= overview.published_results %>
+      </div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">Unpublished Results</div>
+      <div class="metric-value">
+        <%= overview.unpublished_results %>
+      </div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">Sections Without Grades</div>
+      <div class="metric-value">
+        <%= overview.sections_without_grades %>
+      </div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">Departments Involved</div>
+      <div class="metric-value">
+        <%= overview.departments_involved %>
+      </div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-label">Faculty Average GPA</div>
+      <div class="metric-value">
+        <%= overview.faculty_average_gpa ?? '—' %>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- DEPARTMENT PERFORMANCE -->
+  <section class="panel">
+    <h2>Department Performance Monitoring</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Department Head</th>
+            <th>Sections</th>
+            <th>Grade Records</th>
+            <th>Published</th>
+            <th>Unpublished</th>
+            <th>Without Grades</th>
+            <th>Average GPA</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (departments.length === 0) { %>
+            <tr>
+              <td colspan="8" class="empty">No department records found.</td>
+            </tr>
+          <% } %>
+
+          <% departments.forEach(dept => { %>
+            <tr>
+              <td>
+                <strong><%= dept.department_name %></strong>
+                <div class="muted"><%= dept.department_code || '' %></div>
+              </td>
+              <td><%= dept.department_head || 'Not assigned' %></td>
+              <td><%= dept.total_sections %></td>
+              <td><%= dept.total_grade_records %></td>
+              <td><%= dept.published_results %></td>
+              <td><%= dept.unpublished_results %></td>
+              <td><%= dept.sections_without_grades %></td>
+              <td><%= dept.average_gpa ?? '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- COURSE RESULTS MONITORING -->
+  <section class="panel">
+    <h2>Course Results Submission Monitoring</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Group</th>
+            <th>Academic Period</th>
+            <th>Grade Records</th>
+            <th>Published</th>
+            <th>Unpublished</th>
+            <th>Average GPA</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (courses.length === 0) { %>
+            <tr>
+              <td colspan="8" class="empty">No course records found.</td>
+            </tr>
+          <% } %>
+
+          <% courses.forEach(course => { %>
+            <tr>
+              <td>
+                <strong><%= course.course_code || '' %></strong>
+                <div><%= course.course_title %></div>
+              </td>
+              <td><%= course.department_name || '—' %></td>
+              <td><%= course.group_name || '—' %></td>
+              <td>
+                <%= course.academic_year || '—' %>
+                <%= course.term || '' %>
+              </td>
+              <td><%= course.total_grade_records %></td>
+              <td><%= course.published_results %></td>
+              <td><%= course.unpublished_results %></td>
+              <td><%= course.average_gpa ?? '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- INDIVIDUAL GRADE RECORDS -->
+  <section class="panel">
+    <h2>Individual Student Grade Records</h2>
+
+    <input
+      type="search"
+      id="gradeSearch"
+      class="search"
+      placeholder="Search student, course, department or lecturer..."
+    >
+
+    <div class="table-wrap">
+      <table id="gradesTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Group</th>
+            <th>Lecturer</th>
+            <th>Midterm</th>
+            <th>Final</th>
+            <th>Letter Grade</th>
+            <th>GPA Points</th>
+            <th>Publication</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (grades.length === 0) { %>
+            <tr>
+              <td colspan="10" class="empty">No grade records found.</td>
+            </tr>
+          <% } %>
+
+          <% grades.forEach(grade => { %>
+            <tr>
+              <td><%= grade.student_name %></td>
+              <td>
+                <strong><%= grade.course_code || '' %></strong>
+                <div><%= grade.course_title %></div>
+              </td>
+              <td><%= grade.department_name || '—' %></td>
+              <td><%= grade.group_name || '—' %></td>
+              <td><%= grade.lecturer_name %></td>
+              <td><%= grade.midterm_grade ?? '—' %></td>
+              <td><%= grade.final_grade ?? '—' %></td>
+              <td><%= grade.letter_grade || '—' %></td>
+              <td><%= grade.gpa_points ?? '—' %></td>
+              <td>
+                <% if (grade.is_published) { %>
+                  <span class="status published">Published</span>
+                <% } else { %>
+                  <span class="status unpublished">Unpublished</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="muted">
+      Showing up to 300 recent grade records. This workspace is read-only.
+    </p>
+  </section>
+
+</div>
+
+<script>
+  document.getElementById('gradeSearch').addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+
+    document.querySelectorAll('#gradesTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(query)
+        ? ''
+        : 'none';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -3748,6 +3748,61 @@ app.get('/sis/dean/faculty-structure', requireRole('dean'), async (req, res) => 
   }
 });
 
+
+
+// ============================================
+// DEAN - ACADEMIC PROGRAMS
+// Uses existing fee_structure.program data
+// ============================================
+app.get('/sis/dean/academic-programs', requireRole('dean'), async (req, res) => {
+  try {
+    const facultyResult = await pool.query(`
+      SELECT id, name, code
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (!facultyResult.rows.length) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const faculty = facultyResult.rows[0];
+
+    const programsResult = await pool.query(`
+      SELECT
+        TRIM(program) AS program_name,
+        COUNT(*)::int AS fee_records
+      FROM fee_structure
+      WHERE program IS NOT NULL
+        AND TRIM(program) <> ''
+      GROUP BY TRIM(program)
+      ORDER BY TRIM(program) ASC
+    `);
+
+    const programs = programsResult.rows;
+
+    const stats = {
+      totalPrograms: programs.length,
+      totalFeeRecords: programs.reduce(
+        (total, item) => total + Number(item.fee_records || 0), 0
+      )
+    };
+
+    res.render('dean-academic-programs', {
+      user: req.session.user,
+      faculty,
+      programs,
+      stats
+    });
+
+  } catch (err) {
+    console.error('Dean Academic Programs Error:', err);
+    res.status(500).send('Academic Programs Error: ' + err.message);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
 });

@@ -1,0 +1,122 @@
+
+<%
+const dean = user || {};
+const facultyInfo = faculty || {};
+const programList = Array.isArray(programs) ? programs : [];
+const overview = stats || { totalPrograms: 0, totalFeeRecords: 0 };
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Programs | LuxMind SIS</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7f6;color:#172b27;font-family:Inter,Segoe UI,Arial,sans-serif}
+.header{background:linear-gradient(120deg,#064e3b,#047857);color:white;padding:30px 5%}
+.header a{color:#d1fae5;text-decoration:none;font-size:13px}
+.header h1{font-size:28px;margin:18px 0 8px}
+.header p{color:#d1fae5;margin:0;font-size:14px}
+.container{max-width:1250px;margin:28px auto;padding:0 22px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:24px}
+.stat,.panel{background:white;border:1px solid #e4ece8;border-radius:15px;padding:23px;box-shadow:0 4px 16px #102c2110}
+.stat span{font-size:12px;color:#71817b;font-weight:700;text-transform:uppercase;letter-spacing:.7px}
+.stat strong{display:block;font-size:30px;margin-top:10px;color:#047857}
+.panel{margin-bottom:22px}
+.panel h2{font-size:18px;margin:0 0 7px}
+.sub{color:#75847e;font-size:13px;margin:0 0 20px}
+.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:20px 0}
+input{width:100%;max-width:360px;padding:12px 14px;border:1px solid #dce6e1;border-radius:9px;font-size:14px;outline:none}
+input:focus{border-color:#059669;box-shadow:0 0 0 3px #10b98118}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:450px}
+th{text-align:left;background:#f4f8f6;color:#65766e;font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:14px}
+td{padding:16px 14px;border-bottom:1px solid #edf1ef;font-size:13px}
+.program-name{font-weight:700;color:#174b3b}
+.number{font-weight:700;color:#047857}
+.empty{text-align:center;padding:35px;color:#788780}
+.notice{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:11px;padding:15px;color:#166534;font-size:13px;line-height:1.6}
+.footer{text-align:center;padding:25px;color:#89958f;font-size:12px}
+@media(max-width:650px){.stats{grid-template-columns:1fr}.header h1{font-size:23px}.toolbar{align-items:stretch;flex-direction:column}input{max-width:none}}
+</style>
+</head>
+<body>
+
+<header class="header">
+<a href="/sis/dean">← Back to Dean Dashboard</a>
+<h1>Academic Programs</h1>
+<p><%= facultyInfo.name || 'Faculty' %> · Academic program catalogue</p>
+</header>
+
+<main class="container">
+
+<section class="stats">
+<div class="stat">
+<span>Registered Programs</span>
+<strong><%= overview.totalPrograms || 0 %></strong>
+</div>
+<div class="stat">
+<span>Fee Structure Records</span>
+<strong><%= overview.totalFeeRecords || 0 %></strong>
+</div>
+</section>
+
+<section class="panel">
+<h2>Programs Directory</h2>
+<p class="sub">Program names currently registered in the university fee structure.</p>
+
+<div class="toolbar">
+<input id="programSearch" type="search" placeholder="Search programs..." oninput="filterPrograms()">
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Program Name</th>
+<th>Fee Structure Records</th>
+</tr>
+</thead>
+<tbody id="programRows">
+<% if (programList.length) { %>
+<% programList.forEach((item, index) => { %>
+<tr>
+<td><%= index + 1 %></td>
+<td class="program-name"><%= item.program_name %></td>
+<td class="number"><%= item.fee_records %></td>
+</tr>
+<% }) %>
+<% } else { %>
+<tr><td colspan="3" class="empty">No program records were found in the fee structure.</td></tr>
+<% } %>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="panel">
+<h2>Academic Data Integration</h2>
+<p class="sub">Current workspace data coverage</p>
+<div class="notice">
+<strong>Existing data reused:</strong> Program names and fee-record counts come from the existing <code>fee_structure</code> table.
+<br><br>
+Department ownership, degree levels, program coordinators, curriculum mapping, and program accreditation are not assumed or duplicated here. They can be connected when their existing data relationships are established.
+</div>
+</section>
+
+</main>
+
+<footer class="footer">LuxMind SIS · Academic Management</footer>
+
+<script>
+function filterPrograms(){
+  const query = document.getElementById('programSearch').value.toLowerCase();
+  document.querySelectorAll('#programRows tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

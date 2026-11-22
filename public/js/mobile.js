@@ -1,8 +1,6 @@
 /* ============================================================
    LUXMIND — GLOBAL MOBILE JS
-   Focus: 
-   1. Inject hamburger only if a sidebar exists.
-   2. Prevent horizontal overflow on every page.
+   Phase 1: Hamburger + Table Scroll + Double-Submit Prevention
    ============================================================ */
 (function () {
   'use strict';
@@ -12,7 +10,6 @@
   function init() {
     if (!isMobile()) return;
 
-    // Only inject hamburger if there is actually a sidebar to open
     const sb = findSidebar();
     if (sb) {
       injectHamburger();
@@ -21,15 +18,17 @@
       document.body.classList.add('has-hamburger');
     }
 
-    // Universal safety: make any wide tables scroll instead of breaking the page
     makeTablesScrollable();
-    
-    // Re-check on resize
+    attachDoubleSubmitPrevention();
+
     window.addEventListener('resize', () => {
       if (isMobile()) makeTablesScrollable();
     });
   }
 
+  // ============================================================
+  // HAMBURGER (only if sidebar exists)
+  // ============================================================
   function findSidebar() {
     return document.querySelector('.sidebar, .course-nav, aside.sidebar, .layout > aside');
   }
@@ -69,27 +68,19 @@
   }
 
   function attachListeners(sb) {
-    // Close drawer when a nav link is clicked
     sb.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => { if (isMobile()) closeDrawer(); });
     });
-
-    // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDrawer();
     });
-
-    // Close on resize to desktop
     window.addEventListener('resize', () => {
       if (!isMobile()) closeDrawer();
     });
-
-    // Swipe left to close drawer
     let touchStartX = 0;
     document.addEventListener('touchstart', (e) => {
       touchStartX = e.touches[0].clientX;
     }, { passive: true });
-
     document.addEventListener('touchend', (e) => {
       const dx = e.changedTouches[0].clientX - touchStartX;
       if (dx < -60) closeDrawer();
@@ -97,30 +88,70 @@
   }
 
   // ============================================================
-  // TABLE OVERFLOW FIX
-  // Scans the page for <table> elements that are wider than the
-  // screen and forces them to scroll inside their own wrapper.
+  // TABLE SCROLL WRAPPING
   // ============================================================
   function makeTablesScrollable() {
     const tables = document.querySelectorAll('table');
     tables.forEach(table => {
-      // Skip if already wrapped
       if (table.parentElement.classList.contains('table-responsive')) return;
-
-      // Check if the table actually overflows its container
       if (table.scrollWidth > table.clientWidth) {
-        // Create a scrollable wrapper
         const wrapper = document.createElement('div');
         wrapper.className = 'table-responsive';
         wrapper.style.overflowX = 'auto';
         wrapper.style.webkitOverflowScrolling = 'touch';
         wrapper.style.maxWidth = '100%';
-        
-        // Wrap the table
         table.parentNode.insertBefore(wrapper, table);
         wrapper.appendChild(table);
       }
     });
+  }
+
+  // ============================================================
+  // DOUBLE-SUBMIT PREVENTION
+  // Prevents users from tapping "Submit" twice on slow networks,
+  // which would create duplicate records in the database.
+  // ============================================================
+  function attachDoubleSubmitPrevention() {
+    document.addEventListener('submit', (e) => {
+      const form = e.target;
+      if (form.dataset.submitted === 'true') {
+        e.preventDefault();
+        return;
+      }
+      
+      const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+      if (!submitBtn) return;
+      
+      // Only lock forms that are valid (prevents locking on validation errors)
+      // Give browser 50ms to run native validation
+      setTimeout(() => {
+        if (form.checkValidity && form.checkValidity()) {
+          form.dataset.submitted = 'true';
+          
+          if (submitBtn.tagName === 'BUTTON') {
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.dataset.originalHTML = originalHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+          } else {
+            submitBtn.disabled = true;
+            submitBtn.value = 'Processing...';
+          }
+          
+          // Safety: re-enable after 10 seconds in case the request hangs
+          setTimeout(() => {
+            form.dataset.submitted = '';
+            if (submitBtn.tagName === 'BUTTON') {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = submitBtn.dataset.originalHTML || 'Submit';
+            } else {
+              submitBtn.disabled = false;
+              submitBtn.value = 'Submit';
+            }
+          }, 10000);
+        }
+      }, 50);
+    }, true);
   }
 
   // Run when DOM is ready

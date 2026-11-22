@@ -1445,11 +1445,13 @@ app.post('/sis/advisor/approvals/approve', requireRole('advisor'), async (req, r
 });
 
 
+
 // ============================================================
 // DEAN - STAFF ASSIGNMENTS (READ-ONLY OVERSIGHT)
 // ============================================================
 app.get('/sis/dean/staff-assignments', requireRole('dean'), async (req, res) => {
   try {
+    // Get the faculty assigned to the logged-in Dean.
     const facultyResult = await pool.query(`
       SELECT id, name, code
       FROM faculties
@@ -1464,6 +1466,7 @@ app.get('/sis/dean/staff-assignments', requireRole('dean'), async (req, res) => 
 
     const faculty = facultyResult.rows[0];
 
+    // Retrieve all semester advisor records in this faculty.
     const result = await pool.query(`
       SELECT
         d.id AS department_id,
@@ -1481,74 +1484,32 @@ app.get('/sis/dean/staff-assignments', requireRole('dean'), async (req, res) => 
       ORDER BY d.name ASC, a.semester_number ASC
     `, [faculty.id]);
 
-    // Build eight semester slots for every department.
-    const departmentMap = new Map();
+    const assignments = result.rows;
 
-    for (const row of result.rows) {
-      if (!departmentMap.has(row.department_id)) {
-        departmentMap.set(row.department_id, {
-          id: row.department_id,
-          name: row.department_name,
-          code: row.department_code,
-          semesters: Array.from({ length: 8 }, (_, index) => ({
-            semester: index + 1,
-            advisor_name: null,
-            is_placeholder: false,
-            assignment_id: null,
-            updated_at: null
-          }))
-        });
-      }
-
-      if (row.semester_number) {
-        const department = departmentMap.get(row.department_id);
-        department.semesters[row.semester_number - 1] = {
-          semester: row.semester_number,
-          advisor_name: row.advisor_name,
-          is_placeholder: row.is_placeholder,
-          assignment_id: row.assignment_id,
-          updated_at: row.updated_at
-        };
-      }
-    }
-
-    const departments = Array.from(departmentMap.values());
-
+    // Calculate oversight statistics.
     const stats = {
-      departments: departments.length,
-      total: departments.length * 8,
-      named: 0,
-      placeholders: 0,
-      missing: 0
+      departments: new Set(
+        assignments.map(a => a.department_id)
+      ).size,
+
+      assignments: assignments.filter(
+        a => a.assignment_id !== null
+      ).length,
+
+      assigned: assignments.filter(
+        a => a.assignment_id !== null && !a.is_placeholder
+      ).length,
+
+      placeholders: assignments.filter(
+        a => a.assignment_id !== null && a.is_placeholder
+      ).length
     };
-
-    departments.forEach(department => {
-      department.semesters.forEach(semester => {
-        if (!semester.assignment_id) {
-          stats.missing++;
-        } else if (semester.is_placeholder) {
-          stats.placeholders++;
-        } else {
-          stats.named++;
-        }
-      });
-
-      department.completed = department.semesters.filter(
-        semester => semester.assignment_id
-      ).length;
-
-      department.isComplete = department.completed === 8;
-    });
-
-    stats.configured = stats.named + stats.placeholders;
 
     res.render('dean-staff-assignments', {
       user: req.session.user,
       faculty,
-      departments,
-      stats,
-      success: req.flash('success'),
-      error: req.flash('error')
+      assignments,
+      stats
     });
 
   } catch (err) {
@@ -1556,7 +1517,6 @@ app.get('/sis/dean/staff-assignments', requireRole('dean'), async (req, res) => 
     res.status(500).send('Staff Assignments Error: ' + err.message);
   }
 });
-
 
 
 

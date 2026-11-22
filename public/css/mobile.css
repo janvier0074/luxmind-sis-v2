@@ -261,3 +261,45 @@ pre, code {
     font-size: 16px !important;
   }
 }
+/* ============================================================
+   URGENT LAYOUT FIX — Forces vertical stacking on mobile
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+  /* 1. Force the main layout to stack vertically */
+  .layout,
+  .dashboard-layout,
+  .app-container,
+  .flex-layout {
+    display: block !important; /* Kills side-by-side flex layout */
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  /* 2. Force the main content to take full width */
+  .content-wrapper,
+  .main-content,
+  main {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* 3. Kill any remaining flex-row issues that split the screen */
+  body > div {
+    display: block !important;
+  }
+
+  /* 4. Ensure the sidebar (when opened) sits on top, not next to */
+  .sidebar,
+  .course-nav,
+  aside.sidebar {
+    position: fixed !important;
+    width: 260px !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+  }
+}

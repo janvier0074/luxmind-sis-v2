@@ -3904,6 +3904,189 @@ app.get('/sis/dean/courses-curriculum', requireRole('dean'), async (req, res) =>
   }
 });
 
+
+
+// ============================================================
+// DEAN — COURSE ALLOCATION EVALUATION (READ ONLY)
+// Department Heads manage allocations.
+// Admin manages teacher accounts.
+// Dean monitors and evaluates existing allocations.
+// ============================================================
+
+app.get('/sis/dean/course-allocation', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const [departmentsRes, allocationsRes] = await Promise.all([
+
+      // Department-level allocation overview
+      pool.query(`
+        SELECT
+          d.id,
+          d.name,
+          COUNT(DISTINCT c.id)::int AS course_count,
+
+          COUNT(DISTINCT c.id) FILTER (
+            WHERE c.teacher_id IS NOT NULL
+               OR EXISTS (
+                 SELECT 1
+                 FROM course_sections sx
+                 WHERE sx.course_id = c.id
+                   AND sx.teacher_id IS NOT NULL
+               )
+          )::int AS assigned_course_count,
+
+          COUNT(DISTINCT c.id) FILTER (
+            WHERE c.teacher_id IS NULL
+              AND NOT EXISTS (
+                SELECT 1
+                FROM course_sections sx
+                WHERE sx.course_id = c.id
+                  AND sx.teacher_id IS NOT NULL
+              )
+          )::int AS unassigned_course_count,
+
+          (
+            SELECT COUNT(DISTINCT assigned.teacher_id)::int
+            FROM (
+              SELECT c2.teacher_id
+              FROM courses c2
+              WHERE c2.department_id = d.id
+                AND c2.faculty_id = $1
+                AND c2.teacher_id IS NOT NULL
+
+              UNION
+
+              SELECT sx.teacher_id
+              FROM courses c2
+              JOIN course_sections sx ON sx.course_id = c2.id
+              WHERE c2.department_id = d.id
+                AND c2.faculty_id = $1
+                AND sx.teacher_id IS NOT NULL
+            ) assigned
+          ) AS lecturer_count
+
+        FROM departments d
+        LEFT JOIN courses c
+          ON c.department_id = d.id
+         AND c.faculty_id = $1
+        WHERE d.faculty_id = $1
+        GROUP BY d.id, d.name
+        ORDER BY d.name
+      `, [faculty.id]),
+
+      // Real course-to-lecturer assignments.
+      // UNION removes duplicate course/teacher assignments.
+      pool.query(`
+        SELECT
+          d.id AS department_id,
+          d.name AS department_name,
+          c.id AS course_id,
+          c.code AS course_code,
+          c.title AS course_title,
+          c.credits,
+
+          u.id AS staff_id,
+          u.full_name AS teacher_name,
+          u.email AS teacher_email,
+
+          COALESCE(
+            STRING_AGG(DISTINCT s.group_name, ', ')
+              FILTER (WHERE s.group_name IS NOT NULL),
+            'Course-level assignment'
+          ) AS teaching_groups,
+
+          COUNT(DISTINCT s.id)::int AS section_count
+
+        FROM courses c
+
+        LEFT JOIN departments d
+          ON d.id = c.department_id
+
+        LEFT JOIN LATERAL (
+          SELECT c.teacher_id AS teacher_id
+          WHERE c.teacher_id IS NOT NULL
+
+          UNION
+
+          SELECT sx.teacher_id
+          FROM course_sections sx
+          WHERE sx.course_id = c.id
+            AND sx.teacher_id IS NOT NULL
+        ) assigned ON TRUE
+
+        LEFT JOIN users u
+          ON u.id = assigned.teacher_id
+
+        LEFT JOIN course_sections s
+          ON s.course_id = c.id
+         AND s.teacher_id = assigned.teacher_id
+
+        WHERE c.faculty_id = $1
+
+        GROUP BY
+          d.id, d.name,
+          c.id, c.code, c.title, c.credits,
+          u.id, u.full_name, u.email
+
+        ORDER BY
+          d.name NULLS LAST,
+          c.code,
+          u.full_name NULLS LAST
+      `, [faculty.id])
+    ]);
+
+    const departments = departmentsRes.rows;
+    const allocations = allocationsRes.rows;
+
+    const totalCourses = departments.reduce(
+      (sum, d) => sum + Number(d.course_count || 0), 0
+    );
+
+    const assignedCourses = departments.reduce(
+      (sum, d) => sum + Number(d.assigned_course_count || 0), 0
+    );
+
+    const unassignedCourses = departments.reduce(
+      (sum, d) => sum + Number(d.unassigned_course_count || 0), 0
+    );
+
+    const lecturerIds = new Set(
+      allocations
+        .filter(a => a.staff_id != null)
+        .map(a => String(a.staff_id))
+    );
+
+    const stats = {
+      departmentCount: departments.length,
+      totalCourses,
+      assignedCourses,
+      unassignedCourses,
+      lecturerCount: lecturerIds.size
+    };
+
+    res.render('dean-course-allocation', {
+      user: req.session.user,
+      faculty,
+      departments,
+      allocations,
+      stats
+    });
+
+  } catch (err) {
+    console.error('Dean Course Allocation Error:', err);
+    res.status(500).send('Course Allocation Error: ' + err.message);
+  }
+});
+
+
+
+
 // ============================================================
 // DEAN — CLASS TIMETABLE OVERSIGHT (READ ONLY)
 // Department Heads remain responsible for timetable management.

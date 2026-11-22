@@ -1,0 +1,588 @@
+
+<%
+const facultyInfo = faculty || {};
+const departmentList = departments || [];
+const allocationList = allocations || [];
+const metrics = stats || {};
+
+const safe = value => value == null || value === '' ? '—' : String(value);
+
+const lecturers = new Map();
+
+allocationList.forEach(item => {
+  if (item.staff_id == null) return;
+
+  const key = String(item.staff_id);
+
+  if (!lecturers.has(key)) {
+    const nameParts = String(item.teacher_name || '').trim().split(/\s+/);
+    lecturers.set(key, {
+      id: item.staff_id,
+      name: item.teacher_name,
+      firstName: nameParts[0] || '—',
+      surname: nameParts.length > 1 ? nameParts.slice(1).join(' ') : '—',
+      email: item.teacher_email,
+      courses: []
+    });
+  }
+
+  lecturers.get(key).courses.push({
+    code: item.course_code,
+    title: item.course_title,
+    department: item.department_name,
+    groups: item.teaching_groups,
+    sections: item.section_count
+  });
+});
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Allocation | LuxMind SIS</title>
+
+<style>
+:root{
+  --primary:#087f65;
+  --primary-dark:#06634f;
+  --primary-light:#e6f5ef;
+  --navy:#142d28;
+  --ink:#20332d;
+  --muted:#75847d;
+  --line:#e5ece8;
+  --surface:#fff;
+  --background:#f4f7f6;
+  --red:#bd4238;
+  --amber:#a96812;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:var(--background);
+  color:var(--ink);
+}
+a{text-decoration:none;color:inherit}
+button,input,select{font:inherit}
+.sidebar{
+  position:fixed;top:0;bottom:0;left:0;width:245px;
+  padding:25px 18px;background:var(--navy);color:#fff;
+  display:flex;flex-direction:column;z-index:5;
+}
+.brand{font-size:23px;font-weight:850;padding:5px 10px 35px}
+.brand span{color:#55dfad}
+.sidebar-label{
+  color:#91aaa0;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;padding:0 12px 12px;
+}
+.nav-link{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 13px;margin:3px 0;border-radius:9px;
+  color:#d3e0da;font-size:13px;
+}
+.nav-link:hover,.nav-link.active{background:#245044;color:white}
+.nav-icon{width:20px;text-align:center;font-size:17px}
+.sidebar-bottom{margin-top:auto;color:#91aaa0;font-size:11px;padding:15px 10px}
+.main{margin-left:245px;padding:34px 38px 55px;max-width:1600px}
+.breadcrumb{font-size:12px;color:var(--muted);margin-bottom:10px}
+.page-heading{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:15px;margin-bottom:25px;
+}
+h1{font-size:27px;letter-spacing:-.7px;margin:0 0 8px}
+.subtitle{font-size:13px;color:var(--muted);line-height:1.6}
+.faculty-tag{
+  display:inline-block;background:var(--primary-light);
+  color:var(--primary-dark);padding:9px 14px;
+  border-radius:25px;font-size:12px;font-weight:750;margin-top:13px;
+}
+.stats{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;margin-bottom:22px;
+}
+.stat-card,.panel,.department-card{
+  background:white;border:1px solid var(--line);
+  border-radius:13px;box-shadow:0 5px 22px rgba(20,45,35,.045);
+}
+.stat-card{padding:19px}
+.stat-label{font-size:11px;color:var(--muted);font-weight:650}
+.stat-value{font-size:28px;font-weight:800;margin:9px 0 5px}
+.stat-note{font-size:11px;color:var(--muted)}
+.panel{padding:22px;margin-top:20px}
+.panel-heading{
+  display:flex;justify-content:space-between;
+  align-items:flex-start;gap:15px;margin-bottom:18px;
+}
+.panel h2{font-size:16px;margin:0 0 5px}
+.panel-description{font-size:12px;color:var(--muted);line-height:1.5}
+.department-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;
+}
+.department-card{padding:17px}
+.department-name{font-size:14px;font-weight:750}
+.department-meta{font-size:11px;color:var(--muted);margin-top:7px}
+.department-numbers{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-top:16px;
+}
+.department-number{
+  background:#f6f9f7;border-radius:8px;padding:10px;
+}
+.department-number strong{display:block;font-size:18px}
+.department-number span{font-size:10px;color:var(--muted)}
+.status{
+  display:inline-block;padding:6px 9px;border-radius:20px;
+  font-size:10px;font-weight:750;white-space:nowrap;
+}
+.status.assigned{background:#e7f5ed;color:#187448}
+.status.unassigned{background:#fff3df;color:#98600c}
+.status.none{background:#f0f2f1;color:#65736c}
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.filters input,.filters select{
+  border:1px solid var(--line);border-radius:8px;
+  background:white;padding:10px 12px;font-size:12px;
+  min-width:180px;color:var(--ink);
+}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th{
+  text-align:left;background:#f7faf8;color:#718078;
+  font-size:10px;text-transform:uppercase;letter-spacing:.6px;
+  padding:12px 11px;border-bottom:1px solid var(--line);
+}
+td{
+  padding:13px 11px;border-bottom:1px solid #edf1ee;
+  font-size:12px;vertical-align:middle;
+}
+tbody tr:hover{background:#fbfdfc}
+.course-code{font-weight:800;color:var(--primary-dark)}
+.course-title{font-weight:650;margin-top:4px}
+.muted{color:var(--muted);font-size:11px;margin-top:4px}
+.teacher-button{
+  border:0;background:transparent;padding:0;
+  color:var(--primary-dark);font-weight:750;
+  cursor:pointer;text-align:left;
+}
+.teacher-button:hover{text-decoration:underline}
+.profile-modal{
+  position:fixed;inset:0;background:rgba(9,29,22,.58);
+  z-index:20;display:none;align-items:center;
+  justify-content:center;padding:18px;
+}
+.profile-modal.open{display:flex}
+.profile-box{
+  width:100%;max-width:650px;max-height:85vh;
+  overflow-y:auto;background:white;border-radius:15px;padding:24px;
+  box-shadow:0 20px 70px rgba(0,0,0,.2);
+}
+.profile-header{
+  display:flex;justify-content:space-between;
+  align-items:flex-start;gap:12px;
+}
+.profile-heading{display:flex;align-items:center;gap:13px}
+.avatar{
+  width:48px;height:48px;border-radius:50%;
+  display:grid;place-items:center;background:var(--primary-light);
+  color:var(--primary-dark);font-size:20px;font-weight:800;
+}
+.profile-name{font-size:19px;font-weight:800}
+.profile-subtitle{font-size:11px;color:var(--muted);margin-top:5px}
+.close-button{
+  border:1px solid var(--line);background:white;
+  border-radius:8px;padding:7px 11px;cursor:pointer;
+}
+.profile-details{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:12px;margin:22px 0;
+}
+.detail{
+  background:#f7faf8;padding:12px;border-radius:9px;
+}
+.detail-label{
+  color:var(--muted);font-size:10px;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.detail-value{font-size:13px;font-weight:650;margin-top:6px;overflow-wrap:anywhere}
+.profile-box h3{font-size:14px;margin:20px 0 10px}
+.profile-course{
+  padding:12px 0;border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+.profile-course strong{color:var(--primary-dark)}
+.empty-state{text-align:center;padding:35px;color:var(--muted);font-size:13px}
+.notice{
+  margin-top:20px;background:#edf6f2;border:1px solid #dcece4;
+  border-radius:10px;padding:14px 16px;color:#315c4b;
+  font-size:12px;line-height:1.7;
+}
+@media(max-width:1000px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .department-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .sidebar{position:static;width:auto;padding:15px 18px}
+  .brand{padding:4px 5px 15px}
+  .sidebar-label,.sidebar-bottom{display:none}
+  .sidebar nav{display:flex;flex-wrap:wrap}
+  .nav-link{padding:9px 11px}
+  .main{margin:0;padding:23px 15px 40px}
+  .page-heading{flex-direction:column}
+  .stats{gap:9px}
+  .stat-card{padding:14px}
+  .stat-value{font-size:23px}
+  .panel{padding:15px}
+  .panel-heading{flex-direction:column}
+  .profile-details{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="brand">Lux<span>Mind</span></div>
+  <div class="sidebar-label">Dean workspace</div>
+  <nav>
+    <a class="nav-link" href="/sis/dean">
+      <span class="nav-icon">⌂</span> Dashboard
+    </a>
+    <a class="nav-link" href="/sis/dean/departments">
+      <span class="nav-icon">▤</span> Departments
+    </a>
+    <a class="nav-link" href="/sis/dean/department-heads">
+      <span class="nav-icon">♙</span> Department Heads
+    </a>
+    <a class="nav-link" href="/sis/dean/courses-curriculum">
+      <span class="nav-icon">▣</span> Courses & Curriculum
+    </a>
+    <a class="nav-link active" href="/sis/dean/course-allocation">
+      <span class="nav-icon">⇄</span> Course Allocation
+    </a>
+    <a class="nav-link" href="/sis/dean/class-timetables">
+      <span class="nav-icon">▦</span> Class Timetables
+    </a>
+  </nav>
+  <div class="sidebar-bottom">LuxMind SIS · Academic Management</div>
+</aside>
+
+<main class="main">
+  <div class="page-heading">
+    <div>
+      <div class="breadcrumb">Dean Workspace / Academic Management / Course Allocation</div>
+      <h1>Course Allocation Evaluation</h1>
+      <div class="subtitle">
+        Review lecturer assignments and course coverage across your faculty.
+      </div>
+      <div class="faculty-tag"><%= safe(facultyInfo.name) %></div>
+    </div>
+    <a href="/sis/dean" style="font-size:12px;color:var(--primary-dark);font-weight:700">
+      ← Back to dashboard
+    </a>
+  </div>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Departments</div>
+      <div class="stat-value"><%= metrics.departmentCount || 0 %></div>
+      <div class="stat-note">Faculty departments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Courses</div>
+      <div class="stat-value"><%= metrics.totalCourses || 0 %></div>
+      <div class="stat-note">Courses in this faculty</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Courses With Lecturers</div>
+      <div class="stat-value"><%= metrics.assignedCourses || 0 %></div>
+      <div class="stat-note">At least one lecturer assigned</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unassigned Courses</div>
+      <div class="stat-value"><%= metrics.unassignedCourses || 0 %></div>
+      <div class="stat-note"><%= metrics.lecturerCount || 0 %> distinct assigned lecturers</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Department Allocation Overview</h2>
+        <div class="panel-description">
+          Actual course and lecturer assignments grouped by department.
+        </div>
+      </div>
+    </div>
+
+    <% if (departmentList.length) { %>
+      <div class="department-grid">
+        <% departmentList.forEach(department => {
+          const total = Number(department.course_count || 0);
+          const assigned = Number(department.assigned_course_count || 0);
+          const unassigned = Number(department.unassigned_course_count || 0);
+        %>
+          <article class="department-card">
+            <div class="department-name"><%= safe(department.name) %></div>
+            <div class="department-meta">
+              <%= department.lecturer_count || 0 %> assigned lecturers
+            </div>
+            <div class="department-numbers">
+              <div class="department-number">
+                <strong><%= total %></strong>
+                <span>Total courses</span>
+              </div>
+              <div class="department-number">
+                <strong><%= assigned %></strong>
+                <span>With lecturers</span>
+              </div>
+              <div class="department-number">
+                <strong><%= unassigned %></strong>
+                <span>Unassigned</span>
+              </div>
+            </div>
+            <div style="margin-top:13px">
+              <% if (total === 0) { %>
+                <span class="status none">No courses</span>
+              <% } else if (unassigned === 0) { %>
+                <span class="status assigned">All courses assigned</span>
+              <% } else { %>
+                <span class="status unassigned">Allocation requires attention</span>
+              <% } %>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="empty-state">No departments found for this faculty.</div>
+    <% } %>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Course and Lecturer Assignments</h2>
+        <div class="panel-description">
+          Select a lecturer's name to view their staff profile and assigned courses.
+        </div>
+      </div>
+      <div class="filters">
+        <input id="allocationSearch" type="search" placeholder="Search course or lecturer...">
+        <select id="allocationDepartment">
+          <option value="">All departments</option>
+          <% departmentList.forEach(department => { %>
+            <option value="<%= department.id %>"><%= safe(department.name) %></option>
+          <% }); %>
+        </select>
+        <select id="allocationStatus">
+          <option value="">All allocations</option>
+          <option value="assigned">Assigned</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+      </div>
+    </div>
+
+    <% if (allocationList.length) { %>
+      <div class="table-wrap">
+        <table id="allocationTable">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Course</th>
+              <th>Lecturer</th>
+              <th>Email</th>
+              <th>Teaching Groups</th>
+              <th>Sections</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% allocationList.forEach(item => { %>
+              <tr
+                data-department="<%= item.department_id || '' %>"
+                data-status="<%= item.staff_id != null ? 'assigned' : 'unassigned' %>"
+                data-search="<%= [item.department_name,item.course_code,item.course_title,item.teacher_name,item.teacher_email,item.teaching_groups].join(' ').toLowerCase() %>"
+              >
+                <td><%= safe(item.department_name) %></td>
+                <td>
+                  <div class="course-code"><%= safe(item.course_code) %></div>
+                  <div class="course-title"><%= safe(item.course_title) %></div>
+                </td>
+                <td>
+                  <% if (item.staff_id != null) { %>
+                    <button
+                      type="button"
+                      class="teacher-button"
+                      data-teacher-id="<%= item.staff_id %>"
+                      onclick="openLecturerProfile(this.dataset.teacherId)"
+                    ><%= safe(item.teacher_name) %></button>
+                    <div class="muted">Staff ID: <%= item.staff_id %></div>
+                  <% } else { %>
+                    <span class="muted">No lecturer assigned</span>
+                  <% } %>
+                </td>
+                <td><%= safe(item.teacher_email) %></td>
+                <td><%= safe(item.teaching_groups) %></td>
+                <td><%= item.section_count || 0 %></td>
+                <td>
+                  <% if (item.staff_id != null) { %>
+                    <span class="status assigned">Assigned</span>
+                  <% } else { %>
+                    <span class="status unassigned">Unassigned</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <div id="noMatches" class="empty-state" hidden>
+        No allocation records match your filters.
+      </div>
+    <% } else { %>
+      <div class="empty-state">No courses have been recorded for this faculty.</div>
+    <% } %>
+  </section>
+
+  <div class="notice">
+    <strong>Dean's responsibility:</strong> This page is for evaluation and monitoring.
+    Department Heads remain responsible for departmental course allocations.
+    Teacher accounts and staff records are managed by authorized administrators.
+    No allocation records are modified from this page.
+  </div>
+</main>
+
+<div class="profile-modal" id="lecturerModal" role="dialog" aria-modal="true" aria-labelledby="profileName">
+  <div class="profile-box">
+    <div class="profile-header">
+      <div class="profile-heading">
+        <div class="avatar" id="profileAvatar">T</div>
+        <div>
+          <div class="profile-name" id="profileName">Lecturer</div>
+          <div class="profile-subtitle">Staff identification and teaching assignments</div>
+        </div>
+      </div>
+      <button class="close-button" type="button" onclick="closeLecturerProfile()">Close</button>
+    </div>
+
+    <div class="profile-details">
+      <div class="detail">
+        <div class="detail-label">Staff identification</div>
+        <div class="detail-value" id="profileId">—</div>
+      </div>
+      <div class="detail">
+        <div class="detail-label">First name</div>
+        <div class="detail-value" id="profileFirstName">—</div>
+      </div>
+      <div class="detail">
+        <div class="detail-label">Surname</div>
+        <div class="detail-value" id="profileSurname">—</div>
+      </div>
+      <div class="detail">
+        <div class="detail-label">Email address</div>
+        <div class="detail-value" id="profileEmail">—</div>
+      </div>
+    </div>
+
+    <h3>Assigned courses</h3>
+    <div id="profileCourses"></div>
+  </div>
+</div>
+
+<script>
+const lecturerProfiles = <%- JSON.stringify(
+  Array.from(lecturers.values()).map(lecturer => ({
+    id: lecturer.id,
+    name: lecturer.name,
+    firstName: lecturer.firstName,
+    surname: lecturer.surname,
+    email: lecturer.email,
+    courses: lecturer.courses
+  }))
+).replace(/</g, '\\u003c') %>;
+
+function openLecturerProfile(id) {
+  const lecturer = lecturerProfiles.find(item => String(item.id) === String(id));
+  if (!lecturer) return;
+
+  document.getElementById('profileId').textContent = lecturer.id;
+  document.getElementById('profileName').textContent = lecturer.name || 'Lecturer';
+  document.getElementById('profileAvatar').textContent =
+    (lecturer.name || 'T').trim().charAt(0).toUpperCase();
+  document.getElementById('profileFirstName').textContent = lecturer.firstName;
+  document.getElementById('profileSurname').textContent = lecturer.surname;
+  document.getElementById('profileEmail').textContent = lecturer.email || 'Not available';
+
+  const courses = document.getElementById('profileCourses');
+  courses.replaceChildren();
+
+  if (!lecturer.courses.length) {
+    courses.textContent = 'No assigned courses found.';
+  } else {
+    lecturer.courses.forEach(course => {
+      const item = document.createElement('div');
+      item.className = 'profile-course';
+
+      const heading = document.createElement('strong');
+      heading.textContent = (course.code || 'Course') + ' — ' + (course.title || '');
+
+      const details = document.createElement('div');
+      details.className = 'muted';
+      details.textContent =
+        (course.department || 'Department unavailable') +
+        ' · Groups: ' + (course.groups || 'Not specified') +
+        ' · Sections: ' + (course.sections || 0);
+
+      item.append(heading, details);
+      courses.appendChild(item);
+    });
+  }
+
+  document.getElementById('lecturerModal').classList.add('open');
+}
+
+function closeLecturerProfile() {
+  document.getElementById('lecturerModal').classList.remove('open');
+}
+
+document.getElementById('lecturerModal').addEventListener('click', event => {
+  if (event.target.id === 'lecturerModal') closeLecturerProfile();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeLecturerProfile();
+});
+
+(() => {
+  const search = document.getElementById('allocationSearch');
+  const department = document.getElementById('allocationDepartment');
+  const status = document.getElementById('allocationStatus');
+  const rows = Array.from(document.querySelectorAll('#allocationTable tbody tr'));
+  const noMatches = document.getElementById('noMatches');
+
+  function filterRows() {
+    const query = (search?.value || '').trim().toLowerCase();
+    const departmentId = department?.value || '';
+    const selectedStatus = status?.value || '';
+    let visible = 0;
+
+    rows.forEach(row => {
+      const show =
+        (!query || row.dataset.search.includes(query)) &&
+        (!departmentId || row.dataset.department === departmentId) &&
+        (!selectedStatus || row.dataset.status === selectedStatus);
+
+      row.hidden = !show;
+      if (show) visible++;
+    });
+
+    if (noMatches) noMatches.hidden = visible !== 0;
+  }
+
+  search?.addEventListener('input', filterRows);
+  department?.addEventListener('change', filterRows);
+  status?.addEventListener('change', filterRows);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,698 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Structure | LuxMind</title>
+
+<style>
+:root {
+  --green: #0e9f6e;
+  --green-dark: #087f5b;
+  --bg: #f5f8f6;
+  --white: #fff;
+  --text: #18332a;
+  --muted: #718078;
+  --border: #e4ece7;
+  --orange: #a66b12;
+  --red: #b83232;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+}
+
+.topbar {
+  min-height: 68px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+}
+
+.brand {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.top-user {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.container {
+  max-width: 1450px;
+  margin: 30px auto;
+  padding: 0 25px 45px;
+}
+
+.back {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 22px;
+}
+
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.heading h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.faculty-tag {
+  background: #e8f7f0;
+  color: var(--green-dark);
+  padding: 11px 15px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 20px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.stat-number {
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.green { color: var(--green); }
+.orange { color: var(--orange); }
+.red { color: var(--red); }
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: white;
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  padding: 11px 16px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #e8f7f0;
+  color: var(--green-dark);
+}
+
+.panel {
+  display: none;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.panel.active { display: block; }
+
+.panel-heading {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-heading h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.panel-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.faculty-node {
+  margin: 25px auto;
+  max-width: 420px;
+  text-align: center;
+  padding: 22px;
+  background: #e8f7f0;
+  border: 1px solid #ccebdc;
+  border-radius: 13px;
+}
+
+.node-icon {
+  font-size: 25px;
+  margin-bottom: 8px;
+}
+
+.faculty-node h3 {
+  margin: 0 0 7px;
+  color: var(--green-dark);
+}
+
+.faculty-node p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.connector {
+  width: 2px;
+  height: 25px;
+  background: #b9d8c8;
+  margin: -25px auto 0;
+}
+
+.department-grid {
+  padding: 25px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.department-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: white;
+  position: relative;
+}
+
+.department-card:before {
+  content: "";
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  height: 25px;
+  width: 1px;
+  background: #b9d8c8;
+}
+
+.department-card h3 {
+  font-size: 15px;
+  margin: 0 0 5px;
+}
+
+.code {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 17px;
+}
+
+.head {
+  background: #f5f8f6;
+  padding: 12px;
+  border-radius: 9px;
+  margin-bottom: 13px;
+}
+
+.head small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.head strong {
+  font-size: 13px;
+}
+
+.status {
+  display: inline-block;
+  padding: 6px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.status.active {
+  background: #e7f7ee;
+  color: #16794b;
+}
+
+.status.missing {
+  background: #fff2e3;
+  color: #a65e10;
+}
+
+.department-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+th {
+  background: #f8faf9;
+  padding: 14px 18px;
+  text-align: left;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+td {
+  padding: 15px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.semester {
+  background: #e8f7f0;
+  color: var(--green-dark);
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.placeholder {
+  background: #fff2e3;
+  color: #a65e10;
+}
+
+.assigned {
+  background: #e7f7ee;
+  color: #16794b;
+}
+
+.search {
+  margin: 17px 20px;
+  width: min(320px, calc(100% - 40px));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-size: 13px;
+  outline: none;
+}
+
+.search:focus { border-color: var(--green); }
+
+.empty {
+  text-align: center;
+  padding: 35px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.note {
+  border-top: 1px solid var(--border);
+  padding: 15px 20px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media(max-width: 1000px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .department-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media(max-width: 600px) {
+  .container { padding: 0 13px 30px; }
+  .topbar { padding: 0 15px; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .stat { padding: 14px; }
+  .stat-number { font-size: 22px; }
+  .department-grid { grid-template-columns: 1fr; }
+  .department-card:before { display: none; }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">LuxMind</div>
+  <div class="top-user">
+    Dean Portal ·
+    <strong><%= user.full_name || user.username || 'Dean' %></strong>
+  </div>
+</header>
+
+<main class="container">
+
+  <a href="/sis/dean" class="back">← Back to Dean Dashboard</a>
+
+  <section class="heading">
+    <div>
+      <h1>Faculty Structure</h1>
+      <p>Organizational hierarchy, department leadership and academic advising.</p>
+    </div>
+
+    <div class="faculty-tag">
+      <%= faculty.name %> · <%= faculty.code || 'Faculty' %>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat">
+      <div class="stat-label">Total Departments</div>
+      <div class="stat-number"><%= stats.departments %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Department Heads</div>
+      <div class="stat-number green"><%= stats.departmentHeads %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Academic Staff</div>
+      <div class="stat-number"><%= stats.staff %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Departments Without Heads</div>
+      <div class="stat-number orange"><%= stats.unassignedHeads %></div>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="organization">Organizational Chart</button>
+    <button class="tab" data-tab="departments">Departments</button>
+    <button class="tab" data-tab="advising">Academic Advising</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section class="panel active" id="overview">
+    <div class="panel-heading">
+      <h2>Faculty Overview</h2>
+      <p>Summary of the faculty's organizational and academic structure.</p>
+    </div>
+
+    <div class="department-grid">
+      <div class="department-card">
+        <h3>Department Leadership</h3>
+        <div class="code">Leadership coverage</div>
+        <div class="stat-number green"><%= stats.departmentHeads %></div>
+        <p class="code">Departments with assigned heads</p>
+      </div>
+
+      <div class="department-card">
+        <h3>Teaching Staff</h3>
+        <div class="code">Faculty teaching workforce</div>
+        <div class="stat-number"><%= stats.teachers %></div>
+        <p class="code">Registered teachers</p>
+      </div>
+
+      <div class="department-card">
+        <h3>Academic Advisors</h3>
+        <div class="code">Faculty advising workforce</div>
+        <div class="stat-number"><%= stats.advisors %></div>
+        <p class="code">Registered advisors</p>
+      </div>
+
+      <div class="department-card">
+        <h3>Semester Assignments</h3>
+        <div class="code">Advisor allocation records</div>
+        <div class="stat-number"><%= stats.semesterAssignments %></div>
+        <p class="code">Configured records</p>
+      </div>
+
+      <div class="department-card">
+        <h3>Placeholder Advisors</h3>
+        <div class="code">Unconfirmed advisor records</div>
+        <div class="stat-number orange"><%= stats.placeholders %></div>
+        <p class="code">Placeholder assignments</p>
+      </div>
+
+      <div class="department-card">
+        <h3>Leadership Gaps</h3>
+        <div class="code">Departments needing attention</div>
+        <div class="stat-number orange"><%= stats.unassignedHeads %></div>
+        <p class="code">Departments without a head</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ORGANIZATIONAL CHART -->
+  <section class="panel" id="organization">
+    <div class="panel-heading">
+      <h2>Organizational Chart</h2>
+      <p>Faculty leadership and department reporting structure.</p>
+    </div>
+
+    <div class="faculty-node">
+      <div class="node-icon">🏛️</div>
+      <h3><%= faculty.name %></h3>
+      <p>Faculty of LuxMind · Dean</p>
+    </div>
+
+    <div class="connector"></div>
+
+    <div class="department-grid">
+      <% if (departments.length) { %>
+        <% departments.forEach(department => { %>
+          <article class="department-card">
+            <h3><%= department.name %></h3>
+            <div class="code"><%= department.code || 'No department code' %></div>
+
+            <div class="head">
+              <small>DEPARTMENT HEAD</small>
+              <strong>
+                <%= department.head_name || 'No department head assigned' %>
+              </strong>
+              <% if (department.head_username) { %>
+                <div class="code"><%= department.head_username %></div>
+              <% } %>
+            </div>
+
+            <% if (department.head_id) { %>
+              <span class="status active">Head assigned</span>
+            <% } else { %>
+              <span class="status missing">Head unassigned</span>
+            <% } %>
+
+            <div class="department-metrics">
+              <span><%= department.staff_count %> Staff</span>
+              <span><%= department.teacher_count %> Teachers</span>
+            </div>
+          </article>
+        <% }) %>
+      <% } else { %>
+        <div class="empty">No departments found in this faculty.</div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- DEPARTMENTS -->
+  <section class="panel" id="departments">
+    <div class="panel-heading">
+      <h2>Department Directory</h2>
+      <p>Department leadership and workforce overview.</p>
+    </div>
+
+    <input
+      class="search"
+      id="departmentSearch"
+      type="search"
+      placeholder="Search departments or department heads..."
+    >
+
+    <div class="table-wrap">
+      <table id="departmentTable">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Department Head</th>
+            <th>Total Staff</th>
+            <th>Teachers</th>
+            <th>Advisors</th>
+            <th>Leadership</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% departments.forEach(department => { %>
+            <tr>
+              <td>
+                <strong><%= department.name %></strong>
+                <div class="code"><%= department.code || 'No code' %></div>
+              </td>
+              <td><%= department.head_name || 'Not assigned' %></td>
+              <td><%= department.staff_count %></td>
+              <td><%= department.teacher_count %></td>
+              <td><%= department.advisor_count %></td>
+              <td>
+                <% if (department.head_id) { %>
+                  <span class="status active">Assigned</span>
+                <% } else { %>
+                  <span class="status missing">Unassigned</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ACADEMIC ADVISING -->
+  <section class="panel" id="advising">
+    <div class="panel-heading">
+      <h2>Academic Advising Structure</h2>
+      <p>Semester-by-semester advisor allocation across departments.</p>
+    </div>
+
+    <div class="stats" style="padding:18px 20px 0">
+      <div class="stat">
+        <div class="stat-label">Advisor Records</div>
+        <div class="stat-number"><%= stats.semesterAssignments %></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Placeholder Records</div>
+        <div class="stat-number orange"><%= stats.placeholders %></div>
+      </div>
+    </div>
+
+    <input
+      class="search"
+      id="advisorSearch"
+      type="search"
+      placeholder="Search department, semester or advisor..."
+    >
+
+    <div class="table-wrap">
+      <table id="advisorTable">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Semester</th>
+            <th>Advisor</th>
+            <th>Assignment Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (advisors.length) { %>
+            <% advisors.forEach(advisor => { %>
+              <tr>
+                <td><strong><%= advisor.department_name %></strong></td>
+                <td>
+                  <span class="semester">
+                    Semester <%= advisor.semester_number %>
+                  </span>
+                </td>
+                <td><%= advisor.advisor_name || 'Not assigned' %></td>
+                <td>
+                  <% if (advisor.is_placeholder) { %>
+                    <span class="status placeholder">Placeholder</span>
+                  <% } else { %>
+                    <span class="status assigned">Assigned</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="4" class="empty">
+                No academic advising records found.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="note">
+    Faculty Structure is an oversight workspace. Department and staff
+    changes remain managed through their respective administrative modules.
+  </div>
+
+</main>
+
+<script>
+document.querySelectorAll('.tab').forEach(button => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.classList.remove('active');
+    });
+
+    button.classList.add('active');
+    document.getElementById(button.dataset.tab).classList.add('active');
+  });
+});
+
+function attachSearch(inputId, tableId) {
+  const input = document.getElementById(inputId);
+  const table = document.getElementById(tableId);
+
+  if (!input || !table) return;
+
+  input.addEventListener('input', () => {
+    const query = input.value.toLowerCase();
+
+    table.querySelectorAll('tbody tr').forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(query)
+        ? ''
+        : 'none';
+    });
+  });
+}
+
+attachSearch('departmentSearch', 'departmentTable');
+attachSearch('advisorSearch', 'advisorTable');
+</script>
+
+</body>
+</html>

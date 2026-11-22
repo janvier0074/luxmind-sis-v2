@@ -3642,6 +3642,112 @@ app.get(
     }
   }
 );
+
+
+
+
+ // ============================================================
+ // DEAN - FACULTY STRUCTURE
+ // Read-only organizational overview
+ // ============================================================
+app.get('/sis/dean/faculty-structure', requireRole('dean'), async (req, res) => {
+  try {
+    const facultyResult = await pool.query(`
+      SELECT id, name, code
+      FROM faculties
+      WHERE dean_id = $1
+      LIMIT 1
+    `, [req.session.user.id]);
+
+    if (!facultyResult.rows.length) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const faculty = facultyResult.rows[0];
+
+    const departmentsResult = await pool.query(`
+      SELECT
+        d.id,
+        d.name,
+        d.code,
+        d.head_id,
+        head.full_name AS head_name,
+        head.username AS head_username,
+
+        (
+          SELECT COUNT(*)::int
+          FROM users u
+          WHERE u.department_id = d.id
+            AND u.faculty_id = d.faculty_id
+            AND u.role IN ('teacher', 'advisor', 'department_head')
+        ) AS staff_count,
+
+        (
+          SELECT COUNT(*)::int
+          FROM users u
+          WHERE u.department_id = d.id
+            AND u.faculty_id = d.faculty_id
+            AND u.role = 'teacher'
+        ) AS teacher_count,
+
+        (
+          SELECT COUNT(*)::int
+          FROM users u
+          WHERE u.department_id = d.id
+            AND u.faculty_id = d.faculty_id
+            AND u.role = 'advisor'
+        ) AS advisor_count
+
+      FROM departments d
+      LEFT JOIN users head ON head.id = d.head_id
+      WHERE d.faculty_id = $1
+      ORDER BY d.name ASC
+    `, [faculty.id]);
+
+    const departments = departmentsResult.rows;
+
+    const advisorResult = await pool.query(`
+      SELECT
+        a.id,
+        a.department_id,
+        a.semester_number,
+        a.advisor_name,
+        a.is_placeholder,
+        d.name AS department_name
+      FROM department_semester_advisors a
+      INNER JOIN departments d ON d.id = a.department_id
+      WHERE d.faculty_id = $1
+      ORDER BY d.name ASC, a.semester_number ASC
+    `, [faculty.id]);
+
+    const advisors = advisorResult.rows;
+
+    const stats = {
+      departments: departments.length,
+      departmentHeads: departments.filter(d => d.head_id !== null).length,
+      unassignedHeads: departments.filter(d => d.head_id === null).length,
+      staff: departments.reduce((sum, d) => sum + Number(d.staff_count || 0), 0),
+      teachers: departments.reduce((sum, d) => sum + Number(d.teacher_count || 0), 0),
+      advisors: departments.reduce((sum, d) => sum + Number(d.advisor_count || 0), 0),
+      semesterAssignments: advisors.length,
+      placeholders: advisors.filter(a => a.is_placeholder).length
+    };
+
+    res.render('dean-faculty-structure', {
+      user: req.session.user,
+      faculty,
+      departments,
+      advisors,
+      stats
+    });
+
+  } catch (err) {
+    console.error('Dean Faculty Structure Error:', err);
+    res.status(500).send('Faculty Structure Error: ' + err.message);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
 });

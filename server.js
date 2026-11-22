@@ -995,6 +995,203 @@ app.post('/sis/my/registration/submit', requireRole('student'), async (req, res)
   } catch (err) { res.status(500).send("Error submitting: " + err.message); }
 });
 
+
+
+
+
+// ============================================================
+// STUDENT GUIDANCE REQUESTS
+// ============================================================
+
+const guidanceRequestTypes = [
+  'Application Status',
+  'Acceptance Letter',
+  'Scholarship Application',
+  'Transfer Credit',
+  'Visa/Residence Permit',
+  'Health Insurance',
+  'Embassy Letter',
+  'Airport Pickup',
+  'Orientation & Welcome',
+  'Dormitory Check-in',
+  'SIM Card & Bank Account',
+  'Erasmus & Exchange'
+];
+
+// Display the student's guidance requests
+app.get('/sis/my/guidance', requireRole('student'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT *
+       FROM guidance_requests
+       WHERE student_id = $1
+       ORDER BY created_at DESC NULLS LAST`,
+      [req.session.user.id]
+    );
+
+    const requests = result.rows.map(r => ({
+      ...r,
+      description: r.description || '',
+      status: r.status || 'pending',
+      assigned_department: r.assigned_department || 'Unassigned',
+      student_attachment: r.student_attachment
+        ? (/^https?:\/\//i.test(r.student_attachment)
+            ? r.student_attachment
+            : `/sis/my/guidance/attachment/${r.id}`)
+        : null
+    }));
+
+    res.render('student-guidance', {
+      user: req.session.user,
+      requests
+    });
+  } catch (err) {
+    console.error('Student guidance loading error:', err);
+    res.status(500).send('Unable to load guidance requests.');
+  }
+});
+
+// Submit a new guidance request
+app.post(
+  '/sis/my/guidance/request',
+  requireRole('student'),
+  upload.single('attachment'),
+  async (req, res) => {
+    let uploadedPath = null;
+
+    try {
+      const requestType = String(req.body.request_type || '').trim();
+      const description = String(req.body.description || '').trim();
+
+      if (!guidanceRequestTypes.includes(requestType)) {
+        return res.status(400).send('Invalid guidance request type.');
+      }
+
+      if (!description) {
+        return res.status(400).send('Please provide a request description.');
+      }
+
+      let attachmentPath = null;
+
+      if (req.file) {
+        const bucket = process.env.SUPABASE_GUIDANCE_BUCKET;
+
+        if (!supabase || !bucket) {
+          return res.status(503).send(
+            'Attachment storage is not configured. Please contact the administrator.'
+          );
+        }
+
+        const allowedTypes = [
+          'application/pdf',
+          'image/png',
+          'image/jpeg'
+        ];
+
+        if (!allowedTypes.includes(req.file.mimetype)) {
+          return res.status(400).send('Only PDF, PNG and JPG files are allowed.');
+        }
+
+        const extension = req.file.originalname.split('.').pop().toLowerCase();
+
+        if (!['pdf', 'png', 'jpg', 'jpeg'].includes(extension)) {
+          return res.status(400).send('Invalid attachment extension.');
+        }
+
+        uploadedPath =
+          `${req.session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+
+        const uploadResult = await supabase.storage
+          .from(bucket)
+          .upload(uploadedPath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
+
+        if (uploadResult.error) {
+          throw uploadResult.error;
+        }
+
+        attachmentPath = uploadedPath;
+      }
+
+      await pool.query(
+        `INSERT INTO guidance_requests
+          (student_id, request_type, description, status,
+           student_attachment, created_at)
+         VALUES ($1, $2, $3, 'pending', $4, NOW())`,
+        [
+          req.session.user.id,
+          requestType,
+          description,
+          attachmentPath
+        ]
+      );
+
+      req.flash('success', 'Your guidance request was submitted successfully.');
+      return res.redirect('/sis/my/guidance');
+
+    } catch (err) {
+      console.error('Guidance request submission error:', err);
+
+      if (uploadedPath && supabase && process.env.SUPABASE_GUIDANCE_BUCKET) {
+        await supabase.storage
+          .from(process.env.SUPABASE_GUIDANCE_BUCKET)
+          .remove([uploadedPath])
+          .catch(() => {});
+      }
+
+      res.status(500).send('Unable to submit your guidance request.');
+    }
+  }
+);
+
+// Secure access to a student's private attachment
+app.get(
+  '/sis/my/guidance/attachment/:id',
+  requireRole('student'),
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT student_attachment
+         FROM guidance_requests
+         WHERE id = $1 AND student_id = $2`,
+        [req.params.id, req.session.user.id]
+      );
+
+      if (!result.rows.length || !result.rows[0].student_attachment) {
+        return res.status(404).send('Attachment not found.');
+      }
+
+      const attachment = result.rows[0].student_attachment;
+
+      if (/^https?:\/\//i.test(attachment)) {
+        return res.redirect(attachment);
+      }
+
+      const bucket = process.env.SUPABASE_GUIDANCE_BUCKET;
+
+      if (!supabase || !bucket) {
+        return res.status(503).send('Attachment storage unavailable.');
+      }
+
+      const signed = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(attachment, 60);
+
+      if (signed.error) throw signed.error;
+
+      res.redirect(signed.data.signedUrl);
+
+    } catch (err) {
+      console.error('Guidance attachment error:', err);
+      res.status(500).send('Unable to open attachment.');
+    }
+  }
+);
+
+
+
 // ============================================
 // --- STUDENT: DOCUMENT REQUESTS ---
 // ============================================

@@ -1,39 +1,223 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LuxMind SIS - Login</title>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a1e32; }
-    .login-box { background: #fff; padding: 3rem; border-radius: 1.5rem; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    h2 { color: #0a1e32; margin-bottom: 0.5rem; }
-    p { color: #64748b; margin-bottom: 2rem; font-size: 0.9rem; }
-    input { width: 100%; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; outline: none; }
-    input:focus { border-color: #f5a623; }
-    button { width: 100%; padding: 1rem; background: #0a1e32; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-    button:hover { background: #1e4d7b; }
-    .error { background: #fbe9e7; color: #b33e2e; padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; font-size: 0.9rem; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: #0a1e32;
+      overflow-x: hidden;
+    }
+
+    /* Full-screen background video */
+    .background-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    /* Dark overlay for readability */
+    .video-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(5, 20, 35, 0.65),
+        rgba(5, 30, 45, 0.35)
+      );
+      z-index: -1;
+    }
+
+    .login-box {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      padding: 2.7rem;
+      text-align: center;
+
+      background: rgba(255, 255, 255, 0.91);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: 14px;
+
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+
+      animation: appear 0.8s ease;
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .brand {
+      color: #0a1e32;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 5px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand span {
+      color: #0e9f6e;
+    }
+
+    .subtitle {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 14px;
+      border: 1px solid #dbe2ea;
+      border-radius: 6px;
+      background: #f1f5f9;
+      font-size: 0.95rem;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    input:focus {
+      border-color: #0e9f6e;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(14,159,110,0.12);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #0e9f6e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #087d56;
+      transform: translateY(-1px);
+    }
+
+    .error {
+      background: #fbe9e7;
+      color: #b33e2e;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 2rem 1.5rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .login-box {
+        animation: none;
+      }
+
+      .background-video {
+        display: none;
+      }
+    }
   </style>
 </head>
+
 <body>
+
+  <video class="background-video"
+         autoplay
+         muted
+         loop
+         playsinline
+         preload="metadata">
+    <source src="/videos/campus-background.mp4" type="video/mp4">
+  </video>
+
+  <div class="video-overlay"></div>
+
   <div class="login-box">
-    <h2>LuxMind SIS</h2>
-    <p>Sign in to access your portal</p>
-    
+
+    <div class="brand">LuxMind <span>SIS</span></div>
+
+    <p class="subtitle">
+      Sign in to access your portal
+    </p>
+
     <% if (error && error.length > 0) { %>
       <div class="error"><%= error[0] %></div>
     <% } %>
 
     <form method="POST" action="/login">
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
+
+      <input
+        type="text"
+        name="username"
+        placeholder="Username"
+        autocomplete="username"
+        required
+      >
+
+      <input
+        type="password"
+        name="password"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+      >
+
       <button type="submit">Sign In</button>
+
     </form>
-    
-    <p style="margin-top: 1.5rem; font-size: 0.8rem;">
-      Student: student_john / password123<br>
-    </p>
+
+    <div class="footer">
+      © <%= new Date().getFullYear() %> LuxMind SIS
+      <br>
+      Student Information System
+    </div>
+
   </div>
+
 </body>
 </html>

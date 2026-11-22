@@ -1457,18 +1457,23 @@ tr:last-child td{border-bottom:0}
 
   });
 
-  // Standalone sidebar navigation.
-  // Allow the browser to load the actual Express route.
-  standaloneLinks.forEach(link => {
+// Standalone sidebar navigation — force the actual Express route.
+standaloneLinks.forEach(link => {
 
-    link.addEventListener('click', function() {
+  link.addEventListener('click', function(event) {
 
-      closeMenu();
+    event.preventDefault();
+    event.stopPropagation();
 
-    });
+    const targetUrl = this.getAttribute('href');
 
-  });
+    if (targetUrl) {
+      window.location.assign(targetUrl);
+    }
 
+  }, true);
+
+});
   // Quick access navigation.
   document.querySelectorAll('[data-open-view]').forEach(button => {
 

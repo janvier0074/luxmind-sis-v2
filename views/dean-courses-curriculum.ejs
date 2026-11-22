@@ -1,3 +1,4 @@
+
 <%
 const deanUser = user || {};
 const facultyInfo = faculty || {};
@@ -19,263 +20,809 @@ const safe = value => value == null ? '' : String(value);
 
 <style>
 :root {
-  --green:#0e9f6e;
-  --green-dark:#087f59;
-  --ink:#172b25;
-  --muted:#718078;
+  --primary:#087f65;
+  --primary-dark:#06634f;
+  --primary-light:#e6f5ef;
+  --navy:#142d28;
+  --navy-light:#1d4038;
+  --ink:#20332d;
+  --muted:#75847d;
   --line:#e5ece8;
   --surface:#ffffff;
-  --background:#f4f7f5;
+  --background:#f4f7f6;
   --red:#c0392b;
-  --shadow:0 8px 30px rgba(20,50,35,.055);
+  --amber:#a96812;
+  --shadow:0 5px 22px rgba(20,45,35,.045);
+  --sidebar-width:260px;
 }
+
 * {box-sizing:border-box}
+html {scroll-behavior:smooth;scroll-padding-top:25px}
 body {
   margin:0;
-  font-family:Inter,Arial,sans-serif;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   background:var(--background);
   color:var(--ink);
 }
 button,input,select {font:inherit}
 a {color:inherit;text-decoration:none}
-.layout {min-height:100vh;display:flex}
+
+/* FIXED APPLICATION LAYOUT */
+
 .sidebar {
-  width:245px;flex-shrink:0;background:#102d24;color:#fff;
-  padding:25px 17px;display:flex;flex-direction:column;
+  position:fixed;
+  z-index:100;
+  top:0;
+  left:0;
+  bottom:0;
+  width:var(--sidebar-width);
+  background:var(--navy);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:23px 15px 18px;
+  scrollbar-width:thin;
+  scrollbar-color:#42675a transparent;
 }
-.brand {font-size:21px;font-weight:850;letter-spacing:-.7px;padding:5px 12px 30px}
-.brand span {color:#43d6a0}
+
+.sidebar::-webkit-scrollbar {width:5px}
+.sidebar::-webkit-scrollbar-thumb {
+  background:#42675a;
+  border-radius:10px;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:7px 12px 25px;
+  font-size:23px;
+  font-weight:850;
+  letter-spacing:-1px;
+}
+.brand-mark {
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:#0e9f76;
+  color:white;
+  font-size:19px;
+}
+.brand-name span {color:#55dfad}
+.brand small {
+  display:block;
+  font-size:9px;
+  color:#9eb7aa;
+  letter-spacing:2px;
+  font-weight:750;
+  margin-top:2px;
+}
+
+.side-profile {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:13px 11px;
+  background:#ffffff0d;
+  border:1px solid #ffffff12;
+  border-radius:12px;
+  margin:0 2px 20px;
+}
+.side-avatar {
+  width:37px;
+  height:37px;
+  flex-shrink:0;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:#d7f5e8;
+  color:#087f59;
+  font-weight:850;
+}
+.side-profile strong {
+  display:block;
+  font-size:12px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:150px;
+}
+.side-profile small {
+  display:block;
+  color:#a5bcb1;
+  font-size:10px;
+  margin-top:4px;
+}
+
 .side-label {
-  color:#91aa9e;font-size:10px;font-weight:800;
-  letter-spacing:1.5px;padding:15px 12px 9px
+  color:#89a99a;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:1.5px;
+  padding:13px 12px 8px;
 }
+
 .nav-link {
-  display:flex;align-items:center;gap:12px;padding:12px;
-  border-radius:9px;color:#d1ded7;font-size:13px;margin:2px 0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 12px;
+  border-radius:9px;
+  color:#c6d7ce;
+  font-size:12px;
+  font-weight:600;
+  margin:2px 0;
+  border-left:3px solid transparent;
+  transition:.18s ease;
 }
-.nav-link:hover,.nav-link.active {background:#1d4939;color:white}
-.nav-link.active {border-left:3px solid #39d99b}
+.nav-icon {
+  width:20px;
+  text-align:center;
+  font-size:16px;
+  opacity:.9;
+}
+.nav-link:hover {
+  background:#ffffff10;
+  color:#fff;
+  transform:translateX(2px);
+}
+.nav-link.active {
+  background:#0e9f7630;
+  color:#fff;
+  border-left-color:#45dca7;
+}
+.nav-link.active .nav-icon {color:#64e6b5}
+
+.side-divider {
+  height:1px;
+  background:#ffffff16;
+  margin:14px 5px;
+}
+
 .side-footer {
-  margin-top:auto;border-top:1px solid #315244;
-  padding:18px 10px 0;color:#a9beb3;font-size:12px;line-height:1.7
+  margin-top:auto;
+  border-top:1px solid #ffffff18;
+  padding:17px 10px 3px;
+  color:#9eb5a9;
+  font-size:10px;
+  line-height:1.8;
 }
-.main {flex:1;min-width:0;padding:30px 36px 55px}
+.side-footer strong {
+  color:#e4f2eb;
+  font-size:11px;
+}
+
+/* MAIN CONTENT */
+
+.main {
+  margin-left:var(--sidebar-width);
+  min-height:100vh;
+  min-width:0;
+  padding:27px 34px 55px;
+}
+
 .topbar {
-  display:flex;justify-content:space-between;align-items:center;
-  gap:15px;margin-bottom:28px
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  margin-bottom:25px;
 }
-.breadcrumb {font-size:12px;color:var(--muted)}
+.topbar-left {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.breadcrumb {
+  font-size:11px;
+  color:var(--muted);
+}
 .breadcrumb strong {color:var(--ink)}
 .user-chip {
-  display:flex;align-items:center;gap:9px;background:white;
-  border:1px solid var(--line);border-radius:30px;padding:8px 13px;
-  font-size:12px;font-weight:700
+  display:flex;
+  align-items:center;
+  gap:9px;
+  background:white;
+  border:1px solid var(--line);
+  border-radius:30px;
+  padding:7px 13px 7px 7px;
+  font-size:11px;
+  font-weight:750;
+  white-space:nowrap;
 }
 .avatar {
-  width:30px;height:30px;border-radius:50%;background:#d9f5e9;
-  color:var(--green-dark);display:grid;place-items:center;font-weight:800
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  background:#d9f5e9;
+  color:var(--primary-dark);
+  display:grid;
+  place-items:center;
+  font-weight:850;
 }
+
+.mobile-menu {
+  display:none;
+  border:1px solid var(--line);
+  background:white;
+  border-radius:9px;
+  padding:9px 12px;
+  cursor:pointer;
+  font-size:18px;
+  color:var(--ink);
+}
+
 .hero {
-  background:linear-gradient(120deg,#123c2e,#17694a);
-  color:white;border-radius:17px;padding:30px;
-  display:flex;justify-content:space-between;gap:20px;
-  align-items:center;box-shadow:var(--shadow)
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(115deg,#123c32 0%,#087f65 100%);
+  color:white;
+  border-radius:17px;
+  padding:30px 32px;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:center;
+  box-shadow:0 10px 30px #0c70501c;
 }
+.hero:after {
+  content:"";
+  position:absolute;
+  width:250px;
+  height:250px;
+  right:50px;
+  top:-155px;
+  border:1px solid #ffffff18;
+  border-radius:50%;
+  box-shadow:0 0 0 35px #ffffff08,0 0 0 70px #ffffff06;
+}
+.hero-content {position:relative;z-index:1}
 .eyebrow {
-  font-size:10px;letter-spacing:1.7px;text-transform:uppercase;
-  color:#a7e9cb;font-weight:800
+  font-size:9px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#a9efd0;
+  font-weight:850;
 }
-.hero h1 {font-size:29px;letter-spacing:-1px;margin:10px 0}
-.hero p {font-size:13px;color:#d0e7da;max-width:600px;line-height:1.7;margin:0}
+.hero h1 {
+  font-size:29px;
+  letter-spacing:-1px;
+  margin:10px 0;
+}
+.hero p {
+  font-size:12px;
+  color:#d3e9df;
+  max-width:620px;
+  line-height:1.8;
+  margin:0;
+}
 .hero-mark {
-  width:75px;height:75px;border:1px solid #75b99a55;
-  background:#ffffff12;border-radius:18px;display:grid;place-items:center;
-  font-size:33px;flex-shrink:0
+  position:relative;
+  z-index:1;
+  width:72px;
+  height:72px;
+  border:1px solid #ffffff35;
+  background:#ffffff13;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  font-size:31px;
+  flex-shrink:0;
 }
+
+/* QUICK LINKS */
+
+.quick-links {
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin:17px 0 23px;
+}
+.quick-link {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:white;
+  border:1px solid var(--line);
+  padding:9px 13px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:750;
+  color:#50645a;
+  transition:.18s;
+}
+.quick-link:hover {
+  border-color:#9bd8bd;
+  color:var(--primary-dark);
+  background:#f3fbf7;
+}
+
+/* METRICS */
+
 .metrics {
-  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:13px;margin:20px 0 28px
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+  margin:0 0 28px;
 }
 .metric {
-  background:white;border:1px solid var(--line);border-radius:13px;
-  padding:17px;box-shadow:var(--shadow);min-width:0
+  position:relative;
+  background:white;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+  box-shadow:var(--shadow);
+  min-width:0;
+  overflow:hidden;
 }
-.metric-label {font-size:11px;color:var(--muted);font-weight:650}
-.metric-value {font-size:26px;font-weight:850;margin-top:9px;letter-spacing:-1px}
-.metric-note {font-size:10px;color:var(--muted);margin-top:4px}
-.section {margin-top:27px}
+.metric:before {
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:3px;
+  height:100%;
+  background:#24a77b;
+}
+.metric-label {
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700;
+}
+.metric-value {
+  font-size:25px;
+  font-weight:850;
+  margin-top:9px;
+  letter-spacing:-1px;
+  color:#193a30;
+}
+.metric-note {
+  font-size:9px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+/* SECTIONS AND PANELS */
+
+.section {margin-top:29px}
 .section-head {
-  display:flex;justify-content:space-between;align-items:flex-end;
-  gap:15px;margin-bottom:14px
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:15px;
+  margin-bottom:13px;
 }
-.section-head h2 {font-size:18px;margin:0;letter-spacing:-.4px}
-.section-head p {font-size:12px;color:var(--muted);margin:6px 0 0}
+.section-heading {
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+.section-icon {
+  width:37px;
+  height:37px;
+  border-radius:10px;
+  background:var(--primary-light);
+  color:var(--primary);
+  display:grid;
+  place-items:center;
+  font-size:17px;
+  flex-shrink:0;
+}
+.section-head h2 {
+  font-size:16px;
+  margin:0;
+  letter-spacing:-.4px;
+}
+.section-head p {
+  font-size:10px;
+  color:var(--muted);
+  margin:5px 0 0;
+}
 .panel {
-  background:white;border:1px solid var(--line);
-  border-radius:14px;padding:21px;box-shadow:var(--shadow)
+  background:white;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:20px;
+  box-shadow:var(--shadow);
 }
 .toolbar {
-  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
 }
 .search {
-  flex:1;min-width:190px;border:1px solid var(--line);
-  border-radius:8px;padding:11px 13px;outline:none
+  flex:1;
+  min-width:190px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 12px;
+  outline:none;
+  background:white;
+  color:var(--ink);
+  font-size:11px;
 }
 .search:focus,input:focus,select:focus {
-  border-color:var(--green);outline:2px solid #0e9f6e18
+  border-color:var(--primary);
+  outline:3px solid #0e9f6e13;
 }
 .btn {
-  border:0;border-radius:8px;padding:11px 15px;
-  background:var(--green);color:white;font-weight:750;
-  font-size:12px;cursor:pointer;display:inline-flex;
-  justify-content:center;align-items:center;gap:7px
+  border:0;
+  border-radius:8px;
+  padding:10px 14px;
+  background:var(--primary);
+  color:white;
+  font-weight:750;
+  font-size:11px;
+  cursor:pointer;
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:7px;
+  transition:.18s;
 }
-.btn:hover {background:var(--green-dark)}
+.btn:hover {background:var(--primary-dark);transform:translateY(-1px)}
 .btn-light {background:#eaf6f0;color:#087f59}
 .btn-light:hover {background:#d8eee3}
 .btn-danger {background:#fff0ee;color:var(--red)}
 .btn-danger:hover {background:#ffe0dc}
-.btn-small {padding:8px 11px;font-size:11px}
+.btn-small {padding:8px 11px;font-size:10px}
+
+/* COURSE TABLE */
+
 .table-wrap {overflow-x:auto}
-table {width:100%;border-collapse:collapse;min-width:680px}
-th {
-  text-align:left;padding:12px 11px;background:#f7faf8;
-  color:#75847b;font-size:10px;text-transform:uppercase;
-  letter-spacing:.7px;white-space:nowrap
+table {
+  width:100%;
+  border-collapse:collapse;
+  min-width:690px;
 }
-td {padding:13px 11px;border-bottom:1px solid #edf1ee;font-size:12px}
+th {
+  text-align:left;
+  padding:12px 11px;
+  background:#f5f9f7;
+  color:#718078;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  white-space:nowrap;
+}
+td {
+  padding:13px 11px;
+  border-bottom:1px solid #edf1ee;
+  font-size:11px;
+  vertical-align:middle;
+}
+tbody tr {transition:background .15s}
+tbody tr:hover {background:#f8fbf9}
 tbody tr:last-child td {border-bottom:0}
 .course-code {font-weight:850;color:#087f59}
 .course-title {font-weight:750}
-.subtext {display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.subtext {
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  margin-top:4px;
+}
 .pill {
-  display:inline-block;padding:5px 8px;border-radius:20px;
-  font-size:10px;font-weight:800;background:#edf5f0;color:#26714e
+  display:inline-block;
+  padding:5px 8px;
+  border-radius:20px;
+  font-size:9px;
+  font-weight:800;
+  background:#eaf6ef;
+  color:#26714e;
+  white-space:nowrap;
 }
 .pill.gray {background:#f0f2f1;color:#64736a}
 .pill.orange {background:#fff4e5;color:#a66512}
+
+/* CURRICULUM CARDS */
+
 .match-grid {
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
 }
 .curriculum-card {
-  border:1px solid var(--line);border-radius:12px;padding:17px;
-  min-width:0
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:17px;
+  min-width:0;
+  transition:box-shadow .18s,border-color .18s;
+}
+.curriculum-card:hover {
+  border-color:#c5e5d4;
+  box-shadow:0 5px 18px #173d2c0b;
 }
 .curriculum-top {
-  display:flex;justify-content:space-between;gap:10px;align-items:flex-start
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
 }
-.curriculum-card h3 {font-size:14px;margin:0 0 6px}
-.curriculum-card p {font-size:11px;color:var(--muted);margin:0;line-height:1.6}
+.curriculum-card h3 {
+  font-size:12px;
+  line-height:1.5;
+  margin:0 0 6px;
+}
+.curriculum-card p {
+  font-size:10px;
+  color:var(--muted);
+  margin:0;
+  line-height:1.6;
+}
 .curriculum-meta {
-  display:flex;flex-wrap:wrap;gap:7px;margin:13px 0
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:13px 0;
 }
 .curriculum-meta span {
-  font-size:10px;background:#f3f7f4;padding:6px 8px;
-  border-radius:6px;color:#52645a
+  font-size:9px;
+  background:#f3f7f4;
+  padding:6px 8px;
+  border-radius:6px;
+  color:#52645a;
 }
-.card-actions {display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
-details.editor {margin-top:13px;border-top:1px solid var(--line);padding-top:12px}
+.card-actions {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:13px;
+}
+details.editor {
+  margin-top:13px;
+  border-top:1px solid var(--line);
+  padding-top:12px;
+}
 details.editor summary {
-  cursor:pointer;color:var(--green-dark);font-size:11px;font-weight:800
+  cursor:pointer;
+  color:var(--primary-dark);
+  font-size:10px;
+  font-weight:800;
 }
+details.editor[open] summary {margin-bottom:12px}
+
+/* FORMS */
+
 .form-grid {
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
 }
-.field {display:flex;flex-direction:column;gap:6px;min-width:0}
+.field {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
 .field.full {grid-column:1/-1}
-.field label {font-size:11px;font-weight:750;color:#52645a}
-.field input,.field select {
-  width:100%;padding:11px;border:1px solid var(--line);
-  border-radius:8px;background:white;min-width:0;font-size:12px
+.field label {
+  font-size:10px;
+  font-weight:750;
+  color:#52645a;
 }
-.form-actions {display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
+.field input,.field select {
+  width:100%;
+  padding:10px 11px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:white;
+  min-width:0;
+  font-size:11px;
+  color:var(--ink);
+}
+.form-actions {
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:17px;
+}
 .notice {
-  padding:13px 15px;border-radius:9px;background:#eff8f3;
-  color:#276348;font-size:11px;line-height:1.7;margin-top:15px
+  padding:12px 14px;
+  border-radius:8px;
+  background:#eff8f3;
+  color:#276348;
+  font-size:10px;
+  line-height:1.7;
+  margin-top:15px;
+  border-left:3px solid #31a978;
 }
 .alert {
-  padding:12px 15px;border-radius:9px;margin-bottom:12px;font-size:12px
+  padding:12px 15px;
+  border-radius:9px;
+  margin-bottom:12px;
+  font-size:11px;
 }
 .alert.success {background:#e8f7ee;color:#17623d}
 .alert.error {background:#fff0ee;color:#a52b20}
 .empty {
-  padding:30px;text-align:center;color:var(--muted);
-  font-size:12px;border:1px dashed #d7e2db;border-radius:10px
+  padding:32px 20px;
+  text-align:center;
+  color:var(--muted);
+  font-size:11px;
+  border:1px dashed #d7e2db;
+  border-radius:10px;
+  background:#fbfdfc;
 }
-.mobile-menu {
-  display:none;border:1px solid var(--line);background:white;
-  border-radius:8px;padding:9px 12px;cursor:pointer
+.footer {
+  text-align:center;
+  color:#829087;
+  font-size:9px;
+  margin-top:35px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
 }
-.overlay {display:none}
+
+/* MOBILE SIDEBAR */
+
+.overlay {
+  display:none;
+}
+
 @media(max-width:1150px) {
   .metrics {grid-template-columns:repeat(3,minmax(0,1fr))}
-  .main {padding:25px}
+  .main {padding:24px}
 }
+
 @media(max-width:850px) {
   .sidebar {
-    position:fixed;z-index:20;left:-260px;top:0;bottom:0;
-    transition:left .2s ease
+    width:260px;
+    left:-270px;
+    transition:left .22s ease;
+    box-shadow:10px 0 35px #071b1330;
   }
   .sidebar.open {left:0}
-  .overlay.show {
-    display:block;position:fixed;inset:0;background:#071b13a8;z-index:19
+  .main {
+    margin-left:0;
+    padding:20px;
   }
-  .main {padding:20px}
   .mobile-menu {display:inline-block}
+  .overlay.show {
+    display:block;
+    position:fixed;
+    inset:0;
+    background:#071b13a8;
+    z-index:99;
+  }
   .match-grid {grid-template-columns:1fr}
 }
+
 @media(max-width:560px) {
   .main {padding:14px}
   .topbar {margin-bottom:17px}
+  .breadcrumb {font-size:9px}
   .user-chip {font-size:0;padding:5px}
   .hero {padding:22px}
   .hero h1 {font-size:23px}
+  .hero p {font-size:11px}
   .hero-mark {width:50px;height:50px;font-size:23px}
-  .metrics {grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .metrics {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
   .metric {padding:13px}
   .metric-value {font-size:22px}
-  .panel {padding:14px}
-  .section-head {align-items:flex-start;flex-direction:column}
+  .panel {padding:13px}
+  .section-head {align-items:flex-start}
   .form-grid {grid-template-columns:1fr}
   .field.full {grid-column:auto}
+  .quick-links {gap:6px}
+  .quick-link {padding:8px 9px;font-size:9px}
+  .section-head h2 {font-size:14px}
 }
 </style>
 </head>
 
 <body>
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="layout">
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- FIXED SIDEBAR -->
 <aside class="sidebar" id="sidebar">
-  <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#9eb5a9">SIS</small></div>
 
-  <div class="side-label">DEAN WORKSPACE</div>
-  <a class="nav-link" href="/sis/dean">▦ &nbsp; Overview</a>
-  <a class="nav-link" href="/sis/dean/faculty-profile">▤ &nbsp; Faculty Profile</a>
-  <a class="nav-link" href="/sis/dean/faculty-structure">⌘ &nbsp; Faculty Structure</a>
-  <a class="nav-link active" href="/sis/dean/courses-curriculum">▥ &nbsp; Courses & Curriculum</a>
+  <div class="brand">
+    <div class="brand-mark">L</div>
+    <div class="brand-name">
+      Lux<span>Mind</span>
+      <small>STUDENT INFORMATION SYSTEM</small>
+    </div>
+  </div>
+
+  <div class="side-profile">
+    <div class="side-avatar">
+      <%= safe(deanUser.full_name || deanUser.username || 'D').charAt(0).toUpperCase() %>
+    </div>
+    <div>
+      <strong><%= safe(deanUser.full_name || deanUser.username || 'Dean') %></strong>
+      <small>Faculty Dean</small>
+    </div>
+  </div>
+
+  <div class="side-label">MAIN WORKSPACE</div>
+
+  <a class="nav-link" href="/sis/dean">
+    <span class="nav-icon">⌂</span> Overview
+  </a>
+
+  <a class="nav-link" href="/sis/dean/faculty-profile">
+    <span class="nav-icon">▤</span> Faculty Profile
+  </a>
+
+  <a class="nav-link" href="/sis/dean/faculty-structure">
+    <span class="nav-icon">⌘</span> Faculty Structure
+  </a>
+
+  <a class="nav-link active" href="/sis/dean/courses-curriculum">
+    <span class="nav-icon">▥</span> Courses & Curriculum
+  </a>
 
   <div class="side-label">FACULTY ORGANIZATION</div>
-  <a class="nav-link" href="/sis/dean/departments">▦ &nbsp; Departments</a>
-  <a class="nav-link" href="/sis/dean/department-heads">♙ &nbsp; Department Heads</a>
-  <a class="nav-link" href="/sis/dean/faculty-staff">♧ &nbsp; Faculty Staff</a>
-  <a class="nav-link" href="/sis/dean/staff-assignments">▤ &nbsp; Staff Assignments</a>
+
+  <a class="nav-link" href="/sis/dean/departments">
+    <span class="nav-icon">▦</span> Departments
+  </a>
+
+  <a class="nav-link" href="/sis/dean/department-heads">
+    <span class="nav-icon">♙</span> Department Heads
+  </a>
+
+  <a class="nav-link" href="/sis/dean/faculty-staff">
+    <span class="nav-icon">♧</span> Faculty Staff
+  </a>
+
+  <a class="nav-link" href="/sis/dean/staff-assignments">
+    <span class="nav-icon">▤</span> Staff Assignments
+  </a>
+
+  <a class="nav-link" href="/sis/dean/academic-programs">
+    <span class="nav-icon">▧</span> Academic Programs
+  </a>
+
+  <div class="side-divider"></div>
+
+  <div class="side-label">THIS PAGE</div>
+
+  <a class="nav-link" href="#course-catalogue">
+    <span class="nav-icon">▤</span> Course Catalogue
+  </a>
+
+  <a class="nav-link" href="#curriculum">
+    <span class="nav-icon">▥</span> Department Curriculum
+  </a>
+
+  <a class="nav-link" href="#add-curriculum">
+    <span class="nav-icon">＋</span> Add Curriculum Entry
+  </a>
 
   <div class="side-footer">
     <strong><%= safe(facultyInfo.name) %></strong><br>
     Dean Academic Workspace<br>
-    LuxMind SIS
+    LuxMind SIS · Academic Management
   </div>
+
 </aside>
 
+<!-- MAIN CONTENT -->
 <main class="main">
+
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
-      <div class="breadcrumb">Dean Portal / Academic Management / <strong>Courses & Curriculum</strong></div>
+    <div class="topbar-left">
+      <button class="mobile-menu" type="button" onclick="toggleSidebar()" aria-label="Open navigation">☰</button>
+      <div class="breadcrumb">
+        Dean Portal / Academic Management / <strong>Courses & Curriculum</strong>
+      </div>
     </div>
+
     <div class="user-chip">
-      <div class="avatar"><%= safe(deanUser.full_name || 'D').charAt(0).toUpperCase() %></div>
+      <div class="avatar">
+        <%= safe(deanUser.full_name || 'D').charAt(0).toUpperCase() %>
+      </div>
       <%= safe(deanUser.full_name || deanUser.username) %>
     </div>
   </div>
@@ -288,135 +835,189 @@ details.editor summary {
     <div class="alert error"><%= safe(message) %></div>
   <% }); } %>
 
+  <!-- PAGE HERO -->
   <section class="hero">
-    <div>
-      <div class="eyebrow">ACADEMIC MANAGEMENT</div>
+    <div class="hero-content">
+      <div class="eyebrow">ACADEMIC MANAGEMENT · FACULTY OVERSIGHT</div>
       <h1>Courses & Curriculum</h1>
       <p>
-        Monitor the courses offered by your faculty, inspect teaching
-        arrangements and manage department curriculum records from one
-        academic oversight workspace.
+        Monitor faculty course offerings, review teaching arrangements,
+        compare curriculum records with the course catalogue, and maintain
+        department curriculum information.
       </p>
     </div>
     <div class="hero-mark">▤</div>
   </section>
 
+  <!-- QUICK ACTIONS -->
+  <nav class="quick-links" aria-label="Page shortcuts">
+    <a class="quick-link" href="#course-catalogue">▤ Course Catalogue</a>
+    <a class="quick-link" href="#curriculum">▥ Curriculum Records</a>
+    <a class="quick-link" href="#add-curriculum">＋ Add Curriculum</a>
+  </nav>
+
+  <!-- METRICS -->
   <section class="metrics">
+
     <div class="metric">
       <div class="metric-label">Faculty Courses</div>
       <div class="metric-value"><%= Number(metrics.courses || 0) %></div>
       <div class="metric-note">Existing course records</div>
     </div>
+
     <div class="metric">
       <div class="metric-label">Published Courses</div>
       <div class="metric-value"><%= Number(metrics.published || 0) %></div>
       <div class="metric-note">Marked as published</div>
     </div>
+
     <div class="metric">
       <div class="metric-label">Course Sections</div>
       <div class="metric-value"><%= Number(metrics.sections || 0) %></div>
       <div class="metric-note">Existing teaching groups</div>
     </div>
+
     <div class="metric">
       <div class="metric-label">Curriculum Entries</div>
       <div class="metric-value"><%= Number(metrics.curriculumEntries || 0) %></div>
       <div class="metric-note">Faculty department records</div>
     </div>
+
     <div class="metric">
       <div class="metric-label">Unmatched Entries</div>
       <div class="metric-value"><%= Number(metrics.unmatchedEntries || 0) %></div>
       <div class="metric-note">Require catalogue review</div>
     </div>
+
   </section>
 
   <!-- COURSE CATALOGUE -->
   <section class="section" id="course-catalogue">
+
     <div class="section-head">
-      <div>
-        <h2>Faculty Course Catalogue</h2>
-        <p>Actual course records assigned to <%= safe(facultyInfo.name) %>.</p>
+      <div class="section-heading">
+        <div class="section-icon">▤</div>
+        <div>
+          <h2>Faculty Course Catalogue</h2>
+          <p>Course records assigned to <%= safe(facultyInfo.name) %>.</p>
+        </div>
       </div>
       <span class="pill"><%= courseList.length %> courses</span>
     </div>
 
     <div class="panel">
+
       <div class="toolbar">
-        <input class="search" id="courseSearch"
-          placeholder="Search course code, title or department...">
+        <input
+          class="search"
+          id="courseSearch"
+          type="search"
+          placeholder="Search course code, title, lecturer or department..."
+          aria-label="Search courses">
       </div>
 
       <% if (!courseList.length) { %>
-        <div class="empty">No course records are currently assigned to this faculty.</div>
+
+        <div class="empty">
+          <div style="font-size:25px;margin-bottom:9px">▤</div>
+          <strong>No course records found</strong>
+          <p>There are currently no course records assigned to this faculty.</p>
+        </div>
+
       <% } else { %>
-      <div class="table-wrap">
-        <table id="courseTable">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Department</th>
-              <th>Credits</th>
-              <th>Semester</th>
-              <th>Lecturer</th>
-              <th>Sections</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-          <% courseList.forEach(course => { %>
-            <tr class="course-row">
-              <td>
-                <span class="course-code"><%= safe(course.code) %></span>
-                <span class="subtext course-search-title"><%= safe(course.title) %></span>
-              </td>
-              <td><%= safe(course.department_name || 'Unassigned') %></td>
-              <td><%= safe(course.credits) %></td>
-              <td><%= safe(course.semester_number || '—') %></td>
-              <td><%= safe(course.teacher_name || 'Not assigned') %></td>
-              <td>
-                <span class="pill"><%= Number(course.section_count || 0) %></span>
-              </td>
-              <td>
-                <% if (Number(course.is_published) === 1) { %>
-                  <span class="pill">Published</span>
-                <% } else { %>
-                  <span class="pill gray">Unpublished</span>
-                <% } %>
-              </td>
-            </tr>
-          <% }); %>
-          </tbody>
-        </table>
-      </div>
+
+        <div class="table-wrap">
+          <table id="courseTable">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Department</th>
+                <th>Credits</th>
+                <th>Semester</th>
+                <th>Lecturer</th>
+                <th>Sections</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <% courseList.forEach(course => { %>
+                <tr class="course-row">
+                  <td>
+                    <span class="course-code"><%= safe(course.code) %></span>
+                    <span class="subtext"><%= safe(course.title) %></span>
+                  </td>
+
+                  <td><%= safe(course.department_name || 'Unassigned') %></td>
+                  <td><%= safe(course.credits) %></td>
+                  <td><%= safe(course.semester_number || '—') %></td>
+                  <td><%= safe(course.teacher_name || 'Not assigned') %></td>
+
+                  <td>
+                    <span class="pill"><%= Number(course.section_count || 0) %></span>
+                  </td>
+
+                  <td>
+                    <% if (Number(course.is_published) === 1) { %>
+                      <span class="pill">Published</span>
+                    <% } else { %>
+                      <span class="pill gray">Unpublished</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="courseNoResults" class="empty" style="display:none;margin-top:12px">
+          No courses match your search.
+        </div>
+
       <% } %>
 
       <div class="notice">
         Course creation and section administration remain in the existing
-        Central Admin workspace. This Dean page provides faculty-scoped
-        oversight and does not duplicate those operations.
+        Central Admin workspace. This page provides faculty-scoped academic
+        oversight without duplicating central administration.
       </div>
+
     </div>
   </section>
 
   <!-- CURRICULUM RECORDS -->
   <section class="section" id="curriculum">
+
     <div class="section-head">
-      <div>
-        <h2>Department Curriculum</h2>
-        <p>Manage curriculum records belonging to your faculty's departments.</p>
+      <div class="section-heading">
+        <div class="section-icon">▥</div>
+        <div>
+          <h2>Department Curriculum</h2>
+          <p>Manage curriculum records belonging to your faculty departments.</p>
+        </div>
       </div>
       <span class="pill"><%= curriculumList.length %> entries</span>
     </div>
 
     <div class="panel">
+
       <div class="toolbar">
-        <input class="search" id="curriculumSearch"
-          placeholder="Search course, department or programme...">
+        <input
+          class="search"
+          id="curriculumSearch"
+          type="search"
+          placeholder="Search course, department or programme..."
+          aria-label="Search curriculum">
+
         <select class="search" id="departmentFilter" style="max-width:220px">
           <option value="">All departments</option>
           <% departmentList.forEach(dept => { %>
-            <option value="<%= safe(dept.name).toLowerCase() %>"><%= safe(dept.name) %></option>
+            <option value="<%= safe(dept.name).toLowerCase() %>">
+              <%= safe(dept.name) %>
+            </option>
           <% }); %>
         </select>
+
         <select class="search" id="matchFilter" style="max-width:190px">
           <option value="">All matches</option>
           <option value="matched">Matched to course</option>
@@ -425,232 +1026,441 @@ details.editor summary {
       </div>
 
       <% if (!curriculumList.length) { %>
-        <div class="empty">No curriculum records have been entered for your faculty's departments.</div>
+
+        <div class="empty">
+          <div style="font-size:25px;margin-bottom:9px">▥</div>
+          <strong>No curriculum entries yet</strong>
+          <p>Use the form below to add curriculum records for your departments.</p>
+        </div>
+
       <% } else { %>
-      <div class="match-grid" id="curriculumGrid">
-        <% curriculumList.forEach(item => { %>
-          <article class="curriculum-card"
-            data-search="<%= (safe(item.course_code)+' '+safe(item.course_name)+' '+safe(item.department_name)+' '+safe(item.program_level)).toLowerCase() %>"
-            data-department="<%= safe(item.department_name).toLowerCase() %>"
-            data-match="<%= item.matched_course_id ? 'matched' : 'unmatched' %>">
 
-            <div class="curriculum-top">
-              <div>
-                <h3><%= safe(item.course_code) %> — <%= safe(item.course_name) %></h3>
-                <p><%= safe(item.department_name) %> · <%= safe(item.program_level) %></p>
+        <div class="match-grid" id="curriculumGrid">
+
+          <% curriculumList.forEach(item => { %>
+
+            <article
+              class="curriculum-card"
+              data-search="<%= (safe(item.course_code)+' '+safe(item.course_name)+' '+safe(item.department_name)+' '+safe(item.program_level)).toLowerCase() %>"
+              data-department="<%= safe(item.department_name).toLowerCase() %>"
+              data-match="<%= item.matched_course_id ? 'matched' : 'unmatched' %>">
+
+              <div class="curriculum-top">
+                <div>
+                  <h3><%= safe(item.course_code) %> — <%= safe(item.course_name) %></h3>
+                  <p>
+                    <%= safe(item.department_name) %>
+                    ·
+                    <%= safe(item.program_level) %>
+                  </p>
+                </div>
+
+                <% if (item.matched_course_id) { %>
+                  <span class="pill">Matched</span>
+                <% } else { %>
+                  <span class="pill orange">Unmatched</span>
+                <% } %>
               </div>
+
+              <div class="curriculum-meta">
+                <span><strong>Semester:</strong> <%= safe(item.semester_number || item.semester) %></span>
+                <span><strong>Credits:</strong> <%= safe(item.credits) %></span>
+                <span><strong>Type:</strong> <%= safe(item.type) %></span>
+              </div>
+
               <% if (item.matched_course_id) { %>
-                <span class="pill">Matched</span>
+                <p>
+                  Catalogue match:
+                  <strong><%= safe(item.matched_course_title) %></strong>
+                </p>
               <% } else { %>
-                <span class="pill orange">Unmatched</span>
+                <p>
+                  No course with the same code was found in this department's course catalogue.
+                </p>
               <% } %>
-            </div>
 
-            <div class="curriculum-meta">
-              <span><strong>Semester:</strong> <%= safe(item.semester_number || item.semester) %></span>
-              <span><strong>Credits:</strong> <%= safe(item.credits) %></span>
-              <span><strong>Type:</strong> <%= safe(item.type) %></span>
-            </div>
+              <details class="editor">
+                <summary>Edit curriculum record</summary>
 
-            <% if (item.matched_course_id) { %>
-              <p>Catalogue match: <strong><%= safe(item.matched_course_title) %></strong></p>
-            <% } else { %>
-              <p>No course with the same code was found in this department's course catalogue.</p>
-            <% } %>
+                <form
+                  method="POST"
+                  action="/sis/dean/courses-curriculum/curriculum/<%= item.id %>/edit"
+                  style="margin-top:13px">
 
-            <details class="editor">
-              <summary>Edit curriculum record</summary>
-              <form method="POST"
-                action="/sis/dean/courses-curriculum/curriculum/<%= item.id %>/edit"
-                style="margin-top:13px">
+                  <div class="form-grid">
 
-                <div class="form-grid">
-                  <div class="field full">
-                    <label>Department</label>
-                    <select name="department_id" required>
-                      <% departmentList.forEach(dept => { %>
-                        <option value="<%= dept.id %>" <%= Number(item.department_id) === Number(dept.id) ? 'selected' : '' %>>
-                          <%= safe(dept.name) %>
-                        </option>
-                      <% }); %>
-                    </select>
+                    <div class="field full">
+                      <label>Department</label>
+                      <select name="department_id" required>
+                        <% departmentList.forEach(dept => { %>
+                          <option
+                            value="<%= dept.id %>"
+                            <%= Number(item.department_id) === Number(dept.id) ? 'selected' : '' %>>
+                            <%= safe(dept.name) %>
+                          </option>
+                        <% }); %>
+                      </select>
+                    </div>
+
+                    <div class="field">
+                      <label>Programme Level</label>
+                      <input
+                        name="program_level"
+                        value="<%= safe(item.program_level) %>"
+                        required>
+                    </div>
+
+                    <div class="field">
+                      <label>Semester Label</label>
+                      <input
+                        name="semester"
+                        value="<%= safe(item.semester) %>"
+                        required>
+                    </div>
+
+                    <div class="field">
+                      <label>Semester Number</label>
+                      <input
+                        type="number"
+                        name="semester_number"
+                        min="1"
+                        value="<%= safe(item.semester_number) %>"
+                        required>
+                    </div>
+
+                    <div class="field">
+                      <label>Course Code</label>
+                      <input
+                        name="course_code"
+                        value="<%= safe(item.course_code) %>"
+                        required>
+                    </div>
+
+                    <div class="field full">
+                      <label>Course Name</label>
+                      <input
+                        name="course_name"
+                        value="<%= safe(item.course_name) %>"
+                        required>
+                    </div>
+
+                    <div class="field">
+                      <label>Credits</label>
+                      <input
+                        type="number"
+                        name="credits"
+                        min="0"
+                        value="<%= safe(item.credits) %>"
+                        required>
+                    </div>
+
+                    <div class="field">
+                      <label>Course Type</label>
+                      <input
+                        name="type"
+                        value="<%= safe(item.type) %>"
+                        required>
+                    </div>
+
+                    <div class="field full">
+                      <label>Accreditation</label>
+                      <input
+                        name="accreditation"
+                        value="<%= safe(item.accreditation) %>">
+                    </div>
+
                   </div>
 
-                  <div class="field">
-                    <label>Programme Level</label>
-                    <input name="program_level" value="<%= safe(item.program_level) %>" required>
+                  <div class="form-actions">
+                    <button class="btn" type="submit">Save Changes</button>
                   </div>
-                  <div class="field">
-                    <label>Semester Label</label>
-                    <input name="semester" value="<%= safe(item.semester) %>" required>
-                  </div>
-                  <div class="field">
-                    <label>Semester Number</label>
-                    <input type="number" name="semester_number" min="1" value="<%= safe(item.semester_number) %>" required>
-                  </div>
-                  <div class="field">
-                    <label>Course Code</label>
-                    <input name="course_code" value="<%= safe(item.course_code) %>" required>
-                  </div>
-                  <div class="field full">
-                    <label>Course Name</label>
-                    <input name="course_name" value="<%= safe(item.course_name) %>" required>
-                  </div>
-                  <div class="field">
-                    <label>Credits</label>
-                    <input type="number" name="credits" min="0" value="<%= safe(item.credits) %>" required>
-                  </div>
-                  <div class="field">
-                    <label>Course Type</label>
-                    <input name="type" value="<%= safe(item.type) %>" required>
-                  </div>
-                  <div class="field full">
-                    <label>Accreditation</label>
-                    <input name="accreditation" value="<%= safe(item.accreditation) %>">
-                  </div>
-                </div>
+                </form>
 
-                <div class="form-actions">
-                  <button class="btn" type="submit">Save Changes</button>
-                </div>
-              </form>
+                <form
+                  method="POST"
+                  action="/sis/dean/courses-curriculum/curriculum/<%= item.id %>/delete"
+                  onsubmit="return confirm('Delete this curriculum record? This cannot be undone.');"
+                  style="margin-top:10px">
 
-              <form method="POST"
-                action="/sis/dean/courses-curriculum/curriculum/<%= item.id %>/delete"
-                onsubmit="return confirm('Delete this curriculum record? This cannot be undone.');"
-                style="margin-top:10px">
-                <button class="btn btn-danger btn-small" type="submit">Delete Record</button>
-              </form>
-            </details>
-          </article>
-        <% }); %>
-      </div>
+                  <button class="btn btn-danger btn-small" type="submit">
+                    Delete Record
+                  </button>
+                </form>
+
+              </details>
+
+            </article>
+
+          <% }); %>
+
+        </div>
+
+        <div id="curriculumNoResults" class="empty" style="display:none;margin-top:12px">
+          No curriculum records match your filters.
+        </div>
+
       <% } %>
+
     </div>
   </section>
 
   <!-- ADD CURRICULUM -->
   <section class="section" id="add-curriculum">
+
     <div class="section-head">
-      <div>
-        <h2>Add Curriculum Entry</h2>
-        <p>Create a real curriculum record for one of your faculty departments.</p>
+      <div class="section-heading">
+        <div class="section-icon">＋</div>
+        <div>
+          <h2>Add Curriculum Entry</h2>
+          <p>Create a real curriculum record for one of your faculty departments.</p>
+        </div>
       </div>
     </div>
 
     <div class="panel">
+
       <% if (!departmentList.length) { %>
-        <div class="empty">Your faculty has no departments available for curriculum assignment.</div>
+
+        <div class="empty">
+          Your faculty has no departments available for curriculum assignment.
+        </div>
+
       <% } else { %>
-      <form method="POST" action="/sis/dean/courses-curriculum/curriculum/new">
-        <div class="form-grid">
-          <div class="field">
-            <label>Department *</label>
-            <select name="department_id" required>
-              <option value="">Select department</option>
-              <% departmentList.forEach(dept => { %>
-                <option value="<%= dept.id %>"><%= safe(dept.name) %> (<%= safe(dept.code) %>)</option>
-              <% }); %>
-            </select>
+
+        <form method="POST" action="/sis/dean/courses-curriculum/curriculum/new">
+
+          <div class="form-grid">
+
+            <div class="field">
+              <label>Department *</label>
+              <select name="department_id" required>
+                <option value="">Select department</option>
+                <% departmentList.forEach(dept => { %>
+                  <option value="<%= dept.id %>">
+                    <%= safe(dept.name) %> (<%= safe(dept.code) %>)
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Programme Level *</label>
+              <input
+                name="program_level"
+                placeholder="e.g. Undergraduate"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Semester Label *</label>
+              <input
+                name="semester"
+                placeholder="e.g. Semester 1"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Semester Number *</label>
+              <input
+                type="number"
+                name="semester_number"
+                min="1"
+                placeholder="e.g. 1"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Course Code *</label>
+              <input
+                name="course_code"
+                placeholder="e.g. CMPE101"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Course Name *</label>
+              <input
+                name="course_name"
+                placeholder="Course title"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Credits *</label>
+              <input
+                type="number"
+                name="credits"
+                min="0"
+                required>
+            </div>
+
+            <div class="field">
+              <label>Course Type *</label>
+              <select name="type" required>
+                <option value="">Select type</option>
+                <option value="Compulsory">Compulsory</option>
+                <option value="Elective">Elective</option>
+                <option value="Optional">Optional</option>
+              </select>
+            </div>
+
+            <div class="field full">
+              <label>Accreditation</label>
+              <input
+                name="accreditation"
+                placeholder="Optional accreditation reference">
+            </div>
+
           </div>
 
-          <div class="field">
-            <label>Programme Level *</label>
-            <input name="program_level" placeholder="e.g. Undergraduate" required>
+          <div class="form-actions">
+            <button class="btn" type="submit">＋ Create Curriculum Entry</button>
+            <button class="btn btn-light" type="reset">Clear Form</button>
           </div>
 
-          <div class="field">
-            <label>Semester Label *</label>
-            <input name="semester" placeholder="e.g. Semester 1" required>
-          </div>
+        </form>
 
-          <div class="field">
-            <label>Semester Number *</label>
-            <input type="number" name="semester_number" min="1" placeholder="e.g. 1" required>
-          </div>
-
-          <div class="field">
-            <label>Course Code *</label>
-            <input name="course_code" placeholder="e.g. CMPE101" required>
-          </div>
-
-          <div class="field">
-            <label>Course Name *</label>
-            <input name="course_name" placeholder="Course title" required>
-          </div>
-
-          <div class="field">
-            <label>Credits *</label>
-            <input type="number" name="credits" min="0" required>
-          </div>
-
-          <div class="field">
-            <label>Course Type *</label>
-            <select name="type" required>
-              <option value="">Select type</option>
-              <option value="Compulsory">Compulsory</option>
-              <option value="Elective">Elective</option>
-              <option value="Optional">Optional</option>
-            </select>
-          </div>
-
-          <div class="field full">
-            <label>Accreditation</label>
-            <input name="accreditation" placeholder="Optional accreditation reference">
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn" type="submit">＋ Create Curriculum Entry</button>
-          <button class="btn btn-light" type="reset">Clear Form</button>
-        </div>
-      </form>
       <% } %>
 
       <div class="notice">
-        Creating a curriculum entry does not automatically create a course in
-        the course catalogue. After adding it, check the matching status above.
+        Creating a curriculum entry does not automatically create a course
+        in the course catalogue. After adding it, check the matching status
+        in the Department Curriculum section.
       </div>
+
     </div>
   </section>
 
-  <div style="text-align:center;color:#829087;font-size:10px;margin-top:35px">
+  <footer class="footer">
     LuxMind SIS · Academic Management · <%= new Date().getFullYear() %>
-  </div>
+  </footer>
+
 </main>
-</div>
 
 <script>
+/* MOBILE SIDEBAR */
+
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('show');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
 }
 
-document.getElementById('courseSearch').addEventListener('input', function() {
-  const term = this.value.toLowerCase().trim();
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+}
 
-  document.querySelectorAll('.course-row').forEach(row => {
-    row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+/* CLOSE MOBILE SIDEBAR AFTER NAVIGATION */
+
+document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+  link.addEventListener('click', function() {
+    if (window.innerWidth <= 850) {
+      closeSidebar();
+    }
   });
 });
 
-function filterCurriculum() {
-  const term = document.getElementById('curriculumSearch').value.toLowerCase().trim();
-  const department = document.getElementById('departmentFilter').value;
-  const match = document.getElementById('matchFilter').value;
+/* COURSE SEARCH */
 
-  document.querySelectorAll('.curriculum-card').forEach(card => {
+const courseSearch = document.getElementById('courseSearch');
+
+if (courseSearch) {
+  courseSearch.addEventListener('input', function() {
+    const term = this.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.course-row');
+    let visible = 0;
+
+    rows.forEach(row => {
+      const matches = row.innerText.toLowerCase().includes(term);
+      row.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    });
+
+    const noResults = document.getElementById('courseNoResults');
+    if (noResults) {
+      noResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+  });
+}
+
+/* CURRICULUM SEARCH AND FILTERS */
+
+function filterCurriculum() {
+  const searchInput = document.getElementById('curriculumSearch');
+  const departmentInput = document.getElementById('departmentFilter');
+  const matchInput = document.getElementById('matchFilter');
+
+  if (!searchInput || !departmentInput || !matchInput) return;
+
+  const term = searchInput.value.toLowerCase().trim();
+  const department = departmentInput.value;
+  const match = matchInput.value;
+
+  const cards = document.querySelectorAll('.curriculum-card');
+  let visible = 0;
+
+  cards.forEach(card => {
     const searchOK = card.dataset.search.includes(term);
     const departmentOK = !department || card.dataset.department === department;
     const matchOK = !match || card.dataset.match === match;
 
-    card.style.display = searchOK && departmentOK && matchOK ? '' : 'none';
+    const show = searchOK && departmentOK && matchOK;
+
+    card.style.display = show ? '' : 'none';
+
+    if (show) visible++;
   });
+
+  const noResults = document.getElementById('curriculumNoResults');
+
+  if (noResults) {
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+  }
 }
 
-document.getElementById('curriculumSearch').addEventListener('input', filterCurriculum);
-document.getElementById('departmentFilter').addEventListener('change', filterCurriculum);
-document.getElementById('matchFilter').addEventListener('change', filterCurriculum);
+const curriculumSearch = document.getElementById('curriculumSearch');
+const departmentFilter = document.getElementById('departmentFilter');
+const matchFilter = document.getElementById('matchFilter');
+
+if (curriculumSearch) {
+  curriculumSearch.addEventListener('input', filterCurriculum);
+}
+
+if (departmentFilter) {
+  departmentFilter.addEventListener('change', filterCurriculum);
+}
+
+if (matchFilter) {
+  matchFilter.addEventListener('change', filterCurriculum);
+}
+
+/* ACTIVE NAVIGATION */
+
+const currentPath = window.location.pathname;
+
+document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+  const href = link.getAttribute('href');
+
+  if (href && href.startsWith('/sis/dean/')) {
+    if (href === currentPath) {
+      link.classList.add('active');
+    } else if (href !== '/sis/dean/courses-curriculum') {
+      link.classList.remove('active');
+    }
+  }
+});
+
+/* ESCAPE KEY CLOSES MOBILE MENU */
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeSidebar();
+  }
+});
 </script>
+
 </body>
 </html>

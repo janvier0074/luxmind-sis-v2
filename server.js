@@ -50,6 +50,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files (images, videos, CSS, JavaScript)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 app.use(session({ 
   secret: 'luxmind-secret', 

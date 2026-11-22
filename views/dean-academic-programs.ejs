@@ -3,120 +3,736 @@
 const dean = user || {};
 const facultyInfo = faculty || {};
 const programList = Array.isArray(programs) ? programs : [];
-const overview = stats || { totalPrograms: 0, totalFeeRecords: 0 };
+const overview = stats || {};
+const totalPrograms = Number(overview.totalPrograms || programList.length);
+const totalRecords = Number(overview.totalFeeRecords || 0);
+const initialProgram = programList.length ? programList[0] : null;
+const deanInitials = String(dean.full_name || 'Dean')
+  .trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
 %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073f32">
 <title>Academic Programs | LuxMind SIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+:root{
+  --green:#087b58;
+  --green-dark:#073f32;
+  --green-deep:#052f26;
+  --mint:#e9f7f0;
+  --ink:#172c26;
+  --muted:#7b8983;
+  --line:#e7eeea;
+  --bg:#f4f7f5;
+  --white:#fff;
+  --shadow:0 8px 25px rgba(20,50,36,.045);
+}
 *{box-sizing:border-box}
-body{margin:0;background:#f4f7f6;color:#172b27;font-family:Inter,Segoe UI,Arial,sans-serif}
-.header{background:linear-gradient(120deg,#064e3b,#047857);color:white;padding:30px 5%}
-.header a{color:#d1fae5;text-decoration:none;font-size:13px}
-.header h1{font-size:28px;margin:18px 0 8px}
-.header p{color:#d1fae5;margin:0;font-size:14px}
-.container{max-width:1250px;margin:28px auto;padding:0 22px}
-.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:24px}
-.stat,.panel{background:white;border:1px solid #e4ece8;border-radius:15px;padding:23px;box-shadow:0 4px 16px #102c2110}
-.stat span{font-size:12px;color:#71817b;font-weight:700;text-transform:uppercase;letter-spacing:.7px}
-.stat strong{display:block;font-size:30px;margin-top:10px;color:#047857}
-.panel{margin-bottom:22px}
-.panel h2{font-size:18px;margin:0 0 7px}
-.sub{color:#75847e;font-size:13px;margin:0 0 20px}
-.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:20px 0}
-input{width:100%;max-width:360px;padding:12px 14px;border:1px solid #dce6e1;border-radius:9px;font-size:14px;outline:none}
-input:focus{border-color:#059669;box-shadow:0 0 0 3px #10b98118}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:450px}
-th{text-align:left;background:#f4f8f6;color:#65766e;font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:14px}
-td{padding:16px 14px;border-bottom:1px solid #edf1ef;font-size:13px}
-.program-name{font-weight:700;color:#174b3b}
-.number{font-weight:700;color:#047857}
-.empty{text-align:center;padding:35px;color:#788780}
-.notice{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:11px;padding:15px;color:#166534;font-size:13px;line-height:1.6}
-.footer{text-align:center;padding:25px;color:#89958f;font-size:12px}
-@media(max-width:650px){.stats{grid-template-columns:1fr}.header h1{font-size:23px}.toolbar{align-items:stretch;flex-direction:column}input{max-width:none}}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',sans-serif;
+}
+button,input{font:inherit}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.sidebar{
+  width:245px;position:fixed;inset:0 auto 0 0;
+  background:var(--green-deep);color:white;
+  padding:25px 17px;z-index:20;
+  display:flex;flex-direction:column;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 27px}
+.brand-icon{
+  width:41px;height:41px;border-radius:13px;
+  display:grid;place-items:center;background:#0c8b62;
+  font-family:Manrope;font-size:20px;font-weight:800;
+}
+.brand-name{font-family:Manrope;font-weight:800;font-size:17px}
+.brand-caption{font-size:10px;color:#a8cabe;margin-top:3px}
+.nav-label{
+  padding:14px 10px 8px;color:#83aa9a;
+  font-size:9px;font-weight:800;letter-spacing:1.3px;
+}
+.nav-link{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 11px;border-radius:10px;
+  color:#c7ddd3;font-size:11px;font-weight:600;
+  margin:2px 0;transition:.2s;
+}
+.nav-link:hover{background:#ffffff12;color:white}
+.nav-link.active{background:#0c7858;color:white}
+.nav-icon{width:19px;text-align:center;font-size:15px}
+.sidebar-bottom{margin-top:auto;border-top:1px solid #ffffff18;padding-top:17px}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:8px}
+.sidebar-avatar{
+  width:35px;height:35px;border-radius:11px;
+  background:#d7f3e4;color:#087b58;display:grid;place-items:center;
+  font-size:12px;font-weight:800;
+}
+.sidebar-user strong{font-size:11px;display:block}
+.sidebar-user small{font-size:9px;color:#9ebcaf}
+.main{margin-left:245px;min-width:0}
+.topbar{
+  min-height:69px;background:white;border-bottom:1px solid var(--line);
+  padding:0 34px;display:flex;align-items:center;
+  justify-content:space-between;gap:15px;
+}
+.breadcrumb{font-size:11px;color:var(--muted)}
+.breadcrumb strong{color:var(--ink)}
+.top-right{display:flex;align-items:center;gap:12px}
+.faculty-chip{
+  padding:8px 12px;border:1px solid var(--line);
+  border-radius:9px;font-size:10px;color:#476257;
+  font-weight:700;background:#fff;
+}
+.mobile-menu{
+  display:none;border:0;background:var(--mint);
+  width:38px;height:38px;border-radius:10px;color:var(--green);
+  font-size:19px;
+}
+.content{max-width:1600px;margin:auto;padding:29px 34px 40px}
+.hero{
+  position:relative;overflow:hidden;
+  border-radius:20px;padding:31px 34px;
+  background:linear-gradient(110deg,#073f32,#087b58 70%,#0b9167);
+  color:white;box-shadow:0 13px 30px #064b391a;
+}
+.hero:after{
+  content:"";position:absolute;width:310px;height:310px;
+  border:1px solid #ffffff1c;border-radius:50%;
+  right:7%;top:-205px;
+}
+.hero-inner{position:relative;z-index:1}
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:9px;letter-spacing:1.2px;font-weight:800;
+  text-transform:uppercase;color:#c8f1dc;
+}
+.hero-kicker:before{
+  content:"";width:7px;height:7px;border-radius:50%;background:#8df0bc;
+}
+.hero h1{
+  font-family:Manrope;font-size:29px;letter-spacing:-1px;
+  margin:13px 0 7px;font-weight:800;
+}
+.hero p{
+  max-width:650px;color:#d7eee3;font-size:12px;
+  line-height:1.8;margin:0;
+}
+.hero-bottom{
+  display:flex;align-items:center;gap:9px;
+  flex-wrap:wrap;margin-top:21px;
+}
+.hero-bottom span{
+  padding:7px 10px;border:1px solid #ffffff27;
+  border-radius:7px;background:#ffffff12;
+  font-size:10px;color:#effaf3;
+}
+.section-head{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:15px;margin:29px 0 15px;
+}
+.section-head h2{
+  margin:0;font:800 16px Manrope;letter-spacing:-.4px;
+}
+.section-head p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.section-eyebrow{
+  color:var(--green);font-size:9px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;
+}
+.metrics{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+}
+.metric{
+  background:white;border:1px solid var(--line);
+  border-radius:14px;padding:18px;box-shadow:var(--shadow);
+}
+.metric-top{display:flex;justify-content:space-between;align-items:center}
+.metric-icon{
+  width:37px;height:37px;border-radius:11px;
+  display:grid;place-items:center;background:var(--mint);
+  color:var(--green);font-size:17px;
+}
+.metric-label{
+  color:var(--muted);font-size:9px;
+  font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+}
+.metric-value{
+  font:800 27px Manrope;letter-spacing:-.7px;margin-top:12px;
+}
+.metric-note{font-size:10px;color:#84918b;margin-top:4px}
+.workspace-grid{
+  display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);
+  gap:17px;align-items:start;
+}
+.panel{
+  background:white;border:1px solid var(--line);
+  border-radius:16px;box-shadow:var(--shadow);min-width:0;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:19px 20px;border-bottom:1px solid var(--line);
+}
+.panel-head h3{margin:0;font:800 14px Manrope}
+.panel-head p{margin:5px 0 0;color:var(--muted);font-size:10px}
+.panel-body{padding:18px 20px}
+.search-box{position:relative;min-width:190px}
+.search-box input{
+  width:100%;border:1px solid #e2eae5;border-radius:9px;
+  padding:10px 12px 10px 34px;outline:none;
+  background:#fbfdfc;font-size:10px;
+}
+.search-box input:focus{border-color:#43a781}
+.search-box span{
+  position:absolute;left:11px;top:8px;color:#8a9991;font-size:15px;
+}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:15px}
+.filter{
+  padding:7px 11px;border:1px solid #e5ece8;
+  border-radius:20px;background:white;color:#718078;
+  font-size:9px;font-weight:700;
+}
+.filter.active{background:var(--green);border-color:var(--green);color:white}
+.program-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.program-card{
+  text-align:left;width:100%;border:1px solid #e7eeea;
+  background:#fff;border-radius:12px;padding:15px;
+  transition:.18s;color:var(--ink);
+}
+.program-card:hover,.program-card.selected{
+  border-color:#65b995;background:#f8fcf9;
+  box-shadow:0 5px 15px #087b5810;
+}
+.program-card.selected{outline:2px solid #ccebdc}
+.program-card-top{display:flex;align-items:center;justify-content:space-between}
+.program-symbol{
+  width:32px;height:32px;border-radius:10px;
+  display:grid;place-items:center;background:#eaf6f0;color:var(--green);
+}
+.program-index{font-size:9px;color:#9aa69f;font-weight:800}
+.program-card h4{
+  font:700 12px/1.5 Manrope;margin:12px 0 13px;
+  min-height:36px;overflow-wrap:anywhere;
+}
+.program-meta{
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid #edf1ee;padding-top:10px;
+  color:var(--muted);font-size:9px;
+}
+.program-meta strong{color:var(--green);font-size:10px}
+.no-results{
+  display:none;padding:35px 10px;text-align:center;
+  color:var(--muted);font-size:11px;
+}
+.detail-panel{position:sticky;top:18px}
+.detail-label{
+  color:var(--green);font-size:9px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.detail-name{
+  font:800 19px/1.4 Manrope;margin:12px 0;
+  overflow-wrap:anywhere;
+}
+.detail-description{font-size:11px;color:var(--muted);line-height:1.7}
+.detail-stat{
+  margin-top:17px;padding:14px;border-radius:11px;
+  background:#f3f8f5;display:flex;justify-content:space-between;
+  align-items:center;
+}
+.detail-stat span{font-size:10px;color:#718078}
+.detail-stat strong{font:800 18px Manrope;color:var(--green)}
+.detail-note{
+  margin-top:13px;padding:12px;background:#fff9ed;
+  border:1px solid #f3e6c9;border-radius:10px;
+  color:#846a37;font-size:10px;line-height:1.6;
+}
+.action-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;
+}
+.action-card{
+  display:block;padding:16px;border:1px solid var(--line);
+  border-radius:13px;background:white;transition:.2s;
+}
+.action-card:hover{
+  border-color:#82c9a8;transform:translateY(-2px);
+  box-shadow:0 7px 18px #087b5810;
+}
+.action-icon{
+  width:34px;height:34px;border-radius:10px;
+  display:grid;place-items:center;background:#edf7f1;
+  color:var(--green);font-size:16px;margin-bottom:12px;
+}
+.action-card h4{font:800 11px Manrope;margin:0 0 6px}
+.action-card p{font-size:9px;color:var(--muted);line-height:1.6;margin:0}
+.action-go{
+  display:block;margin-top:12px;color:var(--green);
+  font-size:9px;font-weight:800;
+}
+.collab{
+  display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;
+  gap:12px;
+}
+.collab-card{
+  padding:16px;background:white;border:1px solid var(--line);
+  border-radius:13px;min-width:0;
+}
+.collab-card .step{
+  font-size:9px;font-weight:800;color:#0b9369;
+  letter-spacing:.8px;margin-bottom:12px;
+}
+.collab-card h4{font:800 11px Manrope;margin:0 0 6px}
+.collab-card p{font-size:9px;line-height:1.6;color:var(--muted);margin:0}
+.collab-card a{
+  display:inline-block;color:var(--green);
+  font-size:9px;font-weight:800;margin-top:12px;
+}
+.collab-intro{background:#073f32;color:white;border-color:#073f32}
+.collab-intro .step,.collab-intro p{color:#b8dfce}
+.collab-intro h4{font-size:13px}
+.notice{
+  display:flex;gap:11px;align-items:flex-start;
+  padding:14px 16px;border:1px solid #dceee4;
+  background:#eff9f3;border-radius:12px;margin-top:17px;
+}
+.notice-icon{
+  width:27px;height:27px;flex-shrink:0;border-radius:8px;
+  display:grid;place-items:center;background:#d9f1e2;color:var(--green);
+}
+.notice strong{font-size:10px;color:#176344}
+.notice p{margin:4px 0 0;color:#648174;font-size:9px;line-height:1.7}
+.footer{
+  display:flex;justify-content:space-between;gap:10px;
+  color:#98a49e;font-size:9px;padding:24px 2px 0;
+}
+.overlay{display:none}
+@media(max-width:1150px){
+  .workspace-grid{grid-template-columns:1fr}
+  .detail-panel{position:static}
+  .collab{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:800px){
+  .sidebar{
+    transform:translateX(-100%);transition:transform .25s;
+    box-shadow:10px 0 35px #0002;
+  }
+  .sidebar.open{transform:translateX(0)}
+  .overlay{
+    position:fixed;inset:0;background:#061d16a8;
+    z-index:19;display:none;
+  }
+  .overlay.show{display:block}
+  .main{margin-left:0}
+  .topbar{padding:0 17px}
+  .mobile-menu{display:block}
+  .content{padding:20px 17px 30px}
+}
+@media(max-width:560px){
+  .topbar{min-height:60px}
+  .faculty-chip{display:none}
+  .breadcrumb{font-size:10px}
+  .hero{padding:24px 20px;border-radius:15px}
+  .hero h1{font-size:24px}
+  .hero p{font-size:11px}
+  .section-head{margin-top:24px}
+  .metrics{grid-template-columns:1fr}
+  .metric{display:flex;align-items:center;gap:13px}
+  .metric-top{flex-shrink:0}
+  .metric-value{font-size:22px;margin-top:4px}
+  .metric-note{font-size:9px}
+  .program-list{grid-template-columns:1fr}
+  .panel-head{align-items:flex-start;flex-direction:column}
+  .search-box{width:100%}
+  .panel-body{padding:14px}
+  .action-grid{grid-template-columns:1fr 1fr}
+  .collab{grid-template-columns:1fr}
+  .footer{flex-direction:column}
+}
+@media(max-width:360px){
+  .content{padding-left:11px;padding-right:11px}
+  .action-grid{grid-template-columns:1fr}
+  .hero h1{font-size:21px}
+}
 </style>
 </head>
+
 <body>
+<div class="app">
 
-<header class="header">
-<a href="/sis/dean">← Back to Dean Dashboard</a>
-<h1>Academic Programs</h1>
-<p><%= facultyInfo.name || 'Faculty' %> · Academic program catalogue</p>
-</header>
+<div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<main class="container">
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-icon">L</div>
+    <div>
+      <div class="brand-name">LuxMind SIS</div>
+      <div class="brand-caption">University Management</div>
+    </div>
+  </div>
 
-<section class="stats">
-<div class="stat">
-<span>Registered Programs</span>
-<strong><%= overview.totalPrograms || 0 %></strong>
+  <div class="nav-label">DEAN WORKSPACE</div>
+  <a class="nav-link" href="/sis/dean"><span class="nav-icon">⌂</span>Dashboard</a>
+  <a class="nav-link" href="/sis/dean/faculty-profile"><span class="nav-icon">▣</span>Faculty Profile</a>
+  <a class="nav-link" href="/sis/dean/faculty-structure"><span class="nav-icon">⌘</span>Faculty Structure</a>
+
+  <div class="nav-label">ACADEMIC MANAGEMENT</div>
+  <a class="nav-link active" href="/sis/dean/academic-programs"><span class="nav-icon">▤</span>Academic Programs</a>
+  <a class="nav-link" href="/sis/dean/departments"><span class="nav-icon">▦</span>Departments</a>
+  <a class="nav-link" href="/sis/dean/department-heads"><span class="nav-icon">♙</span>Department Heads</a>
+
+  <div class="nav-label">PEOPLE & COORDINATION</div>
+  <a class="nav-link" href="/sis/dean/faculty-staff"><span class="nav-icon">♧</span>Faculty Staff</a>
+  <a class="nav-link" href="/sis/dean/staff-assignments"><span class="nav-icon">▥</span>Staff Assignments</a>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar"><%= deanInitials %></div>
+      <div>
+        <strong><%= dean.full_name || 'Faculty Dean' %></strong>
+        <small>Dean account</small>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="mobile-menu" onclick="toggleSidebar()" aria-label="Open navigation">☰</button>
+      <div class="breadcrumb">Dean Workspace / <strong>Academic Programs</strong></div>
+    </div>
+    <div class="top-right">
+      <div class="faculty-chip"><%= facultyInfo.name || 'Faculty Workspace' %></div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-kicker">Academic Management Centre</div>
+        <h1>Academic Programs</h1>
+        <p>
+          Explore the academic program portfolio, monitor available fee-structure
+          information, and coordinate related academic administration through
+          connected faculty workspaces.
+        </p>
+        <div class="hero-bottom">
+          <span>Faculty: <%= facultyInfo.name || 'Not specified' %></span>
+          <span>Program Portfolio</span>
+          <span>Dean Oversight</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Portfolio intelligence</div>
+        <h2>Academic Overview</h2>
+        <p>Current information available from the existing university records.</p>
+      </div>
+    </div>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="metric-top">
+          <div class="metric-icon">▤</div>
+        </div>
+        <div>
+          <div class="metric-label">Programs Listed</div>
+          <div class="metric-value"><%= totalPrograms %></div>
+          <div class="metric-note">Distinct program names</div>
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-top">
+          <div class="metric-icon">▧</div>
+        </div>
+        <div>
+          <div class="metric-label">Fee Records</div>
+          <div class="metric-value"><%= totalRecords %></div>
+          <div class="metric-note">Existing fee structure entries</div>
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-top">
+          <div class="metric-icon">⌂</div>
+        </div>
+        <div>
+          <div class="metric-label">Faculty Code</div>
+          <div class="metric-value" style="font-size:21px"><%= facultyInfo.code || '—' %></div>
+          <div class="metric-note"><%= facultyInfo.name || 'Faculty not specified' %></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Explore and inspect</div>
+        <h2>Program Portfolio</h2>
+        <p>Select a program to inspect the information currently available.</p>
+      </div>
+    </div>
+
+    <section class="workspace-grid">
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Program Directory</h3>
+            <p>Search and explore registered program names.</p>
+          </div>
+          <div class="search-box">
+            <span>⌕</span>
+            <input type="search" id="programSearch" placeholder="Search programs..." aria-label="Search programs">
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="filters">
+            <button class="filter active" data-filter="all" onclick="filterPrograms('all',this)">All Programs</button>
+            <button class="filter" data-filter="with-records" onclick="filterPrograms('with-records',this)">With Fee Records</button>
+          </div>
+
+          <div class="program-list" id="programList">
+            <% programList.forEach((item,index)=>{ %>
+              <button type="button"
+                class="program-card <%= index === 0 ? 'selected' : '' %>"
+                data-name="<%= item.program_name %>"
+                data-records="<%= item.fee_records %>"
+                data-search="<%= String(item.program_name || '').toLowerCase() %>"
+                onclick="selectProgram(this)">
+                <div class="program-card-top">
+                  <span class="program-symbol">▤</span>
+                  <span class="program-index">PROGRAM <%= String(index+1).padStart(2,'0') %></span>
+                </div>
+                <h4><%= item.program_name %></h4>
+                <div class="program-meta">
+                  <span>Fee structure entries</span>
+                  <strong><%= item.fee_records %></strong>
+                </div>
+              </button>
+            <% }) %>
+          </div>
+
+          <div class="no-results" id="noResults">
+            No programs match your search.
+          </div>
+
+          <% if (!programList.length) { %>
+            <div class="no-results" style="display:block">
+              No program records are currently available.
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <aside class="panel detail-panel">
+        <div class="panel-head">
+          <div>
+            <h3>Program Information</h3>
+            <p>Selected portfolio record</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="detail-label">Selected program</div>
+          <div class="detail-name" id="detailName">
+            <%= initialProgram ? initialProgram.program_name : 'No program selected' %>
+          </div>
+          <p class="detail-description">
+            This panel displays the program name and the number of existing
+            fee-structure records associated with it.
+          </p>
+
+          <div class="detail-stat">
+            <span>Fee structure records</span>
+            <strong id="detailRecords"><%= initialProgram ? initialProgram.fee_records : 0 %></strong>
+          </div>
+
+          <div class="detail-note">
+            Department ownership, degree level, curriculum and coordinator
+            information are not yet available through this data source.
+          </div>
+        </div>
+      </aside>
+
+    </section>
+
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Triggered administrative actions</div>
+        <h2>Faculty Action Centre</h2>
+        <p>Move from program oversight into the existing management workspaces.</p>
+      </div>
+    </div>
+
+    <section class="action-grid">
+
+      <a class="action-card" href="/sis/dean/departments">
+        <div class="action-icon">▦</div>
+        <h4>Review Departments</h4>
+        <p>Review faculty departments and their existing administrative records.</p>
+        <span class="action-go">Open Departments →</span>
+      </a>
+
+      <a class="action-card" href="/sis/dean/faculty-structure">
+        <div class="action-icon">⌘</div>
+        <h4>Inspect Faculty Structure</h4>
+        <p>Review organizational structure, department coverage and academic advising.</p>
+        <span class="action-go">Open Structure →</span>
+      </a>
+
+      <a class="action-card" href="/sis/dean/faculty-staff">
+        <div class="action-icon">♧</div>
+        <h4>Coordinate Faculty Staff</h4>
+        <p>Review existing staff records and faculty staffing information.</p>
+        <span class="action-go">Open Faculty Staff →</span>
+      </a>
+
+      <a class="action-card" href="/sis/dean/staff-assignments">
+        <div class="action-icon">▥</div>
+        <h4>Review Staff Assignments</h4>
+        <p>Inspect existing semester advisor assignments and allocation records.</p>
+        <span class="action-go">Open Assignments →</span>
+      </a>
+
+      <a class="action-card" href="/sis/dean/department-heads">
+        <div class="action-icon">♙</div>
+        <h4>Coordinate Department Heads</h4>
+        <p>Review department leadership and existing head assignments.</p>
+        <span class="action-go">Open Department Heads →</span>
+      </a>
+
+      <a class="action-card" href="/sis/dean/faculty-profile">
+        <div class="action-icon">▣</div>
+        <h4>Review Faculty Profile</h4>
+        <p>Access the faculty information and its existing administrative profile.</p>
+        <span class="action-go">Open Faculty Profile →</span>
+      </a>
+
+    </section>
+
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Cross-workspace coordination</div>
+        <h2>Collaborative Academic Workflow</h2>
+        <p>Connected administrative responsibilities across the faculty.</p>
+      </div>
+    </div>
+
+    <section class="collab">
+      <article class="collab-card collab-intro">
+        <div class="step">FACULTY WORKFLOW</div>
+        <h4>Coordinate academic administration</h4>
+        <p>Use the connected workspaces to review related responsibilities across the faculty.</p>
+      </article>
+
+      <article class="collab-card">
+        <div class="step">01 · DEPARTMENTS</div>
+        <h4>Department review</h4>
+        <p>Review department records before coordinating academic responsibilities.</p>
+        <a href="/sis/dean/departments">Review departments →</a>
+      </article>
+
+      <article class="collab-card">
+        <div class="step">02 · LEADERSHIP</div>
+        <h4>Leadership coordination</h4>
+        <p>Access department head assignments and faculty leadership records.</p>
+        <a href="/sis/dean/department-heads">Coordinate heads →</a>
+      </article>
+
+      <article class="collab-card">
+        <div class="step">03 · STAFF</div>
+        <h4>Staff coordination</h4>
+        <p>Review staff information and semester advisor assignments.</p>
+        <a href="/sis/dean/staff-assignments">Review assignments →</a>
+      </article>
+    </section>
+
+    <section class="notice">
+      <div class="notice-icon">i</div>
+      <div>
+        <strong>Data integrity and collaboration</strong>
+        <p>
+          Program names and fee-record counts are read from the existing
+          <code>fee_structure</code> source. The actions above open existing
+          faculty workspaces; they do not create duplicate records or claim
+          that a task has been assigned or completed. Persistent collaborative
+          task tracking can be connected as a separate backend feature.
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>LuxMind SIS · Academic Management</span>
+      <span>Faculty Administration Workspace</span>
+    </footer>
+
+  </main>
 </div>
-<div class="stat">
-<span>Fee Structure Records</span>
-<strong><%= overview.totalFeeRecords || 0 %></strong>
 </div>
-</section>
-
-<section class="panel">
-<h2>Programs Directory</h2>
-<p class="sub">Program names currently registered in the university fee structure.</p>
-
-<div class="toolbar">
-<input id="programSearch" type="search" placeholder="Search programs..." oninput="filterPrograms()">
-</div>
-
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Program Name</th>
-<th>Fee Structure Records</th>
-</tr>
-</thead>
-<tbody id="programRows">
-<% if (programList.length) { %>
-<% programList.forEach((item, index) => { %>
-<tr>
-<td><%= index + 1 %></td>
-<td class="program-name"><%= item.program_name %></td>
-<td class="number"><%= item.fee_records %></td>
-</tr>
-<% }) %>
-<% } else { %>
-<tr><td colspan="3" class="empty">No program records were found in the fee structure.</td></tr>
-<% } %>
-</tbody>
-</table>
-</div>
-</section>
-
-<section class="panel">
-<h2>Academic Data Integration</h2>
-<p class="sub">Current workspace data coverage</p>
-<div class="notice">
-<strong>Existing data reused:</strong> Program names and fee-record counts come from the existing <code>fee_structure</code> table.
-<br><br>
-Department ownership, degree levels, program coordinators, curriculum mapping, and program accreditation are not assumed or duplicated here. They can be connected when their existing data relationships are established.
-</div>
-</section>
-
-</main>
-
-<footer class="footer">LuxMind SIS · Academic Management</footer>
 
 <script>
-function filterPrograms(){
-  const query = document.getElementById('programSearch').value.toLowerCase();
-  document.querySelectorAll('#programRows tr').forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
-  });
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
 }
+
+function selectProgram(card){
+  document.querySelectorAll('.program-card').forEach(item=>{
+    item.classList.remove('selected');
+  });
+
+  card.classList.add('selected');
+  document.getElementById('detailName').textContent = card.dataset.name || '';
+  document.getElementById('detailRecords').textContent = card.dataset.records || '0';
+}
+
+function filterPrograms(type,button){
+  document.querySelectorAll('.filter').forEach(item=>{
+    item.classList.remove('active');
+  });
+  button.classList.add('active');
+  applyProgramFilters();
+}
+
+function applyProgramFilters(){
+  const query = document.getElementById('programSearch').value.trim().toLowerCase();
+  const activeFilter = document.querySelector('.filter.active');
+  const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+  const cards = document.querySelectorAll('.program-card');
+  let visible = 0;
+
+  cards.forEach(card=>{
+    const matchesText = (card.dataset.search || '').includes(query);
+    const records = Number(card.dataset.records || 0);
+    const matchesFilter = filter === 'all' || records > 0;
+    const show = matchesText && matchesFilter;
+
+    card.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+
+  document.getElementById('noResults').style.display =
+    cards.length && visible === 0 ? 'block' : 'none';
+}
+
+document.getElementById('programSearch').addEventListener('input',applyProgramFilters);
+
+document.querySelectorAll('.sidebar .nav-link').forEach(link=>{
+  link.addEventListener('click',()=>{
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  });
+});
 </script>
 </body>
 </html>

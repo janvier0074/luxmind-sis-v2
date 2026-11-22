@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Assignments | LuxMind</title>
+
+<style>
+:root {
+  --green: #0e9f6e;
+  --green-dark: #087f5b;
+  --bg: #f5f7f9;
+  --white: #ffffff;
+  --text: #172b25;
+  --muted: #718078;
+  --border: #e5ece8;
+  --orange: #b7791f;
+  --red: #c53030;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  height: 68px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+}
+
+.brand {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 13px;
+}
+
+.top-right span {
+  color: var(--muted);
+}
+
+.top-right strong {
+  color: var(--text);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 30px auto;
+  padding: 0 25px;
+}
+
+.back-link {
+  display: inline-flex;
+  text-decoration: none;
+  color: var(--green-dark);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.heading h1 {
+  font-size: 27px;
+  margin: 0 0 8px;
+}
+
+.heading p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 14px;
+}
+
+.faculty-label {
+  background: #e8f7f0;
+  color: var(--green-dark);
+  padding: 10px 15px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 17px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 21px;
+}
+
+.stat-card .label {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.stat-card .number {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.stat-card.green .number {
+  color: var(--green);
+}
+
+.stat-card.orange .number {
+  color: var(--orange);
+}
+
+.panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.panel-header p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.search {
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 240px;
+  outline: none;
+  font-size: 13px;
+}
+
+.search:focus {
+  border-color: var(--green);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 750px;
+}
+
+th {
+  background: #f8faf9;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: .5px;
+  text-align: left;
+  padding: 15px 20px;
+}
+
+td {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.department {
+  font-weight: 700;
+}
+
+.department-code {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.semester {
+  background: #eef8f3;
+  color: var(--green-dark);
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.status {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status.assigned {
+  background: #e7f7ee;
+  color: #16794b;
+}
+
+.status.placeholder {
+  background: #fff4df;
+  color: #98620b;
+}
+
+.no-record {
+  text-align: center;
+  padding: 45px 20px;
+  color: var(--muted);
+}
+
+.footer-note {
+  padding: 17px 22px;
+  color: var(--muted);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-card .number {
+    font-size: 23px;
+  }
+
+  .container {
+    padding: 0 14px;
+  }
+
+  .topbar {
+    padding: 0 15px;
+  }
+
+  .search {
+    width: 100%;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">LuxMind</div>
+
+  <div class="top-right">
+    <span>Dean Portal</span>
+    <strong>
+      <%= user && (user.full_name || user.username)
+        ? (user.full_name || user.username)
+        : 'Dean' %>
+    </strong>
+  </div>
+</header>
+
+<main class="container">
+
+  <a href="/sis/dean" class="back-link">
+    ← Back to Dean Dashboard
+  </a>
+
+  <section class="heading">
+    <div>
+      <h1>Staff Assignments</h1>
+      <p>
+        Faculty-wide overview of semester advisor assignments
+        across your departments.
+      </p>
+    </div>
+
+    <div class="faculty-label">
+      <%= faculty.name %>
+      <% if (faculty.code) { %>
+        · <%= faculty.code %>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="stats">
+
+    <div class="stat-card">
+      <div class="label">Total Departments</div>
+      <div class="number"><%= stats.departments %></div>
+    </div>
+
+    <div class="stat-card green">
+      <div class="label">Total Records</div>
+      <div class="number"><%= stats.assignments %></div>
+    </div>
+
+    <div class="stat-card green">
+      <div class="label">Assigned Advisors</div>
+      <div class="number"><%= stats.assigned %></div>
+    </div>
+
+    <div class="stat-card orange">
+      <div class="label">Placeholder Records</div>
+      <div class="number"><%= stats.placeholders %></div>
+    </div>
+
+  </section>
+
+  <section class="panel">
+
+    <div class="panel-header">
+      <div>
+        <h2>Department Semester Assignments</h2>
+        <p>Advisor allocation overview · Read-only</p>
+      </div>
+
+      <input
+        type="search"
+        class="search"
+        id="assignmentSearch"
+        placeholder="Search department or advisor..."
+      >
+    </div>
+
+    <div class="table-wrap">
+      <table id="assignmentsTable">
+
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Semester</th>
+            <th>Advisor</th>
+            <th>Assignment Status</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+        <% if (assignments.length > 0) { %>
+
+          <% assignments.forEach(item => { %>
+
+            <tr>
+              <td>
+                <div class="department">
+                  <%= item.department_name %>
+                </div>
+
+                <div class="department-code">
+                  <%= item.department_code || 'No department code' %>
+                </div>
+              </td>
+
+              <td>
+                <% if (item.semester_number !== null) { %>
+                  <span class="semester">
+                    Semester <%= item.semester_number %>
+                  </span>
+                <% } else { %>
+                  <span>Not configured</span>
+                <% } %>
+              </td>
+
+              <td>
+                <%= item.advisor_name || 'Not assigned' %>
+              </td>
+
+              <td>
+                <% if (item.assignment_id === null) { %>
+                  <span class="status placeholder">
+                    No record
+                  </span>
+                <% } else if (item.is_placeholder) { %>
+                  <span class="status placeholder">
+                    Placeholder
+                  </span>
+                <% } else { %>
+                  <span class="status assigned">
+                    Assigned
+                  </span>
+                <% } %>
+              </td>
+
+              <td>
+                <% if (item.updated_at) { %>
+                  <%= new Date(item.updated_at).toLocaleDateString() %>
+                <% } else { %>
+                  —
+                <% } %>
+              </td>
+            </tr>
+
+          <% }) %>
+
+        <% } else { %>
+
+          <tr>
+            <td colspan="5" class="no-record">
+              No department assignment records were found.
+            </td>
+          </tr>
+
+        <% } %>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer-note">
+      This page provides oversight of advisor assignments within
+      your faculty. Assignment changes are managed through the
+      appropriate administrative workspace.
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+document.getElementById('assignmentSearch').addEventListener('input', function () {
+  const search = this.value.toLowerCase();
+  const rows = document.querySelectorAll('#assignmentsTable tbody tr');
+
+  rows.forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(search)
+      ? ''
+      : 'none';
+  });
+});
+</script>
+
+</body>
+</html>

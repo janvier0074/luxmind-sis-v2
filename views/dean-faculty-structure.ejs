@@ -6,17 +6,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Faculty Structure | LuxMind</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
 :root {
-  --green: #0e9f6e;
-  --green-dark: #087f5b;
-  --bg: #f5f8f6;
-  --white: #fff;
-  --text: #18332a;
-  --muted: #718078;
-  --border: #e4ece7;
-  --orange: #a66b12;
-  --red: #b83232;
+  --green: #07966d;
+  --green-dark: #087653;
+  --green-deep: #075b43;
+  --green-light: #e8f7f0;
+  --mint: #d9f5e8;
+  --navy: #142c3b;
+  --text: #20352f;
+  --muted: #82918a;
+  --bg: #f3f7f5;
+  --white: #ffffff;
+  --border: #e6eee9;
+  --orange: #d18a2c;
+  --red: #d35454;
+  --shadow: 0 8px 30px rgba(24, 58, 43, .055);
+  --shadow-hover: 0 14px 35px rgba(24, 58, 43, .10);
+  --radius: 16px;
 }
 
 * { box-sizing: border-box; }
@@ -25,97 +36,249 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: Inter, Arial, sans-serif;
+  font-family: 'Inter', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+button, input { font: inherit; }
+
 .topbar {
-  min-height: 68px;
-  background: white;
+  height: 76px;
+  background: rgba(255,255,255,.96);
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 30px;
+  padding: 0 5%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 3px 18px rgba(20,44,59,.035);
+  backdrop-filter: blur(12px);
+}
+
+.brand-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 21px;
+  background: linear-gradient(135deg, #10b981, #087653);
+  box-shadow: 0 5px 13px rgba(7,150,109,.23);
 }
 
 .brand {
-  font-size: 21px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22px;
   font-weight: 800;
-  color: var(--green);
+  letter-spacing: -.8px;
+  color: var(--green-dark);
+}
+
+.brand small {
+  display: block;
+  color: #91a099;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-top: -2px;
 }
 
 .top-user {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   color: var(--muted);
+  font-size: 12px;
+}
+
+.user-avatar {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.top-user strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  margin-top: 3px;
 }
 
 .container {
-  max-width: 1450px;
-  margin: 30px auto;
-  padding: 0 25px 45px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 32px 35px 55px;
 }
 
 .back {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   text-decoration: none;
   color: var(--green-dark);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  margin-bottom: 22px;
+  margin-bottom: 27px;
+  transition: .2s;
+}
+
+.back:hover {
+  color: var(--green);
+  transform: translateX(-3px);
 }
 
 .heading {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 20px;
+  margin-bottom: 27px;
 }
 
 .heading h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
+  margin: 0 0 9px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  color: var(--navy);
 }
 
 .heading p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.heading-label {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+  margin-bottom: 9px;
 }
 
 .faculty-tag {
-  background: #e8f7f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #e9f8f0, #f5fcf8);
+  border: 1px solid #d4eee0;
+  padding: 14px 19px;
+  border-radius: 13px;
   color: var(--green-dark);
-  padding: 11px 15px;
-  border-radius: 9px;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
+  box-shadow: 0 4px 15px rgba(7,150,109,.04);
+}
+
+.faculty-tag-icon {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  background: white;
+  border-radius: 10px;
+  font-size: 18px;
 }
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 25px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 27px;
 }
 
 .stat {
   background: white;
   border: 1px solid var(--border);
-  border-radius: 13px;
-  padding: 20px;
+  border-radius: var(--radius);
+  padding: 21px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform .25s, box-shadow .25s;
+}
+
+.stat:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat:after {
+  content: "";
+  position: absolute;
+  width: 95px;
+  height: 95px;
+  right: -35px;
+  top: -35px;
+  border-radius: 50%;
+  background: var(--accent-bg, #e8f7f0);
+}
+
+.stat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 19px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-bg, #e8f7f0);
+  color: var(--accent, var(--green));
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--muted);
-  margin-bottom: 12px;
+  margin-bottom: 9px;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-number {
-  font-size: 27px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 30px;
   font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--navy);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-foot {
+  color: #9aa69f;
+  font-size: 10px;
+  margin-top: 6px;
 }
 
 .green { color: var(--green); }
@@ -124,88 +287,87 @@ body {
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
   background: white;
   border: 1px solid var(--border);
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  padding: 9px;
+  border-radius: 14px;
+  margin-bottom: 19px;
+  box-shadow: var(--shadow);
 }
 
 .tab {
   border: 0;
   background: transparent;
-  padding: 11px 16px;
-  border-radius: 8px;
-  color: var(--muted);
-  font-size: 13px;
+  padding: 12px 18px;
+  border-radius: 9px;
+  color: #82918a;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: .2s;
+}
+
+.tab:hover {
+  background: #f4f8f5;
+  color: var(--green-dark);
 }
 
 .tab.active {
-  background: #e8f7f0;
-  color: var(--green-dark);
+  background: linear-gradient(135deg, #0b9b70, #087653);
+  color: white;
+  box-shadow: 0 4px 12px rgba(7,150,109,.20);
 }
 
 .panel {
   display: none;
   background: white;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--shadow);
+  animation: panelIn .25s ease;
 }
 
 .panel.active { display: block; }
 
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .panel-heading {
-  padding: 20px 22px;
+  padding: 23px 25px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .panel-heading h2 {
-  margin: 0 0 6px;
+  margin: 0 0 7px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 17px;
+  color: var(--navy);
 }
 
 .panel-heading p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.6;
 }
 
-.faculty-node {
-  margin: 25px auto;
-  max-width: 420px;
-  text-align: center;
-  padding: 22px;
-  background: #e8f7f0;
-  border: 1px solid #ccebdc;
-  border-radius: 13px;
-}
-
-.node-icon {
-  font-size: 25px;
-  margin-bottom: 8px;
-}
-
-.faculty-node h3 {
-  margin: 0 0 7px;
-  color: var(--green-dark);
-}
-
-.faculty-node p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.connector {
-  width: 2px;
-  height: 25px;
-  background: #b9d8c8;
-  margin: -25px auto 0;
+.section-label {
+  color: var(--green);
+  background: var(--green-light);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .department-grid {
@@ -217,172 +379,372 @@ body {
 
 .department-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px;
-  background: white;
+  border-radius: 14px;
+  padding: 19px;
+  background: linear-gradient(145deg, #fff, #fbfdfc);
   position: relative;
+  transition: .25s;
 }
 
-.department-card:before {
-  content: "";
-  position: absolute;
-  top: -26px;
-  left: 50%;
-  height: 25px;
-  width: 1px;
-  background: #b9d8c8;
+.department-card:hover {
+  border-color: #b9e5d0;
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-3px);
 }
 
 .department-card h3 {
-  font-size: 15px;
-  margin: 0 0 5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  margin: 0 0 6px;
+  color: var(--navy);
 }
 
 .code {
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 17px;
+  font-size: 10px;
+  color: #91a098;
+  margin-bottom: 15px;
 }
 
 .head {
-  background: #f5f8f6;
-  padding: 12px;
-  border-radius: 9px;
+  background: #f3f8f5;
+  border: 1px solid #edf3ef;
+  padding: 13px;
+  border-radius: 10px;
   margin-bottom: 13px;
 }
 
 .head small {
   display: block;
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #8a9a91;
+  margin-bottom: 7px;
 }
 
 .head strong {
-  font-size: 13px;
+  font-size: 12px;
+  color: var(--text);
 }
 
 .status {
-  display: inline-block;
-  padding: 6px 9px;
-  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 30px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.status.active {
+.status:before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status.active, .status.assigned {
   background: #e7f7ee;
-  color: #16794b;
+  color: #16834e;
 }
 
-.status.missing {
-  background: #fff2e3;
-  color: #a65e10;
+.status.missing, .status.placeholder {
+  background: #fff4e5;
+  color: #b8751c;
 }
 
 .department-metrics {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding-top: 13px;
+  padding-top: 14px;
+  margin-top: 13px;
   border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 11px;
+  color: #82918a;
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.table-wrap { overflow-x: auto; }
+.department-metrics strong {
+  color: var(--navy);
+  font-size: 12px;
+}
+
+.faculty-node {
+  margin: 30px auto 25px;
+  max-width: 430px;
+  text-align: center;
+  padding: 25px;
+  background: linear-gradient(135deg, #087653, #0ca678);
+  border: 1px solid #07855e;
+  border-radius: 17px;
+  color: white;
+  box-shadow: 0 12px 28px rgba(7,150,109,.18);
+  position: relative;
+}
+
+.node-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+  border-radius: 15px;
+  background: rgba(255,255,255,.17);
+  font-size: 25px;
+}
+
+.faculty-node h3 {
+  margin: 0 0 7px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+}
+
+.faculty-node p {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(255,255,255,.78);
+}
+
+.connector {
+  width: 2px;
+  height: 26px;
+  background: #a8d8c1;
+  margin: -25px auto 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  padding-bottom: 3px;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
+  min-width: 720px;
 }
 
 th {
-  background: #f8faf9;
-  padding: 14px 18px;
+  background: #f5f9f6;
+  padding: 15px 19px;
   text-align: left;
-  color: var(--muted);
-  font-size: 11px;
+  color: #82918a;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: .4px;
+  letter-spacing: .8px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 td {
-  padding: 15px 18px;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
+  padding: 16px 19px;
+  border-top: 1px solid #edf2ee;
+  font-size: 11px;
+  color: #53665d;
+  vertical-align: middle;
+}
+
+tbody tr {
+  transition: background .2s;
+}
+
+tbody tr:hover {
+  background: #f8fcf9;
+}
+
+td strong {
+  color: var(--navy);
+  font-size: 12px;
+}
+
+td .code {
+  margin: 5px 0 0;
 }
 
 .semester {
+  display: inline-block;
   background: #e8f7f0;
   color: var(--green-dark);
-  padding: 6px 9px;
+  padding: 7px 10px;
   border-radius: 7px;
-  font-weight: 700;
-  font-size: 11px;
+  font-weight: 800;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
-.placeholder {
-  background: #fff2e3;
-  color: #a65e10;
-}
-
-.assigned {
-  background: #e7f7ee;
-  color: #16794b;
+.search-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 22px;
+  flex-wrap: wrap;
 }
 
 .search {
-  margin: 17px 20px;
-  width: min(320px, calc(100% - 40px));
+  width: min(350px, 100%);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 11px 13px;
-  font-size: 13px;
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: 11px;
   outline: none;
+  background: #fbfdfc;
+  color: var(--text);
+  transition: .2s;
 }
 
-.search:focus { border-color: var(--green); }
+.search:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(7,150,109,.09);
+  background: white;
+}
+
+.search-hint {
+  color: #9aa69f;
+  font-size: 10px;
+}
 
 .empty {
   text-align: center;
-  padding: 35px;
+  padding: 40px 20px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.empty-icon {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.advising-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 20px 22px 0;
+}
+
+.advising-stat {
+  border: 1px solid var(--border);
+  background: #fbfdfc;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.advising-stat span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.advising-stat strong {
+  display: block;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 23px;
+  color: var(--navy);
+  margin-top: 7px;
 }
 
 .note {
-  border-top: 1px solid var(--border);
-  padding: 15px 20px;
-  color: var(--muted);
-  font-size: 11px;
+  margin-top: 22px;
+  border: 1px solid #dcefe4;
+  background: linear-gradient(100deg, #effaf4, #f9fcfa);
+  border-radius: 12px;
+  padding: 16px 19px;
+  color: #668276;
+  font-size: 10px;
+  line-height: 1.7;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-@media(max-width: 1000px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
+.note-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: white;
+  border-radius: 9px;
+  color: var(--green);
+  font-size: 15px;
+}
+
+.footer {
+  padding: 22px 0 0;
+  text-align: center;
+  color: #a2ada7;
+  font-size: 10px;
+}
+
+@media(max-width: 1050px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .department-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media(max-width: 600px) {
-  .container { padding: 0 13px 30px; }
-  .topbar { padding: 0 15px; }
-  .stats { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+@media(max-width: 650px) {
+  .topbar { padding: 0 16px; height: 68px; }
+  .brand { font-size: 19px; }
+  .top-user { font-size: 10px; gap: 7px; }
+  .user-avatar { width: 34px; height: 34px; }
+  .container { padding: 23px 13px 35px; }
+  .heading { align-items: flex-start; }
+  .heading h1 { font-size: 25px; }
+  .faculty-tag { width: 100%; }
+  .stats { gap: 9px; }
   .stat { padding: 14px; }
-  .stat-number { font-size: 22px; }
-  .department-grid { grid-template-columns: 1fr; }
-  .department-card:before { display: none; }
+  .stat-number { font-size: 24px; }
+  .stat-icon { width: 34px; height: 34px; }
+  .stat-label { font-size: 10px; }
+  .department-grid { grid-template-columns: 1fr; padding: 15px; }
+  .tabs { gap: 5px; padding: 7px; }
+  .tab { flex: 1 1 calc(50% - 5px); padding: 11px 6px; font-size: 10px; }
+  .panel-heading { padding: 18px; }
+  .search-area { padding: 15px; }
+  .search { width: 100%; }
+  .advising-stats { padding: 15px; gap: 9px; }
+  .advising-stat { padding: 12px; }
+  .advising-stat strong { font-size: 20px; }
+  .faculty-node { margin: 20px 15px 25px; }
+}
+
+@media(max-width: 370px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .stat-number { font-size: 21px; }
+  .brand small { letter-spacing: 1px; }
 }
 </style>
 </head>
 
 <body>
 
+<%
+const deanUser = user || {};
+const facultyInfo = faculty || {};
+const departmentList = Array.isArray(departments) ? departments : [];
+const advisorList = Array.isArray(advisors) ? advisors : [];
+const summary = stats || {};
+const deanDisplayName = deanUser.full_name || deanUser.username || 'Dean';
+%>
+
 <header class="topbar">
-  <div class="brand">LuxMind</div>
+  <div class="brand-area">
+    <div class="brand-icon">✦</div>
+    <div class="brand">
+      LuxMind
+      <small>INSTITUTIONAL MANAGEMENT</small>
+    </div>
+  </div>
+
   <div class="top-user">
-    Dean Portal ·
-    <strong><%= user.full_name || user.username || 'Dean' %></strong>
+    <div>
+      Dean Portal
+      <strong><%= deanDisplayName %></strong>
+    </div>
+    <div class="user-avatar">
+      <%= String(deanDisplayName).charAt(0).toUpperCase() %>
+    </div>
   </div>
 </header>
 
@@ -392,116 +754,167 @@ td {
 
   <section class="heading">
     <div>
+      <div class="heading-label">ACADEMIC ADMINISTRATION / STRUCTURE</div>
       <h1>Faculty Structure</h1>
       <p>Organizational hierarchy, department leadership and academic advising.</p>
     </div>
 
     <div class="faculty-tag">
-      <%= faculty.name %> · <%= faculty.code || 'Faculty' %>
+      <div class="faculty-tag-icon">🏛️</div>
+      <div>
+        <%= facultyInfo.name || 'Faculty' %>
+        <div style="font-size:10px;font-weight:500;color:#7c9c8c;margin-top:4px">
+          <%= facultyInfo.code || 'Faculty Administration' %>
+        </div>
+      </div>
     </div>
   </section>
 
+  <!-- MAIN STATISTICS -->
   <section class="stats">
-    <div class="stat">
+
+    <div class="stat" style="--accent:#07966d;--accent-bg:#e8f7f0">
+      <div class="stat-top">
+        <div class="stat-icon">▦</div>
+        <span class="section-label">STRUCTURE</span>
+      </div>
       <div class="stat-label">Total Departments</div>
-      <div class="stat-number"><%= stats.departments %></div>
+      <div class="stat-number"><%= Number(summary.departments || 0) %></div>
+      <div class="stat-foot">Departments under this faculty</div>
     </div>
 
-    <div class="stat">
+    <div class="stat" style="--accent:#2787bd;--accent-bg:#eaf5fc">
+      <div class="stat-top">
+        <div class="stat-icon">♙</div>
+        <span class="section-label">LEADERSHIP</span>
+      </div>
       <div class="stat-label">Department Heads</div>
-      <div class="stat-number green"><%= stats.departmentHeads %></div>
+      <div class="stat-number green"><%= Number(summary.departmentHeads || 0) %></div>
+      <div class="stat-foot">Departments with assigned heads</div>
     </div>
 
-    <div class="stat">
+    <div class="stat" style="--accent:#8256b5;--accent-bg:#f2edfa">
+      <div class="stat-top">
+        <div class="stat-icon">♧</div>
+        <span class="section-label">WORKFORCE</span>
+      </div>
       <div class="stat-label">Academic Staff</div>
-      <div class="stat-number"><%= stats.staff %></div>
+      <div class="stat-number"><%= Number(summary.staff || 0) %></div>
+      <div class="stat-foot">Registered academic personnel</div>
     </div>
 
-    <div class="stat">
+    <div class="stat" style="--accent:#d18a2c;--accent-bg:#fff4e5">
+      <div class="stat-top">
+        <div class="stat-icon">⚑</div>
+        <span class="section-label">ATTENTION</span>
+      </div>
       <div class="stat-label">Departments Without Heads</div>
-      <div class="stat-number orange"><%= stats.unassignedHeads %></div>
+      <div class="stat-number orange"><%= Number(summary.unassignedHeads || 0) %></div>
+      <div class="stat-foot">Leadership assignments pending</div>
     </div>
+
   </section>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="overview">Overview</button>
-    <button class="tab" data-tab="organization">Organizational Chart</button>
-    <button class="tab" data-tab="departments">Departments</button>
-    <button class="tab" data-tab="advising">Academic Advising</button>
+  <!-- NAVIGATION -->
+  <nav class="tabs" aria-label="Faculty structure sections">
+    <button class="tab active" type="button" data-tab="overview">◈ Overview</button>
+    <button class="tab" type="button" data-tab="organization">⌘ Organizational Chart</button>
+    <button class="tab" type="button" data-tab="departments">▤ Departments</button>
+    <button class="tab" type="button" data-tab="advising">♧ Academic Advising</button>
   </nav>
 
   <!-- OVERVIEW -->
   <section class="panel active" id="overview">
+
     <div class="panel-heading">
-      <h2>Faculty Overview</h2>
-      <p>Summary of the faculty's organizational and academic structure.</p>
+      <div>
+        <h2>Faculty Overview</h2>
+        <p>Summary of the faculty's organizational and academic structure.</p>
+      </div>
+      <span class="section-label">FACULTY SUMMARY</span>
     </div>
 
     <div class="department-grid">
+
       <div class="department-card">
+        <div class="stat-icon" style="margin-bottom:15px">♙</div>
         <h3>Department Leadership</h3>
         <div class="code">Leadership coverage</div>
-        <div class="stat-number green"><%= stats.departmentHeads %></div>
+        <div class="stat-number green"><%= Number(summary.departmentHeads || 0) %></div>
         <p class="code">Departments with assigned heads</p>
       </div>
 
       <div class="department-card">
+        <div class="stat-icon" style="background:#eaf5fc;color:#2787bd;margin-bottom:15px">▤</div>
         <h3>Teaching Staff</h3>
         <div class="code">Faculty teaching workforce</div>
-        <div class="stat-number"><%= stats.teachers %></div>
+        <div class="stat-number"><%= Number(summary.teachers || 0) %></div>
         <p class="code">Registered teachers</p>
       </div>
 
       <div class="department-card">
+        <div class="stat-icon" style="background:#f2edfa;color:#8256b5;margin-bottom:15px">♧</div>
         <h3>Academic Advisors</h3>
         <div class="code">Faculty advising workforce</div>
-        <div class="stat-number"><%= stats.advisors %></div>
+        <div class="stat-number"><%= Number(summary.advisors || 0) %></div>
         <p class="code">Registered advisors</p>
       </div>
 
       <div class="department-card">
+        <div class="stat-icon" style="background:#eaf5fc;color:#2787bd;margin-bottom:15px">▦</div>
         <h3>Semester Assignments</h3>
         <div class="code">Advisor allocation records</div>
-        <div class="stat-number"><%= stats.semesterAssignments %></div>
-        <p class="code">Configured records</p>
+        <div class="stat-number"><%= Number(summary.semesterAssignments || 0) %></div>
+        <p class="code">Configured semester records</p>
       </div>
 
       <div class="department-card">
+        <div class="stat-icon" style="background:#fff4e5;color:#d18a2c;margin-bottom:15px">◷</div>
         <h3>Placeholder Advisors</h3>
         <div class="code">Unconfirmed advisor records</div>
-        <div class="stat-number orange"><%= stats.placeholders %></div>
+        <div class="stat-number orange"><%= Number(summary.placeholders || 0) %></div>
         <p class="code">Placeholder assignments</p>
       </div>
 
       <div class="department-card">
+        <div class="stat-icon" style="background:#fff4e5;color:#d18a2c;margin-bottom:15px">⚑</div>
         <h3>Leadership Gaps</h3>
         <div class="code">Departments needing attention</div>
-        <div class="stat-number orange"><%= stats.unassignedHeads %></div>
+        <div class="stat-number orange"><%= Number(summary.unassignedHeads || 0) %></div>
         <p class="code">Departments without a head</p>
       </div>
+
     </div>
   </section>
 
   <!-- ORGANIZATIONAL CHART -->
   <section class="panel" id="organization">
+
     <div class="panel-heading">
-      <h2>Organizational Chart</h2>
-      <p>Faculty leadership and department reporting structure.</p>
+      <div>
+        <h2>Organizational Chart</h2>
+        <p>Faculty leadership and department reporting structure.</p>
+      </div>
+      <span class="section-label">ORGANIZATION</span>
     </div>
 
     <div class="faculty-node">
       <div class="node-icon">🏛️</div>
-      <h3><%= faculty.name %></h3>
-      <p>Faculty of LuxMind · Dean</p>
+      <h3><%= facultyInfo.name || 'Faculty' %></h3>
+      <p>Faculty Administration · Dean</p>
     </div>
 
     <div class="connector"></div>
 
     <div class="department-grid">
-      <% if (departments.length) { %>
-        <% departments.forEach(department => { %>
+
+      <% if (departmentList.length) { %>
+
+        <% departmentList.forEach(department => { %>
+
           <article class="department-card">
-            <h3><%= department.name %></h3>
+
+            <h3><%= department.name || 'Unnamed Department' %></h3>
             <div class="code"><%= department.code || 'No department code' %></div>
 
             <div class="head">
@@ -509,8 +922,11 @@ td {
               <strong>
                 <%= department.head_name || 'No department head assigned' %>
               </strong>
+
               <% if (department.head_username) { %>
-                <div class="code"><%= department.head_username %></div>
+                <div class="code" style="margin-top:6px;margin-bottom:0">
+                  @<%= department.head_username %>
+                </div>
               <% } %>
             </div>
 
@@ -521,33 +937,50 @@ td {
             <% } %>
 
             <div class="department-metrics">
-              <span><%= department.staff_count %> Staff</span>
-              <span><%= department.teacher_count %> Teachers</span>
+              <span><strong><%= Number(department.staff_count || 0) %></strong> Staff</span>
+              <span><strong><%= Number(department.teacher_count || 0) %></strong> Teachers</span>
             </div>
+
           </article>
+
         <% }) %>
+
       <% } else { %>
-        <div class="empty">No departments found in this faculty.</div>
+
+        <div class="empty">
+          <div class="empty-icon">▦</div>
+          No departments found in this faculty.
+        </div>
+
       <% } %>
+
     </div>
   </section>
 
-  <!-- DEPARTMENTS -->
+  <!-- DEPARTMENT DIRECTORY -->
   <section class="panel" id="departments">
+
     <div class="panel-heading">
-      <h2>Department Directory</h2>
-      <p>Department leadership and workforce overview.</p>
+      <div>
+        <h2>Department Directory</h2>
+        <p>Department leadership and workforce overview.</p>
+      </div>
+      <span class="section-label"><%= departmentList.length %> DEPARTMENTS</span>
     </div>
 
-    <input
-      class="search"
-      id="departmentSearch"
-      type="search"
-      placeholder="Search departments or department heads..."
-    >
+    <div class="search-area">
+      <input
+        class="search"
+        id="departmentSearch"
+        type="search"
+        placeholder="⌕  Search departments or department heads..."
+      >
+      <span class="search-hint">Search by department name, code or head</span>
+    </div>
 
     <div class="table-wrap">
       <table id="departmentTable">
+
         <thead>
           <tr>
             <th>Department</th>
@@ -558,58 +991,93 @@ td {
             <th>Leadership</th>
           </tr>
         </thead>
+
         <tbody>
-          <% departments.forEach(department => { %>
+
+          <% if (departmentList.length) { %>
+
+            <% departmentList.forEach(department => { %>
+
+              <tr>
+                <td>
+                  <strong><%= department.name || 'Unnamed Department' %></strong>
+                  <div class="code"><%= department.code || 'No code' %></div>
+                </td>
+
+                <td><%= department.head_name || 'Not assigned' %></td>
+
+                <td><strong><%= Number(department.staff_count || 0) %></strong></td>
+
+                <td><%= Number(department.teacher_count || 0) %></td>
+
+                <td><%= Number(department.advisor_count || 0) %></td>
+
+                <td>
+                  <% if (department.head_id) { %>
+                    <span class="status active">Assigned</span>
+                  <% } else { %>
+                    <span class="status missing">Unassigned</span>
+                  <% } %>
+                </td>
+              </tr>
+
+            <% }) %>
+
+          <% } else { %>
+
             <tr>
-              <td>
-                <strong><%= department.name %></strong>
-                <div class="code"><%= department.code || 'No code' %></div>
-              </td>
-              <td><%= department.head_name || 'Not assigned' %></td>
-              <td><%= department.staff_count %></td>
-              <td><%= department.teacher_count %></td>
-              <td><%= department.advisor_count %></td>
-              <td>
-                <% if (department.head_id) { %>
-                  <span class="status active">Assigned</span>
-                <% } else { %>
-                  <span class="status missing">Unassigned</span>
-                <% } %>
+              <td colspan="6" class="empty">
+                No departments available.
               </td>
             </tr>
-          <% }) %>
+
+          <% } %>
+
         </tbody>
       </table>
     </div>
+
   </section>
 
   <!-- ACADEMIC ADVISING -->
   <section class="panel" id="advising">
+
     <div class="panel-heading">
-      <h2>Academic Advising Structure</h2>
-      <p>Semester-by-semester advisor allocation across departments.</p>
+      <div>
+        <h2>Academic Advising Structure</h2>
+        <p>Semester-by-semester advisor allocation across departments.</p>
+      </div>
+      <span class="section-label">ACADEMIC SUPPORT</span>
     </div>
 
-    <div class="stats" style="padding:18px 20px 0">
-      <div class="stat">
-        <div class="stat-label">Advisor Records</div>
-        <div class="stat-number"><%= stats.semesterAssignments %></div>
+    <div class="advising-stats">
+
+      <div class="advising-stat">
+        <span>ADVISOR RECORDS</span>
+        <strong><%= Number(summary.semesterAssignments || 0) %></strong>
       </div>
-      <div class="stat">
-        <div class="stat-label">Placeholder Records</div>
-        <div class="stat-number orange"><%= stats.placeholders %></div>
+
+      <div class="advising-stat">
+        <span>PLACEHOLDER RECORDS</span>
+        <strong class="orange"><%= Number(summary.placeholders || 0) %></strong>
       </div>
+
     </div>
 
-    <input
-      class="search"
-      id="advisorSearch"
-      type="search"
-      placeholder="Search department, semester or advisor..."
-    >
+    <div class="search-area">
+      <input
+        class="search"
+        id="advisorSearch"
+        type="search"
+        placeholder="⌕  Search department, semester or advisor..."
+      >
+      <span class="search-hint">Filter academic advising records</span>
+    </div>
 
     <div class="table-wrap">
+
       <table id="advisorTable">
+
         <thead>
           <tr>
             <th>Department</th>
@@ -618,17 +1086,26 @@ td {
             <th>Assignment Status</th>
           </tr>
         </thead>
+
         <tbody>
-          <% if (advisors.length) { %>
-            <% advisors.forEach(advisor => { %>
+
+          <% if (advisorList.length) { %>
+
+            <% advisorList.forEach(advisor => { %>
+
               <tr>
-                <td><strong><%= advisor.department_name %></strong></td>
+                <td>
+                  <strong><%= advisor.department_name || 'Unknown Department' %></strong>
+                </td>
+
                 <td>
                   <span class="semester">
                     Semester <%= advisor.semester_number %>
                   </span>
                 </td>
+
                 <td><%= advisor.advisor_name || 'Not assigned' %></td>
+
                 <td>
                   <% if (advisor.is_placeholder) { %>
                     <span class="status placeholder">Placeholder</span>
@@ -637,31 +1114,54 @@ td {
                   <% } %>
                 </td>
               </tr>
+
             <% }) %>
+
           <% } else { %>
+
             <tr>
               <td colspan="4" class="empty">
+                <div class="empty-icon">♧</div>
                 No academic advising records found.
               </td>
             </tr>
+
           <% } %>
+
         </tbody>
+
       </table>
+
     </div>
+
   </section>
 
   <div class="note">
-    Faculty Structure is an oversight workspace. Department and staff
-    changes remain managed through their respective administrative modules.
+    <div class="note-icon">ⓘ</div>
+    <div>
+      <strong>Faculty Structure — Oversight Workspace.</strong>
+      This page provides a consolidated view of the faculty's organizational
+      hierarchy, departments, staff and academic advising. Changes remain
+      managed through their respective administrative modules.
+    </div>
   </div>
+
+  <footer class="footer">
+    LuxMind Institutional Management System · Faculty Administration
+  </footer>
 
 </main>
 
 <script>
+/* TAB NAVIGATION */
 document.querySelectorAll('.tab').forEach(button => {
   button.addEventListener('click', () => {
+
+    const target = button.dataset.tab;
+
     document.querySelectorAll('.tab').forEach(tab => {
       tab.classList.remove('active');
+      tab.setAttribute('aria-selected', 'false');
     });
 
     document.querySelectorAll('.panel').forEach(panel => {
@@ -669,29 +1169,51 @@ document.querySelectorAll('.tab').forEach(button => {
     });
 
     button.classList.add('active');
-    document.getElementById(button.dataset.tab).classList.add('active');
+    button.setAttribute('aria-selected', 'true');
+
+    const targetPanel = document.getElementById(target);
+
+    if (targetPanel) {
+      targetPanel.classList.add('active');
+    }
   });
 });
 
+/* TABLE SEARCH */
 function attachSearch(inputId, tableId) {
+
   const input = document.getElementById(inputId);
   const table = document.getElementById(tableId);
 
   if (!input || !table) return;
 
   input.addEventListener('input', () => {
-    const query = input.value.toLowerCase();
+
+    const query = input.value.trim().toLowerCase();
 
     table.querySelectorAll('tbody tr').forEach(row => {
-      row.style.display = row.innerText.toLowerCase().includes(query)
-        ? ''
-        : 'none';
+
+      const rowText = row.innerText.toLowerCase();
+
+      row.style.display = rowText.includes(query) ? '' : 'none';
+
     });
+
   });
 }
 
 attachSearch('departmentSearch', 'departmentTable');
 attachSearch('advisorSearch', 'advisorTable');
+
+/* PREVENT EMPTY SEARCH FIELDS FROM AFFECTING TABLES */
+document.querySelectorAll('.search').forEach(input => {
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      input.value = '';
+      input.dispatchEvent(new Event('input'));
+    }
+  });
+});
 </script>
 
 </body>

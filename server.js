@@ -3803,6 +3803,284 @@ app.get('/sis/dean/academic-programs', requireRole('dean'), async (req, res) => 
   }
 });
 
+// =====================================================
+// DEAN: COURSES & CURRICULUM
+// =====================================================
+
+// Shared helper: identify the faculty assigned to this Dean.
+async function getDeanAcademicFaculty(userId) {
+  const result = await pool.query(`
+    SELECT id, name, code
+    FROM faculties
+    WHERE dean_id = $1
+    LIMIT 1
+  `, [userId]);
+
+  return result.rows[0] || null;
+}
+
+// Display the Dean's faculty courses and curriculum.
+app.get('/sis/dean/courses-curriculum', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const [departmentsRes, coursesRes, curriculumRes] = await Promise.all([
+      pool.query(`
+        SELECT id, name, code
+        FROM departments
+        WHERE faculty_id = $1
+        ORDER BY name
+      `, [faculty.id]),
+
+      pool.query(`
+        SELECT
+          c.id, c.code, c.title, c.description, c.credits,
+          c.semester_number, c.accreditation, c.syllabus_url,
+          c.moodle_url, c.quota, c.is_published,
+          c.department_id, d.name AS department_name,
+          c.teacher_id, t.full_name AS teacher_name,
+          COUNT(DISTINCT s.id)::int AS section_count,
+          COALESCE(SUM(s.max_capacity), 0)::int AS total_capacity
+        FROM courses c
+        LEFT JOIN departments d ON d.id = c.department_id
+        LEFT JOIN users t ON t.id = c.teacher_id
+        LEFT JOIN course_sections s ON s.course_id = c.id
+        WHERE c.faculty_id = $1
+        GROUP BY c.id, d.name, t.full_name
+        ORDER BY c.semester_number NULLS LAST, c.code
+      `, [faculty.id]),
+
+      pool.query(`
+        SELECT
+          cu.id, cu.program_level, cu.semester,
+          cu.semester_number, cu.course_code, cu.course_name,
+          cu.credits, cu.type, cu.accreditation,
+          cu.department_id, d.name AS department_name,
+          matched.id AS matched_course_id,
+          matched.title AS matched_course_title
+        FROM curriculum cu
+        INNER JOIN departments d ON d.id = cu.department_id
+        LEFT JOIN LATERAL (
+          SELECT c.id, c.title
+          FROM courses c
+          WHERE c.department_id = cu.department_id
+            AND UPPER(TRIM(c.code)) = UPPER(TRIM(cu.course_code))
+          ORDER BY c.id
+          LIMIT 1
+        ) matched ON TRUE
+        WHERE d.faculty_id = $1
+        ORDER BY d.name, cu.program_level, cu.semester_number, cu.course_code
+      `, [faculty.id])
+    ]);
+
+    const courses = coursesRes.rows;
+    const curriculum = curriculumRes.rows;
+
+    const stats = {
+      courses: courses.length,
+      published: courses.filter(c => Number(c.is_published) === 1).length,
+      sections: courses.reduce((sum, c) => sum + Number(c.section_count || 0), 0),
+      curriculumEntries: curriculum.length,
+      matchedEntries: curriculum.filter(c => c.matched_course_id).length,
+      unmatchedEntries: curriculum.filter(c => !c.matched_course_id).length
+    };
+
+    res.render('dean-courses-curriculum', {
+      user: req.session.user,
+      faculty,
+      departments: departmentsRes.rows,
+      courses,
+      curriculum,
+      stats
+    });
+  } catch (err) {
+    console.error('Dean Courses & Curriculum Error:', err);
+    res.status(500).send('Courses & Curriculum Error: ' + err.message);
+  }
+});
+
+
+// Create a curriculum entry for a department in this Dean's faculty.
+app.post('/sis/dean/courses-curriculum/curriculum/new', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const {
+      department_id, program_level, semester, semester_number,
+      course_code, course_name, credits, type, accreditation
+    } = req.body;
+
+    const deptId = Number(department_id);
+    const semesterNo = Number(semester_number);
+    const creditValue = Number(credits);
+
+    if (
+      !Number.isInteger(deptId) ||
+      !Number.isInteger(semesterNo) || semesterNo < 1 ||
+      !Number.isInteger(creditValue) || creditValue < 0 ||
+      !String(course_code || '').trim() ||
+      !String(course_name || '').trim() ||
+      !String(program_level || '').trim() ||
+      !String(semester || '').trim() ||
+      !String(type || '').trim()
+    ) {
+      req.flash('error', 'Complete all required fields with valid values.');
+      return res.redirect('/sis/dean/courses-curriculum');
+    }
+
+    const departmentCheck = await pool.query(`
+      SELECT id FROM departments
+      WHERE id = $1 AND faculty_id = $2
+    `, [deptId, faculty.id]);
+
+    if (!departmentCheck.rows.length) {
+      req.flash('error', 'You cannot add curriculum to a department outside your faculty.');
+      return res.redirect('/sis/dean/courses-curriculum');
+    }
+
+    await pool.query(`
+      INSERT INTO curriculum
+        (department_id, program_level, semester, semester_number,
+         course_code, course_name, credits, type, accreditation)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, [
+      deptId,
+      String(program_level).trim(),
+      String(semester).trim(),
+      semesterNo,
+      String(course_code).trim(),
+      String(course_name).trim(),
+      creditValue,
+      String(type).trim(),
+      accreditation ? String(accreditation).trim() : null
+    ]);
+
+    req.flash('success', 'Curriculum entry created successfully.');
+  } catch (err) {
+    console.error('Create Curriculum Error:', err);
+    req.flash('error', 'Could not create curriculum entry: ' + err.message);
+  }
+
+  res.redirect('/sis/dean/courses-curriculum');
+});
+
+
+// Update a curriculum entry belonging to this Dean's faculty.
+app.post('/sis/dean/courses-curriculum/curriculum/:id/edit', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const id = Number(req.params.id);
+    const deptId = Number(req.body.department_id);
+    const semesterNo = Number(req.body.semester_number);
+    const creditValue = Number(req.body.credits);
+
+    if (
+      !Number.isInteger(id) ||
+      !Number.isInteger(deptId) ||
+      !Number.isInteger(semesterNo) || semesterNo < 1 ||
+      !Number.isInteger(creditValue) || creditValue < 0 ||
+      !String(req.body.course_code || '').trim() ||
+      !String(req.body.course_name || '').trim() ||
+      !String(req.body.program_level || '').trim() ||
+      !String(req.body.semester || '').trim() ||
+      !String(req.body.type || '').trim()
+    ) {
+      req.flash('error', 'Invalid curriculum information. Check the required fields.');
+      return res.redirect('/sis/dean/courses-curriculum');
+    }
+
+    const result = await pool.query(`
+      UPDATE curriculum
+      SET department_id = $1,
+          program_level = $2,
+          semester = $3,
+          semester_number = $4,
+          course_code = $5,
+          course_name = $6,
+          credits = $7,
+          type = $8,
+          accreditation = $9
+      WHERE id = $10
+        AND department_id IN (
+          SELECT id FROM departments WHERE faculty_id = $11
+        )
+        AND $1 IN (
+          SELECT id FROM departments WHERE faculty_id = $11
+        )
+      RETURNING id
+    `, [
+      deptId,
+      String(req.body.program_level).trim(),
+      String(req.body.semester).trim(),
+      semesterNo,
+      String(req.body.course_code).trim(),
+      String(req.body.course_name).trim(),
+      creditValue,
+      String(req.body.type).trim(),
+      req.body.accreditation ? String(req.body.accreditation).trim() : null,
+      id,
+      faculty.id
+    ]);
+
+    if (!result.rows.length) {
+      req.flash('error', 'Curriculum entry not found or outside your faculty.');
+    } else {
+      req.flash('success', 'Curriculum entry updated successfully.');
+    }
+  } catch (err) {
+    console.error('Update Curriculum Error:', err);
+    req.flash('error', 'Could not update curriculum entry: ' + err.message);
+  }
+
+  res.redirect('/sis/dean/courses-curriculum');
+});
+
+
+// Delete a curriculum entry belonging to this Dean's faculty.
+app.post('/sis/dean/courses-curriculum/curriculum/:id/delete', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const result = await pool.query(`
+      DELETE FROM curriculum
+      WHERE id = $1
+        AND department_id IN (
+          SELECT id FROM departments WHERE faculty_id = $2
+        )
+      RETURNING id
+    `, [Number(req.params.id), faculty.id]);
+
+    req.flash(
+      result.rows.length ? 'success' : 'error',
+      result.rows.length
+        ? 'Curriculum entry deleted.'
+        : 'Curriculum entry not found or outside your faculty.'
+    );
+  } catch (err) {
+    console.error('Delete Curriculum Error:', err);
+    req.flash('error', 'Could not delete curriculum entry: ' + err.message);
+  }
+
+  res.redirect('/sis/dean/courses-curriculum');
+});
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
 });

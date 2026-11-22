@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examinations | LuxMind SIS</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #172033;
+    }
+
+    .container {
+      max-width: 1450px;
+      margin: auto;
+      padding: 30px 24px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    h1 { margin: 0 0 7px; font-size: 27px; }
+    .muted { color: #718096; font-size: 13px; }
+
+    .faculty {
+      background: #e9f8f1;
+      color: #087c51;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 28px;
+    }
+
+    .stat, .panel {
+      background: white;
+      border: 1px solid #e6eaf0;
+      border-radius: 12px;
+      padding: 19px;
+    }
+
+    .stat-label {
+      color: #718096;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stat-value {
+      font-size: 27px;
+      font-weight: 750;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 0 0 5px;
+    }
+
+    .panel { margin-bottom: 24px; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 13px 12px;
+      text-align: left;
+      border-bottom: 1px solid #edf0f4;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    th {
+      color: #718096;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      background: #fafbfd;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #edf2f7;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status.pending {
+      background: #fff4dc;
+      color: #9a6500;
+    }
+
+    .status.completed {
+      background: #e6f7ee;
+      color: #087c51;
+    }
+
+    .status.issue {
+      background: #feecec;
+      color: #b42318;
+    }
+
+    .search {
+      width: 260px;
+      max-width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #dce2ea;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: #10a36b;
+    }
+
+    .empty {
+      padding: 25px;
+      text-align: center;
+      color: #718096;
+    }
+
+    .details {
+      color: #0b8c5a;
+      font-weight: 700;
+    }
+
+    @media(max-width: 1050px) {
+      .stats { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media(max-width: 650px) {
+      .container { padding: 20px 13px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      h1 { font-size: 22px; }
+      .search { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="top">
+    <div>
+      <h1>Examinations</h1>
+      <div class="muted">
+        Faculty-level examination oversight and monitoring
+      </div>
+    </div>
+
+    <div class="faculty">
+      <%= faculty.name %>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="stats">
+
+    <div class="stat">
+      <div class="stat-label">Total Examinations</div>
+      <div class="stat-value"><%= overview.total_exams %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Upcoming Examinations</div>
+      <div class="stat-value"><%= overview.upcoming_exams %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Past Examinations</div>
+      <div class="stat-value"><%= overview.past_exams %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Exams Without Recorded Results</div>
+      <div class="stat-value"><%= overview.exams_without_results %></div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Recorded Result Entries</div>
+      <div class="stat-value"><%= overview.recorded_results %></div>
+    </div>
+
+  </div>
+
+  <!-- DEPARTMENT MONITORING -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="section-title">Department Examination Monitoring</h2>
+        <div class="muted">
+          Examination activity across departments in this faculty
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Department Head</th>
+            <th>Total Exams</th>
+            <th>Upcoming</th>
+            <th>Past</th>
+            <th>Recorded Results</th>
+            <th>Without Results</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (!departments.length) { %>
+            <tr>
+              <td colspan="7" class="empty">
+                No departments found for this faculty.
+              </td>
+            </tr>
+          <% } %>
+
+          <% departments.forEach(dept => { %>
+            <tr>
+              <td>
+                <strong><%= dept.department_name %></strong>
+                <div class="muted"><%= dept.department_code || '' %></div>
+              </td>
+              <td><%= dept.department_head || 'Not assigned' %></td>
+              <td><%= dept.total_exams %></td>
+              <td><%= dept.upcoming_exams %></td>
+              <td><%= dept.past_exams %></td>
+              <td><%= dept.recorded_results %></td>
+              <td>
+                <% if (dept.exams_without_results > 0) { %>
+                  <span class="status pending">
+                    <%= dept.exams_without_results %>
+                  </span>
+                <% } else { %>
+                  <span class="status completed">0</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXAMINATION CALENDAR -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="section-title">Examination Calendar</h2>
+        <div class="muted">
+          Examination schedules created for courses in this faculty
+        </div>
+      </div>
+
+      <input
+        type="search"
+        id="examSearch"
+        class="search"
+        placeholder="Search exams, courses, lecturers..."
+      >
+    </div>
+
+    <div class="table-wrap">
+      <table id="examTable">
+        <thead>
+          <tr>
+            <th>Examination</th>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Lecturer(s)</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Room</th>
+            <th>Status</th>
+            <th>Results</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (!exams.length) { %>
+            <tr>
+              <td colspan="9" class="empty">
+                No examinations have been recorded for this faculty.
+              </td>
+            </tr>
+          <% } %>
+
+          <% exams.forEach(exam => { %>
+            <tr>
+              <td>
+                <strong><%= exam.title %></strong>
+                <div class="muted">
+                  Duration: <%= exam.duration_minutes || '—' %> minutes
+                </div>
+              </td>
+
+              <td>
+                <%= exam.course_title %>
+                <div class="muted"><%= exam.course_code || '' %></div>
+              </td>
+
+              <td><%= exam.department_name || '—' %></td>
+              <td><%= exam.lecturer_names %></td>
+
+              <td>
+                <%= exam.exam_date
+                  ? new Date(exam.exam_date).toLocaleDateString()
+                  : '—' %>
+              </td>
+
+              <td><%= exam.start_time || '—' %></td>
+              <td><%= exam.room || '—' %></td>
+
+              <td>
+                <span class="status">
+                  <%= exam.status || 'Not specified' %>
+                </span>
+              </td>
+
+              <td>
+                <strong><%= exam.recorded_results %></strong>
+                <div class="muted">result entries</div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXAMINATION ISSUES -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="section-title">Examination Issues & Objections</h2>
+        <div class="muted">
+          Student examination objections recorded in this faculty
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Group</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (!objections.length) { %>
+            <tr>
+              <td colspan="7" class="empty">
+                No examination objections have been recorded.
+              </td>
+            </tr>
+          <% } %>
+
+          <% objections.forEach(item => { %>
+            <tr>
+              <td><strong><%= item.student_name %></strong></td>
+
+              <td>
+                <%= item.course_title %>
+                <div class="muted"><%= item.course_code || '' %></div>
+              </td>
+
+              <td><%= item.department_name || '—' %></td>
+              <td><%= item.group_name || '—' %></td>
+
+              <td>
+                <%= item.reason || 'No reason provided' %>
+                <% if (item.teacher_response) { %>
+                  <div class="muted">
+                    Response: <%= item.teacher_response %>
+                  </div>
+                <% } %>
+              </td>
+
+              <td>
+                <span class="status <%= 
+                  item.status === 'resolved' ? 'completed' :
+                  item.status === 'pending' ? 'pending' : 'issue'
+                %>">
+                  <%= item.status || 'Unspecified' %>
+                </span>
+              </td>
+
+              <td>
+                <%= item.requested_at
+                  ? new Date(item.requested_at).toLocaleDateString()
+                  : '—' %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="muted" style="text-align:center;padding:15px">
+    LuxMind SIS · Dean Academic Management · Examination Oversight
+  </div>
+
+</div>
+
+<script>
+  const examSearch = document.getElementById('examSearch');
+
+  examSearch.addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+
+    document.querySelectorAll('#examTable tbody tr').forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(query)
+        ? ''
+        : 'none';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -3905,6 +3905,197 @@ app.get('/sis/dean/courses-curriculum', requireRole('dean'), async (req, res) =>
 });
 
 
+// ============================================================
+// DEAN — EXAMINATIONS
+// Faculty-level examination oversight (READ ONLY)
+// ============================================================
+
+app.get('/sis/dean/examinations', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+
+    if (!faculty) {
+      return res.status(404).send('No faculty is assigned to this Dean account.');
+    }
+
+    const facultyId = faculty.id;
+
+    // 1. Faculty examination overview
+    const overviewResult = await pool.query(`
+      SELECT
+        COUNT(DISTINCT e.id)::int AS total_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.exam_date >= CURRENT_DATE
+        )::int AS upcoming_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.exam_date < CURRENT_DATE
+        )::int AS past_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE COALESCE(r.result_count, 0) = 0
+        )::int AS exams_without_results,
+
+        COALESCE(SUM(r.result_count), 0)::int AS recorded_results,
+
+        COUNT(DISTINCT d.id)::int AS departments_involved
+
+      FROM exams e
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN departments d ON d.id = c.department_id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS result_count
+        FROM exam_results er
+        WHERE er.exam_id = e.id
+      ) r ON TRUE
+      WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+    `, [facultyId]);
+
+    // 2. Department examination monitoring
+    const departmentsResult = await pool.query(`
+      SELECT
+        d.id AS department_id,
+        d.name AS department_name,
+        d.code AS department_code,
+        u.full_name AS department_head,
+
+        COUNT(DISTINCT e.id)::int AS total_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.exam_date >= CURRENT_DATE
+        )::int AS upcoming_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.exam_date < CURRENT_DATE
+        )::int AS past_exams,
+
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE COALESCE(r.result_count, 0) = 0
+        )::int AS exams_without_results,
+
+        COALESCE(SUM(r.result_count), 0)::int AS recorded_results
+
+      FROM departments d
+      LEFT JOIN users u ON u.id = d.head_id
+      LEFT JOIN courses c ON c.department_id = d.id
+      LEFT JOIN exams e ON e.course_id = c.id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS result_count
+        FROM exam_results er
+        WHERE er.exam_id = e.id
+      ) r ON e.id IS NOT NULL
+
+      WHERE d.faculty_id = $1
+      GROUP BY d.id, d.name, d.code, u.full_name
+      ORDER BY d.name
+    `, [facultyId]);
+
+    // 3. Examination calendar and result recording
+    const examsResult = await pool.query(`
+      SELECT
+        e.id,
+        e.title,
+        e.exam_date,
+        e.start_time,
+        e.duration_minutes,
+        e.room,
+        e.max_score,
+        e.status,
+
+        c.id AS course_id,
+        c.title AS course_title,
+        c.code AS course_code,
+
+        d.name AS department_name,
+
+        COALESCE(r.result_count, 0)::int AS recorded_results,
+
+        COALESCE(r.students_with_results, 0)::int
+          AS students_with_results,
+
+        COALESCE(t.teacher_names, 'Not assigned')
+          AS lecturer_names
+
+      FROM exams e
+      JOIN courses c ON c.id = e.course_id
+      LEFT JOIN departments d ON d.id = c.department_id
+
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*)::int AS result_count,
+          COUNT(DISTINCT er.student_id)::int AS students_with_results
+        FROM exam_results er
+        WHERE er.exam_id = e.id
+      ) r ON TRUE
+
+      LEFT JOIN LATERAL (
+        SELECT STRING_AGG(DISTINCT teacher_name, ', ') AS teacher_names
+        FROM (
+          SELECT COALESCE(NULLIF(u.full_name, ''), u.username) AS teacher_name
+          FROM users u
+          WHERE u.id = c.teacher_id
+
+          UNION
+
+          SELECT COALESCE(NULLIF(u.full_name, ''), u.username)
+          FROM course_sections cs
+          JOIN users u ON u.id = cs.teacher_id
+          WHERE cs.course_id = c.id
+        ) assigned_teachers
+      ) t ON TRUE
+
+      WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+      ORDER BY e.exam_date DESC, e.start_time
+    `, [facultyId]);
+
+    // 4. Examination objections
+    const objectionsResult = await pool.query(`
+      SELECT
+        eo.id,
+        eo.reason,
+        eo.status,
+        eo.requested_at,
+        eo.resolved_at,
+        eo.teacher_response,
+
+        COALESCE(NULLIF(student.full_name, ''), student.username)
+          AS student_name,
+
+        c.title AS course_title,
+        c.code AS course_code,
+
+        d.name AS department_name,
+
+        cs.group_name
+
+      FROM exam_objections eo
+      JOIN course_sections cs ON cs.id = eo.section_id
+      JOIN courses c ON c.id = cs.course_id
+      LEFT JOIN departments d ON d.id = c.department_id
+      JOIN users student ON student.id = eo.student_id
+
+      WHERE COALESCE(c.faculty_id, d.faculty_id) = $1
+      ORDER BY eo.requested_at DESC
+      LIMIT 100
+    `, [facultyId]);
+
+    res.render('dean-examinations', {
+      user: req.session.user,
+      faculty,
+      overview: overviewResult.rows[0],
+      departments: departmentsResult.rows,
+      exams: examsResult.rows,
+      objections: objectionsResult.rows
+    });
+
+  } catch (err) {
+    console.error('Dean Examinations Error:', err);
+    res.status(500).send('Examinations Error: ' + err.message);
+  }
+});
+
+
 
 // ============================================================
 // DEAN — COURSE ALLOCATION EVALUATION (READ ONLY)

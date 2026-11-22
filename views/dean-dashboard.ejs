@@ -1363,6 +1363,7 @@ tr:last-child td{border-bottom:0}
 <!-- DEAN WORKSPACE NAVIGATION JAVASCRIPT -->
 
 <script>
+
 (function(){
 
   'use strict';
@@ -1371,17 +1372,26 @@ tr:last-child td{border-bottom:0}
   const overlay = document.getElementById('overlay');
   const menuBtn = document.getElementById('menuBtn');
   const breadcrumb = document.getElementById('breadcrumbTitle');
+  const notificationBtn = document.getElementById('notificationBtn');
 
+  if (!sidebar || !overlay || !menuBtn || !breadcrumb) {
+    console.error('Dean sidebar elements are missing.');
+    return;
+  }
+
+  // Internal workspace links only.
   const navLinks = Array.from(
     document.querySelectorAll('.nav-link[data-view]')
   );
 
-  const pages = Array.from(
-    document.querySelectorAll('.module-view')
-  );
-
+  // Standalone Express route links.
   const standaloneLinks = Array.from(
     document.querySelectorAll('.nav-link[data-route]')
+  );
+
+  // Internal workspace sections.
+  const pages = Array.from(
+    document.querySelectorAll('.module-view')
   );
 
   const closeMenu = () => {
@@ -1389,17 +1399,15 @@ tr:last-child td{border-bottom:0}
     overlay.classList.remove('show');
   };
 
-  /*
-    Open an internal Dean workspace.
-  */
-
-  function openView(viewId){
+  // Open an internal Dean workspace.
+  function openView(viewId) {
 
     const target = pages.find(
       page => page.dataset.page === viewId
     );
 
-    if(!target){
+    if (!target) {
+      console.warn('Dean workspace not found:', viewId);
       return;
     }
 
@@ -1418,17 +1426,15 @@ tr:last-child td{border-bottom:0}
       link => link.dataset.view === viewId
     );
 
-    if(selected){
-      breadcrumb.textContent = selected.innerText.trim();
-    } else {
-      breadcrumb.textContent = 'Overview';
-    }
+    breadcrumb.textContent = selected
+      ? selected.innerText.trim()
+      : 'Overview';
 
     closeMenu();
 
     window.scrollTo({
-      top:0,
-      behavior:'smooth'
+      top: 0,
+      behavior: 'smooth'
     });
 
     history.replaceState(
@@ -1441,9 +1447,23 @@ tr:last-child td{border-bottom:0}
   // Internal sidebar navigation.
   navLinks.forEach(link => {
 
-    link.addEventListener('click', function(){
+    link.addEventListener('click', function(event) {
+
+      event.preventDefault();
 
       openView(this.dataset.view);
+
+    });
+
+  });
+
+  // Standalone sidebar navigation.
+  // Allow the browser to load the actual Express route.
+  standaloneLinks.forEach(link => {
+
+    link.addEventListener('click', function() {
+
+      closeMenu();
 
     });
 
@@ -1452,7 +1472,7 @@ tr:last-child td{border-bottom:0}
   // Quick access navigation.
   document.querySelectorAll('[data-open-view]').forEach(button => {
 
-    button.addEventListener('click', function(){
+    button.addEventListener('click', function() {
 
       openView(this.dataset.openView);
 
@@ -1463,7 +1483,7 @@ tr:last-child td{border-bottom:0}
   // Back to overview buttons.
   document.querySelectorAll('[data-go-overview]').forEach(button => {
 
-    button.addEventListener('click', function(){
+    button.addEventListener('click', function() {
 
       openView('overview');
 
@@ -1471,8 +1491,8 @@ tr:last-child td{border-bottom:0}
 
   });
 
-  // Mobile menu.
-  menuBtn.addEventListener('click', function(){
+  // Mobile sidebar toggle.
+  menuBtn.addEventListener('click', function() {
 
     sidebar.classList.toggle('open');
     overlay.classList.toggle('show');
@@ -1481,49 +1501,35 @@ tr:last-child td{border-bottom:0}
 
   overlay.addEventListener('click', closeMenu);
 
-  // Notifications open the internal notifications workspace.
-  document.getElementById('notificationBtn').addEventListener(
-    'click',
-    function(){
+  // Notifications.
+  if (notificationBtn) {
+
+    notificationBtn.addEventListener('click', function() {
 
       const notificationPage = pages.find(
         page => page.dataset.page === 'notifications'
       );
 
-      if(notificationPage){
+      if (notificationPage) {
         openView('notifications');
       }
 
-    }
-  );
-
-  // Standalone pages navigate directly to their Express routes.
-  standaloneLinks.forEach(link => {
-
-    link.addEventListener('click', function(){
-
-      closeMenu();
-
     });
 
-  });
+  }
 
-  // Restore selected internal workspace when refreshing.
-  function restoreWorkspace(){
+  // Restore internal workspace from URL hash.
+  function restoreWorkspace() {
 
     const hash = decodeURIComponent(
       window.location.hash.replace(/^#/, '')
     );
 
-    if(hash && pages.some(page => page.dataset.page === hash)){
+    const validPage = pages.some(
+      page => page.dataset.page === hash
+    );
 
-      openView(hash);
-
-    } else {
-
-      openView('overview');
-
-    }
+    openView(validPage ? hash : 'overview');
 
   }
 
@@ -1534,19 +1540,20 @@ tr:last-child td{border-bottom:0}
   // Current date.
   const todayLabel = document.getElementById('todayLabel');
 
-  if(todayLabel){
+  if (todayLabel) {
 
     todayLabel.textContent =
       new Intl.DateTimeFormat(undefined, {
-        weekday:'long',
-        year:'numeric',
-        month:'long',
-        day:'numeric'
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       }).format(new Date());
 
   }
 
 })();
+
 </script>
 
 </body>

@@ -3904,6 +3904,128 @@ app.get('/sis/dean/courses-curriculum', requireRole('dean'), async (req, res) =>
   }
 });
 
+// ============================================================
+// DEAN — CLASS TIMETABLE OVERSIGHT (READ ONLY)
+// Department Heads remain responsible for timetable management.
+// ============================================================
+
+app.get('/sis/dean/class-timetables', requireRole('dean'), async (req, res) => {
+  try {
+    const faculty = await getDeanAcademicFaculty(req.session.user.id);
+
+    if (!faculty) {
+      req.flash('error', 'No faculty is assigned to your Dean account.');
+      return res.redirect('/sis/dean');
+    }
+
+    const [departmentsRes, sectionsRes] = await Promise.all([
+      pool.query(`
+        SELECT
+          d.id,
+          d.name,
+          COUNT(DISTINCT c.id)::int AS course_count,
+          COUNT(DISTINCT s.id)::int AS section_count,
+          COUNT(DISTINCT s.id) FILTER (
+            WHERE s.day_of_week IS NOT NULL
+              AND BTRIM(s.day_of_week::text) <> ''
+              AND s.start_time IS NOT NULL
+              AND s.end_time IS NOT NULL
+              AND s.room IS NOT NULL
+              AND BTRIM(s.room) <> ''
+          )::int AS scheduled_count
+        FROM departments d
+        LEFT JOIN courses c
+          ON c.department_id = d.id
+         AND c.faculty_id = $1
+        LEFT JOIN course_sections s
+          ON s.course_id = c.id
+        WHERE d.faculty_id = $1
+        GROUP BY d.id, d.name
+        ORDER BY d.name
+      `, [faculty.id]),
+
+      pool.query(`
+        SELECT
+          s.id AS section_id,
+          s.course_id,
+          s.group_name,
+          s.day_of_week,
+          s.start_time,
+          s.end_time,
+          s.room,
+          s.max_capacity,
+          c.code AS course_code,
+          c.title AS course_title,
+          d.id AS department_id,
+          COALESCE(d.name, 'Unassigned Department') AS department_name,
+          u.full_name AS teacher_name
+        FROM course_sections s
+        JOIN courses c
+          ON c.id = s.course_id
+        LEFT JOIN departments d
+          ON d.id = c.department_id
+        LEFT JOIN users u
+          ON u.id = s.teacher_id
+        WHERE c.faculty_id = $1
+        ORDER BY
+          CASE LOWER(COALESCE(s.day_of_week::text, ''))
+            WHEN 'monday' THEN 1
+            WHEN 'tuesday' THEN 2
+            WHEN 'wednesday' THEN 3
+            WHEN 'thursday' THEN 4
+            WHEN 'friday' THEN 5
+            WHEN 'saturday' THEN 6
+            WHEN 'sunday' THEN 7
+            ELSE 8
+          END,
+          s.start_time NULLS LAST,
+          d.name NULLS LAST,
+          c.code,
+          s.group_name
+      `, [faculty.id])
+    ]);
+
+    const departments = departmentsRes.rows;
+    const sections = sectionsRes.rows;
+
+    const totalSections = departments.reduce(
+      (total, department) => total + Number(department.section_count || 0),
+      0
+    );
+
+    const scheduledSections = departments.reduce(
+      (total, department) => total + Number(department.scheduled_count || 0),
+      0
+    );
+
+    const incompleteSections = totalSections - scheduledSections;
+
+    const departmentsWithSchedules = departments.filter(
+      department => Number(department.scheduled_count || 0) > 0
+    ).length;
+
+    const stats = {
+      departmentCount: departments.length,
+      totalSections,
+      scheduledSections,
+      incompleteSections,
+      departmentsWithSchedules
+    };
+
+    res.render('dean-class-timetables', {
+      user: req.session.user,
+      faculty,
+      departments,
+      sections,
+      stats
+    });
+
+  } catch (err) {
+    console.error('Dean Class Timetables Error:', err);
+    res.status(500).send('Class Timetables Error: ' + err.message);
+  }
+});
+
 
 // Create a curriculum entry for a department in this Dean's faculty.
 app.post('/sis/dean/courses-curriculum/curriculum/new', requireRole('dean'), async (req, res) => {

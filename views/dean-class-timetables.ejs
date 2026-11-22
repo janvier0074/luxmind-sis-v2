@@ -1,0 +1,395 @@
+
+<%
+const deanUser = user || {};
+const facultyInfo = faculty || {};
+const departmentList = departments || [];
+const sectionList = sections || [];
+const metrics = stats || {};
+
+const safe = value => value == null || value === '' ? '—' : String(value);
+const formatTime = value => {
+  if (!value) return '—';
+  return String(value).slice(0, 5);
+};
+const isScheduled = section =>
+  section.day_of_week &&
+  section.start_time &&
+  section.end_time &&
+  section.room &&
+  String(section.room).trim() !== '';
+const scheduledPercent = metrics.totalSections
+  ? Math.round((metrics.scheduledSections / metrics.totalSections) * 100)
+  : 0;
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Class Timetable Oversight | LuxMind SIS</title>
+<style>
+:root {
+  --primary:#087f65;
+  --primary-dark:#06634f;
+  --primary-light:#e6f5ef;
+  --navy:#142d28;
+  --ink:#20332d;
+  --muted:#75847d;
+  --line:#e5ece8;
+  --surface:#fff;
+  --background:#f4f7f6;
+  --amber:#a96812;
+  --red:#bd4238;
+  --shadow:0 5px 22px rgba(20,45,35,.045);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:var(--background);
+  color:var(--ink);
+}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+.sidebar{
+  position:fixed;z-index:5;top:0;bottom:0;left:0;width:245px;
+  padding:25px 18px;background:var(--navy);color:#fff;
+  display:flex;flex-direction:column;
+}
+.brand{font-size:23px;font-weight:850;letter-spacing:-1px;padding:5px 10px 35px}
+.brand span{color:#55dfad}
+.sidebar-label{
+  color:#91aaa0;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;padding:0 12px 12px;text-transform:uppercase
+}
+.nav-link{
+  display:flex;align-items:center;gap:12px;padding:12px 13px;
+  margin:3px 0;border-radius:9px;color:#d3e0da;font-size:13px;
+}
+.nav-link:hover,.nav-link.active{background:#245044;color:#fff}
+.nav-icon{width:20px;text-align:center;font-size:17px}
+.sidebar-bottom{margin-top:auto;color:#91aaa0;font-size:11px;padding:15px 10px}
+.main{margin-left:245px;padding:34px 38px 55px;max-width:1600px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:28px}
+.breadcrumb{font-size:12px;color:var(--muted);margin-bottom:9px}
+h1{font-size:27px;letter-spacing:-.7px;margin:0 0 8px}
+.subtitle{color:var(--muted);font-size:13px;line-height:1.6}
+.faculty-tag{
+  background:var(--primary-light);color:var(--primary-dark);
+  border-radius:30px;padding:9px 14px;font-size:12px;font-weight:750
+}
+.back-link{font-size:12px;color:var(--primary-dark);font-weight:700}
+.stats{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:15px;margin:25px 0
+}
+.stat-card,.panel,.department-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:13px;box-shadow:var(--shadow)
+}
+.stat-card{padding:19px}
+.stat-label{font-size:11px;color:var(--muted);font-weight:650}
+.stat-value{font-size:28px;font-weight:800;margin:9px 0 5px;letter-spacing:-.7px}
+.stat-note{font-size:11px;color:var(--muted)}
+.progress-track{height:7px;background:#edf2ef;border-radius:20px;overflow:hidden;margin-top:13px}
+.progress-fill{height:100%;background:var(--primary);border-radius:20px}
+.panel{padding:22px;margin-top:20px}
+.panel-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:17px}
+.panel h2{font-size:16px;margin:0 0 5px}
+.panel-description{font-size:12px;color:var(--muted);line-height:1.5}
+.filters{display:flex;gap:10px;flex-wrap:wrap}
+.filters input,.filters select{
+  border:1px solid var(--line);border-radius:8px;background:#fff;
+  padding:10px 12px;color:var(--ink);font-size:12px;min-width:180px
+}
+.department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.department-card{padding:17px}
+.department-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.department-name{font-weight:750;font-size:14px}
+.department-meta{font-size:11px;color:var(--muted);margin-top:6px}
+.status{
+  display:inline-flex;align-items:center;gap:5px;border-radius:20px;
+  padding:6px 9px;font-size:10px;font-weight:750;white-space:nowrap
+}
+.status.complete{background:#e7f5ed;color:#187448}
+.status.partial{background:#fff3df;color:#98600c}
+.status.empty{background:#f0f2f1;color:#65736c}
+.department-progress{margin-top:14px}
+.department-progress-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:7px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th{
+  text-align:left;background:#f7faf8;color:#718078;font-size:10px;
+  text-transform:uppercase;letter-spacing:.6px;padding:12px 11px;
+  border-bottom:1px solid var(--line)
+}
+td{padding:13px 11px;border-bottom:1px solid #edf1ee;font-size:12px;vertical-align:middle}
+tbody tr:hover{background:#fbfdfc}
+.course-code{font-weight:800;color:var(--primary-dark)}
+.course-title{font-weight:650}
+.muted{color:var(--muted);font-size:11px;margin-top:4px}
+.empty-state{text-align:center;padding:35px 15px;color:var(--muted);font-size:13px}
+.notice{
+  background:#edf6f2;border:1px solid #dcece4;border-radius:10px;
+  padding:13px 15px;color:#315c4b;font-size:12px;line-height:1.6;margin-top:20px
+}
+.footer{padding:25px 0 0;color:#8a9891;font-size:10px;text-align:center}
+@media(max-width:1000px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .department-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .sidebar{position:static;width:auto;padding:15px 18px}
+  .brand{padding:4px 5px 15px}
+  .sidebar-label,.sidebar-bottom{display:none}
+  .sidebar nav{display:flex;flex-wrap:wrap}
+  .nav-link{padding:9px 11px}
+  .main{margin:0;padding:23px 15px 40px}
+  .topbar{align-items:flex-start;flex-direction:column}
+  .stats{gap:9px}
+  .stat-card{padding:14px}
+  .stat-value{font-size:23px}
+  .panel{padding:15px}
+  .panel-heading{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">Lux<span>Mind</span></div>
+  <div class="sidebar-label">Dean workspace</div>
+  <nav>
+    <a class="nav-link" href="/sis/dean">
+      <span class="nav-icon">⌂</span> Dashboard
+    </a>
+    <a class="nav-link" href="/sis/dean/departments">
+      <span class="nav-icon">▤</span> Departments
+    </a>
+    <a class="nav-link" href="/sis/dean/department-heads">
+      <span class="nav-icon">♙</span> Department Heads
+    </a>
+    <a class="nav-link" href="/sis/dean/courses-curriculum">
+      <span class="nav-icon">▣</span> Courses & Curriculum
+    </a>
+    <a class="nav-link active" href="/sis/dean/class-timetables">
+      <span class="nav-icon">▦</span> Class Timetables
+    </a>
+  </nav>
+  <div class="sidebar-bottom">LuxMind SIS · Academic Management</div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="breadcrumb">Dean Workspace / Academic Management / Class Timetables</div>
+      <h1>Class Timetable Oversight</h1>
+      <div class="subtitle">
+        Monitor timetable preparation and review teaching schedules across your faculty.
+      </div>
+    </div>
+    <a class="back-link" href="/sis/dean">← Back to dashboard</a>
+  </div>
+
+  <div class="faculty-tag"><%= facultyInfo.name || 'Faculty' %></div>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Departments</div>
+      <div class="stat-value"><%= metrics.departmentCount || 0 %></div>
+      <div class="stat-note">Departments in this faculty</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Class Sections</div>
+      <div class="stat-value"><%= metrics.totalSections || 0 %></div>
+      <div class="stat-note">Sections linked to faculty courses</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Scheduled Sections</div>
+      <div class="stat-value"><%= metrics.scheduledSections || 0 %></div>
+      <div class="stat-note">Day, time, and room recorded</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Incomplete Sections</div>
+      <div class="stat-value"><%= metrics.incompleteSections || 0 %></div>
+      <div class="stat-note">One or more schedule details missing</div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:<%= scheduledPercent %>%"></div>
+      </div>
+      <div class="muted"><%= scheduledPercent %>% of sections scheduled</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Department Timetable Progress</h2>
+        <div class="panel-description">
+          Department-level overview based on actual course sections and schedule fields.
+        </div>
+      </div>
+    </div>
+
+    <% if (departmentList.length) { %>
+      <div class="department-grid">
+        <% departmentList.forEach(department => {
+          const total = Number(department.section_count || 0);
+          const scheduled = Number(department.scheduled_count || 0);
+          const percent = total ? Math.round((scheduled / total) * 100) : 0;
+          const statusClass = total === 0 ? 'empty' : scheduled === total ? 'complete' : 'partial';
+          const statusText = total === 0 ? 'No sections' : scheduled === total ? 'Complete' : 'In progress';
+        %>
+          <article class="department-card">
+            <div class="department-top">
+              <div>
+                <div class="department-name"><%= department.name %></div>
+                <div class="department-meta">
+                  <%= department.course_count %> courses · <%= total %> sections
+                </div>
+              </div>
+              <span class="status <%= statusClass %>"><%= statusText %></span>
+            </div>
+            <div class="department-progress">
+              <div class="department-progress-row">
+                <span>Scheduled sections</span>
+                <strong><%= scheduled %> / <%= total %></strong>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:<%= percent %>%"></div>
+              </div>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="empty-state">No departments are currently assigned to this faculty.</div>
+    <% } %>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Faculty Class Schedule</h2>
+        <div class="panel-description">
+          Read-only view of class sections recorded by the departments.
+        </div>
+      </div>
+      <div class="filters">
+        <input id="scheduleSearch" type="search" placeholder="Search course, teacher, room...">
+        <select id="departmentFilter">
+          <option value="">All departments</option>
+          <% departmentList.forEach(department => { %>
+            <option value="<%= department.id %>"><%= department.name %></option>
+          <% }); %>
+        </select>
+        <select id="statusFilter">
+          <option value="">All schedule statuses</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="incomplete">Incomplete</option>
+        </select>
+      </div>
+    </div>
+
+    <% if (sectionList.length) { %>
+      <div class="table-wrap">
+        <table id="scheduleTable">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Course</th>
+              <th>Group</th>
+              <th>Day</th>
+              <th>Time</th>
+              <th>Room</th>
+              <th>Teacher</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sectionList.forEach(section => {
+              const scheduled = isScheduled(section);
+            %>
+              <tr
+                data-department="<%= section.department_id || '' %>"
+                data-status="<%= scheduled ? 'scheduled' : 'incomplete' %>"
+                data-search="<%= [section.department_name, section.course_code, section.course_title, section.group_name, section.day_of_week, section.room, section.teacher_name].join(' ').toLowerCase() %>"
+              >
+                <td><%= safe(section.department_name) %></td>
+                <td>
+                  <div class="course-code"><%= safe(section.course_code) %></div>
+                  <div class="muted course-title"><%= safe(section.course_title) %></div>
+                </td>
+                <td><%= safe(section.group_name) %></td>
+                <td><%= safe(section.day_of_week) %></td>
+                <td>
+                  <%= formatTime(section.start_time) %>
+                  –
+                  <%= formatTime(section.end_time) %>
+                </td>
+                <td><%= safe(section.room) %></td>
+                <td><%= safe(section.teacher_name) %></td>
+                <td>
+                  <% if (scheduled) { %>
+                    <span class="status complete">Scheduled</span>
+                  <% } else { %>
+                    <span class="status partial">Incomplete</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <div id="noMatches" class="empty-state" hidden>
+        No timetable sections match the selected filters.
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        No class sections have been created for courses in this faculty yet.
+      </div>
+    <% } %>
+  </section>
+
+  <div class="notice">
+    <strong>Responsibility:</strong> Department Heads are responsible for preparing and
+    maintaining their department timetables. This Dean workspace provides faculty-wide
+    monitoring and schedule visibility; it does not modify timetable records.
+  </div>
+
+  <div class="footer">LuxMind Student Information System</div>
+</main>
+
+<script>
+(() => {
+  const search = document.getElementById('scheduleSearch');
+  const department = document.getElementById('departmentFilter');
+  const status = document.getElementById('statusFilter');
+  const rows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
+  const noMatches = document.getElementById('noMatches');
+
+  function applyFilters() {
+    const query = (search?.value || '').trim().toLowerCase();
+    const departmentId = department?.value || '';
+    const selectedStatus = status?.value || '';
+    let visible = 0;
+
+    rows.forEach(row => {
+      const matchesSearch = !query || row.dataset.search.includes(query);
+      const matchesDepartment = !departmentId || row.dataset.department === departmentId;
+      const matchesStatus = !selectedStatus || row.dataset.status === selectedStatus;
+      const show = matchesSearch && matchesDepartment && matchesStatus;
+
+      row.hidden = !show;
+      if (show) visible++;
+    });
+
+    if (noMatches) noMatches.hidden = visible !== 0;
+  }
+
+  search?.addEventListener('input', applyFilters);
+  department?.addEventListener('change', applyFilters);
+  status?.addEventListener('change', applyFilters);
+})();
+</script>
+</body>
+</html>

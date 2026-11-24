@@ -3681,32 +3681,310 @@ app.get('/sis/admin/registrations', requireRole('admin'), async (req, res) => {
 // ============================================
 // --- CENTRAL ADMIN: COURSE WITHDRAWALS ---
 // ============================================
+
+// ============================================
+// --- ADMIN / REGISTRAR: COURSE WITHDRAWALS ---
+// ============================================
 app.get('/sis/admin/withdrawals', requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
+        w.*,
         w.id AS withdrawal_id,
-        w.reason,
-        w.requested_at,
         u.full_name AS student_name,
         u.username,
         c.code AS course_code,
-        c.title AS course_title
+        c.title AS course_name,
+        cs.group_name,
+        cs.day_of_week,
+        cs.start_time,
+        cs.end_time
       FROM course_withdrawals w
       JOIN users u ON u.id = w.student_id
       JOIN courses c ON c.id = w.course_id
-      WHERE w.status = 'pending'
+      LEFT JOIN course_sections cs ON cs.id = w.section_id
       ORDER BY w.requested_at DESC
     `);
 
-    res.render('admin-withdrawals', {
+    res.render('registrar-withdrawals', {
       user: req.session.user,
-      withdrawals: result.rows
+      requests: result.rows,
+      flash: req.flash ? req.flash() : {}
     });
   } catch (err) {
-    res.status(500).send("Withdrawals Error: " + err.message);
+    console.error('Registrar withdrawals loading error:', err);
+    res.status(500).send('Unable to load Registrar withdrawals.');
   }
 });
+
+
+
+// ============================================
+// --- REGISTRAR: FINAL WITHDRAWAL DECISION ---
+// ============================================
+app.post(
+  '/sis/admin/withdrawals/:id/decision',
+  requireRole('admin'),
+  async (req, res) => {
+    const withdrawalId = Number(req.params.id);
+    const decision = req.body.decision;
+    const comments = String(req.body.comments || '').trim();
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!['approved', 'rejected', 'more_info'].includes(decision)) {
+      return res.status(400).send('Invalid Registrar decision.');
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const requestResult = await client.query(`
+        SELECT *
+        FROM course_withdrawals
+        WHERE id = $1
+        FOR UPDATE
+      `, [withdrawalId]);
+
+      if (!requestResult.rows.length) {
+        throw new Error('Withdrawal request not found.');
+      }
+
+      const request = requestResult.rows[0];
+
+      if (!['registrar_review', 'pending_registrar'].includes(request.status)) {
+        throw new Error('This request is not awaiting Registrar review.');
+      }
+
+      if (
+        decision === 'approved' &&
+        request.finance_required &&
+        request.finance_decision !== 'cleared'
+      ) {
+        throw new Error('Finance clearance is required before approval.');
+      }
+
+      const newStatus =
+        decision === 'approved' ? 'approved' :
+        decision === 'rejected' ? 'rejected' :
+        'registrar_review';
+
+      await client.query(`
+        UPDATE course_withdrawals
+        SET
+          registrar_decision = $1,
+          registrar_comments = $2,
+          registrar_reviewed_by = $3,
+          registrar_reviewed_at = NOW(),
+          status = $4,
+          updated_at = NOW()
+        WHERE id = $5
+      `, [
+        decision,
+        comments,
+        req.session.user.id,
+        newStatus,
+        withdrawalId
+      ]);
+
+      await client.query(`
+        INSERT INTO course_withdrawal_history (
+          withdrawal_id,
+          action,
+          actor_id,
+          actor_role,
+          previous_status,
+          new_status,
+          description
+        )
+        VALUES ($1, $2, $3, 'admin', $4, $5, $6)
+      `, [
+        withdrawalId,
+        'registrar_' + decision,
+        req.session.user.id,
+        request.status,
+        newStatus,
+        comments || 'Registrar decision: ' + decision
+      ]);
+
+      await client.query('COMMIT');
+
+      if (req.flash) {
+        req.flash('success', 'Registrar decision saved successfully.');
+      }
+
+      res.redirect('/sis/admin/withdrawals');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Registrar decision error:', err);
+      res.status(400).send(err.message || 'Unable to save Registrar decision.');
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+
+// ============================================
+// --- REGISTRAR: PROCESS APPROVED WITHDRAWAL ---
+// ============================================
+app.post(
+  '/sis/admin/withdrawals/:id/process',
+  requireRole('admin'),
+  async (req, res) => {
+    const withdrawalId = Number(req.params.id);
+    const effectiveDate = req.body.effective_date;
+    const notes = String(req.body.processing_notes || '').trim();
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (
+      !effectiveDate ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate) ||
+      Number.isNaN(Date.parse(effectiveDate))
+    ) {
+      return res.status(400).send('A valid effective date is required.');
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const result = await client.query(`
+        SELECT *
+        FROM course_withdrawals
+        WHERE id = $1
+        FOR UPDATE
+      `, [withdrawalId]);
+
+      if (!result.rows.length) {
+        throw new Error('Withdrawal request not found.');
+      }
+
+      const request = result.rows[0];
+
+      if (request.status !== 'approved') {
+        throw new Error('Only approved withdrawals can be processed.');
+      }
+
+      if (
+        request.finance_required &&
+        request.finance_decision !== 'cleared'
+      ) {
+        throw new Error('Finance clearance is required.');
+      }
+
+      // Update the official enrollment record.
+      const enrollmentUpdate = await client.query(`
+        UPDATE enrollments
+        SET
+          status = 'withdrawn',
+          status_changed_at = NOW()
+        WHERE user_id = $1
+          AND course_id = $2
+          AND section_id = $3
+          AND COALESCE(status, '') <> 'withdrawn'
+      `, [
+        request.student_id,
+        request.course_id,
+        request.section_id
+      ]);
+
+      // Update the matching course registration, if one exists.
+      const registrationUpdate = await client.query(`
+        UPDATE course_registrations
+        SET
+          status = 'withdrawn',
+          reviewed_at = NOW(),
+          reviewed_by = $1,
+          notes = COALESCE(notes, '') ||
+            CASE WHEN COALESCE(notes, '') = '' THEN '' ELSE E'\n' END ||
+            $2
+        WHERE student_id = $3
+          AND course_id = $4
+          AND section_id = $5
+          AND status <> 'withdrawn'
+      `, [
+        req.session.user.id,
+        'Withdrawal processed. Request #' + withdrawalId,
+        request.student_id,
+        request.course_id,
+        request.section_id
+      ]);
+
+      if (
+        enrollmentUpdate.rowCount === 0 &&
+        registrationUpdate.rowCount === 0
+      ) {
+        throw new Error(
+          'No matching active enrollment or course registration was found. Nothing was changed.'
+        );
+      }
+
+      await client.query(`
+        UPDATE course_withdrawals
+        SET
+          status = 'processed',
+          effective_date = $1,
+          processed_by = $2,
+          processed_at = NOW(),
+          updated_at = NOW(),
+          admin_notes = COALESCE(admin_notes, '') ||
+            CASE WHEN COALESCE(admin_notes, '') = '' THEN '' ELSE E'\n' END ||
+            $3
+        WHERE id = $4
+      `, [
+        effectiveDate,
+        req.session.user.id,
+        notes,
+        withdrawalId
+      ]);
+
+      await client.query(`
+        INSERT INTO course_withdrawal_history (
+          withdrawal_id,
+          action,
+          actor_id,
+          actor_role,
+          previous_status,
+          new_status,
+          description
+        )
+        VALUES ($1, 'withdrawal_processed', $2, 'admin', 'approved', 'processed', $3)
+      `, [
+        withdrawalId,
+        req.session.user.id,
+        notes || 'Official course withdrawal processed.'
+      ]);
+
+      await client.query('COMMIT');
+
+      if (req.flash) {
+        req.flash('success', 'Withdrawal processed successfully.');
+      }
+
+      res.redirect('/sis/admin/withdrawals');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Withdrawal processing error:', err);
+      res.status(400).send(err.message || 'Unable to process withdrawal.');
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
 
 app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req, res) => {
   try {

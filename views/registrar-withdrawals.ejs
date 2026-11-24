@@ -1,0 +1,681 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar Withdrawal Office — LuxMind SIS</title>
+
+  <style>
+    :root {
+      --green:#087f5b;
+      --green-light:#eaf6f0;
+      --ink:#17231f;
+      --muted:#718078;
+      --line:#e5ece8;
+      --bg:#f4f7f5;
+      --red:#b42318;
+      --amber:#a45b08;
+      --blue:#2459a6;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:Inter,"Segoe UI",Arial,sans-serif;
+      font-size:14px;
+    }
+
+    .topbar {
+      height:62px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:0 22px;
+      position:sticky;
+      top:0;
+      z-index:5;
+    }
+
+    .brand { font-size:18px; font-weight:800; }
+    .brand span { color:#0e9f6e; }
+
+    .back {
+      text-decoration:none;
+      color:var(--ink);
+      border:1px solid var(--line);
+      padding:8px 12px;
+      border-radius:9px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    main {
+      max-width:1200px;
+      margin:25px auto;
+      padding:0 18px 40px;
+    }
+
+    .eyebrow {
+      color:var(--green);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+    }
+
+    h1 { margin:5px 0; font-size:26px; letter-spacing:-.7px; }
+
+    .subtitle {
+      color:var(--muted);
+      font-size:13px;
+      margin:0 0 20px;
+    }
+
+    .notice {
+      background:#eaf6f0;
+      border:1px solid #d4eadf;
+      color:#245c46;
+      padding:13px 15px;
+      border-radius:12px;
+      margin-bottom:17px;
+      font-size:12px;
+    }
+
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:17px;
+    }
+
+    .stat,.panel {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .stat { padding:14px; }
+    .stat small { color:var(--muted); font-size:11px; }
+    .stat strong { display:block; font-size:24px; margin-top:4px; }
+
+    .toolbar {
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+      margin:15px 0;
+    }
+
+    .toolbar input,.toolbar select {
+      padding:10px 12px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:9px;
+      font:inherit;
+      font-size:12px;
+    }
+
+    .toolbar input { flex:1; min-width:190px; }
+    .toolbar select { min-width:155px; }
+
+    .panel { overflow:hidden; }
+
+    .panel-heading {
+      padding:15px 17px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+
+    .panel-heading h2 { margin:0; font-size:15px; }
+    .record-count { color:var(--muted); font-size:11px; }
+
+    .request {
+      padding:16px 17px;
+      border-bottom:1px solid var(--line);
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:15px;
+    }
+
+    .request:last-child { border-bottom:0; }
+
+    .student { font-size:13px; font-weight:800; }
+    .meta { color:var(--muted); font-size:11px; margin-top:4px; }
+    .course { font-weight:750; font-size:12px; margin-top:9px; }
+
+    .detail {
+      color:#56655e;
+      font-size:12px;
+      margin-top:5px;
+    }
+
+    .review-summary {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:7px;
+      margin-top:11px;
+    }
+
+    .review-item {
+      background:#f5f8f6;
+      padding:9px;
+      border-radius:8px;
+      font-size:10px;
+      color:#58665f;
+      min-width:0;
+      overflow-wrap:anywhere;
+    }
+
+    .review-item b {
+      display:block;
+      color:#26372e;
+      margin-bottom:3px;
+    }
+
+    .right {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:10px;
+    }
+
+    .status {
+      font-size:10px;
+      font-weight:800;
+      border-radius:20px;
+      padding:5px 9px;
+      background:#fff4df;
+      color:var(--amber);
+      white-space:nowrap;
+    }
+
+    .status.review { background:#eaf2ff; color:var(--blue); }
+    .status.done { background:#e8f6ee; color:var(--green); }
+    .status.rejected { background:#fff0ef; color:var(--red); }
+
+    .actions {
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    button {
+      border:0;
+      border-radius:8px;
+      padding:9px 12px;
+      font:inherit;
+      font-size:11px;
+      font-weight:750;
+      cursor:pointer;
+    }
+
+    .primary { background:var(--green); color:#fff; }
+    .secondary {
+      background:#f0f4f2;
+      color:#304139;
+      border:1px solid var(--line);
+    }
+
+    .empty {
+      padding:35px 15px;
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .guide { margin-top:16px; padding:16px; }
+    .guide h3 { margin:0 0 10px; font-size:13px; }
+
+    .guide-grid {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:9px;
+    }
+
+    .guide-item {
+      background:#f5f8f6;
+      padding:11px;
+      border-radius:9px;
+      font-size:11px;
+      color:#58665f;
+    }
+
+    .guide-item b {
+      display:block;
+      color:var(--ink);
+      margin-bottom:4px;
+    }
+
+    dialog {
+      border:0;
+      border-radius:15px;
+      width:min(540px,calc(100% - 25px));
+      padding:0;
+      box-shadow:0 20px 70px #10291f35;
+    }
+
+    dialog::backdrop { background:#10231d80; }
+    .modal { padding:20px; }
+    .modal h2 { font-size:17px; margin:0 0 5px; }
+    .modal p { font-size:12px; color:var(--muted); }
+
+    .modal label {
+      display:block;
+      font-size:11px;
+      font-weight:750;
+      margin:13px 0 5px;
+    }
+
+    .modal select,.modal textarea {
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:9px;
+      padding:10px;
+      font:inherit;
+      font-size:12px;
+    }
+
+    .modal textarea { min-height:95px; resize:vertical; }
+
+    .warning {
+      background:#fff7e8;
+      border:1px solid #f0dfba;
+      color:#80520e;
+      border-radius:9px;
+      padding:10px;
+      margin-top:12px;
+      font-size:11px;
+    }
+
+    .modal-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:16px;
+    }
+
+    @media(max-width:720px) {
+      .topbar { height:57px; padding:0 13px; }
+      main { margin:17px auto; padding:0 12px 30px; }
+      h1 { font-size:22px; }
+      .stats { grid-template-columns:repeat(2,1fr); gap:8px; }
+      .stat { padding:11px; }
+      .stat strong { font-size:21px; }
+      .request { grid-template-columns:1fr; padding:13px; }
+      .right { align-items:flex-start; }
+      .actions { justify-content:flex-start; }
+      .review-summary { grid-template-columns:1fr; }
+      .guide-grid { grid-template-columns:repeat(2,1fr); }
+      .back { font-size:11px; padding:7px 9px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#829087">SIS</small></div>
+  <a href="/dashboard" class="back">← Back to Dashboard</a>
+</header>
+
+<main>
+
+  <div class="eyebrow">Office of the Registrar</div>
+  <h1>Course withdrawal administration</h1>
+  <p class="subtitle">
+    Final review, decision and official processing of course withdrawal requests.
+  </p>
+
+  <div class="notice">
+    <b>Registrar authority:</b>
+    The Registrar makes the final decision. An approval is not an official
+    registration change until the processing action is completed and recorded.
+    Preserve the original registration history.
+  </div>
+
+  <section class="stats">
+    <div class="stat">
+      <small>Awaiting final decision</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['registrar_review','pending_registrar'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Approved, not processed</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.status || '').toLowerCase() === 'approved').length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Awaiting processing</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['processing','approved'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Processed</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.status || '').toLowerCase() === 'processed').length : 0 %></strong>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <input type="search" id="searchInput"
+      placeholder="Search student, course or request ID...">
+
+    <select id="statusFilter">
+      <option value="all">All requests</option>
+      <option value="review">Awaiting final decision</option>
+      <option value="approved">Approved, not processed</option>
+      <option value="processed">Processed</option>
+      <option value="rejected">Rejected</option>
+    </select>
+  </div>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Registrar request queue</h2>
+      <span class="record-count" id="recordCount">
+        <%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %> records
+      </span>
+    </div>
+
+    <div id="requestList">
+
+      <% if (typeof requests !== 'undefined' && Array.isArray(requests) && requests.length) { %>
+
+        <% requests.forEach(function(r) {
+          const requestId = r.id || r.request_id || '';
+          const student = r.student_name || r.full_name || r.student_email || 'Student';
+          const course = r.course_name || r.section_name || r.course_code || 'Course details unavailable';
+          const status = String(r.status || '').toLowerCase();
+          const advisor = String(r.advisor_decision || 'Not recorded').replace(/_/g,' ');
+          const hod = String(r.hod_decision || 'Not recorded').replace(/_/g,' ');
+          const finance = String(r.finance_decision || 'Not referred').replace(/_/g,' ');
+          const searchable = [requestId,student,course,r.reason || '',status,advisor,hod,finance].join(' ').toLowerCase();
+          const category = status === 'processed' ? 'processed' :
+            status === 'approved' || status === 'processing' ? 'approved' :
+            status === 'rejected' ? 'rejected' :
+            ['registrar_review','pending_registrar'].includes(status) ? 'review' : status;
+          const canDecide = ['registrar_review','pending_registrar'].includes(status);
+          const canProcess = ['approved','processing'].includes(status);
+        %>
+
+        <article class="request"
+          data-search="<%= searchable %>"
+          data-status="<%= category %>">
+
+          <div>
+            <div class="student"><%= student %></div>
+
+            <div class="meta">
+              Request #<%= requestId || '—' %>
+              · <%= r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Date unavailable' %>
+              · <%= r.student_number || r.student_id || 'Student ID unavailable' %>
+            </div>
+
+            <div class="course"><%= course %></div>
+
+            <div class="detail">
+              <b>Student's reason:</b>
+              <%= r.reason || 'No reason provided.' %>
+            </div>
+
+            <div class="review-summary">
+              <div class="review-item">
+                <b>Advisor review</b>
+                <%= advisor %>
+              </div>
+
+              <div class="review-item">
+                <b>HOD review</b>
+                <%= hod %>
+              </div>
+
+              <div class="review-item">
+                <b>Finance clearance</b>
+                <%= finance %>
+              </div>
+            </div>
+          </div>
+
+          <div class="right">
+            <span class="status <%= category === 'processed' ? 'done' : category === 'rejected' ? 'rejected' : category === 'review' ? 'review' : '' %>">
+              <%= status.replace(/_/g,' ') || 'Pending' %>
+            </span>
+
+            <div class="actions">
+              <% if (canDecide) { %>
+                <button type="button" class="primary"
+                  onclick="openDecision(this)"
+                  data-id="<%= requestId %>"
+                  data-student="<%= student %>"
+                  data-course="<%= course %>">
+                  Final decision
+                </button>
+              <% } %>
+
+              <% if (canProcess) { %>
+                <button type="button" class="primary"
+                  onclick="openProcessing(this)"
+                  data-id="<%= requestId %>"
+                  data-student="<%= student %>"
+                  data-course="<%= course %>">
+                  Process withdrawal
+                </button>
+              <% } %>
+            </div>
+          </div>
+
+        </article>
+
+        <% }); %>
+
+      <% } else { %>
+
+        <div class="empty">
+          No course withdrawal requests are currently assigned to the Registrar.
+        </div>
+
+      <% } %>
+
+    </div>
+
+    <div class="empty" id="noMatches" style="display:none">
+      No requests match your search or filter.
+    </div>
+  </section>
+
+  <section class="panel guide">
+    <h3>Official withdrawal processing</h3>
+
+    <div class="guide-grid">
+      <div class="guide-item">
+        <b>1. Review the file</b>
+        Check the student's request and all required academic reviews.
+      </div>
+
+      <div class="guide-item">
+        <b>2. Make final decision</b>
+        Approve, reject or return the request for clarification.
+      </div>
+
+      <div class="guide-item">
+        <b>3. Process approval</b>
+        Confirm the official effective date and required records.
+      </div>
+
+      <div class="guide-item">
+        <b>4. Preserve history</b>
+        Keep the original enrollment record and record the withdrawal event.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<dialog id="decisionDialog">
+  <form class="modal" id="decisionForm">
+    <h2>Registrar final decision</h2>
+    <p id="decisionSubtitle">Record the official decision for this request.</p>
+
+    <input type="hidden" id="decisionRequestId">
+
+    <label for="finalDecision">Final decision</label>
+    <select id="finalDecision" required>
+      <option value="">Select a decision</option>
+      <option value="approved">Approve withdrawal</option>
+      <option value="rejected">Reject withdrawal</option>
+      <option value="more_info">Return for clarification</option>
+    </select>
+
+    <label for="decisionComments">Registrar comments</label>
+    <textarea id="decisionComments" maxlength="2000"
+      placeholder="Enter the reason or official decision notes..."
+      required></textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary"
+        onclick="document.getElementById('decisionDialog').close()">
+        Cancel
+      </button>
+      <button type="submit" class="primary">Record decision</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="processingDialog">
+  <form class="modal" id="processingForm">
+    <h2>Official withdrawal processing</h2>
+    <p id="processingSubtitle">Confirm the details before processing the approved request.</p>
+
+    <input type="hidden" id="processingRequestId">
+
+    <div class="warning">
+      Processing must update the official enrollment status through a controlled,
+      auditable backend operation. It must not delete the original registration record.
+    </div>
+
+    <label for="effectiveDate">Official effective date</label>
+    <input type="date" id="effectiveDate"
+      style="width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit">
+
+    <label for="processingComments">Processing notes</label>
+    <textarea id="processingComments" maxlength="2000"
+      placeholder="Enter any official processing notes..."></textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary"
+        onclick="document.getElementById('processingDialog').close()">
+        Cancel
+      </button>
+      <button type="submit" class="primary">Confirm processing</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  const search = document.getElementById('searchInput');
+  const filter = document.getElementById('statusFilter');
+  const list = document.getElementById('requestList');
+  const count = document.getElementById('recordCount');
+  const empty = document.getElementById('noMatches');
+
+  function applyFilters() {
+    const query = search.value.trim().toLowerCase();
+    const selected = filter.value;
+    const records = [...list.querySelectorAll('.request')];
+    let visible = 0;
+
+    records.forEach(record => {
+      const matchesText = (record.dataset.search || '').includes(query);
+      const matchesStatus = selected === 'all' ||
+        record.dataset.status === selected;
+
+      record.hidden = !(matchesText && matchesStatus);
+      if (!record.hidden) visible++;
+    });
+
+    count.textContent = visible + ' of ' + records.length + ' records';
+    empty.style.display = records.length && visible === 0 ? 'block' : 'none';
+  }
+
+  search.addEventListener('input', applyFilters);
+  filter.addEventListener('change', applyFilters);
+
+  window.openDecision = function (button) {
+    document.getElementById('decisionRequestId').value = button.dataset.id || '';
+
+    document.getElementById('decisionSubtitle').textContent =
+      'Student: ' + (button.dataset.student || 'Student') +
+      ' · Course: ' + (button.dataset.course || 'Course');
+
+    document.getElementById('finalDecision').value = '';
+    document.getElementById('decisionComments').value = '';
+
+    document.getElementById('decisionDialog').showModal();
+  };
+
+  window.openProcessing = function (button) {
+    document.getElementById('processingRequestId').value = button.dataset.id || '';
+
+    document.getElementById('processingSubtitle').textContent =
+      'Student: ' + (button.dataset.student || 'Student') +
+      ' · Course: ' + (button.dataset.course || 'Course');
+
+    document.getElementById('effectiveDate').value = '';
+    document.getElementById('processingComments').value = '';
+
+    document.getElementById('processingDialog').showModal();
+  };
+
+  document.getElementById('decisionForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const decision = document.getElementById('finalDecision').value;
+    const comments = document.getElementById('decisionComments').value.trim();
+
+    if (!decision || !comments) {
+      alert('Select a final decision and enter the Registrar comments.');
+      return;
+    }
+
+    alert(
+      'The Registrar decision interface is ready. ' +
+      'Saving requires the Registrar decision route in server.js.'
+    );
+  });
+
+  document.getElementById('processingForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const date = document.getElementById('effectiveDate').value;
+
+    if (!date) {
+      alert('Select the official effective date.');
+      return;
+    }
+
+    if (!confirm(
+      'Confirm that you want to submit this withdrawal for official processing? ' +
+      'The backend must preserve the original registration history.'
+    )) return;
+
+    alert(
+      'The processing interface is ready. ' +
+      'Official registration changes require the secure Registrar processing route.'
+    );
+  });
+
+  applyFilters();
+})();
+</script>
+
+</body>
+</html>

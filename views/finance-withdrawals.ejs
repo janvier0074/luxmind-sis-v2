@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Clearance — LuxMind SIS</title>
+
+  <style>
+    :root {
+      --green:#087f5b;
+      --green-light:#eaf6f0;
+      --ink:#17231f;
+      --muted:#718078;
+      --line:#e5ece8;
+      --bg:#f4f7f5;
+      --amber:#a45b08;
+      --red:#b42318;
+      --blue:#2459a6;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:Inter,"Segoe UI",Arial,sans-serif;
+      font-size:14px;
+    }
+
+    .topbar {
+      height:62px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:0 22px;
+      position:sticky;
+      top:0;
+      z-index:5;
+    }
+
+    .brand { font-size:18px; font-weight:800; }
+    .brand span { color:#0e9f6e; }
+
+    .back {
+      text-decoration:none;
+      color:var(--ink);
+      border:1px solid var(--line);
+      padding:8px 12px;
+      border-radius:9px;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    main {
+      max-width:1180px;
+      margin:25px auto;
+      padding:0 18px 40px;
+    }
+
+    .eyebrow {
+      color:var(--green);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+    }
+
+    h1 { margin:5px 0; font-size:26px; letter-spacing:-.7px; }
+
+    .subtitle {
+      color:var(--muted);
+      font-size:13px;
+      margin:0 0 20px;
+    }
+
+    .notice {
+      background:#fff7e8;
+      border:1px solid #f0dfba;
+      color:#80520e;
+      padding:13px 15px;
+      border-radius:12px;
+      margin-bottom:17px;
+      font-size:12px;
+    }
+
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:17px;
+    }
+
+    .stat,.panel {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .stat { padding:14px; }
+    .stat small { color:var(--muted); font-size:11px; }
+    .stat strong { display:block; font-size:24px; margin-top:4px; }
+
+    .toolbar {
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+      margin:15px 0;
+    }
+
+    .toolbar input,.toolbar select {
+      padding:10px 12px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:9px;
+      font:inherit;
+      font-size:12px;
+    }
+
+    .toolbar input { flex:1; min-width:190px; }
+    .toolbar select { min-width:155px; }
+
+    .panel { overflow:hidden; }
+
+    .panel-heading {
+      padding:15px 17px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+
+    .panel-heading h2 { margin:0; font-size:15px; }
+    .record-count { color:var(--muted); font-size:11px; }
+
+    .request {
+      padding:16px 17px;
+      border-bottom:1px solid var(--line);
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:15px;
+    }
+
+    .request:last-child { border-bottom:0; }
+
+    .student { font-size:13px; font-weight:800; }
+    .meta { color:var(--muted); font-size:11px; margin-top:4px; }
+    .course { font-weight:750; font-size:12px; margin-top:9px; }
+
+    .detail {
+      color:#56655e;
+      font-size:12px;
+      margin-top:5px;
+    }
+
+    .academic-note {
+      background:#f5f8f6;
+      border-left:3px solid #8bc6a8;
+      padding:9px 11px;
+      border-radius:0 8px 8px 0;
+      margin-top:10px;
+      font-size:11px;
+      color:#53635a;
+    }
+
+    .right {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:10px;
+    }
+
+    .status {
+      font-size:10px;
+      font-weight:800;
+      border-radius:20px;
+      padding:5px 9px;
+      background:#fff4df;
+      color:var(--amber);
+      white-space:nowrap;
+    }
+
+    .status.review { background:#eaf2ff; color:var(--blue); }
+    .status.done { background:#e8f6ee; color:var(--green); }
+    .status.rejected { background:#fff0ef; color:var(--red); }
+
+    .actions {
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    button {
+      border:0;
+      border-radius:8px;
+      padding:9px 12px;
+      font:inherit;
+      font-size:11px;
+      font-weight:750;
+      cursor:pointer;
+    }
+
+    .primary { background:var(--green); color:#fff; }
+    .secondary {
+      background:#f0f4f2;
+      color:#304139;
+      border:1px solid var(--line);
+    }
+
+    .empty {
+      padding:35px 15px;
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .guide { margin-top:16px; padding:16px; }
+    .guide h3 { margin:0 0 10px; font-size:13px; }
+
+    .guide-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:9px;
+    }
+
+    .guide-item {
+      background:#f5f8f6;
+      padding:11px;
+      border-radius:9px;
+      font-size:11px;
+      color:#58665f;
+    }
+
+    .guide-item b {
+      display:block;
+      color:var(--ink);
+      margin-bottom:4px;
+    }
+
+    dialog {
+      border:0;
+      border-radius:15px;
+      width:min(520px,calc(100% - 25px));
+      padding:0;
+      box-shadow:0 20px 70px #10291f35;
+    }
+
+    dialog::backdrop { background:#10231d80; }
+    .modal { padding:20px; }
+    .modal h2 { font-size:17px; margin:0 0 5px; }
+    .modal p { font-size:12px; color:var(--muted); }
+
+    .modal label {
+      display:block;
+      font-size:11px;
+      font-weight:750;
+      margin:13px 0 5px;
+    }
+
+    .modal select,.modal textarea,.modal input {
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:9px;
+      padding:10px;
+      font:inherit;
+      font-size:12px;
+    }
+
+    .modal textarea { min-height:95px; resize:vertical; }
+
+    .modal-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:16px;
+    }
+
+    @media(max-width:720px) {
+      .topbar { height:57px; padding:0 13px; }
+      main { margin:17px auto; padding:0 12px 30px; }
+      h1 { font-size:22px; }
+      .stats { grid-template-columns:repeat(2,1fr); gap:8px; }
+      .stat { padding:11px; }
+      .stat strong { font-size:21px; }
+      .request { grid-template-columns:1fr; padding:13px; }
+      .right { align-items:flex-start; }
+      .actions { justify-content:flex-start; }
+      .guide-grid { grid-template-columns:1fr; }
+      .back { font-size:11px; padding:7px 9px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#829087">SIS</small></div>
+  <a href="/dashboard" class="back">← Back to Dashboard</a>
+</header>
+
+<main>
+
+  <div class="eyebrow">Financial administration</div>
+  <h1>Withdrawal financial clearance</h1>
+  <p class="subtitle">
+    Assess financial consequences for withdrawal requests referred to Finance.
+  </p>
+
+  <div class="notice">
+    <b>Finance responsibility:</b>
+    Record outstanding balances, applicable fee adjustments and financial clearance.
+    Finance does not approve or reject the academic withdrawal. Only review requests
+    formally referred to Finance.
+  </div>
+
+  <section class="stats">
+    <div class="stat">
+      <small>Awaiting clearance</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['finance_review','pending_finance'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Cleared</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.finance_decision || '').toLowerCase() === 'cleared').length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Balance requires attention</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.finance_decision || '').toLowerCase() === 'outstanding_balance').length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Total referred</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %></strong>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <input type="search" id="searchInput"
+      placeholder="Search student, course or request ID...">
+
+    <select id="statusFilter">
+      <option value="all">All referred requests</option>
+      <option value="pending">Awaiting clearance</option>
+      <option value="cleared">Cleared</option>
+      <option value="balance">Outstanding balance</option>
+      <option value="not_applicable">No adjustment required</option>
+    </select>
+  </div>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Requests referred to Finance</h2>
+      <span class="record-count" id="recordCount">
+        <%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %> records
+      </span>
+    </div>
+
+    <div id="requestList">
+
+      <% if (typeof requests !== 'undefined' && Array.isArray(requests) && requests.length) { %>
+
+        <% requests.forEach(function(r) {
+          const requestId = r.id || r.request_id || '';
+          const student = r.student_name || r.full_name || r.student_email || 'Student';
+          const course = r.course_name || r.section_name || r.course_code || 'Course details unavailable';
+          const status = String(r.status || '').toLowerCase();
+          const decision = String(r.finance_decision || '').toLowerCase();
+          const pending = ['finance_review','pending_finance'].includes(status);
+          const category = decision === 'cleared' ? 'cleared' :
+            decision === 'outstanding_balance' ? 'balance' :
+            decision === 'not_applicable' ? 'not_applicable' : 'pending';
+          const searchable = [requestId,student,course,r.reason || '',status,decision].join(' ').toLowerCase();
+        %>
+
+        <article class="request"
+          data-search="<%= searchable %>"
+          data-status="<%= category %>">
+
+          <div>
+            <div class="student"><%= student %></div>
+
+            <div class="meta">
+              Request #<%= requestId || '—' %>
+              · <%= r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Date unavailable' %>
+              · <%= r.student_number || r.student_id || 'Student ID unavailable' %>
+            </div>
+
+            <div class="course"><%= course %></div>
+
+            <div class="detail">
+              <b>Withdrawal reason:</b>
+              <%= r.reason || 'No reason provided.' %>
+            </div>
+
+            <div class="academic-note">
+              <b>Academic recommendation:</b>
+              <%= r.hod_decision || r.advisor_decision || 'Not available' %>
+              <br>
+              <b>Financial note:</b>
+              <%= r.finance_comments || 'No financial assessment recorded yet.' %>
+            </div>
+          </div>
+
+          <div class="right">
+            <span class="status <%= category === 'cleared' || category === 'not_applicable' ? 'done' : category === 'balance' ? 'rejected' : 'review' %>">
+              <%= decision ? decision.replace(/_/g,' ') : status.replace(/_/g,' ') || 'Pending' %>
+            </span>
+
+            <div class="actions">
+              <button type="button" class="secondary"
+                onclick="openFinanceReview(this)"
+                data-id="<%= requestId %>"
+                data-student="<%= student %>"
+                data-course="<%= course %>"
+                data-decision="<%= decision %>"
+                <%= !pending ? 'disabled' : '' %>>
+                Financial review
+              </button>
+            </div>
+          </div>
+
+        </article>
+
+        <% }); %>
+
+      <% } else { %>
+
+        <div class="empty">
+          No requests have been referred to Finance.
+        </div>
+
+      <% } %>
+
+    </div>
+
+    <div class="empty" id="noMatches" style="display:none">
+      No requests match your search or filter.
+    </div>
+  </section>
+
+  <section class="panel guide">
+    <h3>Finance review responsibilities</h3>
+
+    <div class="guide-grid">
+      <div class="guide-item">
+        <b>1. Check the account</b>
+        Review applicable tuition charges, payments and outstanding balances.
+      </div>
+
+      <div class="guide-item">
+        <b>2. Assess consequences</b>
+        Record any fee adjustment or refund implications according to institutional policy.
+      </div>
+
+      <div class="guide-item">
+        <b>3. Record clearance</b>
+        Send the financial result back to the Registrar for the final academic process.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<dialog id="financeDialog">
+  <form class="modal" id="financeForm">
+    <h2>Financial assessment</h2>
+    <p id="reviewSubtitle">Record the financial position for this request.</p>
+
+    <input type="hidden" id="requestId" name="request_id">
+
+    <label for="financeDecision">Financial clearance result</label>
+    <select id="financeDecision" name="decision" required>
+      <option value="">Select a result</option>
+      <option value="cleared">Financially cleared</option>
+      <option value="outstanding_balance">Outstanding balance identified</option>
+      <option value="not_applicable">No financial adjustment required</option>
+      <option value="pending_information">Additional financial information required</option>
+    </select>
+
+    <label for="balance">Outstanding balance (if applicable)</label>
+    <input type="number" id="balance" name="balance"
+      min="0" step="0.01" placeholder="Enter amount, if applicable">
+
+    <label for="financeComments">Financial assessment and comments</label>
+    <textarea id="financeComments" name="comments"
+      maxlength="2000"
+      placeholder="Explain the financial assessment, adjustments or outstanding items..."
+      required></textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary"
+        onclick="document.getElementById('financeDialog').close()">
+        Cancel
+      </button>
+
+      <button type="submit" class="primary">
+        Submit financial review
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  const search = document.getElementById('searchInput');
+  const filter = document.getElementById('statusFilter');
+  const list = document.getElementById('requestList');
+  const count = document.getElementById('recordCount');
+  const empty = document.getElementById('noMatches');
+
+  function applyFilters() {
+    const query = search.value.trim().toLowerCase();
+    const selected = filter.value;
+    const records = [...list.querySelectorAll('.request')];
+    let visible = 0;
+
+    records.forEach(record => {
+      const matchesText = (record.dataset.search || '').includes(query);
+      const matchesStatus = selected === 'all' ||
+        record.dataset.status === selected;
+
+      record.hidden = !(matchesText && matchesStatus);
+      if (!record.hidden) visible++;
+    });
+
+    count.textContent = visible + ' of ' + records.length + ' records';
+    empty.style.display = records.length && visible === 0 ? 'block' : 'none';
+  }
+
+  search.addEventListener('input', applyFilters);
+  filter.addEventListener('change', applyFilters);
+
+  window.openFinanceReview = function (button) {
+    if (button.disabled) return;
+
+    document.getElementById('requestId').value = button.dataset.id || '';
+
+    document.getElementById('reviewSubtitle').textContent =
+      'Student: ' + (button.dataset.student || 'Student') +
+      ' · Course: ' + (button.dataset.course || 'Course');
+
+    document.getElementById('financeDecision').value =
+      button.dataset.decision || '';
+
+    document.getElementById('balance').value = '';
+    document.getElementById('financeComments').value = '';
+
+    document.getElementById('financeDialog').showModal();
+  };
+
+  document.getElementById('financeForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const decision = document.getElementById('financeDecision').value;
+    const balance = document.getElementById('balance').value;
+    const comments = document.getElementById('financeComments').value.trim();
+
+    if (!decision || !comments) {
+      alert('Select a financial result and enter your assessment.');
+      return;
+    }
+
+    if (balance !== '' && Number(balance) < 0) {
+      alert('The outstanding balance cannot be negative.');
+      return;
+    }
+
+    alert(
+      'The financial review interface is ready. ' +
+      'The database submission route must be connected in server.js.'
+    );
+  });
+
+  applyFilters();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,717 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal Audit History — LuxMind SIS</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      color: #172033;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e5eaf1;
+      padding: 13px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      color: #079669;
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+
+    .dashboard-btn {
+      text-decoration: none;
+      color: #344054;
+      border: 1px solid #dce3eb;
+      padding: 9px 13px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .dashboard-btn:hover {
+      color: #047857;
+      background: #f0fdf7;
+      border-color: #10b981;
+    }
+
+    .container {
+      width: min(1150px, 94%);
+      margin: 25px auto 45px;
+    }
+
+    .heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 25px;
+      letter-spacing: -.7px;
+      margin-bottom: 5px;
+    }
+
+    .muted {
+      color: #667085;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 17px;
+    }
+
+    .stat {
+      background: #fff;
+      border: 1px solid #e5eaf1;
+      border-radius: 12px;
+      padding: 15px;
+      min-width: 0;
+    }
+
+    .stat-label {
+      color: #7b8494;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 7px;
+    }
+
+    .stat-sub {
+      color: #98a2b3;
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e5eaf1;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 3px 12px rgba(16, 24, 40, .035);
+      margin-bottom: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      font-size: 16px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.6fr) repeat(2, minmax(130px, .8fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #dce3eb;
+      border-radius: 9px;
+      background: #fff;
+      color: #344054;
+      font-size: 12px;
+      outline: none;
+      min-width: 0;
+    }
+
+    input:focus, select:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,.09);
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #edf0f5;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 850px;
+    }
+
+    th {
+      text-align: left;
+      background: #f8fafc;
+      color: #667085;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      padding: 12px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 12px;
+      border-top: 1px solid #edf0f5;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #fbfefc;
+    }
+
+    .primary-text {
+      font-weight: 700;
+      color: #263244;
+    }
+
+    .secondary-text {
+      color: #98a2b3;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .action {
+      display: inline-flex;
+      border-radius: 20px;
+      padding: 5px 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 10px;
+      font-weight: 750;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .action-submitted { background: #ecfdf5; color: #047857; }
+    .action-recommended { background: #eff6ff; color: #1d4ed8; }
+    .action-rejected { background: #fee2e2; color: #991b1b; }
+    .action-processed { background: #dcfce7; color: #166534; }
+    .action-updated { background: #f3e8ff; color: #7e22ce; }
+
+    .status {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 10px;
+      font-weight: 750;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-approved, .status-processed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-submitted,
+    .status-advisor_review,
+    .status-hod_review,
+    .status-finance_review,
+    .status-registrar_review {
+      background: #fff7e6;
+      color: #a15c00;
+    }
+
+    .status-processing {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-cancelled {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .view-btn {
+      display: inline-block;
+      text-decoration: none;
+      border: 1px solid #dce3eb;
+      padding: 7px 10px;
+      border-radius: 7px;
+      color: #344054;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .view-btn:hover {
+      border-color: #10b981;
+      color: #047857;
+    }
+
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 35px 15px;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 13px;
+    }
+
+    .timeline-entry {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .timeline-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .timeline-content {
+      border-bottom: 1px solid #edf0f5;
+      padding-bottom: 12px;
+      min-width: 0;
+    }
+
+    .timeline-entry:last-child .timeline-content {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .timeline-title {
+      font-size: 12px;
+      font-weight: 750;
+      margin-bottom: 4px;
+    }
+
+    .timeline-description {
+      color: #667085;
+      font-size: 11px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-date {
+      color: #98a2b3;
+      font-size: 10px;
+      margin-top: 5px;
+    }
+
+    .notice {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #854d0e;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #98a2b3;
+      font-size: 11px;
+      padding: 20px 0 5px;
+    }
+
+    @media(max-width: 760px) {
+      .container {
+        margin-top: 17px;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .filters {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .filters input {
+        grid-column: 1 / -1;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+    }
+
+    @media(max-width: 420px) {
+      .topbar {
+        padding: 11px 13px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .dashboard-btn {
+        font-size: 11px;
+        padding: 8px 9px;
+      }
+
+      .heading {
+        flex-direction: column;
+      }
+
+      .stat {
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 21px;
+      }
+
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .filters input {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<%
+  const logs = typeof history !== 'undefined' && Array.isArray(history) ? history : [];
+  const formatDate = (value) => {
+    if (!value) return 'Not recorded';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
+  };
+
+  const totalLogs = logs.length;
+  const processedLogs = logs.filter(x => String(x.action || '').toLowerCase().includes('process')).length;
+  const decisionLogs = logs.filter(x => {
+    const a = String(x.action || '').toLowerCase();
+    return a.includes('approv') || a.includes('reject') || a.includes('recommend');
+  }).length;
+  const submissionLogs = logs.filter(x => String(x.action || '').toLowerCase().includes('submit')).length;
+%>
+
+<header class="topbar">
+  <div class="brand">LuxMind SIS</div>
+  <a href="/dashboard" class="dashboard-btn">← Dashboard</a>
+</header>
+
+<main class="container">
+
+  <div class="heading">
+    <div>
+      <h1>Withdrawal Audit History</h1>
+      <p class="muted">Track every recorded action and status change in the withdrawal workflow.</p>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Audit record:</strong>
+    This page is intended for authorized staff. Every important withdrawal action should be recorded with the responsible user, timestamp, request ID, and status transition. Historical records should not be silently overwritten or deleted.
+  </div>
+
+  <!-- SUMMARY -->
+  <section class="stats">
+    <div class="stat">
+      <span class="stat-label">Total Activities</span>
+      <strong class="stat-value"><%= totalLogs %></strong>
+      <div class="stat-sub">Recorded audit entries</div>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label">Submissions</span>
+      <strong class="stat-value"><%= submissionLogs %></strong>
+      <div class="stat-sub">Requests created</div>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label">Review Decisions</span>
+      <strong class="stat-value"><%= decisionLogs %></strong>
+      <div class="stat-sub">Recommendations and decisions</div>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label">Processing Events</span>
+      <strong class="stat-value"><%= processedLogs %></strong>
+      <div class="stat-sub">Processing-related records</div>
+    </div>
+  </section>
+
+  <!-- FILTERS AND AUDIT TABLE -->
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>All Withdrawal Activities</h2>
+        <p class="muted" style="margin-top:4px;">Search and filter recorded events.</p>
+      </div>
+      <span class="status"><span id="visibleCount"><%= totalLogs %></span>&nbsp; entries</span>
+    </div>
+
+    <div class="filters">
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search student, course, request ID or staff..."
+        aria-label="Search audit history">
+
+      <select id="actionFilter" aria-label="Filter by action">
+        <option value="">All actions</option>
+        <option value="submit">Submitted</option>
+        <option value="recommend">Recommended</option>
+        <option value="approv">Approved</option>
+        <option value="reject">Rejected</option>
+        <option value="finance">Finance review</option>
+        <option value="process">Processed</option>
+        <option value="update">Updated</option>
+      </select>
+
+      <select id="statusFilter" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="submitted">Submitted</option>
+        <option value="advisor_review">Advisor review</option>
+        <option value="hod_review">HOD review</option>
+        <option value="finance_review">Finance review</option>
+        <option value="registrar_review">Registrar review</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="processing">Processing</option>
+        <option value="processed">Processed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Student / Course</th>
+            <th>Action</th>
+            <th>Performed By</th>
+            <th>Previous Status</th>
+            <th>New Status</th>
+            <th>Date & Time</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% logs.forEach(log => {
+            const action = String(log.action || 'updated').toLowerCase();
+            const previousStatus = String(log.previous_status || '').toLowerCase();
+            const newStatus = String(log.new_status || '').toLowerCase();
+            const student = log.student_name || 'Student';
+            const course = log.course_name || 'Course';
+            const actor = log.performed_by_name || log.actor_name || 'System / not recorded';
+            const requestId = log.request_id || log.withdrawal_request_id || '';
+            const searchable = [
+              requestId, student, course, actor, action,
+              previousStatus, newStatus, log.comments, log.description
+            ].join(' ').toLowerCase();
+          %>
+            <tr class="history-row"
+                data-search="<%= searchable %>"
+                data-action="<%= action %>"
+                data-status="<%= newStatus %>">
+
+              <td>
+                <div class="primary-text">#<%= requestId || 'N/A' %></div>
+                <div class="secondary-text">Withdrawal request</div>
+              </td>
+
+              <td>
+                <div class="primary-text"><%= student %></div>
+                <div class="secondary-text"><%= course %></div>
+              </td>
+
+              <td>
+                <span class="action action-<%= action.replace(/[^a-z0-9_-]/g, '') %>">
+                  <%= action.replace(/_/g, ' ') %>
+                </span>
+              </td>
+
+              <td>
+                <div class="primary-text"><%= actor %></div>
+                <div class="secondary-text"><%= log.performed_by_role || log.actor_role || 'Role not recorded' %></div>
+              </td>
+
+              <td>
+                <span class="status <%= previousStatus ? 'status-' + previousStatus : '' %>">
+                  <%= previousStatus ? previousStatus.replace(/_/g, ' ') : '—' %>
+                </span>
+              </td>
+
+              <td>
+                <span class="status <%= newStatus ? 'status-' + newStatus : '' %>">
+                  <%= newStatus ? newStatus.replace(/_/g, ' ') : '—' %>
+                </span>
+              </td>
+
+              <td>
+                <div class="primary-text"><%= formatDate(log.created_at || log.performed_at) %></div>
+              </td>
+
+              <td>
+                <% if (requestId) { %>
+                  <a class="view-btn" href="/sis/withdrawals/<%= requestId %>">View request</a>
+                <% } else { %>
+                  <span class="secondary-text">No request link</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty" id="emptyState">
+      No audit records match your search.
+    </div>
+  </section>
+
+  <!-- RECENT ACTIVITY -->
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Recent Activity</h2>
+        <p class="muted" style="margin-top:4px;">Latest recorded withdrawal events.</p>
+      </div>
+    </div>
+
+    <div class="timeline-list">
+      <% logs.slice(0, 8).forEach(log => { %>
+        <div class="timeline-entry">
+          <div class="timeline-icon">✓</div>
+          <div class="timeline-content">
+            <div class="timeline-title">
+              <%= log.action ? String(log.action).replace(/_/g, ' ') : 'Withdrawal activity' %>
+              · Request #<%= log.request_id || log.withdrawal_request_id || 'N/A' %>
+            </div>
+
+            <div class="timeline-description">
+              <%= log.description || log.comments || 'An activity was recorded in the withdrawal workflow.' %>
+            </div>
+
+            <div class="timeline-date">
+              <%= log.performed_by_name || log.actor_name || 'System / not recorded' %>
+              · <%= formatDate(log.created_at || log.performed_at) %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <% if (!logs.length) { %>
+        <div class="empty" style="display:block;">
+          No withdrawal activity has been recorded yet.
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <div class="footer">
+    LuxMind SIS · Withdrawal Audit History
+  </div>
+
+</main>
+
+<script>
+(function () {
+  const searchInput = document.getElementById('searchInput');
+  const actionFilter = document.getElementById('actionFilter');
+  const statusFilter = document.getElementById('statusFilter');
+  const rows = Array.from(document.querySelectorAll('.history-row'));
+  const emptyState = document.getElementById('emptyState');
+  const visibleCount = document.getElementById('visibleCount');
+
+  function filterHistory() {
+    const query = searchInput.value.trim().toLowerCase();
+    const action = actionFilter.value.toLowerCase();
+    const status = statusFilter.value.toLowerCase();
+
+    let visible = 0;
+
+    rows.forEach(row => {
+      const matchesSearch =
+        !query || row.dataset.search.includes(query);
+
+      const matchesAction =
+        !action || row.dataset.action.includes(action);
+
+      const matchesStatus =
+        !status || row.dataset.status === status;
+
+      const show = matchesSearch && matchesAction && matchesStatus;
+
+      row.style.display = show ? '' : 'none';
+
+      if (show) visible++;
+    });
+
+    visibleCount.textContent = visible;
+    emptyState.style.display = visible ? 'none' : 'block';
+  }
+
+  searchInput.addEventListener('input', filterHistory);
+  actionFilter.addEventListener('change', filterHistory);
+  statusFilter.addEventListener('change', filterHistory);
+})();
+</script>
+
+</body>
+</html>

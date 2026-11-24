@@ -3,150 +3,430 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LuxMind SIS - Course Withdrawal</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0e9f6e">
+  <title>Course Withdrawal | LuxMind SIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-    :root { --navy: #0a1e32; --blue: #1e4d7b; --gold: #ffc857; --ice: #f7fafd; --frost: #d9e6f2; --amber: #f5a623; --shadow: 0 8px 20px -6px rgba(10,30,50,0.12); --danger: #b33e2e; --success: #1f8a5f; }
-    body { background: var(--ice); display: flex; min-height: 100vh; color: var(--navy); }
-    .sidebar { width: 280px; background: var(--navy); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s ease; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .brand-mark { width: 35px; height: 35px; background: var(--amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; }
-    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
-    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
-    .menu-link { display: flex; align-items: center; padding: 0.7rem 1.2rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 3px solid transparent; }
-    .menu-link:hover, .menu-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--gold); }
-    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.9rem; }
-
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); transition: margin 0.3s ease; }
-    .top-bar { margin-bottom: 2rem; }
-    .top-bar h1 { font-size: 1.8rem; font-weight: 800; }
-    .top-bar p { color: #64748b; font-size: 0.95rem; }
-
-    .layout { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; }
-    
-    .form-card { background: #fff; padding: 2rem; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); }
-    .form-card h3 { margin-bottom: 1.5rem; font-size: 1.1rem; font-weight: 800; }
-    .form-group { margin-bottom: 1.5rem; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .form-control { width: 100%; padding: 0.9rem; border: 1px solid var(--frost); border-radius: 8px; font-family: inherit; background: var(--ice); font-size: 0.9rem; }
-    textarea.form-control { resize: vertical; min-height: 120px; }
-    .btn-submit { background: var(--danger); color: #fff; padding: 0.9rem; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; width: 100%; transition: 0.2s; }
-    .btn-submit:hover { background: #922e20; }
-
-    .table-container { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--frost); overflow: hidden; }
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { background: var(--navy); color: #fff; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
-    .data-table td { padding: 1rem; border-bottom: 1px solid var(--frost); font-size: 0.85rem; font-weight: 600; }
-    
-    .badge { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
-    .badge.pending { background: #fef3c7; color: #d97706; }
-    .badge.approved { background: #dcfce7; color: #16a34a; }
-    .badge.rejected { background: #fee2e2; color: #dc2626; }
-
-    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 700; font-size: 0.85rem; }
-    .alert-success { background: #dcfce7; color: #16a34a; }
-    .alert-error { background: #fee2e2; color: #dc2626; }
-
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow); align-items: center; justify-content: center; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
-
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0; width: 100%; padding: 1.5rem; padding-top: 5rem; }
-      .layout { grid-template-columns: 1fr; }
+    :root{--green:#0e9f6e;--green-dark:#087f59;--green-soft:#eaf8f1;--ink:#172b24;--muted:#718078;--line:#e6ece8;--bg:#f5f8f6;--white:#fff;--amber:#a66d12;--amber-bg:#fff8e8;--red:#c43f3f;--red-bg:#fff0f0;--blue:#3868ae;--blue-bg:#edf4ff;--shadow:0 5px 20px rgba(25,55,40,.045);--radius:15px}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;scroll-padding-top:82px}
+    body{font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:13px;min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    a{color:inherit;text-decoration:none}
+    button{cursor:pointer}
+    .topbar{height:62px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 max(18px,calc((100% - 1120px)/2));position:sticky;top:0;z-index:30}
+    .brand{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;letter-spacing:-.6px}
+    .brand-mark{width:32px;height:32px;border-radius:10px;background:var(--green);color:white;display:grid;place-items:center;font-size:17px}
+    .brand-name span{color:var(--green)}
+    .back-link{display:inline-flex;align-items:center;gap:7px;color:var(--green-dark);font-size:12px;font-weight:700;padding:9px 12px;border:1px solid #d6eee2;border-radius:9px;background:#f7fcf9}
+    .back-link:hover{background:var(--green-soft)}
+    .page{max-width:1120px;width:calc(100% - 36px);margin:22px auto 40px}
+    .hero{border-radius:17px;background:linear-gradient(115deg,#087f59,#10a875);color:white;padding:23px 25px;display:flex;justify-content:space-between;align-items:center;gap:18px;position:relative;overflow:hidden}
+    .hero:after{content:"";position:absolute;width:190px;height:190px;border:32px solid rgba(255,255,255,.08);border-radius:50%;right:-40px;top:-100px}
+    .hero-copy{position:relative;z-index:1;max-width:680px}
+    .eyebrow{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:8px}
+    h1{font-size:clamp(23px,3vw,30px);letter-spacing:-.9px;margin-bottom:7px}
+    .hero p{font-size:12px;line-height:1.7;color:rgba(255,255,255,.88);max-width:620px}
+    .hero-count{position:relative;z-index:1;min-width:112px;text-align:center;padding:12px 15px;border-radius:12px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2)}
+    .hero-count strong{display:block;font-size:25px}
+    .hero-count span{font-size:10px;color:rgba(255,255,255,.85)}
+    .quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:14px 0 18px}
+    .quick-action{border:1px solid var(--line);background:white;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:11px;text-align:left;box-shadow:var(--shadow);transition:.18s}
+    .quick-action:hover{border-color:#b9e4cf;transform:translateY(-1px)}
+    .quick-icon{width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:var(--green-soft);color:var(--green-dark);display:grid;place-items:center;font-size:16px;font-weight:800}
+    .quick-action strong{display:block;font-size:11px;margin-bottom:3px}
+    .quick-action small{display:block;color:var(--muted);font-size:10px;line-height:1.4}
+    .alert{padding:11px 14px;border-radius:10px;margin:0 0 14px;font-size:12px;line-height:1.6}
+    .alert-success{background:#e9f8ef;color:#16804f;border:1px solid #ccebd9}
+    .alert-error{background:var(--red-bg);color:#b83232;border:1px solid #f3d1d1}
+    .panel{background:white;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .panel-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .panel-head h2{font-size:14px;font-weight:800}
+    .panel-head p{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}
+    .panel-body{padding:18px 19px}
+    .section-title{font-size:12px;font-weight:800;margin-bottom:12px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    .field{min-width:0;margin-bottom:15px}
+    .field.full{grid-column:1/-1}
+    .field label{display:block;font-size:11px;font-weight:700;margin-bottom:7px}
+    .required{color:var(--red)}
+    .control{width:100%;min-height:42px;border:1px solid #dfe8e2;border-radius:9px;padding:10px 12px;background:white;color:var(--ink);font-size:12px;outline:none;transition:.18s}
+    .control:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.09)}
+    textarea.control{min-height:105px;resize:vertical;line-height:1.6}
+    .hint{font-size:10px;color:var(--muted);line-height:1.55;margin-top:6px}
+    .course-preview{display:none;margin-top:9px;padding:10px 12px;background:#f2faf6;border:1px solid #d9eee2;border-radius:9px}
+    .course-preview.visible{display:block}
+    .course-preview strong{display:block;font-size:11px;color:var(--green-dark);margin-bottom:3px}
+    .course-preview span{font-size:10px;color:var(--muted)}
+    .upload{display:flex;align-items:center;gap:12px;border:1px dashed #bfd4c7;border-radius:10px;padding:13px;background:#fbfdfb;cursor:pointer;transition:.18s}
+    .upload:hover{border-color:var(--green);background:#f4fbf7}
+    .upload-icon{width:34px;height:34px;border-radius:9px;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:17px;flex:0 0 34px}
+    .upload strong{display:block;font-size:11px;margin-bottom:3px}
+    .upload small{display:block;font-size:10px;color:var(--muted)}
+    .upload input{display:none}
+    .file-name{font-size:10px;color:var(--green-dark);margin-top:7px;overflow-wrap:anywhere}
+    .info-note{display:flex;gap:10px;padding:12px;border:1px solid #f0e2bd;background:var(--amber-bg);border-radius:10px;margin:2px 0 14px}
+    .info-note b{display:block;font-size:10px;margin-bottom:3px;color:#7e5b1d}
+    .info-note p{font-size:10px;color:#79643a;line-height:1.6}
+    .confirm-row{display:flex;align-items:flex-start;gap:9px;margin:13px 0}
+    .confirm-row input{margin-top:2px;accent-color:var(--green)}
+    .confirm-row label{font-size:10px;color:#59675f;line-height:1.6}
+    .form-actions{display:flex;gap:9px;flex-wrap:wrap}
+    .btn{min-height:39px;padding:0 15px;border:0;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:11px;font-weight:800;transition:.18s}
+    .btn-primary{background:var(--green);color:white}
+    .btn-primary:hover{background:var(--green-dark)}
+    .btn-light{background:#f0f5f2;color:#405148;border:1px solid var(--line)}
+    .btn-light:hover{background:#e8f0eb}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .review-box{display:none;border:1px solid #cfe9da;background:#f5fbf7;border-radius:11px;padding:13px;margin:14px 0}
+    .review-box.visible{display:block}
+    .review-box h3{font-size:12px;margin-bottom:9px;color:var(--green-dark)}
+    .review-line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #e2efe7;font-size:10px}
+    .review-line:last-child{border:0}
+    .review-line span{color:var(--muted);text-align:right;overflow-wrap:anywhere}
+    .history{margin-top:17px}
+    .history-tools{display:flex;align-items:center;gap:8px}
+    .search{width:190px;min-height:34px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:10px;outline:none}
+    .filter-row{display:flex;gap:6px;flex-wrap:wrap;padding:13px 18px 0}
+    .filter-btn{border:1px solid var(--line);background:white;color:var(--muted);border-radius:20px;padding:6px 10px;font-size:9px;font-weight:700}
+    .filter-btn.active{background:var(--green-soft);border-color:#ccebd9;color:var(--green-dark)}
+    .request-list{padding:12px 18px 17px;display:grid;gap:9px}
+    .request-card{border:1px solid var(--line);border-radius:10px;padding:12px 13px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+    .request-card[hidden]{display:none}
+    .request-course{font-size:11px;font-weight:800;margin-bottom:4px}
+    .request-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:9px}
+    .request-right{display:flex;align-items:center;gap:10px}
+    .status{display:inline-flex;align-items:center;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:800;background:#f0f2f1;color:#64716a;white-space:nowrap}
+    .status.pending,.status.submitted,.status.advisor_review,.status.hod_review,.status.registrar_review{background:#fff6df;color:#9b6b12}
+    .status.approved,.status.processed{background:#e7f8ef;color:#16804f}
+    .status.rejected,.status.cancelled{background:#fff0f0;color:#c43f3f}
+    .status.finance_review,.status.processing{background:var(--blue-bg);color:var(--blue)}
+    .view-link{font-size:10px;color:var(--green-dark);font-weight:800;white-space:nowrap}
+    .empty{padding:25px 15px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6}
+    .guide{margin-top:17px}
+    .guide-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:15px 18px}
+    .guide-step{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fcfdfc}
+    .step-num{width:24px;height:24px;border-radius:8px;background:var(--green-soft);color:var(--green-dark);display:grid;place-items:center;font-size:10px;font-weight:800;margin-bottom:8px}
+    .guide-step strong{display:block;font-size:10px;margin-bottom:4px}
+    .guide-step p{font-size:9px;color:var(--muted);line-height:1.55}
+    .faq-list{padding:4px 18px 13px}
+    .faq-item{border-bottom:1px solid var(--line)}
+    .faq-item:last-child{border:0}
+    .faq-question{width:100%;background:white;border:0;padding:12px 0;display:flex;justify-content:space-between;gap:12px;text-align:left;font-size:10px;font-weight:700;color:var(--ink)}
+    .faq-answer{display:none;padding:0 20px 12px 0;color:var(--muted);font-size:10px;line-height:1.65}
+    .faq-item.open .faq-answer{display:block}
+    .faq-item.open .faq-mark{transform:rotate(45deg)}
+    .faq-mark{color:var(--green);font-size:16px;transition:.2s}
+    .footer{text-align:center;color:var(--muted);font-size:9px;padding:20px 8px 0}
+    @media(max-width:760px){.page{margin-top:15px}.hero{padding:19px}.quick-actions{gap:8px}.quick-action{padding:11px 9px}.quick-action small{font-size:9px}.guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){
+      body{font-size:12px}.topbar{height:56px;padding:0 13px}.brand{font-size:16px}.brand-mark{width:29px;height:29px}.back-link{font-size:10px;padding:8px 9px}
+      .page{width:calc(100% - 22px);margin:12px auto 28px}.hero{padding:17px 15px;border-radius:13px;align-items:flex-start}.hero-count{min-width:68px;padding:9px 7px}.hero-count strong{font-size:20px}.hero-count span{font-size:8px}.hero p{font-size:10px;line-height:1.6}
+      .eyebrow{font-size:9px}h1{font-size:22px}.quick-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 12px}.quick-action{display:block;padding:9px 8px;min-height:83px}.quick-icon{width:27px;height:27px;margin-bottom:7px;font-size:13px}.quick-action strong{font-size:9px}.quick-action small{font-size:8px;line-height:1.35}
+      .panel-head{padding:13px 13px}.panel-body{padding:13px}.panel-head h2{font-size:12px}.panel-head p{font-size:9px}
+      .form-grid{grid-template-columns:1fr;gap:0}.field.full{grid-column:auto}.field{margin-bottom:12px}.control{min-height:40px;font-size:11px}textarea.control{min-height:92px}
+      .info-note{padding:10px}.info-note p,.info-note b{font-size:9px}.btn{min-height:38px;font-size:10px}.form-actions .btn{flex:1}
+      .history-tools{width:100%;flex-direction:column;align-items:stretch}.search{width:100%}.panel-head.history-head{align-items:flex-start;flex-direction:column}
+      .filter-row{padding:11px 12px 0}.request-list{padding:10px 12px 13px}.request-card{grid-template-columns:1fr;gap:8px;padding:11px}.request-right{justify-content:space-between}.request-meta{font-size:8px}
+      .guide-grid{gap:7px;padding:11px 12px}.guide-step{padding:10px}.guide-step strong{font-size:9px}.guide-step p{font-size:8px}.faq-list{padding:2px 13px 10px}
     }
+    @media(max-width:350px){.hero-count{display:none}.quick-action small{display:none}.quick-action{min-height:66px}.quick-icon{margin-bottom:5px}}
   </style>
-  <link rel="stylesheet" href="/css/mobile.css">
-  <script src="/js/mobile.js" defer></script>
 </head>
 <body>
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+  <header class="topbar">
+    <a href="/dashboard" class="brand" aria-label="LuxMind">
+      <span class="brand-mark">L</span>
+      <span class="brand-name">Lux<span>Mind</span></span>
+    </a>
+    <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+  </header>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">L</div>
-      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
-    </div>
-    <ul class="sidebar-menu">
-      <li><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
-      <li><a href="/sis/my/withdrawal" class="menu-link active"><i class="fas fa-sign-out-alt main-icon"></i> Course Withdrawal</a></li>
-      <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
-    </ul>
-  </aside>
+  <main class="page">
+    <% const availableCourses = typeof enrolledCourses !== 'undefined' && Array.isArray(enrolledCourses) ? enrolledCourses : (typeof courses !== 'undefined' && Array.isArray(courses) ? courses : []); %>
+    <% const withdrawalRequests = typeof requests !== 'undefined' && Array.isArray(requests) ? requests : []; %>
+    <% const studentInitials = typeof user !== 'undefined' && user && user.name ? user.name.trim().split(/\s+/).map(n => n[0]).slice(0,2).join('').toUpperCase() : 'ST'; %>
 
-  <main class="main-content">
-    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Student academic services</div>
+        <h1>Course Withdrawal</h1>
+        <p>Request to withdraw from a currently registered course, follow your application, and review the steps before submitting.</p>
+      </div>
+      <div class="hero-count"><strong><%= withdrawalRequests.length %></strong><span>My requests</span></div>
+    </section>
 
-    <div class="top-bar">
-      <h1>Course Withdrawal</h1>
-      <p>Request to drop a course from your current semester.</p>
-    </div>
+    <nav class="quick-actions" aria-label="Page actions">
+      <button class="quick-action" type="button" data-scroll="#newRequest">
+        <span class="quick-icon">＋</span><span><strong>New Request</strong><small>Start an application</small></span>
+      </button>
+      <button class="quick-action" type="button" data-scroll="#requestHistory">
+        <span class="quick-icon">▤</span><span><strong>My Requests</strong><small>Track submitted requests</small></span>
+      </button>
+      <button class="quick-action" type="button" data-scroll="#processGuide">
+        <span class="quick-icon">ⓘ</span><span><strong>Process Guide</strong><small>See review stages</small></span>
+      </button>
+    </nav>
 
-    <% if (flash.success && flash.success.length > 0) { %><div class="alert alert-success"><%= flash.success[0] %></div><% } %>
-    <% if (flash.error && flash.error.length > 0) { %><div class="alert alert-error"><%= flash.error[0] %></div><% } %>
+    <% if (typeof flash !== 'undefined' && flash && flash.success) { %>
+      <div class="alert alert-success"><%= flash.success %></div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
 
-    <div class="layout">
-      <div class="form-card">
-        <h3><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> New Request</h3>
-        <form method="POST" action="/sis/my/withdrawal/request">
-          <div class="form-group">
-            <label>Select Course to Drop</label>
-            <select name="course_id" class="form-control" required>
-              <option value="" disabled selected>-- Choose an enrolled course --</option>
-              <% enrolled.forEach(c => { %>
-                <option value="<%= c.id %>"><%= c.code %> - <%= c.title %></option>
+    <section class="panel" id="newRequest">
+      <div class="panel-head">
+        <div><h2>Submit a Withdrawal Request</h2><p>Complete the required details. Your registration will not change until official processing.</p></div>
+      </div>
+      <form class="panel-body" action="/sis/my/withdrawal/submit" method="POST" enctype="multipart/form-data" id="withdrawalForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="section_id">Course to withdraw from <span class="required">*</span></label>
+            <select class="control" id="section_id" name="section_id" required>
+              <option value="">Select one of your enrolled courses</option>
+              <% availableCourses.forEach(course => { %>
+                <option value="<%= course.section_id || course.id %>"
+                  data-code="<%= course.code || course.course_code || 'Course' %>"
+                  data-title="<%= course.title || course.course_title || course.name || 'Untitled course' %>"
+                  data-credits="<%= course.credits || '' %>">
+                  <%= course.code || course.course_code || 'Course' %> — <%= course.title || course.course_title || course.name || 'Untitled course' %><% if (course.credits) { %> (<%= course.credits %> Credits)<% } %>
+                </option>
               <% }) %>
             </select>
+            <div class="course-preview" id="coursePreview"><strong id="previewCourseName">Selected course</strong><span id="previewCourseMeta">Course details will appear here.</span></div>
+            <p class="hint">Only select a course that appears in your current enrollment list.</p>
           </div>
-          <div class="form-group">
-            <label>Reason for Withdrawal</label>
-            <textarea name="reason" class="form-control" placeholder="Explain why you need to drop this course..." required></textarea>
-          </div>
-          <button type="submit" class="btn-submit">Submit Request</button>
-        </form>
-      </div>
 
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Date Requested</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (requests.length === 0) { %>
-              <tr><td colspan="4" style="text-align: center; padding: 2rem;">No withdrawal requests yet.</td></tr>
-            <% } %>
-            <% requests.forEach(r => { %>
-              <tr>
-                <td><strong style="color: var(--blue);"><%= r.code %></strong><br><%= r.title %></td>
-                <td><%= r.reason %></td>
-                <td><span class="badge <%= r.status %>"><%= r.status %></span></td>
-                <td><%= new Date(r.requested_at).toLocaleDateString() %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+          <div class="field full">
+            <label for="reason">Reason for withdrawal <span class="required">*</span></label>
+            <textarea class="control" id="reason" name="reason" placeholder="Explain why you are requesting to withdraw from this course..." maxlength="2000" required></textarea>
+            <p class="hint">Give a clear explanation for the academic reviewers. <span id="charCount">0 / 2000</span></p>
+          </div>
+
+          <div class="field full">
+            <label for="attachment">Supporting document <span style="font-weight:500;color:var(--muted)">(optional unless required by policy)</span></label>
+            <label class="upload" for="attachment">
+              <span class="upload-icon">↑</span>
+              <span><strong>Choose a file to attach</strong><small>PDF, JPG or PNG · Maximum 5 MB</small></span>
+              <input type="file" id="attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png">
+            </label>
+            <div class="file-name" id="fileName" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="info-note">
+          <span aria-hidden="true">ⓘ</span>
+          <div><b>Important: submitting is not the same as withdrawing</b><p>Your current course registration remains active while the request is reviewed. The Registrar must complete the official processing before your enrollment record changes.</p></div>
+        </div>
+
+        <div class="confirm-row">
+          <input type="checkbox" id="confirmation" required>
+          <label for="confirmation">I confirm that the information provided is accurate and understand that this request is subject to academic review and the university's withdrawal policy.</label>
+        </div>
+
+        <div class="review-box" id="reviewBox" aria-live="polite">
+          <h3>Review your request</h3>
+          <div class="review-line"><b>Course</b><span id="reviewCourse">Not selected</span></div>
+          <div class="review-line"><b>Reason</b><span id="reviewReason">Not provided</span></div>
+          <div class="review-line"><b>Attachment</b><span id="reviewFile">None</span></div>
+          <p class="hint">Check these details before submitting. Selecting “Submit Request” sends the form to the university for review.</p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-light" id="reviewBtn">Review Details</button>
+          <button type="reset" class="btn btn-light" id="resetBtn">Clear Form</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Submit Request →</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel history" id="requestHistory">
+      <div class="panel-head history-head">
+        <div><h2>My Withdrawal Requests</h2><p>Review the status and open the details of an application.</p></div>
+        <div class="history-tools">
+          <input class="search" id="requestSearch" type="search" placeholder="Search by course or status..." aria-label="Search requests">
+        </div>
       </div>
-    </div>
+      <div class="filter-row" aria-label="Filter requests">
+        <button class="filter-btn active" type="button" data-filter="all">All</button>
+        <button class="filter-btn" type="button" data-filter="progress">In progress</button>
+        <button class="filter-btn" type="button" data-filter="completed">Completed</button>
+      </div>
+      <% if (withdrawalRequests.length > 0) { %>
+        <div class="request-list" id="requestList">
+          <% withdrawalRequests.forEach(request => { %>
+            <% const requestStatus = String(request.status || 'submitted').toLowerCase(); %>
+            <% const isCompleted = ['approved','rejected','processed','cancelled'].includes(requestStatus); %>
+            <article class="request-card" data-status="<%= isCompleted ? 'completed' : 'progress' %>" data-search="<%= (String(request.course_code || request.code || '') + ' ' + String(request.course_title || request.title || '') + ' ' + requestStatus).toLowerCase() %>">
+              <div>
+                <div class="request-course"><%= request.course_code || request.code || 'Course' %> — <%= request.course_title || request.title || 'Course withdrawal' %></div>
+                <div class="request-meta">
+                  <span>Submitted: <%= request.created_at ? new Date(request.created_at).toLocaleDateString() : '—' %></span>
+                  <span>Updated: <%= request.updated_at ? new Date(request.updated_at).toLocaleDateString() : '—' %></span>
+                </div>
+              </div>
+              <div class="request-right">
+                <span class="status <%= requestStatus %>"><%= requestStatus.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) %></span>
+                <a class="view-link" href="/sis/my/withdrawal/<%= request.id %>">Details →</a>
+              </div>
+            </article>
+          <% }) %>
+          <div class="empty" id="noMatches" hidden>No requests match your search or filter.</div>
+        </div>
+      <% } else { %>
+        <div class="empty">You have not submitted a withdrawal request yet. Your applications will appear here after submission.</div>
+      <% } %>
+    </section>
+
+    <section class="panel guide" id="processGuide">
+      <div class="panel-head"><div><h2>How the Process Works</h2><p>Know what happens after you submit your application.</p></div></div>
+      <div class="guide-grid">
+        <div class="guide-step"><span class="step-num">1</span><strong>Student submission</strong><p>Select an enrolled course, explain your reason, and submit the request.</p></div>
+        <div class="guide-step"><span class="step-num">2</span><strong>Academic review</strong><p>Your Academic Advisor and Head of Department review and recommend an outcome.</p></div>
+        <div class="guide-step"><span class="step-num">3</span><strong>Finance review, if needed</strong><p>Finance checks applicable financial consequences when a review is required.</p></div>
+        <div class="guide-step"><span class="step-num">4</span><strong>Registrar processing</strong><p>The Registrar makes the final decision and processes an approved request.</p></div>
+      </div>
+    </section>
+
+    <section class="panel guide" id="faq">
+      <div class="panel-head"><div><h2>Frequently Asked Questions</h2><p>Quick answers about course withdrawal.</p></div></div>
+      <div class="faq-list">
+        <div class="faq-item"><button type="button" class="faq-question">Am I withdrawn immediately after submitting? <span class="faq-mark">＋</span></button><div class="faq-answer">No. Your registration remains unchanged while the request is reviewed. The official record changes only after the Registrar completes processing.</div></div>
+        <div class="faq-item"><button type="button" class="faq-question">Can I track my application? <span class="faq-mark">＋</span></button><div class="faq-answer">Yes. Use the My Withdrawal Requests section above and open Details to view the application information available to you.</div></div>
+        <div class="faq-item"><button type="button" class="faq-question">Do I need to attach a document? <span class="faq-mark">＋</span></button><div class="faq-answer">Attach supporting evidence when it is relevant or required by university policy. The form accepts PDF, JPG, and PNG files up to 5 MB.</div></div>
+        <div class="faq-item"><button type="button" class="faq-question">Who makes the final decision? <span class="faq-mark">＋</span></button><div class="faq-answer">The Registrar is the final authority in the proposed workflow, after the required academic reviews and any applicable financial review.</div></div>
+      </div>
+    </section>
+
+    <footer class="footer">© <%= new Date().getFullYear() %> LuxMind SIS · Academic Services</footer>
   </main>
 
   <script>
-    function toggleMobileMenu() {
-      document.getElementById('sidebar').classList.toggle('active');
-      document.getElementById('sidebarOverlay').classList.toggle('active');
-    }
+    (() => {
+      'use strict';
+
+      const form = document.getElementById('withdrawalForm');
+      const course = document.getElementById('section_id');
+      const reason = document.getElementById('reason');
+      const attachment = document.getElementById('attachment');
+      const fileName = document.getElementById('fileName');
+      const charCount = document.getElementById('charCount');
+      const preview = document.getElementById('coursePreview');
+      const reviewBox = document.getElementById('reviewBox');
+      const submitBtn = document.getElementById('submitBtn');
+
+      document.querySelectorAll('[data-scroll]').forEach(button => {
+        button.addEventListener('click', () => {
+          const target = document.querySelector(button.dataset.scroll);
+          if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      });
+
+      function updateCoursePreview() {
+        const option = course.options[course.selectedIndex];
+        if (!course.value || !option) {
+          preview.classList.remove('visible');
+          return;
+        }
+        document.getElementById('previewCourseName').textContent = option.dataset.code + ' — ' + option.dataset.title;
+        document.getElementById('previewCourseMeta').textContent = option.dataset.credits ? option.dataset.credits + ' credits · Selected course' : 'Selected course';
+        preview.classList.add('visible');
+      }
+
+      course.addEventListener('change', updateCoursePreview);
+      reason.addEventListener('input', () => {
+        charCount.textContent = reason.value.length + ' / 2000';
+      });
+
+      attachment.addEventListener('change', () => {
+        const file = attachment.files && attachment.files[0];
+        fileName.textContent = '';
+        if (!file) return;
+        const allowed = ['application/pdf','image/jpeg','image/png'];
+        if (!allowed.includes(file.type)) {
+          alert('Please select a PDF, JPG or PNG document.');
+          attachment.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('The selected file exceeds the 5 MB limit.');
+          attachment.value = '';
+          return;
+        }
+        fileName.textContent = 'Selected: ' + file.name;
+      });
+
+      document.getElementById('reviewBtn').addEventListener('click', () => {
+        if (!course.value || !reason.value.trim()) {
+          form.reportValidity();
+          return;
+        }
+        const selected = course.options[course.selectedIndex];
+        document.getElementById('reviewCourse').textContent = selected.textContent.trim();
+        document.getElementById('reviewReason').textContent = reason.value.trim().length > 110 ? reason.value.trim().slice(0,107) + '…' : reason.value.trim();
+        document.getElementById('reviewFile').textContent = attachment.files[0] ? attachment.files[0].name : 'No document attached';
+        reviewBox.classList.add('visible');
+        reviewBox.scrollIntoView({behavior:'smooth',block:'nearest'});
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        window.setTimeout(() => {
+          charCount.textContent = '0 / 2000';
+          fileName.textContent = '';
+          preview.classList.remove('visible');
+          reviewBox.classList.remove('visible');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Request →';
+        }, 0);
+      });
+
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) return;
+        if (!confirm('Submit this course withdrawal request for academic review?')) {
+          event.preventDefault();
+          return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting…';
+      });
+
+      const filterButtons = [...document.querySelectorAll('[data-filter]')];
+      const requestCards = [...document.querySelectorAll('.request-card')];
+      const search = document.getElementById('requestSearch');
+      const noMatches = document.getElementById('noMatches');
+      let activeFilter = 'all';
+
+      function filterRequests() {
+        const query = (search?.value || '').trim().toLowerCase();
+        let visible = 0;
+        requestCards.forEach(card => {
+          const filterMatch = activeFilter === 'all' || card.dataset.status === activeFilter;
+          const searchMatch = (card.dataset.search || '').includes(query);
+          card.hidden = !(filterMatch && searchMatch);
+          if (!card.hidden) visible++;
+        });
+        if (noMatches) noMatches.hidden = visible !== 0;
+      }
+
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          activeFilter = button.dataset.filter;
+          filterButtons.forEach(item => item.classList.toggle('active', item === button));
+          filterRequests();
+        });
+      });
+      search?.addEventListener('input', filterRequests);
+
+      document.querySelectorAll('.faq-question').forEach(button => {
+        button.addEventListener('click', () => {
+          const item = button.closest('.faq-item');
+          item.classList.toggle('open');
+        });
+      });
+    })();
   </script>
 </body>
 </html>

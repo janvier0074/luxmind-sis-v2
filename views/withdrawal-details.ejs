@@ -1,0 +1,803 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal Details — LuxMind SIS</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      color: #172033;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e5eaf1;
+      padding: 13px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      font-size: 19px;
+      font-weight: 800;
+      color: #079669;
+      letter-spacing: -.5px;
+    }
+
+    .dashboard-btn {
+      text-decoration: none;
+      color: #344054;
+      border: 1px solid #dce3eb;
+      background: #fff;
+      padding: 9px 13px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .dashboard-btn:hover {
+      background: #f0fdf7;
+      border-color: #10b981;
+      color: #047857;
+    }
+
+    .container {
+      width: min(1100px, 94%);
+      margin: 25px auto 45px;
+    }
+
+    .page-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .page-heading h1 {
+      font-size: 25px;
+      letter-spacing: -.7px;
+      margin-bottom: 5px;
+    }
+
+    .muted {
+      color: #667085;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 11px;
+      border-radius: 30px;
+      font-size: 11px;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      white-space: nowrap;
+    }
+
+    .status-submitted,
+    .status-advisor_review,
+    .status-hod_review,
+    .status-finance_review,
+    .status-registrar_review {
+      background: #fff7e6;
+      color: #a15c00;
+    }
+
+    .status-approved,
+    .status-processed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-cancelled {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .status-processing {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(260px, .8fr);
+      gap: 17px;
+      align-items: start;
+    }
+
+    .main-column,
+    .side-column {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5eaf1;
+      border-radius: 15px;
+      padding: 19px;
+      box-shadow: 0 3px 12px rgba(16, 24, 40, .035);
+    }
+
+    .card h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      letter-spacing: -.2px;
+    }
+
+    .course-title {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .course-code {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #047857;
+      border-radius: 7px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 750;
+      margin-bottom: 13px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .info-item {
+      min-width: 0;
+    }
+
+    .info-label {
+      display: block;
+      color: #7b8494;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .45px;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      color: #263244;
+      font-size: 13px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .reason-box {
+      background: #f8fafc;
+      border: 1px solid #edf0f5;
+      border-radius: 10px;
+      padding: 13px;
+      color: #475467;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .review {
+      border: 1px solid #e8edf3;
+      border-radius: 11px;
+      padding: 13px;
+      margin-bottom: 10px;
+    }
+
+    .review:last-child {
+      margin-bottom: 0;
+    }
+
+    .review-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .review-title {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .decision {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 5px 8px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .decision-approved,
+    .decision-recommended,
+    .decision-cleared {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .decision-rejected,
+    .decision-not_recommended {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .decision-pending,
+    .decision-more_info,
+    .decision-outstanding_balance {
+      background: #fff7e6;
+      color: #a15c00;
+    }
+
+    .review-comment {
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.6;
+      margin-top: 7px;
+      overflow-wrap: anywhere;
+    }
+
+    .review-meta {
+      color: #98a2b3;
+      font-size: 11px;
+      margin-top: 7px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 23px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 7px;
+      bottom: 7px;
+      width: 2px;
+      background: #e4e9ef;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 0 0 18px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -22px;
+      top: 3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #d1fae5;
+    }
+
+    .timeline-dot.pending {
+      background: #cbd5e1;
+      border-color: #f1f5f9;
+    }
+
+    .timeline-title {
+      font-size: 12px;
+      font-weight: 750;
+      margin-bottom: 3px;
+    }
+
+    .timeline-date {
+      font-size: 10px;
+      color: #98a2b3;
+    }
+
+    .timeline-note {
+      color: #667085;
+      font-size: 11px;
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+
+    .summary-box {
+      background: #f0fdf7;
+      border: 1px solid #bbf7d0;
+      border-radius: 11px;
+      padding: 13px;
+    }
+
+    .summary-box strong {
+      display: block;
+      color: #166534;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .summary-box p {
+      color: #476454;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .warning-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 12px;
+      color: #854d0e;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .attachment-link {
+      display: inline-flex;
+      margin-top: 10px;
+      color: #047857;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    .attachment-link:hover {
+      text-decoration: underline;
+    }
+
+    .empty {
+      color: #98a2b3;
+      font-size: 12px;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 9px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #98a2b3;
+      font-size: 11px;
+      padding: 20px 0 5px;
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: 94%;
+        margin-top: 17px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .page-heading h1 {
+        font-size: 21px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .topbar {
+        padding: 11px 13px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .dashboard-btn {
+        padding: 8px 9px;
+        font-size: 11px;
+      }
+
+      .page-heading {
+        flex-direction: column;
+      }
+
+      .info-grid {
+        gap: 12px 9px;
+      }
+
+      .course-title {
+        font-size: 18px;
+      }
+
+      .review-top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<%
+  const withdrawal = typeof request !== 'undefined' && request ? request : {};
+  const currentStatus = String(withdrawal.status || 'submitted').toLowerCase();
+  const statusLabel = currentStatus.replace(/_/g, ' ');
+  const studentName = withdrawal.student_name || withdrawal.full_name || 'Student';
+  const courseName = withdrawal.course_name || withdrawal.course_title || 'Course information unavailable';
+  const courseCode = withdrawal.course_code || 'N/A';
+  const requestId = withdrawal.id || 'N/A';
+
+  const dateValue = (value) => {
+    if (!value) return 'Not recorded';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  };
+
+  const displayDecision = (value) => {
+    if (!value) return 'Pending';
+    return String(value).replace(/_/g, ' ');
+  };
+
+  const decisionClass = (value) => {
+    const v = String(value || 'pending').toLowerCase();
+    return 'decision-' + v.replace(/[^a-z0-9_-]/g, '');
+  };
+%>
+
+<header class="topbar">
+  <div class="brand">LuxMind SIS</div>
+  <a href="/dashboard" class="dashboard-btn">← Dashboard</a>
+</header>
+
+<main class="container">
+
+  <div class="page-heading">
+    <div>
+      <h1>Withdrawal Request Details</h1>
+      <p class="muted">Review the request information, approval stages and processing history.</p>
+    </div>
+
+    <span class="status status-<%= currentStatus.replace(/[^a-z0-9_-]/g, '') %>">
+      <%= statusLabel %>
+    </span>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="warning-box" style="margin-bottom:15px;">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <div class="layout">
+
+    <div class="main-column">
+
+      <!-- COURSE INFORMATION -->
+      <section class="card">
+        <h2>Course Information</h2>
+
+        <div class="course-title"><%= courseName %></div>
+        <span class="course-code"><%= courseCode %></span>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Request Number</span>
+            <span class="info-value">#<%= requestId %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Credit Hours</span>
+            <span class="info-value"><%= withdrawal.credit_hours ?? 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Department</span>
+            <span class="info-value"><%= withdrawal.department_name || 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Semester</span>
+            <span class="info-value"><%= withdrawal.semester || 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Academic Year</span>
+            <span class="info-value"><%= withdrawal.academic_year || 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Submission Date</span>
+            <span class="info-value"><%= dateValue(withdrawal.created_at) %></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- STUDENT INFORMATION -->
+      <section class="card">
+        <h2>Student Information</h2>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Student Name</span>
+            <span class="info-value"><%= studentName %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Student Number</span>
+            <span class="info-value"><%= withdrawal.student_number || withdrawal.student_id || 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value"><%= withdrawal.student_email || 'N/A' %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Programme</span>
+            <span class="info-value"><%= withdrawal.programme || withdrawal.program_name || 'N/A' %></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- WITHDRAWAL REASON -->
+      <section class="card">
+        <h2>Student's Withdrawal Reason</h2>
+
+        <div class="reason-box"><%= withdrawal.reason || 'No reason was provided.' %></div>
+
+        <% if (withdrawal.attachment_url) { %>
+          <a class="attachment-link"
+             href="<%= withdrawal.attachment_url %>"
+             target="_blank"
+             rel="noopener noreferrer">
+            View supporting attachment ↗
+          </a>
+        <% } %>
+      </section>
+
+      <!-- REVIEW DECISIONS -->
+      <section class="card">
+        <h2>Review and Approval Record</h2>
+
+        <div class="review">
+          <div class="review-top">
+            <span class="review-title">1. Academic Advisor</span>
+            <span class="decision <%= decisionClass(withdrawal.advisor_decision) %>">
+              <%= displayDecision(withdrawal.advisor_decision) %>
+            </span>
+          </div>
+          <p class="review-comment">
+            <%= withdrawal.advisor_comments || 'No advisor comments recorded.' %>
+          </p>
+          <div class="review-meta">
+            Reviewer: <%= withdrawal.advisor_name || 'Not assigned / not recorded' %>
+            · <%= dateValue(withdrawal.advisor_reviewed_at) %>
+          </div>
+        </div>
+
+        <div class="review">
+          <div class="review-top">
+            <span class="review-title">2. Head of Department</span>
+            <span class="decision <%= decisionClass(withdrawal.hod_decision) %>">
+              <%= displayDecision(withdrawal.hod_decision) %>
+            </span>
+          </div>
+          <p class="review-comment">
+            <%= withdrawal.hod_comments || 'No HOD comments recorded.' %>
+          </p>
+          <div class="review-meta">
+            Reviewer: <%= withdrawal.hod_name || 'Not assigned / not recorded' %>
+            · <%= dateValue(withdrawal.hod_reviewed_at) %>
+          </div>
+        </div>
+
+        <div class="review">
+          <div class="review-top">
+            <span class="review-title">3. Finance Office</span>
+            <span class="decision <%= decisionClass(withdrawal.finance_decision) %>">
+              <%= displayDecision(withdrawal.finance_decision) %>
+            </span>
+          </div>
+          <p class="review-comment">
+            <%= withdrawal.finance_comments || 'No financial review recorded. Finance review may not be required for every request.' %>
+          </p>
+          <div class="review-meta">
+            Outstanding balance:
+            <%= withdrawal.outstanding_balance != null ? withdrawal.outstanding_balance : 'Not recorded' %>
+            · <%= dateValue(withdrawal.finance_reviewed_at) %>
+          </div>
+        </div>
+
+        <div class="review">
+          <div class="review-top">
+            <span class="review-title">4. Registrar</span>
+            <span class="decision <%= decisionClass(withdrawal.registrar_decision) %>">
+              <%= displayDecision(withdrawal.registrar_decision) %>
+            </span>
+          </div>
+          <p class="review-comment">
+            <%= withdrawal.registrar_comments || 'No Registrar decision recorded.' %>
+          </p>
+          <div class="review-meta">
+            Registrar: <%= withdrawal.registrar_name || 'Not recorded' %>
+            · <%= dateValue(withdrawal.registrar_decided_at) %>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROCESSING RECORD -->
+      <section class="card">
+        <h2>Official Withdrawal Processing</h2>
+
+        <% if (currentStatus === 'processed') { %>
+          <div class="summary-box">
+            <strong>Withdrawal processed</strong>
+            <p>
+              The Registrar has recorded this request as processed.
+              The official registration update should be verified in the connected
+              Course Registration module.
+            </p>
+          </div>
+
+          <div class="info-grid" style="margin-top:15px;">
+            <div class="info-item">
+              <span class="info-label">Effective Date</span>
+              <span class="info-value"><%= dateValue(withdrawal.effective_date) %></span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Processed Date</span>
+              <span class="info-value"><%= dateValue(withdrawal.processed_at) %></span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Processed By</span>
+              <span class="info-value"><%= withdrawal.processed_by_name || withdrawal.registrar_name || 'Not recorded' %></span>
+            </div>
+          </div>
+
+          <% if (withdrawal.processing_notes) { %>
+            <div class="reason-box" style="margin-top:13px;"><%= withdrawal.processing_notes %></div>
+          <% } %>
+        <% } else if (currentStatus === 'approved' || currentStatus === 'processing') { %>
+          <div class="warning-box">
+            The request has been approved, but official withdrawal processing is not yet confirmed.
+            The course should remain in the student's active registration until processing is completed.
+          </div>
+        <% } else { %>
+          <div class="empty">
+            Official processing details will appear here after the Registrar completes the withdrawal.
+          </div>
+        <% } %>
+
+        <div class="warning-box" style="margin-top:14px;">
+          <strong>Registration history must be preserved.</strong>
+          Processing a withdrawal must update the student's enrollment status.
+          It must not delete the original registration record or remove the course from other students' timetables.
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <aside class="side-column">
+
+      <section class="card">
+        <h2>Request Summary</h2>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Current Status</span>
+            <span class="info-value"><%= statusLabel %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Request ID</span>
+            <span class="info-value">#<%= requestId %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Created</span>
+            <span class="info-value"><%= dateValue(withdrawal.created_at) %></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Last Updated</span>
+            <span class="info-value"><%= dateValue(withdrawal.updated_at) %></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Workflow Progress</h2>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-title">Request Submitted</div>
+            <div class="timeline-date"><%= dateValue(withdrawal.created_at) %></div>
+          </div>
+
+          <div class="timeline-item">
+            <span class="timeline-dot <%= withdrawal.advisor_decision ? '' : 'pending' %>"></span>
+            <div class="timeline-title">Academic Advisor Review</div>
+            <div class="timeline-date"><%= displayDecision(withdrawal.advisor_decision) %></div>
+          </div>
+
+          <div class="timeline-item">
+            <span class="timeline-dot <%= withdrawal.hod_decision ? '' : 'pending' %>"></span>
+            <div class="timeline-title">HOD Review</div>
+            <div class="timeline-date"><%= displayDecision(withdrawal.hod_decision) %></div>
+          </div>
+
+          <div class="timeline-item">
+            <span class="timeline-dot <%= withdrawal.finance_decision ? '' : 'pending' %>"></span>
+            <div class="timeline-title">Finance Review</div>
+            <div class="timeline-date"><%= displayDecision(withdrawal.finance_decision) %></div>
+          </div>
+
+          <div class="timeline-item">
+            <span class="timeline-dot <%= withdrawal.registrar_decision ? '' : 'pending' %>"></span>
+            <div class="timeline-title">Registrar Decision</div>
+            <div class="timeline-date"><%= displayDecision(withdrawal.registrar_decision) %></div>
+          </div>
+
+          <div class="timeline-item">
+            <span class="timeline-dot <%= currentStatus === 'processed' ? '' : 'pending' %>"></span>
+            <div class="timeline-title">Official Processing</div>
+            <div class="timeline-date"><%= currentStatus === 'processed' ? dateValue(withdrawal.processed_at) : 'Not yet processed' %></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Important Information</h2>
+        <p class="muted">
+          A recommendation from the Advisor or HOD is not the final withdrawal decision.
+          Finance provides financial clearance when applicable.
+          The Registrar is responsible for the final decision and official processing.
+        </p>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <div class="footer">
+    LuxMind SIS · Student Information System
+  </div>
+
+</main>
+
+</body>
+</html>

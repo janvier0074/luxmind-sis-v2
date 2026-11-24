@@ -1,0 +1,1050 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal Administration — LuxMind SIS</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      background: #f3f6fb;
+      color: #172033;
+      min-height: 100vh;
+    }
+
+    :root {
+      --green: #059669;
+      --blue: #2563eb;
+      --purple: #7c3aed;
+      --orange: #ea580c;
+      --red: #dc2626;
+      --border: #e7ecf3;
+      --muted: #748094;
+    }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 13px 23px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      color: var(--green);
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -.7px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .top-link {
+      text-decoration: none;
+      border: 1px solid #e0e6ee;
+      color: #344054;
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .top-link:hover {
+      border-color: var(--green);
+      color: var(--green);
+      background: #f0fdf7;
+    }
+
+    .container {
+      width: min(1200px, 94%);
+      margin: 25px auto 45px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #064e3b, #059669 60%, #10b981);
+      border-radius: 18px;
+      padding: 25px;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: 4%;
+      top: -125px;
+      border: 30px solid rgba(255,255,255,.09);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 30px;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 {
+      font-size: 27px;
+      letter-spacing: -.8px;
+      margin-bottom: 7px;
+    }
+
+    .hero p {
+      color: #d1fae5;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 570px;
+    }
+
+    .hero-icon {
+      width: 85px;
+      height: 85px;
+      border-radius: 23px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.22);
+      display: grid;
+      place-items: center;
+      font-size: 39px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 0 13px;
+    }
+
+    .section-heading h2 {
+      font-size: 16px;
+      letter-spacing: -.3px;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 13px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 3px 12px rgba(16,24,40,.035);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(16,24,40,.08);
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-label {
+      color: #687589;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .stat-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 29px;
+      font-weight: 850;
+      margin-top: 11px;
+      letter-spacing: -1px;
+    }
+
+    .stat-note {
+      color: #98a2b3;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .stat-card.green { border-top: 3px solid #10b981; }
+    .stat-card.blue { border-top: 3px solid #3b82f6; }
+    .stat-card.purple { border-top: 3px solid #8b5cf6; }
+    .stat-card.orange { border-top: 3px solid #f59e0b; }
+    .stat-card.red { border-top: 3px solid #ef4444; }
+    .stat-card.teal { border-top: 3px solid #0d9488; }
+    .stat-card.indigo { border-top: 3px solid #6366f1; }
+    .stat-card.slate { border-top: 3px solid #64748b; }
+
+    .green .stat-icon { background: #dcfce7; color: #15803d; }
+    .blue .stat-icon { background: #dbeafe; color: #1d4ed8; }
+    .purple .stat-icon { background: #ede9fe; color: #6d28d9; }
+    .orange .stat-icon { background: #ffedd5; color: #c2410c; }
+    .red .stat-icon { background: #fee2e2; color: #b91c1c; }
+    .teal .stat-icon { background: #ccfbf1; color: #0f766e; }
+    .indigo .stat-icon { background: #e0e7ff; color: #4338ca; }
+    .slate .stat-icon { background: #f1f5f9; color: #475569; }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(270px, .8fr);
+      gap: 16px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 3px 12px rgba(16,24,40,.035);
+      min-width: 0;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title h2 {
+      font-size: 15px;
+    }
+
+    .panel-title p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .view-all {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .view-all:hover {
+      text-decoration: underline;
+    }
+
+    .workflow-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .workflow-row {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) 35px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .workflow-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    .workflow-info {
+      min-width: 0;
+    }
+
+    .workflow-name {
+      font-size: 12px;
+      font-weight: 750;
+      margin-bottom: 7px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      background: #edf1f6;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: var(--progress);
+      background: var(--bar);
+      border-radius: 20px;
+      min-width: 0;
+    }
+
+    .workflow-count {
+      text-align: right;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .workflow-row.advisor .workflow-icon { background: #dbeafe; color: #2563eb; }
+    .workflow-row.hod .workflow-icon { background: #ede9fe; color: #7c3aed; }
+    .workflow-row.finance .workflow-icon { background: #ffedd5; color: #ea580c; }
+    .workflow-row.registrar .workflow-icon { background: #ccfbf1; color: #0f766e; }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-action {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      padding: 14px;
+      border-radius: 12px;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: transform .2s;
+      min-width: 0;
+    }
+
+    .quick-action:hover {
+      transform: translateY(-2px);
+    }
+
+    .quick-action .quick-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .quick-action strong {
+      font-size: 12px;
+    }
+
+    .quick-action span:last-child {
+      font-size: 10px;
+      line-height: 1.5;
+      opacity: .8;
+    }
+
+    .quick-action.requests {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .quick-action.requests .quick-icon { background: #bbf7d0; }
+
+    .quick-action.history {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1e40af;
+    }
+
+    .quick-action.history .quick-icon { background: #dbeafe; }
+
+    .quick-action.processed {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+      color: #6d28d9;
+    }
+
+    .quick-action.processed .quick-icon { background: #ede9fe; }
+
+    .quick-action.rejected {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #be123c;
+    }
+
+    .quick-action.rejected .quick-icon { background: #ffe4e6; }
+
+    .filter-bar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.5fr) minmax(130px, .8fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .filter-bar input,
+    .filter-bar select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #dce3eb;
+      border-radius: 9px;
+      font-size: 12px;
+      color: #344054;
+      outline: none;
+      background: #fff;
+    }
+
+    .filter-bar input:focus,
+    .filter-bar select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(16,185,129,.09);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #edf0f5;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 730px;
+    }
+
+    th {
+      text-align: left;
+      background: #f8fafc;
+      color: #667085;
+      font-size: 10px;
+      padding: 12px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 12px;
+      border-top: 1px solid #edf0f5;
+      font-size: 11px;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #fbfefc;
+    }
+
+    .student-name {
+      font-weight: 750;
+      color: #263244;
+    }
+
+    .sub-text {
+      color: #98a2b3;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .status {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-submitted,
+    .status-advisor_review,
+    .status-hod_review,
+    .status-finance_review,
+    .status-registrar_review {
+      background: #fff7e6;
+      color: #a15c00;
+    }
+
+    .status-approved,
+    .status-processed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-processing {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-cancelled {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .status-unknown {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .view-btn {
+      text-decoration: none;
+      display: inline-block;
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1px solid #d1fae5;
+      background: #f0fdf7;
+      color: #047857;
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .view-btn:hover {
+      background: #dcfce7;
+    }
+
+    .empty {
+      display: none;
+      padding: 30px 12px;
+      text-align: center;
+      color: #98a2b3;
+      font-size: 12px;
+    }
+
+    .notice {
+      padding: 13px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #854d0e;
+      font-size: 11px;
+      line-height: 1.6;
+      border-radius: 10px;
+      margin-top: 17px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #98a2b3;
+      font-size: 11px;
+      padding: 20px 0 5px;
+    }
+
+    @media(max-width: 850px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media(max-width: 500px) {
+      .topbar {
+        padding: 11px 13px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .top-link {
+        padding: 8px 9px;
+        font-size: 10px;
+      }
+
+      .container {
+        width: 94%;
+        margin-top: 15px;
+      }
+
+      .hero {
+        padding: 19px;
+        border-radius: 14px;
+      }
+
+      .hero h1 {
+        font-size: 22px;
+      }
+
+      .hero p {
+        font-size: 11px;
+      }
+
+      .hero-icon {
+        width: 54px;
+        height: 54px;
+        font-size: 25px;
+        border-radius: 15px;
+      }
+
+      .stats-grid {
+        gap: 9px;
+      }
+
+      .stat-card {
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+
+      .stat-icon {
+        width: 29px;
+        height: 29px;
+        font-size: 13px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .filter-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<%
+  const items = typeof requests !== 'undefined' && Array.isArray(requests) ? requests : [];
+
+  const countStatus = (status) =>
+    items.filter(r => String(r.status || '').toLowerCase() === status).length;
+
+  const total = items.length;
+  const pending = items.filter(r =>
+    ['submitted', 'advisor_review', 'hod_review', 'finance_review', 'registrar_review', 'processing']
+      .includes(String(r.status || '').toLowerCase())
+  ).length;
+
+  const approved = countStatus('approved');
+  const processed = countStatus('processed');
+  const rejected = countStatus('rejected');
+
+  const advisorCount = countStatus('advisor_review') + countStatus('submitted');
+  const hodCount = countStatus('hod_review');
+  const financeCount = countStatus('finance_review');
+  const registrarCount = countStatus('registrar_review');
+
+  const percent = (value) => total ? Math.round(value / total * 100) : 0;
+
+  const safeStatus = (value) => {
+    const s = String(value || 'unknown').toLowerCase();
+    return /^[a-z0-9_-]+$/.test(s) ? s : 'unknown';
+  };
+
+  const displayDate = (value) => {
+    if (!value) return 'Not recorded';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString();
+  };
+%>
+
+<header class="topbar">
+  <div class="brand">LuxMind SIS</div>
+
+  <div class="top-actions">
+    <a href="/sis/withdrawals/history" class="top-link">Activity History</a>
+    <a href="/dashboard" class="top-link">← Dashboard</a>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-tag">Academic Administration</span>
+      <h1>Course Withdrawal Center</h1>
+      <p>
+        Monitor student withdrawal requests, track departmental reviews,
+        and follow the official Registrar processing workflow.
+      </p>
+    </div>
+    <div class="hero-icon">📚</div>
+  </section>
+
+  <!-- OVERALL STATISTICS -->
+  <div class="section-heading">
+    <div>
+      <h2>Withdrawal Overview</h2>
+      <p>Current status of all withdrawal requests.</p>
+    </div>
+  </div>
+
+  <section class="stats-grid">
+
+    <div class="stat-card green">
+      <div class="stat-top">
+        <span class="stat-label">Total Requests</span>
+        <span class="stat-icon">📋</span>
+      </div>
+      <strong class="stat-value"><%= total %></strong>
+      <p class="stat-note">All recorded requests</p>
+    </div>
+
+    <div class="stat-card orange">
+      <div class="stat-top">
+        <span class="stat-label">Pending Review</span>
+        <span class="stat-icon">⏳</span>
+      </div>
+      <strong class="stat-value"><%= pending %></strong>
+      <p class="stat-note">Awaiting workflow action</p>
+    </div>
+
+    <div class="stat-card blue">
+      <div class="stat-top">
+        <span class="stat-label">Approved</span>
+        <span class="stat-icon">✓</span>
+      </div>
+      <strong class="stat-value"><%= approved %></strong>
+      <p class="stat-note">Awaiting official processing</p>
+    </div>
+
+    <div class="stat-card purple">
+      <div class="stat-top">
+        <span class="stat-label">Processed</span>
+        <span class="stat-icon">⚡</span>
+      </div>
+      <strong class="stat-value"><%= processed %></strong>
+      <p class="stat-note">Registrar processing recorded</p>
+    </div>
+
+    <div class="stat-card red">
+      <div class="stat-top">
+        <span class="stat-label">Rejected</span>
+        <span class="stat-icon">✕</span>
+      </div>
+      <strong class="stat-value"><%= rejected %></strong>
+      <p class="stat-note">Requests not approved</p>
+    </div>
+
+    <div class="stat-card teal">
+      <div class="stat-top">
+        <span class="stat-label">Advisor Queue</span>
+        <span class="stat-icon">👤</span>
+      </div>
+      <strong class="stat-value"><%= advisorCount %></strong>
+      <p class="stat-note">Awaiting advisor review</p>
+    </div>
+
+    <div class="stat-card indigo">
+      <div class="stat-top">
+        <span class="stat-label">HOD Queue</span>
+        <span class="stat-icon">🏛️</span>
+      </div>
+      <strong class="stat-value"><%= hodCount %></strong>
+      <p class="stat-note">Awaiting department review</p>
+    </div>
+
+    <div class="stat-card slate">
+      <div class="stat-top">
+        <span class="stat-label">Finance Queue</span>
+        <span class="stat-icon">💳</span>
+      </div>
+      <strong class="stat-value"><%= financeCount %></strong>
+      <p class="stat-note">Awaiting financial clearance</p>
+    </div>
+
+  </section>
+
+  <div class="content-grid">
+
+    <!-- WORKFLOW -->
+    <section class="panel">
+      <div class="panel-title">
+        <div>
+          <h2>Departmental Workflow</h2>
+          <p>Requests currently waiting at each stage.</p>
+        </div>
+      </div>
+
+      <div class="workflow-list">
+
+        <div class="workflow-row advisor">
+          <div class="workflow-icon">👤</div>
+          <div class="workflow-info">
+            <div class="workflow-name">Academic Advisor</div>
+            <div class="progress-track">
+              <div class="progress-fill" style="--progress:<%= percent(advisorCount) %>%;--bar:#3b82f6;"></div>
+            </div>
+          </div>
+          <strong class="workflow-count"><%= advisorCount %></strong>
+        </div>
+
+        <div class="workflow-row hod">
+          <div class="workflow-icon">🏛️</div>
+          <div class="workflow-info">
+            <div class="workflow-name">Head of Department</div>
+            <div class="progress-track">
+              <div class="progress-fill" style="--progress:<%= percent(hodCount) %>%;--bar:#8b5cf6;"></div>
+            </div>
+          </div>
+          <strong class="workflow-count"><%= hodCount %></strong>
+        </div>
+
+        <div class="workflow-row finance">
+          <div class="workflow-icon">💳</div>
+          <div class="workflow-info">
+            <div class="workflow-name">Finance Office</div>
+            <div class="progress-track">
+              <div class="progress-fill" style="--progress:<%= percent(financeCount) %>%;--bar:#f59e0b;"></div>
+            </div>
+          </div>
+          <strong class="workflow-count"><%= financeCount %></strong>
+        </div>
+
+        <div class="workflow-row registrar">
+          <div class="workflow-icon">📑</div>
+          <div class="workflow-info">
+            <div class="workflow-name">Registrar Office</div>
+            <div class="progress-track">
+              <div class="progress-fill" style="--progress:<%= percent(registrarCount) %>%;--bar:#0d9488;"></div>
+            </div>
+          </div>
+          <strong class="workflow-count"><%= registrarCount %></strong>
+        </div>
+
+      </div>
+
+      <div class="notice">
+        Departmental recommendations do not change the student's official enrollment.
+        The Registrar must make the final decision and complete processing.
+      </div>
+    </section>
+
+    <!-- QUICK ACTIONS -->
+    <section class="panel">
+      <div class="panel-title">
+        <div>
+          <h2>Quick Access</h2>
+          <p>Navigate to withdrawal management tools.</p>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+
+        <a href="/sis/withdrawals" class="quick-action requests">
+          <span class="quick-icon">📋</span>
+          <strong>All Requests</strong>
+          <span>Review the withdrawal request list.</span>
+        </a>
+
+        <a href="/sis/withdrawals/history" class="quick-action history">
+          <span class="quick-icon">🕒</span>
+          <strong>Audit History</strong>
+          <span>Trace decisions and status changes.</span>
+        </a>
+
+        <a href="/sis/withdrawals?status=processed" class="quick-action processed">
+          <span class="quick-icon">✓</span>
+          <strong>Processed</strong>
+          <span>View completed withdrawals.</span>
+        </a>
+
+        <a href="/sis/withdrawals?status=rejected" class="quick-action rejected">
+          <span class="quick-icon">✕</span>
+          <strong>Rejected</strong>
+          <span>Review rejected applications.</span>
+        </a>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- REQUEST TABLE -->
+  <section class="panel" style="margin-top:17px;">
+    <div class="panel-title">
+      <div>
+        <h2>Recent Withdrawal Requests</h2>
+        <p>Search and review the latest applications.</p>
+      </div>
+      <a href="/sis/withdrawals/history" class="view-all">Audit history →</a>
+    </div>
+
+    <div class="filter-bar">
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search student, course or request number...">
+
+      <select id="statusFilter">
+        <option value="">All statuses</option>
+        <option value="submitted">Submitted</option>
+        <option value="advisor_review">Advisor review</option>
+        <option value="hod_review">HOD review</option>
+        <option value="finance_review">Finance review</option>
+        <option value="registrar_review">Registrar review</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="processing">Processing</option>
+        <option value="processed">Processed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody id="requestTableBody">
+          <% items.slice(0, 30).forEach(r => {
+            const status = safeStatus(r.status);
+            const student = r.student_name || 'Student';
+            const course = r.course_name || 'Course';
+            const rid = r.id || '';
+            const searchable = [rid, student, course, status].join(' ').toLowerCase();
+          %>
+
+            <tr class="request-row"
+                data-search="<%= searchable %>"
+                data-status="<%= status %>">
+
+              <td>
+                <span class="student-name">#<%= rid || 'N/A' %></span>
+              </td>
+
+              <td>
+                <div class="student-name"><%= student %></div>
+                <div class="sub-text"><%= r.student_number || r.student_id || 'Student number unavailable' %></div>
+              </td>
+
+              <td>
+                <div class="student-name"><%= course %></div>
+                <div class="sub-text"><%= r.course_code || 'Course code unavailable' %></div>
+              </td>
+
+              <td><%= displayDate(r.created_at) %></td>
+
+              <td>
+                <span class="status status-<%= status %>">
+                  <%= status.replace(/_/g, ' ') %>
+                </span>
+              </td>
+
+              <td>
+                <% if (rid) { %>
+                  <a href="/sis/withdrawals/<%= rid %>" class="view-btn">View details →</a>
+                <% } else { %>
+                  <span class="sub-text">Unavailable</span>
+                <% } %>
+              </td>
+
+            </tr>
+
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty" id="emptyState">
+      No withdrawal requests match your search.
+    </div>
+  </section>
+
+  <div class="footer">
+    LuxMind SIS · Course Withdrawal Administration
+  </div>
+
+</main>
+
+<script>
+(function () {
+  const search = document.getElementById('searchInput');
+  const filter = document.getElementById('statusFilter');
+  const rows = Array.from(document.querySelectorAll('.request-row'));
+  const empty = document.getElementById('emptyState');
+
+  function updateTable() {
+    const query = search.value.trim().toLowerCase();
+    const status = filter.value.toLowerCase();
+    let visible = 0;
+
+    rows.forEach(row => {
+      const matchesSearch =
+        !query || row.dataset.search.includes(query);
+
+      const matchesStatus =
+        !status || row.dataset.status === status;
+
+      const show = matchesSearch && matchesStatus;
+
+      row.style.display = show ? '' : 'none';
+
+      if (show) visible++;
+    });
+
+    empty.style.display = visible ? 'none' : 'block';
+  }
+
+  search.addEventListener('input', updateTable);
+  filter.addEventListener('change', updateTable);
+})();
+</script>
+
+</body>
+</html>

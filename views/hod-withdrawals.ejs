@@ -1,0 +1,622 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOD Withdrawal Reviews — LuxMind SIS</title>
+
+  <style>
+    :root {
+      --green: #087f5b;
+      --green-light: #eaf6f0;
+      --ink: #17231f;
+      --muted: #718078;
+      --line: #e5ece8;
+      --bg: #f4f7f5;
+      --red: #b42318;
+      --amber: #a45b08;
+      --blue: #2459a6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    .topbar {
+      height: 62px;
+      background: white;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 22px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand { font-size: 18px; font-weight: 800; }
+    .brand span { color: #0e9f6e; }
+
+    .dashboard-link {
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 25px auto;
+      padding: 0 18px 40px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 5px 0;
+      font-size: 26px;
+      letter-spacing: -.7px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+
+    .notice {
+      background: var(--green-light);
+      border: 1px solid #d4eadf;
+      color: #245c46;
+      padding: 13px 15px;
+      border-radius: 12px;
+      margin-bottom: 17px;
+      font-size: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 17px;
+    }
+
+    .stat, .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .stat { padding: 14px; }
+    .stat small { color: var(--muted); font-size: 11px; }
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      margin-top: 4px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 9px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+
+    .toolbar input, .toolbar select {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 9px;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .toolbar input { flex: 1; min-width: 190px; }
+    .toolbar select { min-width: 150px; }
+
+    .panel { overflow: hidden; }
+
+    .panel-heading {
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-heading h2 {
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .record-count {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .request {
+      padding: 16px 17px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 15px;
+    }
+
+    .request:last-child { border-bottom: 0; }
+
+    .student-name {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .course {
+      font-weight: 750;
+      font-size: 12px;
+      margin-top: 9px;
+    }
+
+    .detail {
+      color: #56655e;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .advisor-note {
+      background: #f5f8f6;
+      border-left: 3px solid #8bc6a8;
+      padding: 9px 11px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #53635a;
+    }
+
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .status {
+      font-size: 10px;
+      font-weight: 800;
+      border-radius: 20px;
+      padding: 5px 9px;
+      background: #fff4df;
+      color: var(--amber);
+      white-space: nowrap;
+    }
+
+    .status.review {
+      background: #eaf2ff;
+      color: var(--blue);
+    }
+
+    .status.done {
+      background: #e8f6ee;
+      color: var(--green);
+    }
+
+    .status.rejected {
+      background: #fff0ef;
+      color: var(--red);
+    }
+
+    .actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .primary { background: var(--green); color: white; }
+    .secondary {
+      background: #f0f4f2;
+      color: #304139;
+      border: 1px solid var(--line);
+    }
+
+    .empty {
+      padding: 35px 15px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .workflow {
+      margin-top: 16px;
+      padding: 16px;
+    }
+
+    .workflow h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+    }
+
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+    }
+
+    .workflow-step {
+      background: #f5f8f6;
+      padding: 11px;
+      border-radius: 9px;
+      font-size: 11px;
+      color: #58665f;
+    }
+
+    .workflow-step b {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 15px;
+      width: min(520px, calc(100% - 25px));
+      padding: 0;
+      box-shadow: 0 20px 70px #10291f35;
+    }
+
+    dialog::backdrop { background: #10231d80; }
+
+    .modal { padding: 20px; }
+    .modal h2 { font-size: 17px; margin: 0 0 5px; }
+    .modal p { font-size: 12px; color: var(--muted); }
+
+    .modal label {
+      display: block;
+      font-size: 11px;
+      font-weight: 750;
+      margin: 13px 0 5px;
+    }
+
+    .modal select, .modal textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 10px;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .modal textarea { min-height: 105px; resize: vertical; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    @media(max-width: 720px) {
+      .topbar { height: 57px; padding: 0 13px; }
+      main { margin: 17px auto; padding: 0 12px 30px; }
+      h1 { font-size: 22px; }
+      .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .stat { padding: 11px; }
+      .stat strong { font-size: 21px; }
+      .request { grid-template-columns: 1fr; padding: 13px; }
+      .right { align-items: flex-start; }
+      .actions { justify-content: flex-start; }
+      .workflow-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-link { font-size: 11px; padding: 7px 9px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#829087">SIS</small></div>
+  <a href="/dashboard" class="dashboard-link">← Back to Dashboard</a>
+</header>
+
+<main>
+
+  <div class="eyebrow">Department administration</div>
+  <h1>Course withdrawal reviews</h1>
+  <p class="subtitle">
+    Review advisor recommendations and provide the department's academic decision.
+  </p>
+
+  <div class="notice">
+    <b>HOD responsibility:</b>
+    Evaluate the advisor's recommendation and departmental academic considerations.
+    Forward your decision to the Registrar. The Registrar remains the final authority.
+  </div>
+
+  <section class="stats">
+    <div class="stat">
+      <small>Awaiting HOD review</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['hod_review','pending_hod'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Advisor recommended</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.advisor_decision || '').toLowerCase() === 'recommend').length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>HOD decisions recorded</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => !!r.hod_decision).length : 0 %></strong>
+    </div>
+
+    <div class="stat">
+      <small>Total assigned</small>
+      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %></strong>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <input type="search" id="searchInput"
+      placeholder="Search student, course or request ID...">
+
+    <select id="statusFilter">
+      <option value="all">All requests</option>
+      <option value="pending">Awaiting review</option>
+      <option value="recommend">Advisor recommended</option>
+      <option value="completed">HOD decision recorded</option>
+    </select>
+  </div>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Department requests</h2>
+      <span class="record-count" id="recordCount">
+        <%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %> records
+      </span>
+    </div>
+
+    <div id="requestList">
+
+      <% if (typeof requests !== 'undefined' && Array.isArray(requests) && requests.length) { %>
+
+        <% requests.forEach(function(r) {
+          const requestId = r.id || r.request_id || '';
+          const student = r.student_name || r.full_name || r.student_email || 'Student';
+          const course = r.course_name || r.section_name || r.course_code || 'Course details unavailable';
+          const status = String(r.status || '').toLowerCase();
+          const advisorDecision = String(r.advisor_decision || '').toLowerCase();
+          const hodDecision = String(r.hod_decision || '').toLowerCase();
+          const pending = ['hod_review','pending_hod'].includes(status);
+          const searchText = [requestId, student, course, r.reason || '', status].join(' ').toLowerCase();
+        %>
+
+        <article class="request"
+          data-search="<%= searchText %>"
+          data-status="<%= hodDecision ? 'completed' : pending ? 'pending' : advisorDecision === 'recommend' ? 'recommend' : status %>">
+
+          <div>
+            <div class="student-name"><%= student %></div>
+
+            <div class="meta">
+              Request #<%= requestId || '—' %>
+              · <%= r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Date unavailable' %>
+              · <%= r.student_number || r.student_id || 'Student ID unavailable' %>
+            </div>
+
+            <div class="course"><%= course %></div>
+
+            <div class="detail">
+              <b>Student's reason:</b>
+              <%= r.reason || 'No reason provided.' %>
+            </div>
+
+            <div class="advisor-note">
+              <b>Advisor recommendation:</b>
+              <%= advisorDecision ? advisorDecision.replace(/_/g, ' ') : 'Not recorded' %>
+              <br>
+              <b>Advisor comments:</b>
+              <%= r.advisor_comments || r.advisor_note || 'No advisor comments available.' %>
+            </div>
+          </div>
+
+          <div class="right">
+            <span class="status <%= hodDecision ? 'done' : pending ? 'review' : '' %>">
+              <%= hodDecision ? 'HOD decision recorded' : status.replace(/_/g, ' ') || 'Pending' %>
+            </span>
+
+            <div class="actions">
+              <button class="secondary" type="button"
+                onclick="openHodReview(this)"
+                data-id="<%= requestId %>"
+                data-student="<%= student %>"
+                data-course="<%= course %>"
+                data-decision="<%= hodDecision %>"
+                <%= !pending ? 'disabled' : '' %>>
+                Review request
+              </button>
+            </div>
+          </div>
+
+        </article>
+
+        <% }); %>
+
+      <% } else { %>
+
+        <div class="empty">
+          No course withdrawal requests are currently assigned to your department.
+        </div>
+
+      <% } %>
+
+    </div>
+
+    <div class="empty" id="noMatches" style="display:none">
+      No requests match your search or filter.
+    </div>
+  </section>
+
+  <section class="panel workflow">
+    <h3>Withdrawal approval sequence</h3>
+
+    <div class="workflow-grid">
+      <div class="workflow-step">
+        <b>1. Student</b>
+        Submits a course withdrawal request.
+      </div>
+
+      <div class="workflow-step">
+        <b>2. Academic Advisor</b>
+        Reviews and recommends an action.
+      </div>
+
+      <div class="workflow-step">
+        <b>3. Head of Department</b>
+        Reviews the recommendation and forwards the case.
+      </div>
+
+      <div class="workflow-step">
+        <b>4. Registrar</b>
+        Makes the final decision and processes approved changes.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<dialog id="hodDialog">
+  <form class="modal" id="hodForm">
+    <h2>HOD academic review</h2>
+    <p id="reviewSubtitle">Review the request and record the department's decision.</p>
+
+    <input type="hidden" id="requestId" name="request_id">
+
+    <label for="hodDecision">Department decision</label>
+    <select id="hodDecision" name="decision" required>
+      <option value="">Select decision</option>
+      <option value="recommend">Recommend withdrawal to Registrar</option>
+      <option value="not_recommend">Do not recommend withdrawal</option>
+      <option value="more_info">Request additional information</option>
+    </select>
+
+    <label for="hodComments">HOD comments and academic justification</label>
+    <textarea id="hodComments" name="comments"
+      maxlength="2000"
+      placeholder="Explain the department's academic assessment..."
+      required></textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary"
+        onclick="document.getElementById('hodDialog').close()">
+        Cancel
+      </button>
+
+      <button type="submit" class="primary">
+        Submit HOD review
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  const search = document.getElementById('searchInput');
+  const filter = document.getElementById('statusFilter');
+  const list = document.getElementById('requestList');
+  const count = document.getElementById('recordCount');
+  const empty = document.getElementById('noMatches');
+
+  function applyFilters() {
+    const query = search.value.trim().toLowerCase();
+    const selected = filter.value;
+    const records = [...list.querySelectorAll('.request')];
+    let visible = 0;
+
+    records.forEach(record => {
+      const matchesText = (record.dataset.search || '').includes(query);
+      const matchesStatus = selected === 'all' ||
+        record.dataset.status === selected;
+
+      record.hidden = !(matchesText && matchesStatus);
+
+      if (!record.hidden) visible++;
+    });
+
+    count.textContent = visible + ' of ' + records.length + ' records';
+    empty.style.display = records.length && visible === 0 ? 'block' : 'none';
+  }
+
+  search.addEventListener('input', applyFilters);
+  filter.addEventListener('change', applyFilters);
+
+  window.openHodReview = function (button) {
+    if (button.disabled) return;
+
+    document.getElementById('requestId').value = button.dataset.id || '';
+
+    document.getElementById('reviewSubtitle').textContent =
+      'Student: ' + (button.dataset.student || 'Student') +
+      ' · Course: ' + (button.dataset.course || 'Course');
+
+    document.getElementById('hodDecision').value =
+      button.dataset.decision || '';
+
+    document.getElementById('hodComments').value = '';
+
+    document.getElementById('hodDialog').showModal();
+  };
+
+  document.getElementById('hodForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const decision = document.getElementById('hodDecision').value;
+    const comments = document.getElementById('hodComments').value.trim();
+
+    if (!decision || !comments) {
+      alert('Select a decision and enter your academic comments.');
+      return;
+    }
+
+    alert(
+      'The HOD review interface is ready. ' +
+      'The database submission route must be connected in server.js.'
+    );
+  });
+
+  applyFilters();
+})();
+</script>
+
+</body>
+</html>

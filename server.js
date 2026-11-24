@@ -534,23 +534,24 @@ app.get('/sis/my', requireRole('student'), async (req, res) => {
 // ============================================
 app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
   try {
-    const scheduleRes = await pool.query(`
-      SELECT 
-        c.code, c.title, c.credits, 
-        COALESCE(s.group_name, 'TBA') AS group_name,
-        s.day_of_week,
-        s.start_time,
-        s.end_time,
-        COALESCE(s.room, 'TBA') AS room,
-        u.full_name AS teacher_name,
-        s.id AS section_id
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN course_sections s ON s.id = e.section_id
-      LEFT JOIN users u ON u.id = s.teacher_id
-      WHERE e.user_id = $1
-      ORDER BY c.code ASC
-    `, [req.session.user.id]);
+  const scheduleRes = await pool.query(`
+  SELECT
+    c.code, c.title, c.credits,
+    COALESCE(s.group_name, 'TBA') AS group_name,
+    s.day_of_week,
+    s.start_time,
+    s.end_time,
+    COALESCE(s.room, 'TBA') AS room,
+    u.full_name AS teacher_name,
+    s.id AS section_id
+  FROM enrollments e
+  JOIN courses c ON c.id = e.course_id
+  LEFT JOIN course_sections s ON s.id = e.section_id
+  LEFT JOIN users u ON u.id = s.teacher_id
+  WHERE e.user_id = $1
+    AND COALESCE(e.status, '') <> 'withdrawn'
+  ORDER BY c.code ASC
+`, [req.session.user.id]);
 
     const profileRes = await pool.query(`
       SELECT sp.class_level, sp.current_semester, sp.admission_number 
@@ -613,17 +614,18 @@ app.get('/sis/my/timetable', requireRole('student'), async (req, res) => {
 });
 app.get('/sis/my/attendance', requireRole('student'), async (req, res) => {
   try {
-    const attendanceRes = await pool.query(`
-      SELECT c.code, c.title,
-             COUNT(a.id) as total_classes,
-             COUNT(CASE WHEN a.status = 'Present' THEN 1 END) as attended_classes
-      FROM enrollments e
-      JOIN courses c ON c.id = e.course_id
-      LEFT JOIN course_sections s ON s.id = e.section_id
-      LEFT JOIN attendance a ON a.section_id = s.id AND a.student_id = e.user_id
-      WHERE e.user_id = $1
-      GROUP BY c.id, c.code, c.title
-    `, [req.session.user.id]);
+ const attendanceRes = await pool.query(`
+  SELECT c.code, c.title,
+         COUNT(a.id) as total_classes,
+         COUNT(CASE WHEN a.status = 'Present' THEN 1 END) as attended_classes
+  FROM enrollments e
+  JOIN courses c ON c.id = e.course_id
+  LEFT JOIN course_sections s ON s.id = e.section_id
+  LEFT JOIN attendance a ON a.section_id = s.id AND a.student_id = e.user_id
+  WHERE e.user_id = $1
+    AND COALESCE(e.status, '') <> 'withdrawn'
+  GROUP BY c.id, c.code, c.title
+`, [req.session.user.id]);
 
     const attendanceData = attendanceRes.rows.map(row => {
       const total = Number(row.total_classes);
@@ -675,23 +677,90 @@ app.get('/sis/my/cgpa-simulator', requireRole('student'), async (req, res) => {
   } catch (err) { res.status(500).send("CGPA Simulator Error: " + err.message); }
 });
 
+
 app.get('/sis/my/transcript', requireRole('student'), async (req, res) => {
   try {
-    const gradesRes = await pool.query(` SELECT c.code, c.title, c.credits, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points FROM grades g JOIN course_sections s ON s.id = g.section_id JOIN courses c ON c.id = s.course_id WHERE g.student_id = $1 AND g.is_published = true ORDER BY c.semester_number ASC `, [req.session.user.id]);
+    const gradesRes = await pool.query(`
+      WITH processed_withdrawals AS (
+        SELECT DISTINCT ON (w.section_id)
+          w.section_id,
+          w.course_id
+        FROM course_withdrawals w
+        WHERE w.student_id = $1
+          AND w.status = 'processed'
+          AND w.section_id IS NOT NULL
+        ORDER BY w.section_id, w.processed_at DESC
+      )
+
+      SELECT
+        c.code,
+        c.title,
+        c.credits,
+        g.midterm_grade,
+        g.final_grade,
+        g.letter_grade,
+        g.gpa_points,
+        c.semester_number
+      FROM grades g
+      JOIN course_sections s ON s.id = g.section_id
+      JOIN courses c ON c.id = s.course_id
+      WHERE g.student_id = $1
+        AND g.is_published = true
+        AND NOT EXISTS (
+          SELECT 1
+          FROM processed_withdrawals pw
+          WHERE pw.section_id = g.section_id
+        )
+
+      UNION ALL
+
+      SELECT
+        c.code,
+        c.title,
+        c.credits,
+        NULL AS midterm_grade,
+        NULL AS final_grade,
+        'W' AS letter_grade,
+        0 AS gpa_points,
+        c.semester_number
+      FROM processed_withdrawals pw
+      JOIN courses c ON c.id = pw.course_id
+
+      ORDER BY semester_number ASC, title ASC
+    `, [req.session.user.id]);
 
     const courses = gradesRes.rows;
+
     let totalCredits = 0;
     let totalPoints = 0;
 
-    courses.forEach(c => {
-      totalCredits += Number(c.credits);
-      totalPoints += (Number(c.gpa_points) * Number(c.credits));
+    courses.forEach(course => {
+      // Withdrawn courses remain visible but do not affect CGPA.
+      if (course.letter_grade === 'W') return;
+
+      totalCredits += Number(course.credits) || 0;
+      totalPoints +=
+        (Number(course.gpa_points) || 0) *
+        (Number(course.credits) || 0);
     });
 
-    const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
-    res.render('transcript', { user: req.session.user, courses: courses, totalCredits: totalCredits, cgpa: cgpa });
-  } catch (err) { res.status(500).send("Transcript Error: " + err.message); }
+    const cgpa = totalCredits > 0
+      ? (totalPoints / totalCredits).toFixed(2)
+      : '0.00';
+
+    res.render('transcript', {
+      user: req.session.user,
+      courses,
+      totalCredits,
+      cgpa
+    });
+
+  } catch (err) {
+    console.error('Transcript loading error:', err);
+    res.status(500).send('Unable to load transcript.');
+  }
 });
+
 
 app.get('/sis/my/registration', requireRole('student'), async (req, res) => {
   try {
@@ -1433,6 +1502,126 @@ app.post(
     }
   }
 );
+
+
+
+/* =========================================================
+   STUDENT RESPONSE TO WITHDRAWAL INFORMATION REQUEST
+========================================================= */
+
+app.post(
+  '/sis/my/withdrawal/:id/respond',
+  requireRole('student'),
+  async (req, res) => {
+    const withdrawalId = Number.parseInt(req.params.id, 10);
+    const studentId = req.session?.user?.id || req.user?.id;
+    const response = String(req.body.student_response || '').trim();
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId < 1) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!studentId) {
+      return res.status(401).send('Please sign in again.');
+    }
+
+    if (response.length < 10 || response.length > 2000) {
+      return res.status(400).send(
+        'Your response must contain between 10 and 2000 characters.'
+      );
+    }
+
+    let client;
+
+    try {
+      client = await pool.connect();
+      await client.query('BEGIN');
+
+      const result = await client.query(
+        `SELECT *
+         FROM course_withdrawals
+         WHERE id = $1
+           AND student_id = $2
+         FOR UPDATE`,
+        [withdrawalId, studentId]
+      );
+
+      if (!result.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(404).send('Withdrawal request not found.');
+      }
+
+      const withdrawal = result.rows[0];
+
+      if (withdrawal.status !== 'student_action_required') {
+        await client.query('ROLLBACK');
+        return res.status(409).send(
+          'This request is not currently waiting for a student response.'
+        );
+      }
+
+     const returnStatus = {
+  advisor: 'advisor_review',
+  department_head: 'hod_review',
+  finance: 'finance_review',
+  finance_staff: 'finance_review',
+  registrar: 'registrar_review'
+}[String(withdrawal.information_requested_by || '').toLowerCase()];
+
+      if (!returnStatus) {
+        await client.query('ROLLBACK');
+        return res.status(409).send(
+          'The department requesting information could not be identified.'
+        );
+      }
+
+      await client.query(
+        `UPDATE course_withdrawals
+         SET student_response = $1,
+             student_responded_at = NOW(),
+             status = $2,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [response, returnStatus, withdrawalId]
+      );
+
+      await client.query(
+        `INSERT INTO course_withdrawal_history
+          (withdrawal_id, action, actor_id, actor_role,
+           previous_status, new_status, description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          withdrawalId,
+          'student_information_submitted',
+          studentId,
+          'student',
+          'student_action_required',
+          returnStatus,
+          response
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      return res.redirect('/sis/my/withdrawal');
+    } catch (err) {
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          console.error('Student response rollback error:', rollbackError);
+        }
+      }
+
+      console.error('Student withdrawal response error:', err);
+      return res.status(500).send('Unable to submit your response.');
+    } finally {
+      if (client) client.release();
+    }
+  }
+);
+
+
 
 // Secure access to a student's private attachment
 app.get(
@@ -3041,31 +3230,195 @@ app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
-app.get('/sis/faculty/attendance/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
-  try {
-    const coursesRes = await pool.query(`SELECT s.id as section_id, c.code, c.title, s.group_name, s.day_of_week, s.start_time FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.teacher_id = $1`, [req.session.user.id]);
-    const sectionRes = await pool.query(`SELECT s.id, c.code, c.title, s.group_name FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.id = $1 AND s.teacher_id = $2`, [req.params.section_id, req.session.user.id]);
-    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/attendance');
-    const studentsRes = await pool.query(`SELECT u.id as user_id, u.full_name, u.username, a.status as current_status FROM enrollments e JOIN users u ON u.id = e.user_id LEFT JOIN attendance a ON a.student_id = u.id AND a.section_id = $1 AND a.date = CURRENT_DATE WHERE e.section_id = $1`, [req.params.section_id]);
-    res.render('faculty-attendance', { user: req.session.user, courses: coursesRes.rows, section: sectionRes.rows[0], students: studentsRes.rows, today: new Date().toISOString().slice(0, 10), hours: [1, 2, 3, 4] });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
-});
+// ============================================
+// TEACHER: ATTENDANCE ROSTER
+// ============================================
 
-app.post('/sis/faculty/attendance/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
-  const sectionId = req.params.section_id;
-  const today = new Date().toISOString().slice(0, 10);
-  try {
-    for (const key in req.body) {
-      if (key.startsWith('status_')) {
-        const studentId = key.split('_')[1];
-        const status = req.body[key];
-        await pool.query(`DELETE FROM attendance WHERE student_id = $1 AND section_id = $2 AND date = $3`, [studentId, sectionId, today]);
-        await pool.query(`INSERT INTO attendance (student_id, section_id, date, status) VALUES ($1, $2, $3, $4)`, [studentId, sectionId, today, status]);
+app.get(
+  '/sis/faculty/attendance/:section_id',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    try {
+      const coursesRes = await pool.query(
+        `SELECT
+           s.id AS section_id,
+           c.code,
+           c.title,
+           s.group_name,
+           s.day_of_week,
+           s.start_time
+         FROM course_sections s
+         JOIN courses c ON c.id = s.course_id
+         WHERE s.teacher_id = $1`,
+        [req.session.user.id]
+      );
+
+      const sectionRes = await pool.query(
+        `SELECT
+           s.id,
+           c.code,
+           c.title,
+           s.group_name
+         FROM course_sections s
+         JOIN courses c ON c.id = s.course_id
+         WHERE s.id = $1
+           AND s.teacher_id = $2`,
+        [req.params.section_id, req.session.user.id]
+      );
+
+      if (!sectionRes.rows.length) {
+        return res.redirect('/sis/faculty/attendance');
       }
+
+      // Only currently active students appear in the roster.
+      const studentsRes = await pool.query(
+        `SELECT
+           u.id AS user_id,
+           u.full_name,
+           u.username,
+           a.status AS current_status
+         FROM enrollments e
+         JOIN users u ON u.id = e.user_id
+         LEFT JOIN attendance a
+           ON a.student_id = u.id
+          AND a.section_id = $1
+          AND a.date = CURRENT_DATE
+         WHERE e.section_id = $1
+           AND COALESCE(e.status, '') <> 'withdrawn'
+         ORDER BY u.full_name ASC`,
+        [req.params.section_id]
+      );
+
+      return res.render('faculty-attendance', {
+        user: req.session.user,
+        courses: coursesRes.rows,
+        section: sectionRes.rows[0],
+        students: studentsRes.rows,
+        today: new Date().toISOString().slice(0, 10),
+        hours: [1, 2, 3, 4]
+      });
+
+    } catch (err) {
+      console.error('Teacher attendance roster error:', err);
+      return res.status(500).send('Unable to load attendance roster.');
     }
-    res.redirect('/sis/faculty/attendance/' + sectionId);
-  } catch (err) { res.status(500).send("Error saving attendance: " + err.message); }
-});
+  }
+);
+
+
+// ============================================
+// TEACHER: SAVE ATTENDANCE
+// ============================================
+
+app.post(
+  '/sis/faculty/attendance/:section_id',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
+      return res.status(400).send('Invalid section.');
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Confirm that this teacher owns the section.
+      const sectionCheck = await client.query(
+        `SELECT id
+         FROM course_sections
+         WHERE id = $1
+           AND teacher_id = $2
+         FOR UPDATE`,
+        [sectionId, req.session.user.id]
+      );
+
+      if (!sectionCheck.rows.length) {
+        throw new Error('You are not authorized to manage this section.');
+      }
+
+      const allowedStatuses = [
+        'Present',
+        'Absent',
+        'Late',
+        'Excused'
+      ];
+
+      for (const [key, value] of Object.entries(req.body)) {
+        const match = key.match(/^status_(\d+)$/);
+
+        if (!match) continue;
+
+        const studentId = Number(match[1]);
+        const status = String(value).trim();
+
+        if (!Number.isInteger(studentId) || studentId <= 0) {
+          continue;
+        }
+
+        if (!allowedStatuses.includes(status)) {
+          throw new Error('Invalid attendance status.');
+        }
+
+        // Confirm the student is still actively enrolled.
+        const activeStudent = await client.query(
+          `SELECT id
+           FROM enrollments
+           WHERE user_id = $1
+             AND section_id = $2
+             AND COALESCE(status, '') <> 'withdrawn'
+           LIMIT 1
+           FOR UPDATE`,
+          [studentId, sectionId]
+        );
+
+        // Skip students who have withdrawn or are not enrolled.
+        if (!activeStudent.rows.length) {
+          continue;
+        }
+
+        // Replace only today's attendance record.
+        await client.query(
+          `DELETE FROM attendance
+           WHERE student_id = $1
+             AND section_id = $2
+             AND date = $3`,
+          [studentId, sectionId, today]
+        );
+
+        await client.query(
+          `INSERT INTO attendance (
+             student_id,
+             section_id,
+             date,
+             status
+           )
+           VALUES ($1, $2, $3, $4)`,
+          [studentId, sectionId, today, status]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      return res.redirect('/sis/faculty/attendance/' + sectionId);
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+
+      console.error('Teacher attendance save error:', err);
+
+      return res.status(400).send(
+        err.message || 'Unable to save attendance.'
+      );
+
+    } finally {
+      client.release();
+    }
+  }
+);
 
 app.get('/sis/faculty/grades', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
@@ -3074,83 +3427,172 @@ app.get('/sis/faculty/grades', requireRole('teacher', 'advisor'), async (req, re
   } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
+
 app.get('/sis/faculty/grades/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
   try {
-    const sectionRes = await pool.query(`SELECT s.id, c.code, c.title, s.group_name FROM course_sections s JOIN courses c ON c.id = s.course_id WHERE s.id = $1 AND s.teacher_id = $2`, [req.params.section_id, req.session.user.id]);
-    if (sectionRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
-    const studentsRes = await pool.query(`SELECT u.id as user_id, u.full_name, u.username, g.midterm_grade, g.final_grade, g.letter_grade, g.gpa_points, g.is_published FROM enrollments e JOIN users u ON u.id = e.user_id LEFT JOIN grades g ON g.student_id = u.id AND g.section_id = $1 WHERE e.section_id = $1`, [req.params.section_id]);
-    res.render('faculty-grades-entry', { user: req.session.user, section: sectionRes.rows[0], students: studentsRes.rows });
-  } catch (err) { res.status(500).send("Error: " + err.message); }
+    const sectionRes = await pool.query(`
+      SELECT s.id, c.code, c.title, s.group_name
+      FROM course_sections s
+      JOIN courses c ON c.id = s.course_id
+      WHERE s.id = $1
+        AND s.teacher_id = $2
+    `, [req.params.section_id, req.session.user.id]);
+
+    if (sectionRes.rows.length === 0) {
+      return res.redirect('/sis/faculty/grades');
+    }
+
+    const studentsRes = await pool.query(`
+      SELECT
+        u.id AS user_id,
+        u.full_name,
+        u.username,
+        g.midterm_grade,
+        g.final_grade,
+        g.letter_grade,
+        g.gpa_points,
+        g.is_published
+      FROM enrollments e
+      JOIN users u ON u.id = e.user_id
+      LEFT JOIN grades g
+        ON g.student_id = u.id
+       AND g.section_id = $1
+      WHERE e.section_id = $1
+        AND COALESCE(e.status, '') <> 'withdrawn'
+      ORDER BY u.full_name
+    `, [req.params.section_id]);
+
+    res.render('faculty-grades-entry', {
+      user: req.session.user,
+      section: sectionRes.rows[0],
+      students: studentsRes.rows
+    });
+
+  } catch (err) {
+    console.error('Teacher grade roster error:', err);
+    res.status(500).send('Unable to load grade roster.');
+  }
 });
 
+
 app.post('/sis/faculty/grades/:section_id', requireRole('teacher', 'advisor'), async (req, res) => {
-  const sectionId = req.params.section_id;
+  const sectionId = Number(req.params.section_id);
+
+  if (!Number.isInteger(sectionId) || sectionId <= 0) {
+    return res.status(400).send('Invalid section.');
+  }
+
   try {
     const secInfoRes = await pool.query(`
       SELECT midterm_weight, final_weight, weights_locked
       FROM course_sections
-      WHERE id = $1 AND teacher_id = $2
+      WHERE id = $1
+        AND teacher_id = $2
     `, [sectionId, req.session.user.id]);
 
-    if (secInfoRes.rows.length === 0) return res.redirect('/sis/faculty/grades');
+    if (secInfoRes.rows.length === 0) {
+      return res.redirect('/sis/faculty/grades');
+    }
 
     const secInfo = secInfoRes.rows[0];
     const mw = Number(secInfo.midterm_weight) || 50;
     const fw = Number(secInfo.final_weight) || 50;
 
     let gradesSaved = 0;
+
     for (const key in req.body) {
-      if (key.startsWith('midterm_')) {
-        const studentId = key.split('_')[1];
-        const midterm = Number(req.body[key]) || 0;
-        const final = Number(req.body['final_' + studentId]) || 0;
+      if (!key.startsWith('midterm_')) continue;
 
-        const total = (midterm * mw / 100) + (final * fw / 100);
+      const studentId = Number(key.substring('midterm_'.length));
 
-        let letter = 'F';
-        let gpa = 0.0;
-
-        if (total >= 97) { letter = 'A+'; gpa = 4.0; }
-        else if (total >= 93) { letter = 'A'; gpa = 4.0; }
-        else if (total >= 90) { letter = 'A-'; gpa = 3.7; }
-        else if (total >= 87) { letter = 'B+'; gpa = 3.3; }
-        else if (total >= 83) { letter = 'B'; gpa = 3.0; }
-        else if (total >= 80) { letter = 'B-'; gpa = 2.7; }
-        else if (total >= 77) { letter = 'C+'; gpa = 2.3; }
-        else if (total >= 73) { letter = 'C'; gpa = 2.0; }
-        else if (total >= 70) { letter = 'C-'; gpa = 1.7; }
-        else if (total >= 67) { letter = 'D+'; gpa = 1.3; }
-        else if (total >= 63) { letter = 'D'; gpa = 1.0; }
-        else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
-        else { letter = 'F'; gpa = 0.0; }
-
-        await pool.query(`
-          INSERT INTO grades (student_id, section_id, midterm_grade, final_grade, letter_grade, gpa_points, is_published) 
-          VALUES ($1, $2, $3, $4, $5, $6, false) 
-          ON CONFLICT (student_id, section_id) DO UPDATE 
-          SET midterm_grade = EXCLUDED.midterm_grade, 
-              final_grade = EXCLUDED.final_grade, 
-              letter_grade = EXCLUDED.letter_grade, 
-              gpa_points = EXCLUDED.gpa_points
-        `, [studentId, sectionId, midterm, final, letter, gpa]);
-        gradesSaved++;
+      if (!Number.isInteger(studentId) || studentId <= 0) {
+        continue;
       }
+
+      // Only actively enrolled students can receive grade updates.
+      const activeStudent = await pool.query(`
+        SELECT id
+        FROM enrollments
+        WHERE user_id = $1
+          AND section_id = $2
+          AND COALESCE(status, '') <> 'withdrawn'
+        LIMIT 1
+      `, [studentId, sectionId]);
+
+      if (activeStudent.rows.length === 0) {
+        continue;
+      }
+
+      const midterm = Number(req.body[key]) || 0;
+      const final = Number(req.body['final_' + studentId]) || 0;
+
+      const total = (midterm * mw / 100) + (final * fw / 100);
+
+      let letter = 'F';
+      let gpa = 0.0;
+
+      if (total >= 97) { letter = 'A+'; gpa = 4.0; }
+      else if (total >= 93) { letter = 'A'; gpa = 4.0; }
+      else if (total >= 90) { letter = 'A-'; gpa = 3.7; }
+      else if (total >= 87) { letter = 'B+'; gpa = 3.3; }
+      else if (total >= 83) { letter = 'B'; gpa = 3.0; }
+      else if (total >= 80) { letter = 'B-'; gpa = 2.7; }
+      else if (total >= 77) { letter = 'C+'; gpa = 2.3; }
+      else if (total >= 73) { letter = 'C'; gpa = 2.0; }
+      else if (total >= 70) { letter = 'C-'; gpa = 1.7; }
+      else if (total >= 67) { letter = 'D+'; gpa = 1.3; }
+      else if (total >= 63) { letter = 'D'; gpa = 1.0; }
+      else if (total >= 60) { letter = 'D-'; gpa = 0.7; }
+      else { letter = 'F'; gpa = 0.0; }
+
+      await pool.query(`
+        INSERT INTO grades (
+          student_id,
+          section_id,
+          midterm_grade,
+          final_grade,
+          letter_grade,
+          gpa_points,
+          is_published
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, false)
+        ON CONFLICT (student_id, section_id) DO UPDATE
+        SET midterm_grade = EXCLUDED.midterm_grade,
+            final_grade = EXCLUDED.final_grade,
+            letter_grade = EXCLUDED.letter_grade,
+            gpa_points = EXCLUDED.gpa_points
+      `, [studentId, sectionId, midterm, final, letter, gpa]);
+
+      gradesSaved++;
     }
 
     let lockMsg = '';
+
     if (gradesSaved > 0 && !secInfo.weights_locked) {
       await pool.query(`
         UPDATE course_sections
-        SET weights_locked = true, weights_locked_at = NOW(), weights_locked_by = $1
+        SET weights_locked = true,
+            weights_locked_at = NOW(),
+            weights_locked_by = $1
         WHERE id = $2
       `, [req.session.user.id, sectionId]);
+
       lockMsg = ' Weights are now locked.';
     }
 
-    req.flash('success', `Grades saved successfully using weights: Midterm ${mw}%, Final ${fw}%.${lockMsg}`);
+    req.flash(
+      'success',
+      `Grades saved successfully using weights: Midterm ${mw}%, Final ${fw}%.${lockMsg}`
+    );
+
     res.redirect('/sis/faculty/grades/' + sectionId);
-  } catch (err) { res.status(500).send("Error saving grades: " + err.message); }
+
+  } catch (err) {
+    console.error('Teacher grade saving error:', err);
+    res.status(500).send('Unable to save grades: ' + err.message);
+  }
 });
+
 
 // ============================================
 // --- ADMIN ROUTES ---
@@ -3726,8 +4168,14 @@ app.post(
     const decision = String(req.body.decision || '').trim();
     const comments = String(req.body.comments || '').trim();
 
+    const actorId = req.session?.user?.id || req.user?.id;
+
     if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
       return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!actorId) {
+      return res.status(401).send('Please sign in again.');
     }
 
     if (!['recommended', 'not_recommended', 'more_info'].includes(decision)) {
@@ -3780,9 +4228,13 @@ app.post(
              advisor_reviewed_by = $3,
              advisor_reviewed_at = NOW(),
              status = $4,
+             information_requested_by =
+               CASE WHEN $1 = 'more_info' THEN 'advisor' ELSE NULL END,
+             information_requested_at =
+               CASE WHEN $1 = 'more_info' THEN NOW() ELSE NULL END,
              updated_at = NOW()
          WHERE id = $5`,
-        [decision, comments, req.user.id, newStatus, withdrawalId]
+        [decision, comments, actorId, newStatus, withdrawalId]
       );
 
       await client.query(
@@ -3793,7 +4245,7 @@ app.post(
         [
           withdrawalId,
           `advisor_${decision}`,
-          req.user.id,
+          actorId,
           withdrawal.status,
           newStatus,
           comments || `Advisor decision: ${decision.replaceAll('_', ' ')}`
@@ -3804,7 +4256,12 @@ app.post(
 
       res.redirect('/sis/advisor/withdrawals');
     } catch (err) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Advisor withdrawal rollback error:', rollbackError);
+      }
+
       console.error('Advisor withdrawal review error:', err);
       res.status(500).send('Unable to save advisor decision.');
     } finally {
@@ -3812,7 +4269,6 @@ app.post(
     }
   }
 );
-
 
 
 
@@ -3857,7 +4313,6 @@ app.post(
   '/sis/hod/withdrawals/:id/review',
   requireRole('department_head'),
   async (req, res) => {
-
     const withdrawalId = Number(req.params.id);
     const decision = String(req.body.decision || '').trim();
     const comments = String(req.body.comments || '').trim();
@@ -3912,7 +4367,6 @@ app.post(
           ? 'finance_review'
           : 'registrar_review';
       } else if (decision === 'not_recommended') {
-        // Registrar retains final decision authority.
         newStatus = 'registrar_review';
       } else {
         newStatus = 'student_action_required';
@@ -3925,6 +4379,10 @@ app.post(
              hod_reviewed_by = $3,
              hod_reviewed_at = NOW(),
              status = $4,
+             information_requested_by =
+               CASE WHEN $1 = 'more_info' THEN 'department_head' ELSE NULL END,
+             information_requested_at =
+               CASE WHEN $1 = 'more_info' THEN NOW() ELSE NULL END,
              updated_at = NOW()
          WHERE id = $5`,
         [decision, comments, actorId, newStatus, withdrawalId]
@@ -3950,7 +4408,12 @@ app.post(
       res.redirect('/sis/hod/withdrawals');
 
     } catch (err) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('HOD withdrawal rollback error:', rollbackError);
+      }
+
       console.error('HOD withdrawal review error:', err);
       res.status(500).send('Unable to save HOD decision.');
 
@@ -3959,7 +4422,6 @@ app.post(
     }
   }
 );
-
 
 /* =========================================================
    FINANCE COURSE WITHDRAWAL REVIEW
@@ -4030,8 +4492,8 @@ app.post(
       return res.status(400).send('Invalid Finance decision.');
     }
 
-    if (!comments) {
-      return res.status(400).send('Please provide Finance comments.');
+    if (!comments || comments.length > 2000) {
+      return res.status(400).send('Finance comments are required and must not exceed 2000 characters.');
     }
 
     if (!actorId) {
@@ -4042,7 +4504,7 @@ app.post(
       cleared: 'registrar_review',
       not_applicable: 'registrar_review',
       outstanding_balance: 'finance_hold',
-      pending_information: 'finance_information_required'
+      pending_information: 'student_action_required'
     }[decision];
 
     let client;
@@ -4087,6 +4549,10 @@ app.post(
              finance_reviewed_by = $3,
              finance_reviewed_at = NOW(),
              status = $4,
+             information_requested_by =
+               CASE WHEN $1 = 'pending_information' THEN 'finance' ELSE NULL END,
+             information_requested_at =
+               CASE WHEN $1 = 'pending_information' THEN NOW() ELSE NULL END,
              updated_at = NOW()
          WHERE id = $5`,
         [decision, comments, actorId, nextStatus, withdrawalId]
@@ -4127,7 +4593,6 @@ app.post(
     }
   }
 );
-
 
 
 // ============================================
@@ -4175,8 +4640,10 @@ app.post(
   requireRole('admin'),
   async (req, res) => {
     const withdrawalId = Number(req.params.id);
-    const decision = req.body.decision;
+    const decision = String(req.body.decision || '').trim();
     const comments = String(req.body.comments || '').trim();
+
+    const actorId = req.session?.user?.id || req.user?.id;
 
     if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
       return res.status(400).send('Invalid withdrawal request.');
@@ -4186,17 +4653,26 @@ app.post(
       return res.status(400).send('Invalid Registrar decision.');
     }
 
+    if (!actorId) {
+      return res.status(401).send('Please sign in again.');
+    }
+
+    if (comments.length > 2000) {
+      return res.status(400).send('Comments cannot exceed 2000 characters.');
+    }
+
     const client = await pool.connect();
 
     try {
       await client.query('BEGIN');
 
-      const requestResult = await client.query(`
-        SELECT *
-        FROM course_withdrawals
-        WHERE id = $1
-        FOR UPDATE
-      `, [withdrawalId]);
+      const requestResult = await client.query(
+        `SELECT *
+         FROM course_withdrawals
+         WHERE id = $1
+         FOR UPDATE`,
+        [withdrawalId]
+      );
 
       if (!requestResult.rows.length) {
         throw new Error('Withdrawal request not found.');
@@ -4219,28 +4695,26 @@ app.post(
       const newStatus =
         decision === 'approved' ? 'approved' :
         decision === 'rejected' ? 'rejected' :
-        'registrar_review';
+        'student_action_required';
 
-      await client.query(`
-        UPDATE course_withdrawals
-        SET
-          registrar_decision = $1,
-          registrar_comments = $2,
-          registrar_reviewed_by = $3,
-          registrar_reviewed_at = NOW(),
-          status = $4,
-          updated_at = NOW()
-        WHERE id = $5
-      `, [
-        decision,
-        comments,
-        req.session.user.id,
-        newStatus,
-        withdrawalId
-      ]);
+      await client.query(
+        `UPDATE course_withdrawals
+         SET registrar_decision = $1,
+             registrar_comments = $2,
+             registrar_reviewed_by = $3,
+             registrar_reviewed_at = NOW(),
+             status = $4,
+             information_requested_by =
+               CASE WHEN $1 = 'more_info' THEN 'registrar' ELSE NULL END,
+             information_requested_at =
+               CASE WHEN $1 = 'more_info' THEN NOW() ELSE NULL END,
+             updated_at = NOW()
+         WHERE id = $5`,
+        [decision, comments, actorId, newStatus, withdrawalId]
+      );
 
-      await client.query(`
-        INSERT INTO course_withdrawal_history (
+      await client.query(
+        `INSERT INTO course_withdrawal_history (
           withdrawal_id,
           action,
           actor_id,
@@ -4249,15 +4723,16 @@ app.post(
           new_status,
           description
         )
-        VALUES ($1, $2, $3, 'admin', $4, $5, $6)
-      `, [
-        withdrawalId,
-        'registrar_' + decision,
-        req.session.user.id,
-        request.status,
-        newStatus,
-        comments || 'Registrar decision: ' + decision
-      ]);
+        VALUES ($1, $2, $3, 'admin', $4, $5, $6)`,
+        [
+          withdrawalId,
+          'registrar_' + decision,
+          actorId,
+          request.status,
+          newStatus,
+          comments || 'Registrar decision: ' + decision
+        ]
+      );
 
       await client.query('COMMIT');
 
@@ -4265,18 +4740,25 @@ app.post(
         req.flash('success', 'Registrar decision saved successfully.');
       }
 
-      res.redirect('/sis/admin/withdrawals');
+      return res.redirect('/sis/admin/withdrawals');
 
     } catch (err) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Registrar rollback error:', rollbackError);
+      }
+
       console.error('Registrar decision error:', err);
-      res.status(400).send(err.message || 'Unable to save Registrar decision.');
+      return res.status(400).send(
+        err.message || 'Unable to save Registrar decision.'
+      );
+
     } finally {
       client.release();
     }
   }
 );
-
 
 
 // ============================================
@@ -4289,9 +4771,14 @@ app.post(
     const withdrawalId = Number(req.params.id);
     const effectiveDate = req.body.effective_date;
     const notes = String(req.body.processing_notes || '').trim();
+    const actorId = req.session?.user?.id || req.user?.id;
 
     if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
       return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!actorId) {
+      return res.status(401).send('Please sign in again.');
     }
 
     if (
@@ -4307,12 +4794,13 @@ app.post(
     try {
       await client.query('BEGIN');
 
-      const result = await client.query(`
-        SELECT *
-        FROM course_withdrawals
-        WHERE id = $1
-        FOR UPDATE
-      `, [withdrawalId]);
+      const result = await client.query(
+        `SELECT *
+         FROM course_withdrawals
+         WHERE id = $1
+         FOR UPDATE`,
+        [withdrawalId]
+      );
 
       if (!result.rows.length) {
         throw new Error('Withdrawal request not found.');
@@ -4331,74 +4819,134 @@ app.post(
         throw new Error('Finance clearance is required.');
       }
 
-      // Update the official enrollment record.
-      const enrollmentUpdate = await client.query(`
-        UPDATE enrollments
-        SET
-          status = 'withdrawn',
-          status_changed_at = NOW()
-        WHERE user_id = $1
-          AND course_id = $2
-          AND section_id = $3
-          AND COALESCE(status, '') <> 'withdrawn'
-      `, [
-        request.student_id,
-        request.course_id,
-        request.section_id
-      ]);
+      // Find exactly one active enrollment for this student,
+      // course and section.
+      const enrollmentResult = await client.query(
+        `SELECT id
+         FROM enrollments
+         WHERE user_id = $1
+           AND course_id = $2
+           AND section_id = $3
+           AND COALESCE(status, '') <> 'withdrawn'
+         ORDER BY id DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [
+          request.student_id,
+          request.course_id,
+          request.section_id
+        ]
+      );
 
-      // Update the matching course registration, if one exists.
-      const registrationUpdate = await client.query(`
-        UPDATE course_registrations
-        SET
-          status = 'withdrawn',
-          reviewed_at = NOW(),
-          reviewed_by = $1,
-          notes = COALESCE(notes, '') ||
-            CASE WHEN COALESCE(notes, '') = '' THEN '' ELSE E'\n' END ||
-            $2
-        WHERE student_id = $3
-          AND course_id = $4
-          AND section_id = $5
-          AND status <> 'withdrawn'
-      `, [
-        req.session.user.id,
-        'Withdrawal processed. Request #' + withdrawalId,
-        request.student_id,
-        request.course_id,
-        request.section_id
-      ]);
+      // Find the exact course registration associated with
+      // this withdrawal request.
+      let registrationResult;
 
-      if (
-        enrollmentUpdate.rowCount === 0 &&
-        registrationUpdate.rowCount === 0
-      ) {
+      if (request.registration_id) {
+        registrationResult = await client.query(
+          `SELECT id
+           FROM course_registrations
+           WHERE id = $1
+             AND student_id = $2
+             AND course_id = $3
+             AND section_id = $4
+             AND COALESCE(status, '') <> 'withdrawn'
+           FOR UPDATE`,
+          [
+            request.registration_id,
+            request.student_id,
+            request.course_id,
+            request.section_id
+          ]
+        );
+      } else {
+        // Fallback for older withdrawal requests without registration_id.
+        registrationResult = await client.query(
+          `SELECT id
+           FROM course_registrations
+           WHERE student_id = $1
+             AND course_id = $2
+             AND section_id = $3
+             AND COALESCE(status, '') <> 'withdrawn'
+           ORDER BY id DESC
+           LIMIT 1
+           FOR UPDATE`,
+          [
+            request.student_id,
+            request.course_id,
+            request.section_id
+          ]
+        );
+      }
+
+      const enrollmentId = enrollmentResult.rows[0]?.id;
+      const registrationId = registrationResult.rows[0]?.id;
+
+      if (!enrollmentId && !registrationId) {
         throw new Error(
           'No matching active enrollment or course registration was found. Nothing was changed.'
         );
       }
 
-      await client.query(`
-        UPDATE course_withdrawals
-        SET
-          status = 'processed',
-          effective_date = $1,
-          processed_by = $2,
-          processed_at = NOW(),
-          updated_at = NOW(),
-          admin_notes = COALESCE(admin_notes, '') ||
-            CASE WHEN COALESCE(admin_notes, '') = '' THEN '' ELSE E'\n' END ||
-            $3
-        WHERE id = $4
-      `, [
-        effectiveDate,
-        req.session.user.id,
-        notes,
-        withdrawalId
-      ]);
+      // Update only the selected enrollment.
+      if (enrollmentId) {
+        await client.query(
+          `UPDATE enrollments
+           SET status = 'withdrawn',
+               status_changed_at = NOW()
+           WHERE id = $1`,
+          [enrollmentId]
+        );
+      }
 
-      await client.query(`
-        INSERT INTO course_withdrawal_history (
+      // Update only the exact selected course registration.
+      if (registrationId) {
+        await client.query(
+          `UPDATE course_registrations
+           SET status = 'withdrawn',
+               reviewed_at = NOW(),
+               reviewed_by = $1,
+               notes = COALESCE(notes, '') ||
+                 CASE
+                   WHEN COALESCE(notes, '') = '' THEN ''
+                   ELSE E'\n'
+                 END ||
+                 $2
+           WHERE id = $3`,
+          [
+            actorId,
+            'Withdrawal processed. Request #' + withdrawalId,
+            registrationId
+          ]
+        );
+      }
+
+      // Mark the withdrawal request as officially processed.
+      await client.query(
+        `UPDATE course_withdrawals
+         SET status = 'processed',
+             effective_date = $1,
+             processed_by = $2,
+             processed_at = NOW(),
+             updated_at = NOW(),
+             admin_notes = COALESCE(admin_notes, '') ||
+               CASE
+                 WHEN COALESCE(admin_notes, '') = '' THEN ''
+                 ELSE E'\n'
+               END ||
+               $3
+         WHERE id = $4`,
+        [
+          effectiveDate,
+          actorId,
+          notes,
+          withdrawalId
+        ]
+      );
+
+      // Preserve the complete audit history.
+      await client.query(
+        `INSERT INTO course_withdrawal_history (
           withdrawal_id,
           action,
           actor_id,
@@ -4407,12 +4955,13 @@ app.post(
           new_status,
           description
         )
-        VALUES ($1, 'withdrawal_processed', $2, 'admin', 'approved', 'processed', $3)
-      `, [
-        withdrawalId,
-        req.session.user.id,
-        notes || 'Official course withdrawal processed.'
-      ]);
+        VALUES ($1, 'withdrawal_processed', $2, 'admin', 'approved', 'processed', $3)`,
+        [
+          withdrawalId,
+          actorId,
+          notes || 'Official course withdrawal processed.'
+        ]
+      );
 
       await client.query('COMMIT');
 
@@ -4420,18 +4969,26 @@ app.post(
         req.flash('success', 'Withdrawal processed successfully.');
       }
 
-      res.redirect('/sis/admin/withdrawals');
+      return res.redirect('/sis/admin/withdrawals');
 
     } catch (err) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Withdrawal rollback error:', rollbackError);
+      }
+
       console.error('Withdrawal processing error:', err);
-      res.status(400).send(err.message || 'Unable to process withdrawal.');
+
+      return res.status(400).send(
+        err.message || 'Unable to process withdrawal.'
+      );
+
     } finally {
       client.release();
     }
   }
 );
-
 
 
 app.post('/sis/admin/registrations/:id/action', requireRole('admin'), async (req, res) => {

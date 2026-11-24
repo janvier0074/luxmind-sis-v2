@@ -1146,6 +1146,294 @@ app.post(
   }
 );
 
+
+
+// ======================================================
+// STUDENT COURSE WITHDRAWAL
+// ======================================================
+
+// Display the student's eligible courses and withdrawal history
+app.get('/sis/my/withdrawal', requireRole('student'), async (req, res) => {
+  try {
+    const studentId = req.session.user.id;
+
+    // Get courses in which the student is officially enrolled
+    const coursesResult = await pool.query(`
+      SELECT DISTINCT
+        x.registration_id,
+        x.course_id,
+        x.section_id,
+        c.code,
+        c.title,
+        c.credits,
+        s.group_name
+      FROM (
+        SELECT
+          NULL::INTEGER AS registration_id,
+          e.course_id,
+          e.section_id
+        FROM enrollments e
+        WHERE e.user_id = $1
+          AND e.section_id IS NOT NULL
+
+        UNION
+
+        SELECT
+          cr.id AS registration_id,
+          cr.course_id,
+          cr.section_id
+        FROM course_registrations cr
+        WHERE cr.student_id = $1
+          AND cr.status = 'approved'
+          AND cr.section_id IS NOT NULL
+      ) x
+      JOIN courses c ON c.id = x.course_id
+      JOIN course_sections s ON s.id = x.section_id
+      ORDER BY c.code ASC
+    `, [studentId]);
+
+    // Get the student's previous withdrawal requests
+    const requestsResult = await pool.query(`
+      SELECT
+        w.*,
+        c.code AS course_code,
+        c.title AS course_name,
+        s.group_name
+      FROM course_withdrawals w
+      JOIN courses c ON c.id = w.course_id
+      LEFT JOIN course_sections s ON s.id = w.section_id
+      WHERE w.student_id = $1
+      ORDER BY w.requested_at DESC
+    `, [studentId]);
+
+    const successMessages = req.flash('success');
+    const errorMessages = req.flash('error');
+
+    res.render('student-withdrawal', {
+      user: req.session.user,
+      enrolledCourses: coursesResult.rows,
+      courses: coursesResult.rows,
+      requests: requestsResult.rows,
+      flash: {
+        success: successMessages,
+        error: errorMessages
+      },
+      error: errorMessages[0] || null
+    });
+
+  } catch (err) {
+    console.error('Student withdrawal page error:', err);
+    res.status(500).send('Unable to load the course withdrawal page.');
+  }
+});
+
+
+// Submit a new course withdrawal request
+app.post(
+  '/sis/my/withdrawal/submit',
+  requireRole('student'),
+  upload.single('attachment'),
+  async (req, res) => {
+
+    let uploadedPath = null;
+    let client = null;
+
+    try {
+      const studentId = req.session.user.id;
+      const sectionId = Number(req.body.section_id);
+      const reason = String(req.body.reason || '').trim();
+
+      if (!Number.isInteger(sectionId) || sectionId <= 0) {
+        req.flash('error', 'Please select a valid course.');
+        return res.redirect('/sis/my/withdrawal');
+      }
+
+      if (reason.length < 15) {
+        req.flash('error', 'Please provide a reason of at least 15 characters.');
+        return res.redirect('/sis/my/withdrawal');
+      }
+
+      if (reason.length > 2000) {
+        req.flash('error', 'Your explanation is too long. Maximum 2000 characters.');
+        return res.redirect('/sis/my/withdrawal');
+      }
+
+      // Confirm that this student is officially enrolled in this section.
+      const registrationResult = await pool.query(`
+        SELECT
+          x.registration_id,
+          x.course_id,
+          x.section_id
+        FROM (
+          SELECT
+            NULL::INTEGER AS registration_id,
+            e.course_id,
+            e.section_id
+          FROM enrollments e
+          WHERE e.user_id = $1
+            AND e.section_id = $2
+
+          UNION ALL
+
+          SELECT
+            cr.id AS registration_id,
+            cr.course_id,
+            cr.section_id
+          FROM course_registrations cr
+          WHERE cr.student_id = $1
+            AND cr.section_id = $2
+            AND cr.status = 'approved'
+        ) x
+        LIMIT 1
+      `, [studentId, sectionId]);
+
+      if (registrationResult.rows.length === 0) {
+        req.flash('error', 'You are not officially enrolled in the selected course section.');
+        return res.redirect('/sis/my/withdrawal');
+      }
+
+      const registration = registrationResult.rows[0];
+
+      // Prevent multiple active withdrawal requests for the same section.
+      const duplicateResult = await pool.query(`
+        SELECT id
+        FROM course_withdrawals
+        WHERE student_id = $1
+          AND course_id = $2
+          AND section_id = $3
+          AND status NOT IN ('rejected', 'processed', 'cancelled')
+        LIMIT 1
+      `, [studentId, registration.course_id, sectionId]);
+
+      if (duplicateResult.rows.length > 0) {
+        req.flash('error', 'You already have an active withdrawal request for this course.');
+        return res.redirect('/sis/my/withdrawal');
+      }
+
+      // Upload optional attachment to the dedicated withdrawal bucket.
+      let attachmentPath = null;
+
+      if (req.file) {
+        const bucket = process.env.SUPABASE_WITHDRAWAL_BUCKET;
+
+        if (!supabase || !bucket) {
+          req.flash('error', 'Withdrawal document storage is not configured. Please contact the administrator.');
+          return res.redirect('/sis/my/withdrawal');
+        }
+
+        const allowedTypes = [
+          'application/pdf',
+          'image/png',
+          'image/jpeg'
+        ];
+
+        if (!allowedTypes.includes(req.file.mimetype)) {
+          req.flash('error', 'Only PDF, PNG and JPG documents are accepted.');
+          return res.redirect('/sis/my/withdrawal');
+        }
+
+        const extension = String(req.file.originalname.split('.').pop()).toLowerCase();
+
+        if (!['pdf', 'png', 'jpg', 'jpeg'].includes(extension)) {
+          req.flash('error', 'The uploaded file extension is not supported.');
+          return res.redirect('/sis/my/withdrawal');
+        }
+
+        uploadedPath =
+          `${studentId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+
+        const uploadResult = await supabase.storage
+          .from(bucket)
+          .upload(uploadedPath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
+
+        if (uploadResult.error) {
+          throw uploadResult.error;
+        }
+
+        attachmentPath = uploadedPath;
+      }
+
+      // Save the withdrawal request and its audit event together.
+      client = await pool.connect();
+
+      await client.query('BEGIN');
+
+      const insertResult = await client.query(`
+        INSERT INTO course_withdrawals (
+          student_id,
+          course_id,
+          registration_id,
+          section_id,
+          reason,
+          attachment_url,
+          finance_required,
+          status,
+          requested_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, FALSE, 'advisor_review', NOW())
+        RETURNING id
+      `, [
+        studentId,
+        registration.course_id,
+        registration.registration_id,
+        sectionId,
+        reason,
+        attachmentPath
+      ]);
+
+      const withdrawalId = insertResult.rows[0].id;
+
+      await client.query(`
+        INSERT INTO course_withdrawal_history (
+          withdrawal_id,
+          actor_id,
+          actor_role,
+          action,
+          previous_status,
+          new_status,
+          description,
+          created_at
+        )
+        VALUES ($1, $2, 'student', 'submitted', NULL, 'advisor_review',
+                'Student submitted a course withdrawal request.', NOW())
+      `, [withdrawalId, studentId]);
+
+      await client.query('COMMIT');
+
+      req.flash('success', 'Your withdrawal request has been submitted successfully.');
+      return res.redirect('/sis/my/withdrawal');
+
+    } catch (err) {
+      if (client) {
+        await client.query('ROLLBACK').catch(() => {});
+      }
+
+      console.error('Course withdrawal submission error:', err);
+
+      // Remove the uploaded document if the database operation failed.
+      if (
+        uploadedPath &&
+        supabase &&
+        process.env.SUPABASE_WITHDRAWAL_BUCKET
+      ) {
+        await supabase.storage
+          .from(process.env.SUPABASE_WITHDRAWAL_BUCKET)
+          .remove([uploadedPath])
+          .catch(() => {});
+      }
+
+      req.flash('error', 'Unable to submit your withdrawal request. Please try again.');
+      return res.redirect('/sis/my/withdrawal');
+
+    } finally {
+      if (client) client.release();
+    }
+  }
+);
+
 // Secure access to a student's private attachment
 app.get(
   '/sis/my/guidance/attachment/:id',

@@ -3682,6 +3682,454 @@ app.get('/sis/admin/registrations', requireRole('admin'), async (req, res) => {
 // --- CENTRAL ADMIN: COURSE WITHDRAWALS ---
 // ============================================
 
+
+
+// ============================================================
+// ACADEMIC ADVISOR — COURSE WITHDRAWAL REVIEW
+// ============================================================
+
+app.get('/sis/advisor/withdrawals', requireRole('advisor'), async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        w.*,
+        u.full_name AS student_name,
+        u.username,
+        c.code AS course_code,
+        c.title AS course_name,
+        cs.group_name
+      FROM course_withdrawals w
+      JOIN users u ON u.id = w.student_id
+      JOIN courses c ON c.id = w.course_id
+      LEFT JOIN course_sections cs ON cs.id = w.section_id
+      WHERE w.status = 'advisor_review'
+      ORDER BY w.requested_at ASC
+    `);
+
+    res.render('advisor-withdrawals', {
+      user: req.user,
+      requests: result.rows,
+      flash: null
+    });
+  } catch (err) {
+    console.error('Advisor withdrawal loading error:', err);
+    res.status(500).send('Unable to load withdrawal requests.');
+  }
+});
+
+
+app.post(
+  '/sis/advisor/withdrawals/:id/review',
+  requireRole('advisor'),
+  async (req, res) => {
+    const withdrawalId = Number(req.params.id);
+    const decision = String(req.body.decision || '').trim();
+    const comments = String(req.body.comments || '').trim();
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!['recommended', 'not_recommended', 'more_info'].includes(decision)) {
+      return res.status(400).send('Invalid advisor decision.');
+    }
+
+    if (comments.length > 2000) {
+      return res.status(400).send('Comments cannot exceed 2000 characters.');
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const requestResult = await client.query(
+        `SELECT id, status
+         FROM course_withdrawals
+         WHERE id = $1
+         FOR UPDATE`,
+        [withdrawalId]
+      );
+
+      if (requestResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).send('Withdrawal request not found.');
+      }
+
+      const withdrawal = requestResult.rows[0];
+
+      if (withdrawal.status !== 'advisor_review') {
+        await client.query('ROLLBACK');
+        return res.status(409).send('This request is no longer awaiting advisor review.');
+      }
+
+      let newStatus;
+
+      if (decision === 'recommended') {
+        newStatus = 'hod_review';
+      } else if (decision === 'not_recommended') {
+        newStatus = 'advisor_not_recommended';
+      } else {
+        newStatus = 'student_action_required';
+      }
+
+      await client.query(
+        `UPDATE course_withdrawals
+         SET advisor_decision = $1,
+             advisor_comments = $2,
+             advisor_reviewed_by = $3,
+             advisor_reviewed_at = NOW(),
+             status = $4,
+             updated_at = NOW()
+         WHERE id = $5`,
+        [decision, comments, req.user.id, newStatus, withdrawalId]
+      );
+
+      await client.query(
+        `INSERT INTO course_withdrawal_history
+          (withdrawal_id, action, actor_id, actor_role,
+           previous_status, new_status, description)
+         VALUES ($1, $2, $3, 'advisor', $4, $5, $6)`,
+        [
+          withdrawalId,
+          `advisor_${decision}`,
+          req.user.id,
+          withdrawal.status,
+          newStatus,
+          comments || `Advisor decision: ${decision.replaceAll('_', ' ')}`
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      res.redirect('/sis/advisor/withdrawals');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Advisor withdrawal review error:', err);
+      res.status(500).send('Unable to save advisor decision.');
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+
+
+// ============================================================
+// HEAD OF DEPARTMENT — COURSE WITHDRAWAL REVIEW
+// ============================================================
+
+// HOD withdrawal review queue
+app.get('/sis/hod/withdrawals', requireRole('department_head'), async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        w.*,
+        u.full_name AS student_name,
+        u.username,
+        c.code AS course_code,
+        c.title AS course_name,
+        cs.group_name
+      FROM course_withdrawals w
+      JOIN users u ON u.id = w.student_id
+      JOIN courses c ON c.id = w.course_id
+      LEFT JOIN course_sections cs ON cs.id = w.section_id
+      WHERE w.status = 'hod_review'
+      ORDER BY w.requested_at ASC
+    `);
+
+    res.render('hod-withdrawals', {
+      user: req.session.user,
+      requests: result.rows,
+      flash: req.flash ? req.flash() : {}
+    });
+
+  } catch (err) {
+    console.error('HOD withdrawal loading error:', err);
+    res.status(500).send('Unable to load HOD withdrawal requests.');
+  }
+});
+
+
+// HOD decision submission
+app.post(
+  '/sis/hod/withdrawals/:id/review',
+  requireRole('department_head'),
+  async (req, res) => {
+
+    const withdrawalId = Number(req.params.id);
+    const decision = String(req.body.decision || '').trim();
+    const comments = String(req.body.comments || '').trim();
+
+    const actorId = req.session?.user?.id || req.user?.id;
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId <= 0) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!actorId) {
+      return res.status(401).send('Unable to identify the HOD account.');
+    }
+
+    if (!['recommended', 'not_recommended', 'more_info'].includes(decision)) {
+      return res.status(400).send('Invalid HOD decision.');
+    }
+
+    if (!comments || comments.length > 2000) {
+      return res.status(400).send('Comments are required and must not exceed 2000 characters.');
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const requestResult = await client.query(
+        `SELECT id, status, finance_required
+         FROM course_withdrawals
+         WHERE id = $1
+         FOR UPDATE`,
+        [withdrawalId]
+      );
+
+      if (requestResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).send('Withdrawal request not found.');
+      }
+
+      const withdrawal = requestResult.rows[0];
+
+      if (withdrawal.status !== 'hod_review') {
+        await client.query('ROLLBACK');
+        return res.status(409).send('This request is not awaiting HOD review.');
+      }
+
+      let newStatus;
+
+      if (decision === 'recommended') {
+        newStatus = withdrawal.finance_required
+          ? 'finance_review'
+          : 'registrar_review';
+      } else if (decision === 'not_recommended') {
+        // Registrar retains final decision authority.
+        newStatus = 'registrar_review';
+      } else {
+        newStatus = 'student_action_required';
+      }
+
+      await client.query(
+        `UPDATE course_withdrawals
+         SET hod_decision = $1,
+             hod_comments = $2,
+             hod_reviewed_by = $3,
+             hod_reviewed_at = NOW(),
+             status = $4,
+             updated_at = NOW()
+         WHERE id = $5`,
+        [decision, comments, actorId, newStatus, withdrawalId]
+      );
+
+      await client.query(
+        `INSERT INTO course_withdrawal_history
+          (withdrawal_id, action, actor_id, actor_role,
+           previous_status, new_status, description)
+         VALUES ($1, $2, $3, 'department_head', $4, $5, $6)`,
+        [
+          withdrawalId,
+          `hod_${decision}`,
+          actorId,
+          withdrawal.status,
+          newStatus,
+          comments
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      res.redirect('/sis/hod/withdrawals');
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('HOD withdrawal review error:', err);
+      res.status(500).send('Unable to save HOD decision.');
+
+    } finally {
+      client.release();
+    }
+  }
+);
+
+
+/* =========================================================
+   FINANCE COURSE WITHDRAWAL REVIEW
+========================================================= */
+
+// Finance withdrawal queue
+app.get(
+  '/sis/finance/withdrawals',
+  requireRole('finance_staff'),
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+           w.*,
+           w.id AS withdrawal_id,
+           u.full_name AS student_name,
+           u.username,
+           c.code AS course_code,
+           c.title AS course_name,
+           cs.group_name
+         FROM course_withdrawals w
+         JOIN users u ON u.id = w.student_id
+         JOIN courses c ON c.id = w.course_id
+         LEFT JOIN course_sections cs ON cs.id = w.section_id
+         WHERE w.finance_required = TRUE
+           AND w.status IN (
+             'finance_review',
+             'finance_hold',
+             'finance_information_required'
+           )
+         ORDER BY w.requested_at ASC`
+      );
+
+      res.render('finance-withdrawals', {
+        user: req.session?.user || req.user,
+        requests: result.rows,
+        flash: null
+      });
+    } catch (err) {
+      console.error('Finance withdrawal queue error:', err);
+      res.status(500).send('Unable to load Finance withdrawal requests.');
+    }
+  }
+);
+
+// Finance review decision
+app.post(
+  '/sis/finance/withdrawals/:id/review',
+  requireRole('finance_staff'),
+  async (req, res) => {
+    const withdrawalId = Number.parseInt(req.params.id, 10);
+    const decision = String(req.body.decision || '').trim();
+    const comments = String(req.body.comments || '').trim();
+    const actorId = req.session?.user?.id || req.user?.id;
+
+    const allowedDecisions = [
+      'cleared',
+      'outstanding_balance',
+      'not_applicable',
+      'pending_information'
+    ];
+
+    if (!Number.isInteger(withdrawalId) || withdrawalId < 1) {
+      return res.status(400).send('Invalid withdrawal request.');
+    }
+
+    if (!allowedDecisions.includes(decision)) {
+      return res.status(400).send('Invalid Finance decision.');
+    }
+
+    if (!comments) {
+      return res.status(400).send('Please provide Finance comments.');
+    }
+
+    if (!actorId) {
+      return res.status(401).send('Your session has expired. Please sign in again.');
+    }
+
+    const nextStatus = {
+      cleared: 'registrar_review',
+      not_applicable: 'registrar_review',
+      outstanding_balance: 'finance_hold',
+      pending_information: 'finance_information_required'
+    }[decision];
+
+    let client;
+
+    try {
+      client = await pool.connect();
+      await client.query('BEGIN');
+
+      const current = await client.query(
+        `SELECT *
+         FROM course_withdrawals
+         WHERE id = $1
+           AND finance_required = TRUE
+         FOR UPDATE`,
+        [withdrawalId]
+      );
+
+      if (!current.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(404).send('Finance withdrawal request not found.');
+      }
+
+      const withdrawal = current.rows[0];
+
+      const allowedStatuses = [
+        'finance_review',
+        'finance_hold',
+        'finance_information_required'
+      ];
+
+      if (!allowedStatuses.includes(withdrawal.status)) {
+        await client.query('ROLLBACK');
+        return res.status(409).send(
+          'This request is not currently available for Finance review.'
+        );
+      }
+
+      await client.query(
+        `UPDATE course_withdrawals
+         SET finance_decision = $1,
+             finance_comments = $2,
+             finance_reviewed_by = $3,
+             finance_reviewed_at = NOW(),
+             status = $4,
+             updated_at = NOW()
+         WHERE id = $5`,
+        [decision, comments, actorId, nextStatus, withdrawalId]
+      );
+
+      await client.query(
+        `INSERT INTO course_withdrawal_history
+          (withdrawal_id, action, actor_id, actor_role,
+           previous_status, new_status, description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          withdrawalId,
+          `finance_${decision}`,
+          actorId,
+          'finance_staff',
+          withdrawal.status,
+          nextStatus,
+          comments
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      return res.redirect('/sis/finance/withdrawals');
+    } catch (err) {
+      if (client) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          console.error('Finance withdrawal rollback error:', rollbackError);
+        }
+      }
+
+      console.error('Finance withdrawal review error:', err);
+      return res.status(500).send('Unable to save the Finance review.');
+    } finally {
+      if (client) client.release();
+    }
+  }
+);
+
+
+
 // ============================================
 // --- ADMIN / REGISTRAR: COURSE WITHDRAWALS ---
 // ============================================

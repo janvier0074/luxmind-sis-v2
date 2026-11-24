@@ -1,170 +1,610 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advisor Withdrawal Reviews â€” LuxMind SIS</title>
+  <title>Advisor Withdrawal Reviews — LuxMind SIS</title>
+
   <style>
-    :root{--ink:#17231f;--muted:#6c7b74;--line:#e5ece8;--soft:#f5f8f6;--green:#087f5b;--green2:#0e9f6e;--amber:#a45b08;--red:#b42318;--blue:#2459a6}
-    *{box-sizing:border-box}body{margin:0;background:#f4f7f5;color:var(--ink);font:14px/1.5 Inter,Segoe UI,Arial,sans-serif}
-    a{color:inherit;text-decoration:none}.top{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}
-    .brand{font-size:17px;font-weight:800;letter-spacing:-.4px}.brand span{color:var(--green2)}.back{border:1px solid var(--line);padding:8px 12px;border-radius:10px;font-weight:650;font-size:12px;background:#fff}
-    main{max-width:1180px;margin:24px auto;padding:0 18px 40px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:800}
-    h1{font-size:26px;letter-spacing:-.8px;margin:4px 0}.intro{color:var(--muted);margin:0 0 20px;font-size:13px}
-    .notice{background:#edf7f2;border:1px solid #d4eadf;border-radius:12px;padding:12px 14px;color:#245c46;font-size:12px;margin-bottom:17px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.stat,.panel{background:#fff;border:1px solid var(--line);border-radius:15px}
-    .stat{padding:14px}.stat small{color:var(--muted);font-size:11px;font-weight:650}.stat strong{display:block;font-size:24px;margin-top:3px;letter-spacing:-.5px}
-    .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:14px 0}.search{flex:1;min-width:190px}.search input,.toolbar select{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 11px;font:inherit;font-size:12px;outline:none}.toolbar select{width:auto;min-width:145px}
-    .panel{overflow:hidden}.panel-head{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.panel-head h2{font-size:15px;margin:0}.count{font-size:11px;color:var(--muted)}
-    .list{display:grid;gap:0}.request{padding:15px 17px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px}.request:last-child{border-bottom:0}
-    .student{font-weight:750;font-size:13px}.meta{font-size:11px;color:var(--muted);margin-top:3px}.course{font-weight:700;margin-top:8px;font-size:12px}.reason{font-size:12px;color:#53635b;margin-top:5px;max-width:760px}
-    .right{display:flex;flex-direction:column;align-items:flex-end;gap:9px}.pill{font-size:10px;font-weight:800;border-radius:30px;padding:5px 9px;background:#fff4df;color:var(--amber);white-space:nowrap}.pill.review{background:#eaf2ff;color:var(--blue)}.pill.done{background:#e8f6ee;color:var(--green)}.pill.rejected{background:#fff0ef;color:var(--red)}
-    .actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.btn{border:0;border-radius:9px;padding:8px 11px;font:inherit;font-size:11px;font-weight:750;cursor:pointer}.btn.primary{background:var(--green);color:#fff}.btn.light{background:#f0f4f2;color:#304139;border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}
-    .empty{padding:35px 18px;text-align:center;color:var(--muted);font-size:12px;display:none}.guide{margin-top:15px;padding:14px 16px}.guide h3{margin:0 0 8px;font-size:13px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.step{background:var(--soft);padding:10px;border-radius:10px;font-size:11px;color:#52635a}.step b{display:block;color:#24352c;margin-bottom:3px}
-    dialog{border:0;border-radius:16px;padding:0;width:min(520px,calc(100% - 28px));box-shadow:0 20px 70px #10291f35}dialog::backdrop{background:#10231d80}.modal{padding:19px}.modal h3{margin:0 0 4px;font-size:17px}.modal p{margin:0 0 13px;color:var(--muted);font-size:12px}.modal label{display:block;font-size:11px;font-weight:750;margin:12px 0 5px}.modal textarea,.modal select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:12px}.modal textarea{min-height:95px;resize:vertical}.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
-    @media(max-width:720px){.top{padding:0 13px;height:58px}main{margin:17px auto;padding:0 12px 28px}h1{font-size:22px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:11px}.stat strong{font-size:21px}.request{grid-template-columns:1fr;gap:10px;padding:13px}.right{align-items:flex-start}.actions{justify-content:flex-start}.toolbar select{flex:1}.steps{grid-template-columns:repeat(2,1fr)}.panel-head{padding:13px}.back{font-size:11px;padding:7px 9px}}
+    :root {
+      --green:#087f5b;
+      --green2:#0e9f6e;
+      --ink:#17231f;
+      --muted:#718078;
+      --line:#e5ece8;
+      --soft:#f4f8f5;
+      --blue:#2459a6;
+      --amber:#a45b08;
+      --red:#b42318;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      background:#f3f7f5;
+      color:var(--ink);
+      font:14px/1.5 Inter,Segoe UI,Arial,sans-serif;
+    }
+
+    button,input,select,textarea { font:inherit; }
+    a { text-decoration:none;color:inherit; }
+
+    .top {
+      height:62px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 24px;
+      position:sticky;
+      top:0;
+      z-index:5;
+    }
+
+    .brand { font-size:18px;font-weight:850; }
+    .brand span { color:var(--green2); }
+    .brand small { color:#829087;font-size:10px; }
+
+    .back {
+      padding:8px 13px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      font-size:12px;
+      font-weight:700;
+      background:#fff;
+    }
+
+    main {
+      max-width:1150px;
+      margin:25px auto;
+      padding:0 17px 40px;
+    }
+
+    .hero {
+      background:linear-gradient(115deg,#075b43,#0e9f6e);
+      color:white;
+      padding:23px;
+      border-radius:17px;
+      margin-bottom:18px;
+    }
+
+    .hero small {
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      font-size:10px;
+      font-weight:800;
+      opacity:.8;
+    }
+
+    h1 {
+      font-size:25px;
+      letter-spacing:-.7px;
+      margin:5px 0;
+    }
+
+    .hero p {
+      font-size:12px;
+      opacity:.9;
+      margin:0;
+      max-width:650px;
+    }
+
+    .notice {
+      background:#eaf6ef;
+      border:1px solid #d4eade;
+      color:#285c45;
+      border-radius:12px;
+      padding:12px 15px;
+      font-size:12px;
+      margin-bottom:17px;
+    }
+
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-bottom:17px;
+    }
+
+    .stat,.panel {
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+
+    .stat { padding:15px; }
+    .stat small { color:var(--muted);font-size:11px;font-weight:650; }
+    .stat strong { display:block;font-size:25px;margin-top:4px; }
+
+    .toolbar {
+      display:flex;
+      gap:9px;
+      margin:15px 0;
+      flex-wrap:wrap;
+    }
+
+    .search { flex:1;min-width:190px; }
+
+    .search input,.toolbar select {
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 12px;
+      background:white;
+      font-size:12px;
+      outline:none;
+    }
+
+    .toolbar select { width:auto;min-width:150px; }
+
+    .panel { overflow:hidden; }
+
+    .panel-head {
+      padding:15px 17px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid var(--line);
+      gap:10px;
+    }
+
+    .panel-head h2 { font-size:15px;margin:0; }
+    .count { color:var(--muted);font-size:11px; }
+
+    .request {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:15px;
+      padding:16px 17px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .request:last-child { border-bottom:0; }
+
+    .student { font-weight:800;font-size:13px; }
+    .meta { color:var(--muted);font-size:11px;margin-top:3px; }
+    .course { font-weight:750;font-size:12px;margin-top:9px; }
+    .reason {
+      color:#53635b;
+      font-size:12px;
+      margin-top:6px;
+      max-width:720px;
+      overflow-wrap:anywhere;
+    }
+
+    .right {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:10px;
+    }
+
+    .pill {
+      padding:5px 10px;
+      border-radius:30px;
+      background:#fff3dc;
+      color:var(--amber);
+      font-size:10px;
+      font-weight:800;
+    }
+
+    .actions {
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn {
+      border:0;
+      border-radius:9px;
+      padding:9px 12px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .primary { background:var(--green);color:white; }
+    .light { background:#f0f4f2;color:#34463c;border:1px solid var(--line); }
+    .btn:hover { filter:brightness(.96); }
+    .btn:disabled { opacity:.6;cursor:wait; }
+
+    .empty {
+      padding:35px 15px;
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .guide { margin-top:16px;padding:16px; }
+    .guide h3 { font-size:13px;margin:0 0 10px; }
+
+    .steps {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:9px;
+    }
+
+    .step {
+      background:var(--soft);
+      padding:11px;
+      border-radius:10px;
+      font-size:11px;
+      color:#56665e;
+    }
+
+    .step b {
+      display:block;
+      color:#24372d;
+      margin-bottom:4px;
+    }
+
+    dialog {
+      border:0;
+      border-radius:16px;
+      padding:0;
+      width:min(520px,calc(100% - 25px));
+      box-shadow:0 20px 70px #10291f35;
+    }
+
+    dialog::backdrop { background:#10231d80; }
+
+    .modal { padding:20px; }
+    .modal h3 { margin:0 0 4px;font-size:17px; }
+    .modal p { color:var(--muted);font-size:12px;margin:0 0 14px; }
+
+    .modal label {
+      display:block;
+      font-size:11px;
+      font-weight:800;
+      margin:13px 0 5px;
+    }
+
+    .modal select,.modal textarea {
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:11px;
+      font-size:12px;
+      background:white;
+    }
+
+    .modal textarea { min-height:105px;resize:vertical; }
+
+    .modal-foot {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:16px;
+    }
+
+    @media(max-width:700px) {
+      .top { height:56px;padding:0 12px; }
+      main { margin:17px auto;padding:0 11px 28px; }
+      h1 { font-size:21px; }
+      .hero { padding:18px; }
+      .stats { grid-template-columns:repeat(2,1fr);gap:8px; }
+      .stat { padding:11px; }
+      .stat strong { font-size:21px; }
+      .request { grid-template-columns:1fr;padding:13px; }
+      .right { align-items:flex-start; }
+      .actions { justify-content:flex-start; }
+      .steps { grid-template-columns:repeat(2,1fr); }
+      .toolbar select { flex:1; }
+      .back { font-size:11px;padding:7px 9px; }
+    }
   </style>
 </head>
+
 <body>
-  <header class="top">
-    <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#819087;font-weight:600">SIS</small></div>
-    <a class="back" href="/dashboard">â† Back to Dashboard</a>
-  </header>
 
-  <main>
-    <div class="eyebrow">Academic advising</div>
-    <h1>Course withdrawal reviews</h1>
-    <p class="intro">Review student requests, record your recommendation, and forward each case to the Head of Department.</p>
+<header class="top">
+  <div class="brand">Lux<span>Mind</span> <small>SIS</small></div>
+  <a class="back" href="/dashboard">← Back to Dashboard</a>
+</header>
 
-    <div class="notice"><b>Advisor responsibility:</b> assess the student's academic situation and provide a recommendation. You do not make the final withdrawal decision or change the official course registration.</div>
+<main>
 
-    <section class="stats" aria-label="Request summary">
-      <div class="stat"><small>Awaiting your review</small><strong id="pendingCount"><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['submitted','advisor_review'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong></div>
-      <div class="stat"><small>Recommended</small><strong id="recommendedCount"><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.advisor_decision || '').toLowerCase() === 'recommend').length : 0 %></strong></div>
-      <div class="stat"><small>Needs information</small><strong id="infoCount"><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.advisor_decision || '').toLowerCase() === 'more_info').length : 0 %></strong></div>
-      <div class="stat"><small>Total assigned</small><strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %></strong></div>
-    </section>
+  <section class="hero">
+    <small>Academic advising office</small>
+    <h1>Course Withdrawal Reviews</h1>
+    <p>Evaluate student withdrawal requests, record your academic recommendation and forward suitable cases to the Head of Department.</p>
+  </section>
 
-    <div class="toolbar">
-      <div class="search"><input id="searchInput" type="search" placeholder="Search student, course or request IDâ€¦" aria-label="Search requests"></div>
-      <select id="statusFilter" aria-label="Filter by status">
-        <option value="all">All requests</option><option value="pending">Awaiting review</option><option value="recommended">Recommended</option><option value="more_info">Needs information</option><option value="rejected">Not recommended</option>
-      </select>
-      <select id="sortFilter" aria-label="Sort requests"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+  <div class="notice">
+    <b>Advisor responsibility:</b>
+    Review the academic circumstances and provide a recommendation.
+    You cannot make the final withdrawal decision or change official registration.
+  </div>
+
+  <section class="stats">
+    <div class="stat">
+      <small>Awaiting your review</small>
+      <strong><%= Array.isArray(requests) ? requests.length : 0 %></strong>
+    </div>
+    <div class="stat">
+      <small>Review stage</small>
+      <strong style="color:#087f5b">Advisor</strong>
+    </div>
+    <div class="stat">
+      <small>Next authority</small>
+      <strong style="font-size:19px">HOD</strong>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="search">
+      <input id="searchInput" type="search"
+        placeholder="Search student, course or request ID...">
     </div>
 
-    <section class="panel">
-      <div class="panel-head"><h2>Assigned requests</h2><span class="count" id="visibleCount"><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %> records</span></div>
-      <div class="list" id="requestList">
-        <% if (typeof requests !== 'undefined' && Array.isArray(requests) && requests.length) { %>
-          <% requests.forEach(function(r) {
-            const status = String(r.status || 'submitted').toLowerCase();
-            const decision = String(r.advisor_decision || '').toLowerCase();
-            const studentName = r.student_name || r.full_name || r.student_email || 'Student';
-            const courseName = r.course_name || r.section_name || r.course_code || 'Course details unavailable';
-            const requestId = r.id || r.request_id || '';
-            const searchable = [studentName, courseName, requestId, r.reason || '', status, decision].join(' ').toLowerCase();
-            const dateText = r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Date unavailable';
-            const isPending = ['submitted','advisor_review'].includes(status);
-          %>
-          <article class="request" data-search="<%= searchable %>" data-status="<%= decision === 'recommend' ? 'recommended' : decision === 'more_info' ? 'more_info' : decision === 'not_recommend' ? 'rejected' : isPending ? 'pending' : status %>" data-date="<%= r.created_at ? new Date(r.created_at).getTime() : 0 %>">
-            <div>
-              <div class="student"><%= studentName %></div>
-              <div class="meta">Request #<%= requestId || 'â€”' %> Â· Submitted <%= dateText %> Â· <%= r.student_number || r.student_id || 'Student ID unavailable' %></div>
-              <div class="course"><%= courseName %><% if (r.course_code && r.course_name) { %> Â· <%= r.course_code %><% } %></div>
-              <div class="reason"><b>Student reason:</b> <%= r.reason || 'No reason provided.' %></div>
+    <select id="sortFilter">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Requests awaiting review</h2>
+      <span class="count" id="visibleCount">
+        <%= Array.isArray(requests) ? requests.length : 0 %> records
+      </span>
+    </div>
+
+    <div id="requestList">
+
+      <% if (Array.isArray(requests) && requests.length) { %>
+
+        <% requests.forEach(function(r) {
+          const studentName = r.student_name || r.full_name || 'Student';
+          const courseName = r.course_name || r.course_code || 'Course';
+          const requestId = r.id || r.withdrawal_id;
+          const requestDate = r.requested_at || r.created_at;
+          const searchable = [studentName, courseName, requestId, r.reason || ''].join(' ').toLowerCase();
+        %>
+
+        <article class="request"
+          data-search="<%= searchable %>"
+          data-date="<%= requestDate ? new Date(requestDate).getTime() : 0 %>">
+
+          <div>
+            <div class="student"><%= studentName %></div>
+
+            <div class="meta">
+              Request #<%= requestId %>
+              · Submitted
+              <%= requestDate ? new Date(requestDate).toLocaleDateString() : 'Date unavailable' %>
+              · Student ID: <%= r.student_id || 'N/A' %>
             </div>
-            <div class="right">
-              <span class="pill <%= decision === 'recommend' ? 'done' : decision === 'not_recommend' ? 'rejected' : decision === 'more_info' ? 'review' : '' %>"><%= decision === 'recommend' ? 'Recommended' : decision === 'not_recommend' ? 'Not recommended' : decision === 'more_info' ? 'More information' : status.replace(/_/g,' ') %></span>
-              <div class="actions">
-                <button class="btn light" type="button" onclick="openReview(this)" data-id="<%= requestId %>" data-student="<%= studentName %>" data-course="<%= courseName %>" data-decision="<%= decision %>" data-reason="<%= (r.reason || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;') %>">Review</button>
-                <% if (isPending) { %><button class="btn primary" type="button" onclick="openReview(this,'recommend')" data-id="<%= requestId %>" data-student="<%= studentName %>" data-course="<%= courseName %>" data-decision="<%= decision %>">Make recommendation</button><% } %>
+
+            <div class="course">
+              <%= courseName %>
+              <% if (r.course_code && r.course_name) { %>
+                · <%= r.course_code %>
+              <% } %>
+              <% if (r.group_name) { %>
+                · Group <%= r.group_name %>
+              <% } %>
+            </div>
+
+            <div class="reason">
+              <b>Student's reason:</b>
+              <%= r.reason || 'No reason provided.' %>
+            </div>
+
+            <% if (r.attachment_url) { %>
+              <div style="margin-top:8px;font-size:11px">
+                <a href="<%= r.attachment_url %>" target="_blank" rel="noopener"
+                   style="color:#087f5b;font-weight:750">
+                  View submitted attachment
+                </a>
               </div>
+            <% } %>
+          </div>
+
+          <div class="right">
+            <span class="pill">Awaiting review</span>
+
+            <div class="actions">
+              <button type="button" class="btn light"
+                data-id="<%= requestId %>"
+                data-student="<%= studentName %>"
+                data-course="<%= courseName %>"
+                onclick="openReview(this)">
+                Review
+              </button>
+
+              <button type="button" class="btn primary"
+                data-id="<%= requestId %>"
+                data-student="<%= studentName %>"
+                data-course="<%= courseName %>"
+                onclick="openReview(this,'recommended')">
+                Review & Recommend
+              </button>
             </div>
-          </article>
-          <% }); %>
-        <% } else { %>
-          <div class="empty" style="display:block">No withdrawal requests are currently assigned to you.</div>
-        <% } %>
-      </div>
-      <div class="empty" id="noMatches">No requests match your search or filter.</div>
-    </section>
+          </div>
 
-    <section class="panel guide">
-      <h3>Review sequence</h3>
-      <div class="steps">
-        <div class="step"><b>1. Check the context</b>Review the course, student reason, academic progress and relevant advising notes.</div>
-        <div class="step"><b>2. Record a recommendation</b>Recommend, do not recommend, or request more information. Explain your reasoning.</div>
-        <div class="step"><b>3. Forward to HOD</b>The case proceeds to the Head of Department for the next review.</div>
-        <div class="step"><b>4. Registrar decides</b>The Registrar remains the final authority and processes any approved change.</div>
-      </div>
-    </section>
-  </main>
+        </article>
 
-  <dialog id="reviewDialog">
-    <form class="modal" id="reviewForm" method="dialog">
-      <h3 id="modalTitle">Advisor review</h3>
-      <p id="modalSubtitle">Record your academic recommendation for this withdrawal request.</p>
-      <input type="hidden" id="requestId" name="request_id">
-      <label for="decision">Your recommendation</label>
-      <select id="decision" name="decision" required>
-        <option value="">Select a recommendation</option>
-        <option value="recommend">Recommend withdrawal</option>
-        <option value="not_recommend">Do not recommend</option>
-        <option value="more_info">Request more information</option>
-      </select>
-      <label for="comments">Academic assessment / comments</label>
-      <textarea id="comments" name="comments" maxlength="2000" placeholder="Explain the academic considerations and your recommendationâ€¦" required></textarea>
-      <div class="modal-foot">
-        <button class="btn light" type="button" onclick="document.getElementById('reviewDialog').close()">Cancel</button>
-        <button class="btn primary" type="submit">Save review</button>
-      </div>
-    </form>
-  </dialog>
+        <% }); %>
 
-  <script>
-    (function(){
-      const list=document.getElementById('requestList');
-      const search=document.getElementById('searchInput');
-      const status=document.getElementById('statusFilter');
-      const sort=document.getElementById('sortFilter');
-      const count=document.getElementById('visibleCount');
-      const empty=document.getElementById('noMatches');
-      function filter(){
-        const q=search.value.trim().toLowerCase(), s=status.value;
-        const cards=[...list.querySelectorAll('.request')];
-        cards.sort((a,b)=>sort.value==='newest'?Number(b.dataset.date)-Number(a.dataset.date):Number(a.dataset.date)-Number(b.dataset.date));
-        cards.forEach(card=>list.appendChild(card));
-        let shown=0;
-        cards.forEach(card=>{
-          const matchText=(card.dataset.search||'').includes(q);
-          const matchStatus=s==='all'||card.dataset.status===s;
-          card.hidden=!(matchText&&matchStatus);
-          if(!card.hidden)shown++;
-        });
-        count.textContent=shown+' of '+cards.length+' records';
-        empty.style.display=cards.length&&shown===0?'block':'none';
-      }
-      [search,status,sort].forEach(el=>el.addEventListener('input',filter));
-      window.openReview=function(button, preset){
-        const d=document.getElementById('reviewDialog');
-        document.getElementById('requestId').value=button.dataset.id||'';
-        document.getElementById('modalTitle').textContent='Advisor review Â· '+(button.dataset.student||'Student');
-        document.getElementById('modalSubtitle').textContent=(button.dataset.course||'Course')+' â€” add your recommendation and academic assessment.';
-        document.getElementById('decision').value=preset||button.dataset.decision||'';
-        document.getElementById('comments').value='';
-        d.showModal();
-      };
-      document.getElementById('reviewForm').addEventListener('submit',function(e){
-        e.preventDefault();
-        const decision=document.getElementById('decision').value;
-        const comments=document.getElementById('comments').value.trim();
-        if(!decision||!comments){alert('Select a recommendation and enter your academic assessment.');return;}
-        alert('The advisor review form is ready. Saving requires the advisor review POST route to be connected in server.js.');
-        document.getElementById('reviewDialog').close();
-      });
-      filter();
-    })();
-  </script>
+      <% } else { %>
+
+        <div class="empty">
+          <div style="font-size:28px;margin-bottom:8px">✓</div>
+          <b>No pending withdrawal requests</b>
+          <div>New student requests will appear here when submitted.</div>
+        </div>
+
+      <% } %>
+
+    </div>
+
+    <div class="empty" id="noMatches" hidden>
+      No requests match your search.
+    </div>
+  </section>
+
+  <section class="panel guide">
+    <h3>Withdrawal review workflow</h3>
+
+    <div class="steps">
+      <div class="step">
+        <b>1. Academic review</b>
+        Examine the student's reason and academic circumstances.
+      </div>
+
+      <div class="step">
+        <b>2. Advisor recommendation</b>
+        Recommend, do not recommend, or request more information.
+      </div>
+
+      <div class="step">
+        <b>3. HOD review</b>
+        Recommended cases proceed to the Head of Department.
+      </div>
+
+      <div class="step">
+        <b>4. Registrar decision</b>
+        The Registrar makes the final decision and processes approved withdrawals.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<dialog id="reviewDialog">
+  <form class="modal" id="reviewForm" method="POST">
+
+    <h3 id="modalTitle">Advisor review</h3>
+    <p id="modalSubtitle">Record your academic assessment.</p>
+
+    <label for="decision">Your recommendation</label>
+
+    <select id="decision" name="decision" required>
+      <option value="">Select a decision</option>
+      <option value="recommended">Recommend withdrawal</option>
+      <option value="not_recommended">Do not recommend</option>
+      <option value="more_info">Request more information</option>
+    </select>
+
+    <label for="comments">Academic assessment and comments</label>
+
+    <textarea
+      id="comments"
+      name="comments"
+      maxlength="2000"
+      minlength="1"
+      required
+      placeholder="Explain your academic assessment and the reasons for your recommendation..."></textarea>
+
+    <div class="modal-foot">
+      <button type="button" class="btn light"
+        onclick="document.getElementById('reviewDialog').close()">
+        Cancel
+      </button>
+
+      <button type="submit" class="btn primary" id="submitReview">
+        Save Advisor Decision
+      </button>
+    </div>
+
+  </form>
+</dialog>
+
+<script>
+(function() {
+  const list = document.getElementById('requestList');
+  const search = document.getElementById('searchInput');
+  const sort = document.getElementById('sortFilter');
+  const count = document.getElementById('visibleCount');
+  const empty = document.getElementById('noMatches');
+  const dialog = document.getElementById('reviewDialog');
+  const form = document.getElementById('reviewForm');
+
+  function filterRequests() {
+    const query = search.value.trim().toLowerCase();
+    const cards = [...list.querySelectorAll('.request')];
+
+    cards.sort((a, b) => {
+      const first = Number(a.dataset.date);
+      const second = Number(b.dataset.date);
+
+      return sort.value === 'newest'
+        ? second - first
+        : first - second;
+    });
+
+    cards.forEach(card => list.appendChild(card));
+
+    let visible = 0;
+
+    cards.forEach(card => {
+      const matches = (card.dataset.search || '').includes(query);
+
+      card.hidden = !matches;
+
+      if (matches) visible++;
+    });
+
+    count.textContent = visible + ' of ' + cards.length + ' records';
+    empty.hidden = !(cards.length && visible === 0);
+  }
+
+  window.openReview = function(button, preset) {
+    const id = button.dataset.id;
+
+    if (!id) {
+      alert('The withdrawal request ID is missing.');
+      return;
+    }
+
+    form.action = '/sis/advisor/withdrawals/' +
+      encodeURIComponent(id) + '/review';
+
+    document.getElementById('modalTitle').textContent =
+      'Advisor review · ' + (button.dataset.student || 'Student');
+
+    document.getElementById('modalSubtitle').textContent =
+      'Course: ' + (button.dataset.course || 'Course');
+
+    document.getElementById('decision').value = preset || '';
+    document.getElementById('comments').value = '';
+
+    dialog.showModal();
+  };
+
+  form.addEventListener('submit', function(event) {
+    const decision = document.getElementById('decision').value;
+    const comments = document.getElementById('comments').value.trim();
+    const button = document.getElementById('submitReview');
+
+    if (!decision || !comments) {
+      event.preventDefault();
+      alert('Select a decision and enter your academic assessment.');
+      return;
+    }
+
+    if (!form.action.includes('/sis/advisor/withdrawals/')) {
+      event.preventDefault();
+      alert('The withdrawal request could not be identified.');
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Submitting...';
+  });
+
+  search.addEventListener('input', filterRequests);
+  sort.addEventListener('change', filterRequests);
+
+  filterRequests();
+})();
+</script>
+
 </body>
 </html>

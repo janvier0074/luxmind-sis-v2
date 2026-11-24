@@ -85,6 +85,7 @@
       border-radius:12px;
       margin-bottom:17px;
       font-size:12px;
+      line-height:1.6;
     }
 
     .stats {
@@ -155,6 +156,7 @@
       color:#56655e;
       font-size:12px;
       margin-top:5px;
+      line-height:1.5;
     }
 
     .academic-note {
@@ -165,6 +167,7 @@
       margin-top:10px;
       font-size:11px;
       color:#53635a;
+      line-height:1.6;
     }
 
     .right {
@@ -186,14 +189,7 @@
 
     .status.review { background:#eaf2ff; color:var(--blue); }
     .status.done { background:#e8f6ee; color:var(--green); }
-    .status.rejected { background:#fff0ef; color:var(--red); }
-
-    .actions {
-      display:flex;
-      gap:7px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
+    .status.hold { background:#fff0ef; color:var(--red); }
 
     button {
       border:0;
@@ -203,6 +199,11 @@
       font-size:11px;
       font-weight:750;
       cursor:pointer;
+    }
+
+    button:disabled {
+      opacity:.5;
+      cursor:not-allowed;
     }
 
     .primary { background:var(--green); color:#fff; }
@@ -234,6 +235,7 @@
       border-radius:9px;
       font-size:11px;
       color:#58665f;
+      line-height:1.5;
     }
 
     .guide-item b {
@@ -253,7 +255,7 @@
     dialog::backdrop { background:#10231d80; }
     .modal { padding:20px; }
     .modal h2 { font-size:17px; margin:0 0 5px; }
-    .modal p { font-size:12px; color:var(--muted); }
+    .modal p { font-size:12px; color:var(--muted); line-height:1.5; }
 
     .modal label {
       display:block;
@@ -289,7 +291,6 @@
       .stat strong { font-size:21px; }
       .request { grid-template-columns:1fr; padding:13px; }
       .right { align-items:flex-start; }
-      .actions { justify-content:flex-start; }
       .guide-grid { grid-template-columns:1fr; }
       .back { font-size:11px; padding:7px 9px; }
     }
@@ -299,7 +300,10 @@
 <body>
 
 <header class="topbar">
-  <div class="brand">Lux<span>Mind</span> <small style="font-size:10px;color:#829087">SIS</small></div>
+  <div class="brand">
+    Lux<span>Mind</span>
+    <small style="font-size:10px;color:#829087">SIS</small>
+  </div>
   <a href="/dashboard" class="back">← Back to Dashboard</a>
 </header>
 
@@ -314,29 +318,45 @@
   <div class="notice">
     <b>Finance responsibility:</b>
     Record outstanding balances, applicable fee adjustments and financial clearance.
-    Finance does not approve or reject the academic withdrawal. Only review requests
-    formally referred to Finance.
+    Finance does not approve or reject the academic withdrawal. The Registrar makes
+    the final decision.
   </div>
+
+  <%
+    const financeRequests = Array.isArray(requests) ? requests : [];
+
+    const awaitingCount = financeRequests.filter(r =>
+      ['finance_review', 'pending_finance'].includes(String(r.status || '').toLowerCase())
+    ).length;
+
+    const holdCount = financeRequests.filter(r =>
+      String(r.status || '').toLowerCase() === 'finance_hold'
+    ).length;
+
+    const informationCount = financeRequests.filter(r =>
+      String(r.status || '').toLowerCase() === 'finance_information_required'
+    ).length;
+  %>
 
   <section class="stats">
     <div class="stat">
-      <small>Awaiting clearance</small>
-      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => ['finance_review','pending_finance'].includes(String(r.status || '').toLowerCase())).length : 0 %></strong>
+      <small>Awaiting review</small>
+      <strong><%= awaitingCount %></strong>
     </div>
 
     <div class="stat">
-      <small>Cleared</small>
-      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.finance_decision || '').toLowerCase() === 'cleared').length : 0 %></strong>
+      <small>Finance holds</small>
+      <strong><%= holdCount %></strong>
     </div>
 
     <div class="stat">
-      <small>Balance requires attention</small>
-      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.filter(r => String(r.finance_decision || '').toLowerCase() === 'outstanding_balance').length : 0 %></strong>
+      <small>Information required</small>
+      <strong><%= informationCount %></strong>
     </div>
 
     <div class="stat">
-      <small>Total referred</small>
-      <strong><%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %></strong>
+      <small>Total in Finance queue</small>
+      <strong><%= financeRequests.length %></strong>
     </div>
   </section>
 
@@ -346,36 +366,52 @@
 
     <select id="statusFilter">
       <option value="all">All referred requests</option>
-      <option value="pending">Awaiting clearance</option>
-      <option value="cleared">Cleared</option>
-      <option value="balance">Outstanding balance</option>
-      <option value="not_applicable">No adjustment required</option>
+      <option value="pending">Awaiting review</option>
+      <option value="balance">Finance hold</option>
+      <option value="information">Information required</option>
     </select>
   </div>
 
   <section class="panel">
+
     <div class="panel-heading">
       <h2>Requests referred to Finance</h2>
       <span class="record-count" id="recordCount">
-        <%= (typeof requests !== 'undefined' && Array.isArray(requests)) ? requests.length : 0 %> records
+        <%= financeRequests.length %> records
       </span>
     </div>
 
     <div id="requestList">
 
-      <% if (typeof requests !== 'undefined' && Array.isArray(requests) && requests.length) { %>
+      <% if (financeRequests.length) { %>
 
-        <% requests.forEach(function(r) {
-          const requestId = r.id || r.request_id || '';
-          const student = r.student_name || r.full_name || r.student_email || 'Student';
-          const course = r.course_name || r.section_name || r.course_code || 'Course details unavailable';
+        <% financeRequests.forEach(function(r) {
+          const requestId = r.id || r.withdrawal_id || '';
+          const student = r.student_name || r.full_name || 'Student';
+          const course = r.course_name || r.course_code || 'Course details unavailable';
           const status = String(r.status || '').toLowerCase();
           const decision = String(r.finance_decision || '').toLowerCase();
-          const pending = ['finance_review','pending_finance'].includes(status);
-          const category = decision === 'cleared' ? 'cleared' :
-            decision === 'outstanding_balance' ? 'balance' :
-            decision === 'not_applicable' ? 'not_applicable' : 'pending';
-          const searchable = [requestId,student,course,r.reason || '',status,decision].join(' ').toLowerCase();
+
+          const category =
+            status === 'finance_hold' ? 'balance' :
+            status === 'finance_information_required' ? 'information' :
+            'pending';
+
+          const actionable = [
+            'finance_review',
+            'finance_hold',
+            'finance_information_required'
+          ].includes(status);
+
+          const searchable = [
+            requestId,
+            student,
+            course,
+            r.reason || '',
+            status,
+            decision,
+            r.username || ''
+          ].join(' ').toLowerCase();
         %>
 
         <article class="request"
@@ -387,11 +423,15 @@
 
             <div class="meta">
               Request #<%= requestId || '—' %>
-              · <%= r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Date unavailable' %>
-              · <%= r.student_number || r.student_id || 'Student ID unavailable' %>
+              · <%= r.requested_at ? new Date(r.requested_at).toLocaleDateString() : 'Date unavailable' %>
+              · Student ID: <%= r.student_id || '—' %>
             </div>
 
             <div class="course"><%= course %></div>
+
+            <% if (r.group_name) { %>
+              <div class="meta">Section: <%= r.group_name %></div>
+            <% } %>
 
             <div class="detail">
               <b>Withdrawal reason:</b>
@@ -399,32 +439,48 @@
             </div>
 
             <div class="academic-note">
-              <b>Academic recommendation:</b>
-              <%= r.hod_decision || r.advisor_decision || 'Not available' %>
+              <b>Advisor recommendation:</b>
+              <%= r.advisor_decision || 'Not available' %>
               <br>
-              <b>Financial note:</b>
+
+              <b>HOD recommendation:</b>
+              <%= r.hod_decision || 'Not available' %>
+              <br>
+
+              <b>Previous Finance comments:</b>
               <%= r.finance_comments || 'No financial assessment recorded yet.' %>
             </div>
+
+            <% if (r.attachment_url) { %>
+              <div class="detail">
+                <a href="<%= r.attachment_url %>" target="_blank" rel="noopener">
+                  View supporting attachment
+                </a>
+              </div>
+            <% } %>
           </div>
 
           <div class="right">
-            <span class="status <%= category === 'cleared' || category === 'not_applicable' ? 'done' : category === 'balance' ? 'rejected' : 'review' %>">
-              <%= decision ? decision.replace(/_/g,' ') : status.replace(/_/g,' ') || 'Pending' %>
+
+            <span class="status <%= category === 'balance' ? 'hold' : category === 'information' ? 'review' : 'review' %>">
+              <%= status.replace(/_/g, ' ') || 'Pending' %>
             </span>
 
             <div class="actions">
-              <button type="button" class="secondary"
+              <button
+                type="button"
+                class="primary"
                 onclick="openFinanceReview(this)"
                 data-id="<%= requestId %>"
                 data-student="<%= student %>"
                 data-course="<%= course %>"
                 data-decision="<%= decision %>"
-                <%= !pending ? 'disabled' : '' %>>
+                <%= actionable ? '' : 'disabled' %>>
                 Financial review
               </button>
             </div>
-          </div>
 
+          </div>
         </article>
 
         <% }); %>
@@ -442,6 +498,7 @@
     <div class="empty" id="noMatches" style="display:none">
       No requests match your search or filter.
     </div>
+
   </section>
 
   <section class="panel guide">
@@ -455,12 +512,12 @@
 
       <div class="guide-item">
         <b>2. Assess consequences</b>
-        Record any fee adjustment or refund implications according to institutional policy.
+        Record fee adjustments or refund implications according to institutional policy.
       </div>
 
       <div class="guide-item">
         <b>3. Record clearance</b>
-        Send the financial result back to the Registrar for the final academic process.
+        Submit the financial result for the Registrar's final review.
       </div>
     </div>
   </section>
@@ -468,13 +525,16 @@
 </main>
 
 <dialog id="financeDialog">
-  <form class="modal" id="financeForm">
-    <h2>Financial assessment</h2>
-    <p id="reviewSubtitle">Record the financial position for this request.</p>
 
-    <input type="hidden" id="requestId" name="request_id">
+  <form class="modal" id="financeForm" method="POST">
+
+    <h2>Financial assessment</h2>
+    <p id="reviewSubtitle">
+      Record the financial position for this request.
+    </p>
 
     <label for="financeDecision">Financial clearance result</label>
+
     <select id="financeDecision" name="decision" required>
       <option value="">Select a result</option>
       <option value="cleared">Financially cleared</option>
@@ -484,26 +544,38 @@
     </select>
 
     <label for="balance">Outstanding balance (if applicable)</label>
-    <input type="number" id="balance" name="balance"
-      min="0" step="0.01" placeholder="Enter amount, if applicable">
+
+    <input
+      type="number"
+      id="balance"
+      min="0"
+      step="0.01"
+      placeholder="Enter amount, if applicable">
 
     <label for="financeComments">Financial assessment and comments</label>
-    <textarea id="financeComments" name="comments"
+
+    <textarea
+      id="financeComments"
+      name="comments"
       maxlength="2000"
       placeholder="Explain the financial assessment, adjustments or outstanding items..."
       required></textarea>
 
     <div class="modal-actions">
+
       <button type="button" class="secondary"
         onclick="document.getElementById('financeDialog').close()">
         Cancel
       </button>
 
-      <button type="submit" class="primary">
+      <button type="submit" class="primary" id="submitFinance">
         Submit financial review
       </button>
+
     </div>
+
   </form>
+
 </dialog>
 
 <script>
@@ -513,24 +585,32 @@
   const list = document.getElementById('requestList');
   const count = document.getElementById('recordCount');
   const empty = document.getElementById('noMatches');
+  const dialog = document.getElementById('financeDialog');
+  const form = document.getElementById('financeForm');
 
   function applyFilters() {
     const query = search.value.trim().toLowerCase();
     const selected = filter.value;
     const records = [...list.querySelectorAll('.request')];
+
     let visible = 0;
 
     records.forEach(record => {
-      const matchesText = (record.dataset.search || '').includes(query);
-      const matchesStatus = selected === 'all' ||
-        record.dataset.status === selected;
+      const matchesText =
+        (record.dataset.search || '').includes(query);
+
+      const matchesStatus =
+        selected === 'all' || record.dataset.status === selected;
 
       record.hidden = !(matchesText && matchesStatus);
+
       if (!record.hidden) visible++;
     });
 
     count.textContent = visible + ' of ' + records.length + ' records';
-    empty.style.display = records.length && visible === 0 ? 'block' : 'none';
+
+    empty.style.display =
+      records.length && visible === 0 ? 'block' : 'none';
   }
 
   search.addEventListener('input', applyFilters);
@@ -539,7 +619,15 @@
   window.openFinanceReview = function (button) {
     if (button.disabled) return;
 
-    document.getElementById('requestId').value = button.dataset.id || '';
+    const requestId = button.dataset.id;
+
+    if (!requestId) {
+      alert('This request has no valid ID.');
+      return;
+    }
+
+    form.action =
+      '/sis/finance/withdrawals/' + encodeURIComponent(requestId) + '/review';
 
     document.getElementById('reviewSubtitle').textContent =
       'Student: ' + (button.dataset.student || 'Student') +
@@ -551,30 +639,61 @@
     document.getElementById('balance').value = '';
     document.getElementById('financeComments').value = '';
 
-    document.getElementById('financeDialog').showModal();
+    dialog.showModal();
   };
 
-  document.getElementById('financeForm').addEventListener('submit', function (event) {
-    event.preventDefault();
+  form.addEventListener('submit', function (event) {
+    const decision =
+      document.getElementById('financeDecision').value;
 
-    const decision = document.getElementById('financeDecision').value;
-    const balance = document.getElementById('balance').value;
-    const comments = document.getElementById('financeComments').value.trim();
+    const balanceInput =
+      document.getElementById('balance');
+
+    const commentsInput =
+      document.getElementById('financeComments');
+
+    const balance = balanceInput.value.trim();
+    const comments = commentsInput.value.trim();
 
     if (!decision || !comments) {
+      event.preventDefault();
       alert('Select a financial result and enter your assessment.');
       return;
     }
 
-    if (balance !== '' && Number(balance) < 0) {
-      alert('The outstanding balance cannot be negative.');
+    if (balance !== '' &&
+        (!Number.isFinite(Number(balance)) || Number(balance) < 0)) {
+      event.preventDefault();
+      alert('Enter a valid non-negative balance.');
       return;
     }
 
-    alert(
-      'The financial review interface is ready. ' +
-      'The database submission route must be connected in server.js.'
-    );
+    if (decision === 'outstanding_balance' && balance === '') {
+      event.preventDefault();
+      alert('Enter the outstanding balance amount.');
+      balanceInput.focus();
+      return;
+    }
+
+    if (decision === 'outstanding_balance' && balance !== '') {
+      commentsInput.value =
+        comments + '\n\nOutstanding balance recorded: ' + balance;
+    }
+
+    if (!form.action) {
+      event.preventDefault();
+      alert('The withdrawal request could not be identified.');
+      return;
+    }
+
+    document.getElementById('submitFinance').disabled = true;
+    document.getElementById('submitFinance').textContent = 'Submitting...';
+  });
+
+  dialog.addEventListener('close', function () {
+    document.getElementById('submitFinance').disabled = false;
+    document.getElementById('submitFinance').textContent =
+      'Submit financial review';
   });
 
   applyFilters();

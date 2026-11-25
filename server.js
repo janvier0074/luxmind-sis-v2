@@ -6640,6 +6640,87 @@ app.post('/sis/my/messages/reply', requireRole('student'), async (req, res) => {
   }
 });
 
+
+// ============================================
+// --- STUDENT CONTACT INFORMATION ---
+// ============================================
+
+app.get('/sis/my/profile', requireRole('student'), async (req, res) => {
+  try {
+    const profileRes = await pool.query(`
+      SELECT
+        u.full_name,
+        u.username,
+        u.email,
+        sp.admission_number,
+        sp.class_level,
+        sp.current_semester,
+        sp.phone,
+        sp.home_address,
+        sp.guardian_name,
+        sp.guardian_phone,
+        sp.guardian_relationship,
+        adv.full_name AS advisor_name
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      LEFT JOIN users adv ON adv.id = sp.advisor_id
+      WHERE u.id = $1
+    `, [req.session.user.id]);
+
+    if (profileRes.rows.length === 0) {
+      return res.redirect('/sis/my');
+    }
+
+    res.render('my-profile', {
+      user: req.session.user,
+      profile: profileRes.rows[0]
+    });
+
+  } catch (err) {
+    console.error('Contact information loading error:', err);
+    res.status(500).send('Unable to load contact information.');
+  }
+});
+
+app.post('/sis/my/profile/update', requireRole('student'), async (req, res) => {
+  const {
+    phone,
+    home_address,
+    guardian_name,
+    guardian_phone,
+    guardian_relationship
+  } = req.body;
+
+  try {
+    await pool.query(`
+      UPDATE student_profiles
+      SET
+        phone = $1,
+        home_address = $2,
+        guardian_name = $3,
+        guardian_phone = $4,
+        guardian_relationship = $5
+      WHERE user_id = $6
+    `, [
+      phone,
+      home_address,
+      guardian_name,
+      guardian_phone,
+      guardian_relationship,
+      req.session.user.id
+    ]);
+
+    req.flash('success', 'Contact information updated successfully.');
+    res.redirect('/sis/my/profile');
+
+  } catch (err) {
+    console.error('Contact information update error:', err);
+    res.status(500).send('Unable to update contact information.');
+  }
+});
+
+
+
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
 });

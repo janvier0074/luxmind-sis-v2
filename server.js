@@ -6578,9 +6578,9 @@ app.get('/sis/my/messages', requireRole('student'), async (req, res) => {
     // Mark received messages as read.
     await pool.query(`
       UPDATE messages
-      SET is_read = TRUE
-      WHERE receiver_id = $1
-        AND is_read = FALSE
+SET is_read = 1
+WHERE receiver_id = $1
+  AND is_read = 0
     `, [studentId]);
 
     res.render('student-messages', {

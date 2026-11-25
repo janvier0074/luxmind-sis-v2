@@ -6547,6 +6547,99 @@ app.post('/sis/dean/courses-curriculum/curriculum/:id/delete', requireRole('dean
 
   res.redirect('/sis/dean/courses-curriculum');
 });
+
+
+
+
+// =====================================================
+// LUXMIND SIS - STUDENT MESSAGES
+// =====================================================
+
+// Display messages received by the logged-in student.
+app.get('/sis/my/messages', requireRole('student'), async (req, res) => {
+  try {
+    const studentId = req.session.user.id;
+
+    const result = await pool.query(`
+      SELECT
+        id,
+        sender_id,
+        sender_id::text AS sender_name,
+        receiver_id,
+        subject,
+        body,
+        is_read,
+        created_at
+      FROM messages
+      WHERE receiver_id = $1
+      ORDER BY created_at DESC
+    `, [studentId]);
+
+    // Mark received messages as read.
+    await pool.query(`
+      UPDATE messages
+      SET is_read = TRUE
+      WHERE receiver_id = $1
+        AND is_read = FALSE
+    `, [studentId]);
+
+    res.render('student-messages', {
+      inbox: result.rows
+    });
+
+  } catch (err) {
+    console.error('Student Messages Error:', err);
+    req.flash('error', 'Unable to load your messages.');
+    res.redirect('/sis/my');
+  }
+});
+
+
+// Allow a student to reply to a teacher who previously
+// sent that student a message.
+app.post('/sis/my/messages/reply', requireRole('student'), async (req, res) => {
+  try {
+    const studentId = req.session.user.id;
+    const senderId = Number(req.body.receiver_id);
+    const subject = String(req.body.subject || '').trim();
+    const body = String(req.body.body || '').trim();
+
+    if (!Number.isInteger(senderId) || senderId <= 0 || !body) {
+      req.flash('error', 'Please enter a valid reply.');
+      return res.redirect('/sis/my/messages');
+    }
+
+    // Verify that this sender previously messaged this student.
+    const original = await pool.query(`
+      SELECT id
+      FROM messages
+      WHERE sender_id = $1
+        AND receiver_id = $2
+        AND subject = $3
+      LIMIT 1
+    `, [senderId, studentId, subject]);
+
+    if (!original.rows.length) {
+      req.flash('error', 'You cannot reply to this conversation.');
+      return res.redirect('/sis/my/messages');
+    }
+
+    await pool.query(`
+      INSERT INTO messages
+        (sender_id, receiver_id, subject, body, is_read, created_at)
+      VALUES ($1, $2, $3, $4, FALSE, NOW())
+    `, [studentId, senderId, subject, body]);
+
+    req.flash('success', 'Your reply was sent successfully.');
+    res.redirect('/sis/my/messages');
+
+  } catch (err) {
+    console.error('Student Message Reply Error:', err);
+    req.flash('error', 'Unable to send your reply.');
+    res.redirect('/sis/my/messages');
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`✅ LuxMind SIS running on port ${PORT}`);
 });

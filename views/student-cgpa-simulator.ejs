@@ -1,230 +1,906 @@
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CGPA Simulator — LuxMind SIS</title>
+  <meta name="theme-color" content="#101b36">
+  <title>CGPA Simulator | LuxMind SIS</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     :root {
-      --navy: #0a1e32; --deep: #0f2a44; --blue: #1e4d7b; --amber: #f5a623;
-      --gold: #ffc857; --frost: #d9e6f2; --ice: #f7fafd;
-      --success: #1f8a5f; --danger: #b33e2e;
-      --shadow-soft: 0 8px 20px -6px rgba(10,30,50,0.12);
-      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      --navy: #101b36;
+      --navy-light: #1c2d50;
+      --blue: #4263eb;
+      --teal: #0d9488;
+      --purple: #7950d8;
+      --gold: #f4b942;
+      --text: #26334d;
+      --muted: #718096;
+      --border: #e4eaf2;
+      --surface: #ffffff;
+      --background: #f4f7fc;
+      --green: #16865b;
+      --red: #c43d4b;
+      --shadow: 0 12px 35px rgba(16, 27, 54, .07);
+      --radius: 20px;
     }
-    html, body { overflow-x: hidden; max-width: 100vw; width: 100%; }
+
+    html { min-height: 100%; scroll-behavior: smooth; }
+
     body {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      background: radial-gradient(circle at 100% 0%, rgba(245,166,35,0.06), transparent 40%), radial-gradient(circle at 0% 100%, rgba(30,77,123,0.05), transparent 40%), var(--ice);
-      min-height: 100vh; display: flex; color: var(--navy);
+      min-height: 100vh;
+      width: 100%;
+      overflow-x: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 95% 0%, rgba(121,80,216,.09), transparent 28%),
+        radial-gradient(circle at 0% 50%, rgba(13,148,136,.07), transparent 30%),
+        var(--background);
     }
 
-    /* Sidebar (Student) */
-    .sidebar { width: 280px; background: linear-gradient(180deg, var(--navy), var(--deep)); color: #fff; position: fixed; top: 0; bottom: 0; left: 0; overflow-y: auto; box-shadow: 4px 0 30px rgba(0,0,0,0.15); z-index: 1000; scrollbar-width: thin; scrollbar-color: #1e3a5f transparent; transition: transform 0.3s ease; }
-    .sidebar::-webkit-scrollbar { width: 5px; }
-    .sidebar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
-    .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; background: var(--navy); z-index: 10; }
-    .brand-mark { width: 38px; height: 38px; background: linear-gradient(135deg, var(--amber), var(--gold)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: var(--navy); box-shadow: 0 4px 12px rgba(245,166,35,0.35); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
-    .brand-name span { display: block; font-size: 0.6rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
-    .sidebar-menu { list-style: none; padding: 0.5rem 0 2rem 0; }
-    .menu-item { cursor: pointer; }
-    .menu-link { display: flex; align-items: center; padding: 0.65rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: var(--transition); border-left: 3px solid transparent; }
-    .menu-link:hover { color: #fff; background: rgba(255,255,255,0.06); border-left-color: var(--amber); }
-    .menu-link i.main-icon { width: 22px; color: var(--gold); font-size: 0.85rem; opacity: 0.85; }
-    .menu-link .arrow { margin-left: auto; font-size: 0.6rem; transition: transform 0.3s ease; }
-    .menu-link.active { color: #fff; background: linear-gradient(90deg, rgba(245,166,35,0.18), transparent); border-left-color: var(--gold); }
-    .submenu { list-style: none; display: none; background: rgba(0,0,0,0.18); border-left: 2px solid transparent; }
-    .submenu.open { display: block; border-left-color: var(--amber); }
-    .submenu .menu-link { padding-left: 2.5rem; font-size: 0.75rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .menu-item.open > .menu-link .arrow { transform: rotate(90deg); }
-    .menu-item.open > .menu-link { color: #fff; }
+    button, select { font: inherit; }
 
-    /* Main */
-    .main-content { margin-left: 280px; padding: 2.5rem; flex: 1; width: calc(100% - 280px); max-width: calc(100vw - 280px); }
-    
-    .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 800; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.85rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: var(--transition); }
-    .btn-back:hover { background: #fff; box-shadow: var(--shadow-soft); color: var(--amber); }
+    .page-container {
+      width: min(1180px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 32px 0 55px;
+    }
 
-    .page-header { margin-bottom: 2rem; }
-    .page-title { display: flex; align-items: center; gap: 1rem; }
-    .page-title-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.4rem; box-shadow: 0 8px 24px -8px rgba(10,30,50,0.4); }
-    .page-title h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
-    .page-title p { color: #64748b; font-weight: 500; font-size: 0.9rem; margin-top: 0.2rem; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
 
-    /* Simulator Grid */
-    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
 
-    .card { background: #fff; border-radius: 1.25rem; box-shadow: var(--shadow-soft); border: 1px solid var(--frost); overflow: hidden; }
-    .card-head { padding: 1.2rem 1.5rem; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 0.8rem; }
-    .card-head i { color: var(--amber); font-size: 1.1rem; }
-    .card-head h2 { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
-    
-    /* Current Stats */
-    .current-stats { display: flex; flex-direction: column; align-items: center; padding: 3rem 2rem; text-align: center; }
-    .cgpa-circle { width: 160px; height: 160px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), var(--blue)); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; margin-bottom: 1.5rem; box-shadow: 0 15px 30px -10px rgba(10,30,50,0.4); border: 4px solid var(--gold); }
-    .cgpa-circle .score { font-size: 3rem; font-weight: 800; line-height: 1; }
-    .cgpa-circle .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; color: var(--gold); }
-    .stats-text { font-size: 0.85rem; color: #64748b; font-weight: 600; }
-    .stats-text strong { color: var(--navy); }
+    .brand-icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      color: white;
+      font-size: 19px;
+      background: linear-gradient(135deg, var(--navy), var(--purple));
+      box-shadow: 0 6px 15px rgba(66,99,235,.2);
+    }
 
-    /* Course List Form */
-    .course-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .course-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border: 1px solid var(--frost); border-radius: 12px; }
-    .course-info h4 { font-size: 0.85rem; font-weight: 800; color: var(--navy); margin-bottom: 0.2rem; }
-    .course-info p { font-size: 0.75rem; color: #64748b; font-weight: 600; }
-    
-    .grade-select { padding: 0.6rem; border: 2px solid var(--frost); border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 800; color: var(--navy); background: #fff; outline: none; cursor: pointer; transition: var(--transition); }
-    .grade-select:focus { border-color: var(--amber); }
+    .brand-name {
+      color: var(--navy);
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
 
-    /* Projected Panel */
-    .projected-panel { margin-top: 1.5rem; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #86efac; border-radius: 1.25rem; padding: 2rem; text-align: center; transition: var(--transition); }
-    .projected-panel .title { font-size: 0.8rem; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-    .projected-panel .score { font-size: 3.5rem; font-weight: 800; color: #166534; line-height: 1; }
-    .projected-panel .diff { font-size: 0.9rem; font-weight: 700; margin-top: 0.5rem; }
+    .brand-name small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+    }
 
-    /* Mobile */
-    .mobile-menu-btn { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--navy); color: var(--gold); border: none; width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-soft); align-items: center; justify-content: center; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(10,30,50,0.5); z-index: 999; backdrop-filter: blur(2px); }
-    
-    @media (max-width: 1024px) { .sim-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 768px) {
-      .mobile-menu-btn { display: flex; }
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.active { transform: translateX(0); }
-      .sidebar-overlay.active { display: block; }
-      .main-content { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; padding: 1.5rem !important; padding-top: 5rem !important; }
-      .page-title h1 { font-size: 1.3rem; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 43px;
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 11px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-dashboard {
+      color: white;
+      background: linear-gradient(135deg, var(--navy), #263e69);
+      box-shadow: 0 6px 15px rgba(16,27,54,.16);
+    }
+
+    .btn-reset {
+      color: #5540a8;
+      background: #f0ebff;
+      border: 1px solid #e1d8ff;
+    }
+
+    .btn-print {
+      color: #087e75;
+      background: #e3f8f4;
+      border: 1px solid #c6eee6;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 31px;
+      margin-bottom: 24px;
+      border-radius: 23px;
+      color: white;
+      background: linear-gradient(115deg, #101b36 0%, #263e69 58%, #5140a5 100%);
+      box-shadow: 0 15px 35px rgba(16,27,54,.16);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -65px;
+      top: -130px;
+      border: 35px solid rgba(255,255,255,.07);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 30px;
+      background: rgba(255,255,255,.1);
+      color: #ffe09a;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(25px, 4vw, 35px);
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: -.9px;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin-top: 11px;
+      color: #d5def1;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .info-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: white;
+      box-shadow: 0 5px 18px rgba(16,27,54,.035);
+    }
+
+    .info-icon {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    .icon-blue { background: #e9efff; color: var(--blue); }
+    .icon-teal { background: #e1f7f2; color: var(--teal); }
+    .icon-gold { background: #fff5df; color: #c18716; }
+
+    .info-card small {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .info-card strong {
+      display: block;
+      color: var(--navy);
+      font-size: 18px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .sim-grid {
+      display: grid;
+      grid-template-columns: .85fr 1.35fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 22px;
+      border-bottom: 1px solid #edf0f5;
+    }
+
+    .card-header-icon {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+    }
+
+    .card-header h2 {
+      color: var(--navy);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .card-header p {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .current-content {
+      padding: 26px 22px;
+      text-align: center;
+    }
+
+    .cgpa-circle {
+      width: 172px;
+      height: 172px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 19px;
+      border: 7px solid #e5eaff;
+      border-radius: 50%;
+      color: white;
+      background: linear-gradient(145deg, var(--navy), #354e83);
+      box-shadow: 0 10px 25px rgba(16,27,54,.18);
+    }
+
+    .cgpa-circle .score {
+      font-size: 43px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .cgpa-circle .label {
+      margin-top: 6px;
+      color: #ffe09a;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .current-caption {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .current-caption strong { color: var(--navy); }
+
+    .academic-note {
+      padding: 14px;
+      margin-top: 22px;
+      border: 1px solid #dce8ff;
+      border-radius: 13px;
+      background: #f4f7ff;
+      color: #52617d;
+      font-size: 11px;
+      line-height: 1.8;
+      text-align: left;
+    }
+
+    .academic-note i {
+      margin-right: 6px;
+      color: var(--blue);
+    }
+
+    .course-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 19px;
+    }
+
+    .course-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #fafbfe;
+      transition: .2s ease;
+    }
+
+    .course-item:focus-within {
+      border-color: #9baefb;
+      background: #f5f7ff;
+    }
+
+    .course-info { min-width: 0; }
+
+    .course-info h4 {
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .course-info p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .course-info p i {
+      margin-right: 4px;
+      color: var(--teal);
+    }
+
+    .grade-select {
+      flex-shrink: 0;
+      width: 112px;
+      min-height: 43px;
+      padding: 9px;
+      border: 2px solid #dce3f0;
+      border-radius: 10px;
+      outline: none;
+      color: var(--navy);
+      background: white;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .grade-select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(66,99,235,.1);
+    }
+
+    .course-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      padding: 0 19px 19px;
+    }
+
+    .empty-state {
+      padding: 32px 18px;
+      text-align: center;
+    }
+
+    .empty-state i {
+      margin-bottom: 12px;
+      color: #a5b2c8;
+      font-size: 30px;
+    }
+
+    .empty-state h3 {
+      color: var(--navy);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .empty-state p {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .projected-panel {
+      padding: 25px 18px;
+      margin: 0 19px 19px;
+      border: 2px solid #bce9db;
+      border-radius: 17px;
+      background: linear-gradient(135deg, #eafaf4, #d9f4eb);
+      text-align: center;
+      transition: .25s ease;
+    }
+
+    .projected-panel .title {
+      color: #087b59;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .projected-panel .score {
+      margin-top: 8px;
+      color: #08734f;
+      font-size: clamp(40px, 6vw, 54px);
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .projected-panel .diff {
+      min-height: 22px;
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .projection-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .projection-stat {
+      padding: 11px;
+      border: 1px solid rgba(8,115,79,.12);
+      border-radius: 11px;
+      background: rgba(255,255,255,.65);
+    }
+
+    .projection-stat small {
+      display: block;
+      color: #55796d;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .projection-stat strong {
+      display: block;
+      margin-top: 5px;
+      color: #08734f;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .explanation-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: white;
+    }
+
+    .explanation-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 8px;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .explanation-card h3 i { color: var(--purple); }
+
+    .explanation-card p {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .disclaimer {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 15px 17px;
+      margin-top: 20px;
+      border: 1px solid #f1dfb5;
+      border-radius: 13px;
+      background: #fff9eb;
+      color: #795b22;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .disclaimer i {
+      margin-top: 2px;
+      color: #c18a22;
+    }
+
+    .footer {
+      padding-top: 25px;
+      color: #8b97aa;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      .sim-grid { grid-template-columns: 1fr; }
+      .info-strip { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .page-container {
+        width: calc(100% - 28px);
+        padding: 17px 0 35px;
+      }
+
+      .topbar { margin-bottom: 19px; }
+
+      .brand-icon {
+        width: 37px;
+        height: 37px;
+        font-size: 16px;
+      }
+
+      .brand-name { font-size: 14px; }
+      .brand-name small { font-size: 9px; }
+
+      .btn-dashboard {
+        min-height: 40px;
+        padding: 9px 11px;
+        font-size: 11px;
+      }
+
+      .hero {
+        padding: 22px 19px;
+        margin-bottom: 16px;
+        border-radius: 17px;
+      }
+
+      .hero h1 { font-size: 25px; }
+      .hero p { font-size: 12px; }
+
+      .info-strip {
+        grid-template-columns: 1fr;
+        gap: 9px;
+        margin-bottom: 16px;
+      }
+
+      .info-card { padding: 12px 14px; }
+      .info-icon { width: 37px; height: 37px; }
+      .info-card strong { font-size: 16px; }
+
+      .sim-grid { gap: 15px; }
+      .card { border-radius: 16px; }
+
+      .card-header { padding: 16px; }
+      .card-header h2 { font-size: 14px; }
+
+      .current-content { padding: 22px 17px; }
+      .cgpa-circle { width: 150px; height: 150px; }
+      .cgpa-circle .score { font-size: 38px; }
+
+      .course-list { padding: 13px; gap: 10px; }
+
+      .course-item {
+        align-items: flex-start;
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .course-info h4 { font-size: 12px; }
+      .course-info p { font-size: 10px; }
+
+      .grade-select {
+        width: 100px;
+        min-height: 41px;
+        padding: 7px;
+        font-size: 11px;
+      }
+
+      .course-actions { padding: 0 13px 14px; }
+      .course-actions .btn { flex: 1; }
+
+      .projected-panel {
+        padding: 20px 13px;
+        margin: 0 13px 14px;
+      }
+
+      .explanation { grid-template-columns: 1fr; gap: 10px; }
+      .explanation-card { padding: 15px; }
+
+      .disclaimer { font-size: 10px; }
+    }
+
+    @media print {
+      body { background: white; }
+      .page-container { width: 100%; padding: 0; }
+      .topbar .btn-dashboard,
+      .course-actions { display: none !important; }
+      .hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .card, .info-card, .explanation-card { box-shadow: none; }
+      .sim-grid { grid-template-columns: 1fr 1fr; }
+      .course-item { break-inside: avoid; }
     }
   </style>
-  <link rel="stylesheet" href="/css/mobile.css">
-  <script src="/js/mobile.js" defer></script>
 </head>
+
 <body>
+  <div class="page-container">
 
-  <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">L</div>
-      <div class="brand-name">LuxMind SIS <span>Student Portal</span></div>
-    </div>
-    <ul class="sidebar-menu">
-      <li class="menu-item"><a href="/sis/my" class="menu-link"><i class="fas fa-home main-icon"></i> Dashboard</a></li>
-      <li class="menu-item open">
-        <a href="#" class="menu-link active" onclick="toggle(event, this)">
-          <i class="fas fa-user-graduate main-icon"></i> Student <i class="fas fa-chevron-right arrow"></i>
-        </a>
-        <ul class="submenu open">
-          <li class="menu-item"><a href="/sis/my/transcript" class="menu-link"><i class="fas fa-list-ol main-icon"></i> My Transcript</a></li>
-          <li class="menu-item"><a href="/sis/my/cgpa-simulator" class="menu-link active"><i class="fas fa-calculator main-icon"></i> CGPA Simulator</a></li>
-        </ul>
-      </li>
-      <li class="menu-item"><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt main-icon"></i> Logout</a></li>
-    </ul>
-  </aside>
-
-  <main class="main-content">
-    <a href="/sis/my" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-
-    <header class="page-header">
-      <div class="page-title">
-        <div class="page-title-icon"><i class="fas fa-calculator"></i></div>
-        <div>
-          <h1>CGPA Simulator</h1>
-          <p>Predict how your current semester grades will affect your final CGPA.</p>
+    <nav class="topbar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div class="brand-name">
+          LuxMind SIS
+          <small>Student Academic Tools</small>
         </div>
+      </div>
+
+      <a href="/sis/my" class="btn btn-dashboard">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+      </a>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-content">
+        <div class="hero-tag">
+          <i class="fas fa-chart-line"></i>
+          Academic Planning Tool
+        </div>
+        <h1>CGPA Simulator</h1>
+        <p>
+          Explore different grade possibilities and see how your current
+          semester performance could affect your cumulative GPA.
+          Make informed academic plans before your official results are released.
+        </p>
       </div>
     </header>
 
-    <div class="sim-grid">
-      
-      <!-- LEFT: Current Status -->
-      <article class="card">
-        <div class="card-head">
-          <i class="fas fa-history"></i>
-          <h2>Current Academic Status</h2>
+    <section class="info-strip">
+      <div class="info-card">
+        <div class="info-icon icon-blue"><i class="fas fa-award"></i></div>
+        <div>
+          <small>Your current CGPA</small>
+          <strong><%= currentCGPA %></strong>
         </div>
-        <div class="current-stats">
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon icon-teal"><i class="fas fa-book-open"></i></div>
+        <div>
+          <small>Credits completed</small>
+          <strong><%= currentCredits %></strong>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon icon-gold"><i class="fas fa-layer-group"></i></div>
+        <div>
+          <small>Current semester courses</small>
+          <strong><%= activeCourses.length %></strong>
+        </div>
+      </div>
+    </section>
+
+    <main class="sim-grid">
+
+      <!-- CURRENT ACADEMIC STATUS -->
+      <article class="card">
+        <div class="card-header">
+          <div class="card-header-icon">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div>
+            <h2>Current Academic Status</h2>
+            <p>Your existing academic standing in SIS</p>
+          </div>
+        </div>
+
+        <div class="current-content">
           <div class="cgpa-circle">
             <div class="score"><%= currentCGPA %></div>
             <div class="label">Current CGPA</div>
           </div>
-          <p class="stats-text">Based on <strong><%= currentCredits %></strong> total credits earned.</p>
+
+          <p class="current-caption">
+            Your current cumulative grade point average,
+            based on <strong><%= currentCredits %> earned credits</strong>.
+          </p>
+
+          <div class="academic-note">
+            <i class="fas fa-info-circle"></i>
+            This is your existing academic baseline. The simulator uses it
+            together with your selected grades to calculate a projected CGPA.
+          </div>
         </div>
       </article>
 
-      <!-- RIGHT: Simulator Form -->
+      <!-- SEMESTER GRADE SIMULATOR -->
       <article class="card">
-        <div class="card-head">
-          <i class="fas fa-magic"></i>
-          <h2>Simulate Semester Grades</h2>
-        </div>
-        
-        <div class="course-list">
-          <% if (activeCourses.length === 0) { %>
-            <p style="text-align: center; color: #94a3b8; padding: 2rem;">You are not enrolled in any courses this semester.</p>
-          <% } %>
-
-          <% activeCourses.forEach(course => { %>
-            <div class="course-item">
-              <div class="course-info">
-                <h4><%= course.code %> - <%= course.title %></h4>
-                <p><%= course.credits %> Credits</p>
-              </div>
-              <select class="grade-select" id="grade_<%= course.id %>" data-credits="<%= course.credits %>" onchange="calculateCGPA()">
-                <option value="4.0">A / A+</option>
-                <option value="3.7">A-</option>
-                <option value="3.3">B+</option>
-                <option value="3.0">B</option>
-                <option value="2.7">B-</option>
-                <option value="2.3">C+</option>
-                <option value="2.0">C</option>
-                <option value="1.7">C-</option>
-                <option value="1.3">D+</option>
-                <option value="1.0">D</option>
-                <option value="0.7">D-</option>
-                <option value="0.0">F</option>
-              </select>
-            </div>
-          <% }) %>
-        </div>
-
-        <% if (activeCourses.length > 0) { %>
-          <div style="padding: 0 1.5rem 1.5rem;">
-            <div class="projected-panel" id="projectedPanel">
-              <div class="title">Projected CGPA</div>
-              <div class="score" id="projectedScore"><%= currentCGPA %></div>
-              <div class="diff" id="projectedDiff"></div>
-            </div>
+        <div class="card-header">
+          <div class="card-header-icon" style="background:linear-gradient(135deg,#0d9488,#2563a6)">
+            <i class="fas fa-calculator"></i>
           </div>
+          <div>
+            <h2>Simulate Semester Grades</h2>
+            <p>Select a possible grade for each enrolled course</p>
+          </div>
+        </div>
+
+        <% if (activeCourses.length === 0) { %>
+
+          <div class="empty-state">
+            <i class="fas fa-book-open"></i>
+            <h3>No Active Courses</h3>
+            <p>
+              You are not enrolled in any courses this semester.
+              Your projected CGPA cannot be calculated until courses are available.
+            </p>
+          </div>
+
+        <% } else { %>
+
+          <div class="course-list">
+
+            <% activeCourses.forEach(course => { %>
+              <div class="course-item">
+                <div class="course-info">
+                  <h4><%= course.code %> — <%= course.title %></h4>
+                  <p>
+                    <i class="fas fa-book"></i>
+                    <%= course.credits %> Credits
+                  </p>
+                </div>
+
+                <select
+                  class="grade-select"
+                  id="grade_<%= course.id %>"
+                  data-credits="<%= course.credits %>"
+                  aria-label="Select grade for <%= course.code %>"
+                  onchange="calculateCGPA()"
+                >
+                  <option value="4.0">A / A+</option>
+                  <option value="3.7">A-</option>
+                  <option value="3.3">B+</option>
+                  <option value="3.0">B</option>
+                  <option value="2.7">B-</option>
+                  <option value="2.3">C+</option>
+                  <option value="2.0">C</option>
+                  <option value="1.7">C-</option>
+                  <option value="1.3">D+</option>
+                  <option value="1.0">D</option>
+                  <option value="0.7">D-</option>
+                  <option value="0.0">F</option>
+                </select>
+              </div>
+            <% }) %>
+
+          </div>
+
+          <div class="course-actions">
+            <button type="button" class="btn btn-reset" onclick="resetGrades()">
+              <i class="fas fa-undo"></i>
+              Reset Grades
+            </button>
+
+            <button type="button" class="btn btn-print" onclick="printSimulation()">
+              <i class="fas fa-print"></i>
+              Print Simulation
+            </button>
+          </div>
+
+          <section class="projected-panel" id="projectedPanel">
+            <div class="title">
+              <i class="fas fa-bullseye"></i>
+              Projected CGPA
+            </div>
+
+            <div class="score" id="projectedScore"><%= currentCGPA %></div>
+            <div class="diff" id="projectedDiff" aria-live="polite">
+              Select your expected grades to see the projection.
+            </div>
+
+            <div class="projection-details">
+              <div class="projection-stat">
+                <small>Semester credits</small>
+                <strong id="semesterCredits">0</strong>
+              </div>
+
+              <div class="projection-stat">
+                <small>Total projected credits</small>
+                <strong id="totalCredits">0</strong>
+              </div>
+            </div>
+          </section>
+
         <% } %>
       </article>
 
+    </main>
+
+    <section class="explanation">
+      <article class="explanation-card">
+        <h3><i class="fas fa-calculator"></i> How the calculation works</h3>
+        <p>
+          The projected CGPA is calculated using your existing quality points
+          plus the quality points from your selected semester grades, divided
+          by the combined credit total.
+        </p>
+      </article>
+
+      <article class="explanation-card">
+        <h3><i class="fas fa-lightbulb"></i> Academic planning tip</h3>
+        <p>
+          Try different grade combinations to understand their possible effect
+          on your cumulative GPA. Higher-credit courses have a greater influence
+          on the calculation.
+        </p>
+      </article>
+    </section>
+
+    <div class="disclaimer">
+      <i class="fas fa-shield-alt"></i>
+      <div>
+        <strong>Important:</strong>
+        This is a planning simulation, not an official academic result.
+        Changing grades here does not update your SIS transcript, course grades,
+        or official academic records. Always refer to your official SIS results
+        for confirmed grades and CGPA.
+      </div>
     </div>
-  </main>
+
+    <footer class="footer">
+      LuxMind SIS · Student Academic Tools
+    </footer>
+
+  </div>
 
   <script>
-    function toggle(event, element) {
-      event.preventDefault();
-      const parent = element.parentElement;
-      parent.classList.toggle('open');
-      const submenu = parent.querySelector('.submenu');
-      if (submenu) submenu.classList.toggle('open');
-    }
-    function toggleMobileMenu() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      if (sb && ov) { sb.classList.toggle('active'); ov.classList.toggle('active'); }
-    }
-
     // LIVE CGPA CALCULATION
     function calculateCGPA() {
       const selects = document.querySelectorAll('.grade-select');
+
       if (selects.length === 0) return;
 
       let newPoints = 0;
@@ -233,45 +909,88 @@
       selects.forEach(select => {
         const credits = Number(select.dataset.credits);
         const gpa = Number(select.value);
-        newPoints += (gpa * credits);
-        newCredits += credits;
+
+        if (Number.isFinite(credits) && credits > 0 &&
+            Number.isFinite(gpa)) {
+          newPoints += gpa * credits;
+          newCredits += credits;
+        }
       });
 
-      // Get current base data from EJS
-      const currentPoints = <%= currentPoints %>;
-      const currentCredits = <%= currentCredits %>;
+      // Existing SIS academic data: preserved
+      const currentPoints = Number(<%= currentPoints %>);
+      const currentCredits = Number(<%= currentCredits %>);
+      const currentCGPA = Number(<%= currentCGPA %>);
 
       const totalPoints = currentPoints + newPoints;
-      const totalCredits = currentCredits + newCredits;
-      
-      const projectedCGPA = totalCredits > 0 ? (totalPoints / totalCredits) : 0;
-      const currentCGPA = <%= currentCGPA %>;
+      const totalCreditsValue = currentCredits + newCredits;
+
+      const projectedCGPA = totalCreditsValue > 0
+        ? totalPoints / totalCreditsValue
+        : 0;
 
       const scoreEl = document.getElementById('projectedScore');
       const diffEl = document.getElementById('projectedDiff');
       const panel = document.getElementById('projectedPanel');
 
+      if (!scoreEl || !diffEl || !panel) return;
+
       scoreEl.innerText = projectedCGPA.toFixed(2);
-      
+
       const diff = projectedCGPA - currentCGPA;
-      
-      if (diff > 0) {
-        diffEl.innerHTML = `<span style="color: #15803d;"><i class="fas fa-arrow-up"></i> +${diff.toFixed(2)} increase</span>`;
-        panel.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
-        panel.style.borderColor = '#86efac';
-      } else if (diff < 0) {
-        diffEl.innerHTML = `<span style="color: #b91c1c;"><i class="fas fa-arrow-down"></i> ${diff.toFixed(2)} decrease</span>`;
-        panel.style.background = 'linear-gradient(135deg, #fef2f2, #fee2e2)';
-        panel.style.borderColor = '#fca5a5';
+
+      if (diff > 0.000001) {
+        diffEl.innerHTML =
+          '<span style="color:#087b59"><i class="fas fa-arrow-up"></i> +' +
+          diff.toFixed(2) + ' improvement</span>';
+
+        panel.style.background =
+          'linear-gradient(135deg,#eafaf4,#d9f4eb)';
+        panel.style.borderColor = '#bce9db';
+
+      } else if (diff < -0.000001) {
+        diffEl.innerHTML =
+          '<span style="color:#bd3447"><i class="fas fa-arrow-down"></i> ' +
+          diff.toFixed(2) + ' decrease</span>';
+
+        panel.style.background =
+          'linear-gradient(135deg,#fff0f1,#ffe1e5)';
+        panel.style.borderColor = '#f3bdc5';
+
       } else {
-        diffEl.innerHTML = `<span style="color: #64748b;">No change</span>`;
-        panel.style.background = 'linear-gradient(135deg, #f8fafc, #f1f5f9)';
-        panel.style.borderColor = '#cbd5e1';
+        diffEl.innerHTML =
+          '<span style="color:#64748b"><i class="fas fa-equals"></i> No change</span>';
+
+        panel.style.background =
+          'linear-gradient(135deg,#f3f6fb,#e9eef6)';
+        panel.style.borderColor = '#d5deeb';
       }
+
+      document.getElementById('semesterCredits').innerText =
+        newCredits.toFixed(1);
+
+      document.getElementById('totalCredits').innerText =
+        totalCreditsValue.toFixed(1);
     }
 
-    // Initialize on load
-    window.addEventListener('DOMContentLoaded', calculateCGPA);
+    // Restore all course grades to A / 4.0 and recalculate
+    function resetGrades() {
+      const selects = document.querySelectorAll('.grade-select');
+
+      selects.forEach(select => {
+        select.value = '4.0';
+      });
+
+      calculateCGPA();
+    }
+
+    // Open the browser's print dialog
+    function printSimulation() {
+      window.print();
+    }
+
+    // Calculate the initial projection when the page loads
+    document.addEventListener('DOMContentLoaded', calculateCGPA);
   </script>
 </body>
 </html>

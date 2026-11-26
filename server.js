@@ -61,7 +61,7 @@ app.use(session({
   secret: 'luxmind-secret', 
   resave: false, 
   saveUninitialized: false,
-  cookie: { secure: true, sameSite: 'none', httpOnly: true }
+  cookie: { secure: false, sameSite: 'lax', httpOnly: true }
 }));
 
 // ============================================

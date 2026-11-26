@@ -61,7 +61,7 @@ app.use(session({
   secret: 'luxmind-secret', 
   resave: false, 
   saveUninitialized: false,
-  cookie: { secure: false, sameSite: 'lax', httpOnly: true }
+  cookie: { secure: true, sameSite: 'lax', httpOnly: true }
 }));
 
 // ============================================
@@ -226,7 +226,7 @@ app.get('/login', (req, res) => {
     );
   }
 
-  res.render('login', { error: req.flash('error') });
+  res.render('login', { error: res.locals.flash.error });
 });
 
 app.post('/login', async (req, res) => {
@@ -3284,6 +3284,45 @@ app.get('/sis/faculty', requireRole('teacher', 'advisor'), async (req, res) => {
 });
 
 // ============================================
+
+// ============================================
+// TEACHER: ATTENDANCE COURSE SELECTION PAGE
+// ============================================
+app.get('/sis/faculty/attendance', requireRole('teacher', 'advisor'), async (req, res) => {
+  try {
+    const coursesRes = await pool.query(
+      `SELECT
+         s.id AS section_id,
+         c.code,
+         c.title,
+         s.group_name,
+         s.day_of_week,
+         s.start_time,
+         (SELECT COUNT(*)
+          FROM enrollments e
+          WHERE e.section_id = s.id
+            AND COALESCE(e.status, '') <> 'withdrawn') AS student_count
+       FROM course_sections s
+       JOIN courses c ON c.id = s.course_id
+       WHERE s.teacher_id = $1
+       ORDER BY c.code, s.group_name`,
+      [req.session.user.id]
+    );
+
+    return res.render('faculty-attendance', {
+      user: req.session.user,
+      courses: coursesRes.rows,
+      section: null,
+      students: [],
+      today: new Date().toISOString().slice(0, 10),
+      hours: [1, 2, 3, 4]
+    });
+  } catch (err) {
+    console.error('Teacher attendance course selection error:', err);
+    return res.status(500).send('Unable to load your attendance courses.');
+  }
+});
+
 // TEACHER: ATTENDANCE ROSTER
 // ============================================
 
@@ -6772,6 +6811,690 @@ app.post('/sis/my/profile/update', requireRole('student'), async (req, res) => {
   }
 });
 
+
+
+
+// International Office dashboard
+app.get('/sis/intl', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const user = req.session.user;
+
+  if (!['intl_officer', 'admin'].includes(user.role)) {
+    return res.status(403).send('Access denied.');
+  }
+
+  const teamName = user.intl_team || 'Unassigned';
+  const intlRole = user.intl_role || 'officer';
+  const isOverallDirector =
+    user.role === 'admin' ||
+    intlRole === 'director' ||
+    teamName === 'All Teams';
+
+  return res.render('intl-dashboard', {
+    user,
+    teamName,
+    intlRole,
+    isOverallDirector,
+    greeting: 'Welcome',
+    flash: res.locals.flash || { success: [], error: [] },
+    stats: { mine: 0, shared: 0 },
+    totalRed: 0,
+    showVisa: true,
+    showAdmissions: true,
+    showGeneral: true,
+    c: {
+      passports_overdue: 0,
+      permits_expired: 0,
+      permits_expiring: 0,
+      insurance_missing: 0
+    },
+    sidebarCounts: { new_applications: 0 },
+    myTickets: [],
+    sharedTickets: []
+  });
+});
+
+// ============================================
+// AZURE COURSE MATERIALS STORAGE
+// ============================================
+const { BlobServiceClient } = require('@azure/storage-blob');
+const { ManagedIdentityCredential } = require('@azure/identity');
+
+const courseMaterialsBlobService = new BlobServiceClient(
+  'https://luxmindsisfiles.blob.core.windows.net',
+  new ManagedIdentityCredential()
+);
+const courseMaterialsContainer =
+  courseMaterialsBlobService.getContainerClient('course-materials');
+
+const courseMaterialMimeTypes = {
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain'
+};
+
+function courseMaterialExtension(filename) {
+  return String(filename || '').split('.').pop().toLowerCase();
+}
+
+function validCourseMaterialFile(file, allowedExtensions) {
+  if (!file || !file.buffer || !file.originalname) return false;
+  const ext = courseMaterialExtension(file.originalname);
+  return allowedExtensions.includes(ext) &&
+    courseMaterialMimeTypes[ext] === file.mimetype;
+}
+
+function safeCourseMaterialFilename(filename) {
+  return String(filename || 'download')
+    .replace(/[\\r\\n"]/g, '_')
+    .replace(/[^\w.\- ()]/g, '_')
+    .slice(0, 180);
+}
+
+async function sendCourseMaterialDownload(res, blobPath, filename, mimeType) {
+  try {
+    const blob = courseMaterialsContainer.getBlobClient(blobPath);
+    const exists = await blob.exists();
+
+    if (!exists) {
+      return res.status(404).send('The requested file was not found.');
+    }
+
+    const download = await blob.downloadToBuffer();
+    res.setHeader('Content-Type', mimeType || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${safeCourseMaterialFilename(filename)}"`
+    );
+    res.setHeader('Content-Length', download.length);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.send(download);
+  } catch (err) {
+    console.error('Course material download error:', err);
+    if (!res.headersSent) {
+      return res.status(500).send('Unable to download this course material.');
+    }
+  }
+}
+
+async function getTeacherCourseSection(sectionId, teacherId) {
+  const result = await pool.query(`
+    SELECT s.id, s.course_id, s.teacher_id, s.group_name,
+           s.midterm_weight, s.final_weight, s.weights_locked,
+           s.moodle_url, c.code, c.title, c.credits,
+           (
+             SELECT COUNT(*)
+             FROM enrollments e
+             WHERE e.section_id = s.id
+               AND COALESCE(e.status, '') <> 'withdrawn'
+           ) AS student_count
+    FROM course_sections s
+    JOIN courses c ON c.id = s.course_id
+    WHERE s.id = $1 AND s.teacher_id = $2
+    LIMIT 1
+  `, [sectionId, teacherId]);
+
+  return result.rows[0] || null;
+}
+
+// ============================================
+// TEACHER COURSE MATERIALS HUB
+// ============================================
+app.get('/sis/faculty/course-materials',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          s.id AS section_id,
+          s.group_name,
+          s.moodle_url,
+          c.code,
+          c.title,
+          c.credits,
+          (
+            SELECT COUNT(*)
+            FROM enrollments e
+            WHERE e.section_id = s.id
+              AND COALESCE(e.status, '') <> 'withdrawn'
+          ) AS student_count,
+          EXISTS (
+            SELECT 1 FROM syllabus_versions sv
+            WHERE sv.section_id = s.id AND sv.is_current = true
+          ) AS has_syllabus
+        FROM course_sections s
+        JOIN courses c ON c.id = s.course_id
+        WHERE s.teacher_id = $1
+        ORDER BY c.code, s.group_name
+      `, [req.session.user.id]);
+
+      const sections = result.rows;
+      const stats = {
+        total: sections.length,
+        withSyllabus: sections.filter(x => x.has_syllabus).length,
+        withMoodle: sections.filter(x => !!x.moodle_url).length,
+        needsAttention: sections.filter(x => !x.has_syllabus || !x.moodle_url).length
+      };
+
+      res.render('faculty-course-materials-hub', {
+        user: req.session.user,
+        sections,
+        stats,
+        lang: res.locals.lang || {},
+        locale: res.locals.locale || 'en'
+      });
+    } catch (err) {
+      console.error('Faculty materials hub error:', err);
+      res.status(500).send('Unable to load course materials.');
+    }
+  }
+);
+
+// ============================================
+// TEACHER COURSE MATERIALS DETAIL
+// ============================================
+app.get('/sis/faculty/course-materials/:section_id',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
+      return res.status(400).send('Invalid section.');
+    }
+
+    try {
+      const section = await getTeacherCourseSection(
+        sectionId, req.session.user.id
+      );
+
+      if (!section) {
+        return res.status(404).send('Course section not found.');
+      }
+
+      const [syllabusResult, notesResult, auditResult] = await Promise.all([
+        pool.query(`
+          SELECT id, version_number, file_name, file_url, file_size,
+                 file_type, uploaded_at, is_current
+          FROM syllabus_versions
+          WHERE section_id = $1
+          ORDER BY version_number DESC
+        `, [sectionId]),
+
+        pool.query(`
+          SELECT id, week_number, title, description, file_name,
+                 file_url, file_type, file_size, uploaded_at
+          FROM course_materials
+          WHERE section_id = $1
+          ORDER BY week_number, uploaded_at DESC
+        `, [sectionId]),
+
+        pool.query(`
+          SELECT old_midterm, old_final, new_midterm, new_final,
+                 reason, changed_at
+          FROM weight_audit_log
+          WHERE section_id = $1
+          ORDER BY changed_at DESC
+          LIMIT 10
+        `, [sectionId])
+      ]);
+
+      const notesByWeek = {};
+      for (let week = 1; week <= 14; week++) notesByWeek[week] = [];
+      for (const note of notesResult.rows) {
+        if (notesByWeek[note.week_number]) {
+          notesByWeek[note.week_number].push(note);
+        }
+      }
+
+      res.render('faculty-materials-detail', {
+        user: req.session.user,
+        section,
+        syllabus: syllabusResult.rows,
+        notesByWeek,
+        weightAudit: auditResult.rows,
+        flash: {
+          success: req.flash('success'),
+          error: req.flash('error')
+        }
+      });
+    } catch (err) {
+      console.error('Faculty materials detail error:', err);
+      res.status(500).send('Unable to load this section’s materials.');
+    }
+  }
+);
+
+// ============================================
+// UPLOAD A NEW SYLLABUS VERSION
+// ============================================
+app.post('/sis/faculty/course-materials/:section_id/syllabus',
+  requireRole('teacher', 'advisor'),
+  upload.single('syllabus'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+    const teacherId = req.session.user.id;
+    let uploadedBlobPath = null;
+
+    try {
+      if (!Number.isInteger(sectionId) || sectionId <= 0) {
+        return res.status(400).send('Invalid section.');
+      }
+
+      const section = await getTeacherCourseSection(sectionId, teacherId);
+      if (!section) return res.status(404).send('Course section not found.');
+
+      if (!validCourseMaterialFile(req.file, ['pdf', 'doc', 'docx'])) {
+        req.flash('error', 'Choose a valid PDF, DOC, or DOCX syllabus file.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      const ext = courseMaterialExtension(req.file.originalname);
+      uploadedBlobPath =
+        `${teacherId}/${sectionId}/syllabus/${Date.now()}-${require('crypto').randomBytes(8).toString('hex')}.${ext}`;
+
+      await courseMaterialsContainer.getBlockBlobClient(uploadedBlobPath).uploadData(
+        req.file.buffer,
+        {
+          blobHTTPHeaders: {
+            blobContentType: courseMaterialMimeTypes[ext]
+          }
+        }
+      );
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        await client.query(
+          'SELECT id FROM course_sections WHERE id = $1 AND teacher_id = $2 FOR UPDATE',
+          [sectionId, teacherId]
+        );
+
+        const versionResult = await client.query(`
+          SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version
+          FROM syllabus_versions
+          WHERE section_id = $1
+        `, [sectionId]);
+
+        await client.query(
+          'UPDATE syllabus_versions SET is_current = false WHERE section_id = $1',
+          [sectionId]
+        );
+
+        await client.query(`
+          INSERT INTO syllabus_versions (
+            course_id, version_number, file_name, file_url, file_size,
+            uploaded_by, uploaded_at, is_current, section_id, file_type
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, NOW(), true, $7, $8)
+        `, [
+          section.course_id,
+          versionResult.rows[0].next_version,
+          req.file.originalname,
+          uploadedBlobPath,
+          req.file.size,
+          teacherId,
+          sectionId,
+          courseMaterialMimeTypes[ext]
+        ]);
+
+        await client.query('COMMIT');
+      } catch (dbErr) {
+        await client.query('ROLLBACK');
+        throw dbErr;
+      } finally {
+        client.release();
+      }
+
+      req.flash('success', 'Syllabus uploaded successfully. A new version has been created.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    } catch (err) {
+      if (uploadedBlobPath) {
+        try {
+          await courseMaterialsContainer.getBlobClient(uploadedBlobPath).deleteIfExists();
+        } catch (cleanupErr) {
+          console.error('Syllabus blob cleanup error:', cleanupErr);
+        }
+      }
+      console.error('Syllabus upload error:', err);
+      req.flash('error', 'Syllabus upload failed. Please try again.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    }
+  }
+);
+
+// ============================================
+// UPLOAD LECTURE NOTES / SLIDES
+// ============================================
+app.post('/sis/faculty/course-materials/:section_id/notes',
+  requireRole('teacher', 'advisor'),
+  upload.single('material'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+    const teacherId = req.session.user.id;
+    let uploadedBlobPath = null;
+
+    try {
+      if (!Number.isInteger(sectionId) || sectionId <= 0) {
+        return res.status(400).send('Invalid section.');
+      }
+
+      const section = await getTeacherCourseSection(sectionId, teacherId);
+      if (!section) return res.status(404).send('Course section not found.');
+
+      const week = Number(req.body.week_number);
+      const title = String(req.body.title || '').trim();
+
+      if (!Number.isInteger(week) || week < 1 || week > 14 || !title || title.length > 180) {
+        req.flash('error', 'Enter a valid week number and a title of up to 180 characters.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      if (!validCourseMaterialFile(req.file, ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'])) {
+        req.flash('error', 'Choose a supported PDF, Word, PowerPoint, or TXT file.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      const ext = courseMaterialExtension(req.file.originalname);
+      uploadedBlobPath =
+        `${teacherId}/${sectionId}/notes/${Date.now()}-${require('crypto').randomBytes(8).toString('hex')}.${ext}`;
+
+      await courseMaterialsContainer.getBlockBlobClient(uploadedBlobPath).uploadData(
+        req.file.buffer,
+        {
+          blobHTTPHeaders: {
+            blobContentType: courseMaterialMimeTypes[ext]
+          }
+        }
+      );
+
+      await pool.query(`
+        INSERT INTO course_materials (
+          section_id, week_number, title, description, file_name,
+          file_url, file_type, file_size, uploaded_by, uploaded_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      `, [
+        sectionId,
+        week,
+        title,
+        String(req.body.description || '').trim(),
+        req.file.originalname,
+        uploadedBlobPath,
+        courseMaterialMimeTypes[ext],
+        req.file.size,
+        teacherId
+      ]);
+
+      req.flash('success', 'Lecture material uploaded successfully.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    } catch (err) {
+      if (uploadedBlobPath) {
+        try {
+          await courseMaterialsContainer.getBlobClient(uploadedBlobPath).deleteIfExists();
+        } catch (cleanupErr) {
+          console.error('Lecture material blob cleanup error:', cleanupErr);
+        }
+      }
+      console.error('Lecture material upload error:', err);
+      req.flash('error', 'Lecture material upload failed. Please try again.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    }
+  }
+);
+
+// ============================================
+// SAVE SECTION MOODLE LINK
+// ============================================
+app.post('/sis/faculty/course-materials/:section_id/moodle',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+
+    try {
+      const section = await getTeacherCourseSection(
+        sectionId, req.session.user.id
+      );
+
+      if (!section) return res.status(404).send('Course section not found.');
+
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(String(req.body.moodle_url || '').trim());
+      } catch {
+        req.flash('error', 'Enter a valid Moodle URL.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        req.flash('error', 'Moodle links must use HTTP or HTTPS.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      await pool.query(
+        'UPDATE course_sections SET moodle_url = $1 WHERE id = $2 AND teacher_id = $3',
+        [parsedUrl.toString(), sectionId, req.session.user.id]
+      );
+
+      req.flash('success', 'Moodle link saved successfully.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    } catch (err) {
+      console.error('Moodle link update error:', err);
+      req.flash('error', 'Unable to save the Moodle link.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    }
+  }
+);
+
+// ============================================
+// UPDATE COURSE WEIGHTS (BEFORE FIRST GRADE SAVE)
+// ============================================
+app.post('/sis/faculty/course-materials/:section_id/weights',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    const sectionId = Number(req.params.section_id);
+    const midterm = Number(req.body.midterm_weight);
+    const finalWeight = Number(req.body.final_weight);
+    const reason = String(req.body.reason || '').trim();
+
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
+      return res.status(400).send('Invalid section.');
+    }
+
+    if (
+      !Number.isInteger(midterm) || !Number.isInteger(finalWeight) ||
+      midterm < 0 || midterm > 100 ||
+      finalWeight < 0 || finalWeight > 100 ||
+      midterm + finalWeight !== 100
+    ) {
+      req.flash('error', 'Midterm and final weights must be between 0 and 100 and add up to 100%.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const currentResult = await client.query(`
+        SELECT midterm_weight, final_weight, weights_locked
+        FROM course_sections
+        WHERE id = $1 AND teacher_id = $2
+        FOR UPDATE
+      `, [sectionId, req.session.user.id]);
+
+      if (!currentResult.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(404).send('Course section not found.');
+      }
+
+      const current = currentResult.rows[0];
+
+      if (current.weights_locked) {
+        await client.query('ROLLBACK');
+        req.flash('error', 'Course weights are locked because grades have already been saved.');
+        return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+      }
+
+      await client.query(`
+        UPDATE course_sections
+        SET midterm_weight = $1, final_weight = $2
+        WHERE id = $3 AND teacher_id = $4
+      `, [midterm, finalWeight, sectionId, req.session.user.id]);
+
+      await client.query(`
+        INSERT INTO weight_audit_log (
+          section_id, changed_by, changed_at,
+          old_midterm, old_final, new_midterm, new_final, reason
+        )
+        VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+      `, [
+        sectionId,
+        req.session.user.id,
+        current.midterm_weight,
+        current.final_weight,
+        midterm,
+        finalWeight,
+        reason || 'Updated by course instructor'
+      ]);
+
+      await client.query('COMMIT');
+      req.flash('success', 'Course weights updated successfully.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Course weights update error:', err);
+      req.flash('error', 'Unable to update course weights.');
+      return res.redirect(`/sis/faculty/course-materials/${sectionId}`);
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// ============================================
+// TEACHER AUTHENTICATED FILE DOWNLOADS
+// ============================================
+app.get('/sis/faculty/course-materials/:section_id/syllabus/:id/download',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    try {
+      const section = await getTeacherCourseSection(
+        Number(req.params.section_id), req.session.user.id
+      );
+      if (!section) return res.status(404).send('Course section not found.');
+
+      const result = await pool.query(`
+        SELECT file_url, file_name, file_type
+        FROM syllabus_versions
+        WHERE id = $1 AND section_id = $2
+      `, [req.params.id, section.id]);
+
+      if (!result.rows.length) return res.status(404).send('Syllabus not found.');
+      const file = result.rows[0];
+
+      return sendCourseMaterialDownload(
+        res, file.file_url, file.file_name, file.file_type
+      );
+    } catch (err) {
+      console.error('Teacher syllabus download error:', err);
+      return res.status(500).send('Unable to download syllabus.');
+    }
+  }
+);
+
+app.get('/sis/faculty/course-materials/:section_id/notes/:id/download',
+  requireRole('teacher', 'advisor'),
+  async (req, res) => {
+    try {
+      const section = await getTeacherCourseSection(
+        Number(req.params.section_id), req.session.user.id
+      );
+      if (!section) return res.status(404).send('Course section not found.');
+
+      const result = await pool.query(`
+        SELECT file_url, file_name, file_type
+        FROM course_materials
+        WHERE id = $1 AND section_id = $2
+      `, [req.params.id, section.id]);
+
+      if (!result.rows.length) return res.status(404).send('Material not found.');
+      const file = result.rows[0];
+
+      return sendCourseMaterialDownload(
+        res, file.file_url, file.file_name, file.file_type
+      );
+    } catch (err) {
+      console.error('Teacher lecture material download error:', err);
+      return res.status(500).send('Unable to download lecture material.');
+    }
+  }
+);
+
+// ============================================
+// STUDENT AUTHENTICATED FILE DOWNLOADS
+// ============================================
+app.get('/sis/my/materials/:section_id/syllabus/:id/download',
+  requireRole('student'),
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT sv.file_url, sv.file_name, sv.file_type
+        FROM syllabus_versions sv
+        JOIN enrollments e ON e.section_id = sv.section_id
+        WHERE sv.id = $1
+          AND sv.section_id = $2
+          AND sv.is_current = true
+          AND e.user_id = $3
+          AND COALESCE(e.status, '') <> 'withdrawn'
+        LIMIT 1
+      `, [req.params.id, req.params.section_id, req.session.user.id]);
+
+      if (!result.rows.length) return res.status(404).send('Syllabus not found.');
+      const file = result.rows[0];
+
+      return sendCourseMaterialDownload(
+        res, file.file_url, file.file_name, file.file_type
+      );
+    } catch (err) {
+      console.error('Student syllabus download error:', err);
+      return res.status(500).send('Unable to download syllabus.');
+    }
+  }
+);
+
+app.get('/sis/my/materials/:section_id/notes/:id/download',
+  requireRole('student'),
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT cm.file_url, cm.file_name, cm.file_type
+        FROM course_materials cm
+        JOIN enrollments e ON e.section_id = cm.section_id
+        WHERE cm.id = $1
+          AND cm.section_id = $2
+          AND e.user_id = $3
+          AND COALESCE(e.status, '') <> 'withdrawn'
+        LIMIT 1
+      `, [req.params.id, req.params.section_id, req.session.user.id]);
+
+      if (!result.rows.length) return res.status(404).send('Material not found.');
+      const file = result.rows[0];
+
+      return sendCourseMaterialDownload(
+        res, file.file_url, file.file_name, file.file_type
+      );
+    } catch (err) {
+      console.error('Student lecture material download error:', err);
+      return res.status(500).send('Unable to download lecture material.');
+    }
+  }
+);
 
 
 app.listen(PORT, () => {

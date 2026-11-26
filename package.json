@@ -19,7 +19,10 @@
   },
   "homepage": "https://github.com/janvier0074/luxmind-sis-v2#readme",
   "dependencies": {
+    "@azure/identity": "^4.14.1",
+    "@azure/storage-blob": "^12.34.0",
     "@supabase/supabase-js": "^2.118.0",
+    "bcryptjs": "^3.0.3",
     "connect-flash": "^0.1.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.8",

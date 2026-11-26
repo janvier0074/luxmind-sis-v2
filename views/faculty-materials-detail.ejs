@@ -127,6 +127,10 @@
         <a href="#" class="menu-link active"><i class="fas fa-book-open"></i> My Courses</a>
         <ul class="submenu">
           <li><a href="/sis/faculty/course-materials" class="menu-link active"><i class="fas fa-folder"></i> Content & Materials</a></li>
+          <li><a href="#syllabus" class="menu-link"><i class="fas fa-file-pdf"></i> Upload Syllabus</a></li>
+          <li><a href="#lecture-notes" class="menu-link"><i class="fas fa-chalkboard"></i> Lecture Notes/Slides</a></li>
+          <li><a href="#moodle" class="menu-link"><i class="fab fa-moodle"></i> Add Moodle Links</a></li>
+          <li><a href="#course-weights" class="menu-link"><i class="fas fa-weight"></i> Course Weights</a></li>
         </ul>
       </li>
       <li><a href="/logout" class="menu-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -159,7 +163,7 @@
       <!-- LEFT COLUMN: SYLLABUS & MOODLE -->
       <div>
         <!-- Syllabus Card -->
-        <div class="premium-card">
+        <div class="premium-card" id="syllabus">
           <div class="card-header">
             <i class="fas fa-file-pdf"></i>
             <h2>Course Syllabus</h2>
@@ -183,7 +187,7 @@
                   <div class="history-info">
                     <i class="fas fa-file-pdf <%= syl.is_current ? 'current' : '' %>"></i>
                     <div>
-                      <a href="<%= syl.file_url %>" target="_blank" style="text-decoration: none; color: inherit;">
+                      <a href="/sis/faculty/course-materials/<%= section.id %>/syllabus/<%= syl.id %>/download" target="_blank" style="text-decoration: none; color: inherit;">
                         <div class="history-title"><%= syl.file_name %> <i class="fas fa-download" style="font-size: 0.7rem; color: var(--blue);"></i></div>
                       </a>
                       <div class="history-date"><%= new Date(syl.uploaded_at).toLocaleDateString() %></div>
@@ -197,7 +201,7 @@
         </div>
 
         <!-- Moodle Link Card -->
-        <div class="premium-card">
+        <div class="premium-card" id="moodle">
           <div class="card-header">
             <i class="fab fa-moodle"></i>
             <h2>Moodle Integration</h2>
@@ -216,8 +220,97 @@
         </div>
       </div>
 
+
+        <!-- Course Weights Card -->
+        <div class="premium-card" id="course-weights" style="margin-top: 1.25rem;">
+          <div class="card-header">
+            <i class="fas fa-weight"></i>
+            <h2>Course Assessment Weights</h2>
+          </div>
+          <div class="card-body">
+            <% if (section.weights_locked) { %>
+              <div class="alert error">
+                Course weights are locked because grades have already been saved.
+                Current weights: Midterm <strong><%= section.midterm_weight %>%</strong>,
+                Final <strong><%= section.final_weight %>%</strong>.
+              </div>
+            <% } else { %>
+              <p style="color:#64748b; margin-bottom:1rem;">
+                Set the assessment contribution. Midterm and final weights must total 100%.
+                Weights become locked after the first grades are saved.
+              </p>
+              <form action="/sis/faculty/course-materials/<%= section.id %>/weights" method="POST">
+                <div class="form-group">
+                  <label for="midterm_weight">Midterm Weight (%)</label>
+                  <input id="midterm_weight" type="number" name="midterm_weight"
+                    class="form-control" min="0" max="100" step="1"
+                    value="<%= section.midterm_weight ?? 50 %>" required>
+                </div>
+                <div class="form-group">
+                  <label for="final_weight">Final Exam Weight (%)</label>
+                  <input id="final_weight" type="number" name="final_weight"
+                    class="form-control" min="0" max="100" step="1"
+                    value="<%= section.final_weight ?? 50 %>" required>
+                </div>
+                <div class="form-group">
+                  <label for="weight_reason">Reason for change (optional)</label>
+                  <input id="weight_reason" type="text" name="reason"
+                    class="form-control" maxlength="500"
+                    placeholder="e.g. Approved course assessment plan">
+                </div>
+                <p id="weight-total" style="font-weight:700; margin:0.5rem 0 1rem;">
+                  Total: <span>100%</span>
+                </p>
+                <button type="submit" class="btn-submit">Save Course Weights</button>
+              </form>
+              <script>
+                (() => {
+                  const mid = document.getElementById('midterm_weight');
+                  const fin = document.getElementById('final_weight');
+                  const total = document.querySelector('#weight-total span');
+                  if (!mid || !fin || !total) return;
+                  const update = () => {
+                    const sum = (Number(mid.value) || 0) + (Number(fin.value) || 0);
+                    total.textContent = sum + '%';
+                    total.style.color = sum === 100 ? '#15803d' : '#b45309';
+                  };
+                  mid.addEventListener('input', update);
+                  fin.addEventListener('input', update);
+                  update();
+                })();
+              </script>
+            <% } %>
+
+            <% if (typeof weightAudit !== 'undefined' && weightAudit.length) { %>
+              <h3 style="margin-top:1.5rem;">Recent Weight Changes</h3>
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:0.6rem;">Date</th>
+                      <th style="text-align:left;padding:0.6rem;">Previous</th>
+                      <th style="text-align:left;padding:0.6rem;">New</th>
+                      <th style="text-align:left;padding:0.6rem;">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% weightAudit.forEach(item => { %>
+                      <tr>
+                        <td style="padding:0.6rem;"><%= new Date(item.changed_at).toLocaleDateString() %></td>
+                        <td style="padding:0.6rem;"><%= item.old_midterm %>/<%= item.old_final %></td>
+                        <td style="padding:0.6rem;"><%= item.new_midterm %>/<%= item.new_final %></td>
+                        <td style="padding:0.6rem;"><%= item.reason || '—' %></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
       <!-- RIGHT COLUMN: LECTURE NOTES -->
-      <div class="premium-card">
+      <div class="premium-card" id="lecture-notes">
         <div class="card-header">
           <i class="fas fa-chalkboard"></i>
           <h2>Lecture Notes & Materials</h2>
@@ -264,7 +357,7 @@
                         <div class="file-item">
                           <i class="fas fa-file-pdf file-icon"></i>
                           <div>
-                            <a href="<%= note.file_url %>" target="_blank" style="text-decoration: none; color: inherit;">
+                            <a href="/sis/faculty/course-materials/<%= section.id %>/notes/<%= note.id %>/download" target="_blank" style="text-decoration: none; color: inherit;">
                               <div style="font-weight: 800;"><%= note.title %> <i class="fas fa-download" style="font-size: 0.7rem; color: var(--blue);"></i></div>
                             </a>
                             <div style="font-size: 0.7rem; color: #64748b;"><%= note.file_name %></div>

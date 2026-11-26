@@ -549,7 +549,7 @@
                 <%= new Date(syllabus.uploaded_at).toLocaleDateString() %>
               </div>
 
-              <a href="<%= syllabus.file_url %>"
+              <a href="/sis/my/materials/<%= section.id %>/syllabus/<%= syllabus.id %>/download"
                  target="_blank"
                  rel="noopener noreferrer"
                  class="btn-download">
@@ -654,7 +654,7 @@
 
                           </div>
 
-                          <a href="<%= note.file_url %>"
+                          <a href="/sis/my/materials/<%= section.id %>/notes/<%= note.id %>/download"
                              target="_blank"
                              rel="noopener noreferrer"
                              class="btn-file-download"

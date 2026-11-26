@@ -1,5 +1,6 @@
 require('dotenv').config(); // <--- MUST BE LINE 1
 
+
 const { createClient } = require('@supabase/supabase-js');
 
 // Safely initialize Supabase (prevents server crash if keys are missing)
@@ -16,6 +17,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const { Resend } = require('resend');
 const multer = require('multer');
+const bcrypt = require('bcryptjs');
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // Increased to 5MB for PDFs
@@ -36,12 +38,15 @@ const app = express();
 app.set('trust proxy', 1);
 
 const pool = new Pool({
-  user: 'postgres.fclhdbppskmjlmbhtoug',
-  password: 'LuxMindAdmin2026',
-  host: 'aws-1-eu-central-1.pooler.supabase.com',
-  port: 6543,
-  database: 'postgres',
-  ssl: { rejectUnauthorized: false }
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 5432),
+  database: process.env.DB_NAME || 'postgres',
+  ssl: process.env.DB_SSL === 'true'
+    ? { rejectUnauthorized: false }
+    : false,
+  connectionTimeoutMillis: 10000
 });
 const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
@@ -208,65 +213,113 @@ app.get('/apply/success/:id', async (req, res) => {
   }
 });
 
+
 // ============================================
 // --- AUTHENTICATION ---
 // ============================================
+
 app.get('/login', (req, res) => {
-  if (req.session.user) return res.send("<h1>LOGIN SUCCESSFUL! The database is connected.</h1><a href='/sis/my'>Go to Dashboard</a>");
+  if (req.session.user) {
+    return res.send(
+      "<h1>LOGIN SUCCESSFUL! The database is connected.</h1>" +
+      "<a href='/sis/my'>Go to Dashboard</a>"
+    );
+  }
+
   res.render('login', { error: req.flash('error') });
 });
 
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  try {
-    const result = await pool.query(`
-      SELECT u.* FROM users u
-      LEFT JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE (u.username = $1 OR sp.admission_number = $1) AND u.password = $2
-    `, [username, password]);
-    
-    if (result.rows.length > 0) {
-      req.session.user = result.rows[0];
-      
-      // Check if this user is a Dean of any faculty
-      let deanFaculty = null;
-      try {
-        const deanCheck = await pool.query(
-          `SELECT id, name, code FROM faculties WHERE dean_id = $1 LIMIT 1`,
-          [req.session.user.id]
-        );
-        if (deanCheck.rows.length > 0) {
-          deanFaculty = deanCheck.rows[0];
-          req.session.user.dean_faculty = deanFaculty;
-        }
-      } catch (e) { /* table may not exist yet, ignore */ }
 
-      // ✅ FIXED LOGIN REDIRECTS
-      if (req.session.user.role === 'intl_officer') return res.redirect('/sis/intl');
-      if (req.session.user.role === 'finance_staff') return res.redirect('/sis/finance');
-      if (req.session.user.role === 'it_staff') return res.redirect('/sis/it');
-      if (req.session.user.role === 'admin') return res.redirect('/sis/admin');
-if (req.session.user.role === 'dean') {
-  return res.redirect('/sis/dean');
-}
-if (deanFaculty) return res.redirect('/sis/dean');
-if (req.session.user.role === 'department_head') {
-  return res.redirect('/sis/department-head');
-}
-      if (req.session.user.role === 'advisor') return res.redirect('/sis/advisor');
-      if (req.session.user.role === 'rectorate') return res.redirect('/sis/rectorate');
-      if (deanFaculty) return res.redirect('/sis/dean');
-      if (req.session.user.role === 'teacher') return res.redirect('/sis/faculty');
-      
-      return res.redirect('/sis/my');
+  try {
+    // 1. Find account in the SIS database
+    const result = await pool.query(`
+      SELECT u.*
+      FROM users u
+      LEFT JOIN student_profiles sp ON sp.user_id = u.id
+      WHERE (u.username = $1 OR sp.admission_number = $1)
+      LIMIT 1
+    `, [username]);
+
+    if (result.rows.length === 0) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/login');
     }
 
-    req.flash('error', 'Invalid credentials');
-    res.redirect('/login');
+    const user = result.rows[0];
+
+    // 2. Verify the bcrypt password hash
+    const passwordMatches = await bcrypt.compare(
+      password || '',
+      user.password || ''
+    );
+
+    if (!passwordMatches) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/login');
+    }
+
+    // 3. Login successful
+    req.session.user = user;
+
+    // 4. Check if this user is a Dean of any faculty
+    let deanFaculty = null;
+
+    try {
+      const deanCheck = await pool.query(
+        `SELECT id, name, code
+         FROM faculties
+         WHERE dean_id = $1
+         LIMIT 1`,
+        [user.id]
+      );
+
+      if (deanCheck.rows.length > 0) {
+        deanFaculty = deanCheck.rows[0];
+        req.session.user.dean_faculty = deanFaculty;
+      }
+    } catch (e) {
+      // Faculty table may not exist yet
+      console.log('Dean faculty check skipped:', e.message);
+    }
+
+    // 5. Redirect according to user role
+    if (user.role === 'intl_officer')
+      return res.redirect('/sis/intl');
+
+    if (user.role === 'finance_staff')
+      return res.redirect('/sis/finance');
+
+    if (user.role === 'it_staff')
+      return res.redirect('/sis/it');
+
+    if (user.role === 'admin')
+      return res.redirect('/sis/admin');
+
+    if (user.role === 'dean' || deanFaculty)
+      return res.redirect('/sis/dean');
+
+    if (user.role === 'department_head')
+      return res.redirect('/sis/department-head');
+
+    if (user.role === 'advisor')
+      return res.redirect('/sis/advisor');
+
+    if (user.role === 'rectorate')
+      return res.redirect('/sis/rectorate');
+
+    if (user.role === 'teacher')
+      return res.redirect('/sis/faculty');
+
+    return res.redirect('/sis/my');
+
   } catch (err) {
-    res.status(500).send("<pre style='color:red; font-size:20px; background:#fff; padding:20px;'>ERROR: " + err.message + "\n\nSTACK: " + err.stack + "</pre>");
+    console.error('SIS LOGIN ERROR:', err);
+    res.status(500).send('Login error. Please try again.');
   }
 });
+
 
 app.get('/logout', (req, res) => {
   req.session.destroy();
